@@ -247,7 +247,7 @@ class YoutubeResolver extends PlaydarResolver
             $finalUrl = substr( $finalUrl, 0, strpos( $finalUrl, $magicLimit ) );
 //            fwrite( $fp, $finalUrl . "\n\n\n" );
 
-            flush( $fp );
+//            flush( $fp );
 
             $result = (Object) array(
                 'artist' => $request->artist,
@@ -255,7 +255,7 @@ class YoutubeResolver extends PlaydarResolver
                 'source' => 'Youtube',
                 'url' => "http://" . urldecode( $finalUrl ),
                 'bitrate' => 128,
-                'duration' => $length,
+                'duration' => (int)$length,
                 'score' => (float)1.0
             );
 
