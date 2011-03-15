@@ -240,12 +240,12 @@ class YoutubeResolver extends PlaydarResolver
             $magicLimit = "%7C";
             $finalUrl = substr( $urlContents, strpos( $urlContents, $magic ) + strlen( $magic ), strlen( $urlContents ) );
 
-/*            $fp = fopen( "/tmp/tomahawk_youtube_debugoutput_v2", "w+" );
-            fwrite( $fp, $finalUrl . "\n\n\First pass:\n\n\n" );
+//            $fp = fopen( "/tmp/tomahawk_youtube_debugoutput_v2", "w+" );
+//            fwrite( $fp, $finalUrl . "\n\n\First pass:\n\n\n" );
             $finalUrl = substr( $finalUrl, strpos( $finalUrl, $magicFmt . $magicLimit ) + strlen( $magic . $magicLimit ), strlen( $finalUrl ) );
-            fwrite( $fp, $finalUrl . "\n\n\Second pass:\n\n\n" );
+//            fwrite( $fp, $finalUrl . "\n\n\Second pass:\n\n\n" );
             $finalUrl = substr( $finalUrl, 0, strpos( $finalUrl, $magicLimit ) );
-            fwrite( $fp, $finalUrl . "\n\n\n" );*/
+//            fwrite( $fp, $finalUrl . "\n\n\n" );
 
             flush( $fp );
 
