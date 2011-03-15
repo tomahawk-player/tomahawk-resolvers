@@ -153,7 +153,6 @@ class YoutubeResolver extends PlaydarResolver
     protected $timeout = 25; // fast atm, it's all hardcoded.
     protected $weight = 70; // 1-100. higher means preferable.
     protected $m_urlOut = 'http://www.youtube.com/watch?v=%s';
-//    protected $m_urlOut = 'http://v3.cache6.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass&fexp=902904&itag=22&ipbits=8&signature=CE32233C08B832C04494D192EBF8950FACF105.ADE40C301D4BB5CCF049C5C4C62D7CD83B7DDDA7&sver=3&ratebypass=yes&expire=1300190400&key=yt1&ip=91.0.0.0&id=f81b01d07a52efaf&redirect_counter=1'; //http://www.youtube.com/v/%s&format=xml';
 
     protected $maxResults = 25;
     
