@@ -3,6 +3,7 @@
 
 /**
  * @author David Singleton (http://dsingleton.co.uk)
+ * @author Christian Muehlhaeuser (http://tomahawk-player.org)
  * A base player resolver written in PHP.
  * Handles basic request/response, encoding.
  */
@@ -11,12 +12,13 @@ abstract class PlaydarResolver
 {
     protected $name; 
     protected $targetTime; // Lower is better
+    protected $timeout; // After which period of time (in ms) we do not expect results to arrive anymore
     protected $weight; // 1-100. higher means preferable.
     
     
     public function __construct()
     {
-        set_error_handler(array($this, 'errorHandler'), E_ALL);
+//        set_error_handler(array($this, 'errorHandler'), E_ALL);
     }
     
     /**
@@ -49,11 +51,6 @@ abstract class PlaydarResolver
             
             // Let's resolve this bitch
             $results = $this->resolve($request);
-            
-            // No results, bail
-            if (!$results) {
-//                continue;
-            }
             
             // Build response and send
             $response = (Object) array(
@@ -91,6 +88,7 @@ abstract class PlaydarResolver
             '_msgtype' => 'settings',
             'name' => $this->name,
             'targettime' => $this->targetTime,
+            'timeout' => $this->timeout,
             'weight' => $this->weight,
             'localonly' => isset($this->localonly) ? $this->localonly : TRUE,
         );
@@ -143,33 +141,6 @@ abstract class PlaydarResolver
     }
 }
 
-/**
- * Example implementation of base PlaydarResolver
- */
-class ExamplePHPResolver extends PlaydarResolver
-{
-    protected $name = 'php resolver script';
-    protected $targetTime = 15; // fast atm, it's all hardcoded.
-    protected $weight = 80; // 1-100. higher means preferable.
-    
-    public function resolve($request)
-    {
-        if(strtolower(trim($request->artist))!='mokele') return array();
-        if(soundex($request->track)!=soundex('hiding in your insides')) return array();
-        $pi = new stdclass;
-        $pi->artist = "Mokele";
-        $pi->track = "Hiding In Your Insides (php)";
-        $pi->album = "You Yourself are Me Myself and I am in Love";
-        $pi->source = "Mokele.co.uk";
-        $pi->size = 4971780;
-        $pi->bitrate= 160;
-        $pi->duration = 248;
-        // NB this url should be url encoded properly:
-        $pi->url = "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3";
-        $pi->score = (float)1.00;
-        return array($pi);
-    }
-}
 
 /**
   * A resolver for Youtube videos
@@ -179,8 +150,10 @@ class YoutubeResolver extends PlaydarResolver
 {
     protected $name = 'Youtube Resolver';
     protected $targetTime = 10; // fast atm, it's all hardcoded.
-    protected $weight = 50; // 1-100. higher means preferable.
+    protected $timeout = 25; // fast atm, it's all hardcoded.
+    protected $weight = 70; // 1-100. higher means preferable.
     protected $m_urlOut = 'http://www.youtube.com/watch?v=%s';
+//    protected $m_urlOut = 'http://v3.cache6.c.youtube.com/videoplayback?sparams=id%2Cexpire%2Cip%2Cipbits%2Citag%2Cratebypass&fexp=902904&itag=22&ipbits=8&signature=CE32233C08B832C04494D192EBF8950FACF105.ADE40C301D4BB5CCF049C5C4C62D7CD83B7DDDA7&sver=3&ratebypass=yes&expire=1300190400&key=yt1&ip=91.0.0.0&id=f81b01d07a52efaf&redirect_counter=1'; //http://www.youtube.com/v/%s&format=xml';
 
     protected $maxResults = 25;
     
@@ -256,12 +229,31 @@ class YoutubeResolver extends PlaydarResolver
                 }
             }
             $url = sprintf( $this->m_urlOut, $v, $hash );
+            $urlContents = file_get_contents( $url );
+
+/*            $fp = fopen( "/tmp/tomahawk_youtube_debugoutput", "w+" );
+            fwrite( $fp, $urlContents );
+            flush( $fp );*/
+
+            $magic = "fmt_stream_map=";
+            $magicFmt = "18";
+            $magicLimit = "%7C";
+            $finalUrl = substr( $urlContents, strpos( $urlContents, $magic ) + strlen( $magic ), strlen( $urlContents ) );
+
+/*            $fp = fopen( "/tmp/tomahawk_youtube_debugoutput_v2", "w+" );
+            fwrite( $fp, $finalUrl . "\n\n\First pass:\n\n\n" );
+            $finalUrl = substr( $finalUrl, strpos( $finalUrl, $magicFmt . $magicLimit ) + strlen( $magic . $magicLimit ), strlen( $finalUrl ) );
+            fwrite( $fp, $finalUrl . "\n\n\Second pass:\n\n\n" );
+            $finalUrl = substr( $finalUrl, 0, strpos( $finalUrl, $magicLimit ) );
+            fwrite( $fp, $finalUrl . "\n\n\n" );*/
+
+            flush( $fp );
 
             $result = (Object) array(
                 'artist' => $request->artist,
                 'track' => $request->track,
                 'source' => 'Youtube',
-                'url' => $url,
+                'url' => "http://" . urldecode( $finalUrl ),
                 'bitrate' => 128,
                 'duration' => $length,
                 'score' => (float)1.0
@@ -277,4 +269,3 @@ class YoutubeResolver extends PlaydarResolver
 $resolver = new YoutubeResolver();
 $resolver->sendResponse( $resolver->getSettings() );
 $resolver->handleRequest( fopen( "php://STDIN", 'r' ) );
-//$resolver->handleRequest( fopen( "/tmp/tsc.txt", 'r' ) );
