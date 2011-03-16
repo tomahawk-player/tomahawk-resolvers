@@ -8,77 +8,75 @@
  * Handles basic request/response, encoding.
  */
 
-abstract class PlaydarResolver
+abstract class TomahawkResolver
 {
-    protected $name; 
+    protected $name;
     protected $targetTime; // Lower is better
     protected $timeout; // After which period of time (in seconds) we do not expect results to arrive anymore
     protected $weight; // 1-100. higher means preferable.
-    
-    
+
+
     public function __construct()
     {
-//        set_error_handler(array($this, 'errorHandler'), E_ALL);
+//        set_error_handler( array( $this, 'errorHandler' ), E_ALL );
     }
-    
+
     /**
-     * 
+     *
      */
-    public function handleRequest($fh)
+    public function handleRequest( $fh )
     {
-        while (!feof($fh)) {
+        while ( !feof( $fh ) )
+        {
 
             // Makes the handler compatable with command line testing and playdar resolver pipeline usage
-            if (!$content = fread($fh, 4)) {
+            if ( !$content = fread( $fh, 4 ) )
                 break;
-            }
-            
+
             // get the length of the payload from the first 4 bytes:
-            $len = current(unpack('N', $content));
-            
+            $len = current( unpack( 'N', $content ) );
+
             // bail on empty request.
-            if($len == 0) {
+            if( $len == 0 )
                 continue;
-            }
-            
+
             // read $len bytes for the actual payload and assume it's a JSON object.
-            $request = json_decode(fread($fh, $len));
-            
+            $request = json_decode( fread( $fh, $len ) );
+
             // Malformed request
-            if (!isset($request->artist, $request->track)) {
+            if ( !isset( $request->artist, $request->track ) )
                 continue;
-            }
-            
+
             // Let's resolve this bitch
-            $results = $this->resolve($request);
-            
+            $results = $this->resolve( $request );
+
             // Build response and send
             $response = (Object) array(
                 '_msgtype' => 'results',
                 'qid' => $request->qid,
                 'results' => $results,
             );
-            $this->sendResponse($response);
+            $this->sendResponse( $response );
         }
     }
-    
+
     /**
      * Find shit. Returns an array of result object
      */
-    abstract function resolve($request);
-    
+    abstract function resolve( $request );
+
     /**
      * Output reply
      * Puts a 4-byte big-endian int first, denoting length of message
      */
-    public function sendResponse($response)
+    public function sendResponse( $response )
     {
         // i think json_spirit rejects \/ even tho it's valid json. doh.
-        $str = str_replace('\/','/',json_encode($response));
-        print pack('N', strlen($str));
+        $str = str_replace( '\/','/', json_encode( $response ) );
+        print pack( 'N', strlen( $str ) );
         print $str;
     }
-    
+
     /**
      * Settings object for this resolver, reported when we start
      */
@@ -90,23 +88,24 @@ abstract class PlaydarResolver
             'targettime' => $this->targetTime,
             'timeout' => $this->timeout,
             'weight' => $this->weight,
-            'localonly' => isset($this->localonly) ? $this->localonly : TRUE,
+            'localonly' => isset( $this->localonly ) ? $this->localonly : TRUE,
         );
         return $settings;
     }
-    
-    public function log($message)
+
+    public function log( $message )
     {
-        $fh = fopen("php://STDERR", 'w');
-        fwrite($fh, $message . "\n");
-        fclose($fh);
+        $fh = fopen( "php://STDERR", 'w' );
+        fwrite( $fh, $message . "\n" );
+        fclose( $fh );
     }
-    
-    public function errorHandler($errno, $errstr, $errfile, $errline)
+
+    public function errorHandler( $errno, $errstr, $errfile, $errline )
     {
         $exit = false;
-        
-        switch ($errno) {
+
+        switch ( $errno )
+        {
             case E_USER_ERROR:
                 $type = "Fatal";
                 $exit = true;
@@ -125,16 +124,18 @@ abstract class PlaydarResolver
                 $type = "Unknown";
                 break;
         }
-        
+
         $format = 'PHP ' . $type . ' Error: "%s" (line %s in %s)';
-        $error = sprintf($format, $errstr, $errline, $errfile);
-        
-        $this->log($error);
-        
-        if ($exit) {
-            exit(1);
+        $error = sprintf( $format, $errstr, $errline, $errfile );
+
+        $this->log( $error );
+
+        if ( $exit )
+        {
+            exit( 1 );
         }
-        else {
+        else
+        {
             /* Don't execute PHP internal error handler */
             return true;
         }
@@ -146,7 +147,7 @@ abstract class PlaydarResolver
   * A resolver for Youtube videos
   * @author Christian Muehlhaeuser (http://tomahawk-player.org)
   */
-class YoutubeResolver extends PlaydarResolver
+class YoutubeResolver extends TomahawkResolver
 {
     protected $name = 'Youtube Resolver';
     protected $targetTime = 10; // fast atm, it's all hardcoded.
