@@ -12,7 +12,7 @@ abstract class PlaydarResolver
 {
     protected $name; 
     protected $targetTime; // Lower is better
-    protected $timeout; // After which period of time (in ms) we do not expect results to arrive anymore
+    protected $timeout; // After which period of time (in seconds) we do not expect results to arrive anymore
     protected $weight; // 1-100. higher means preferable.
     
     
@@ -245,7 +245,6 @@ class YoutubeResolver extends PlaydarResolver
 //            fwrite( $fp, $finalUrl . "\n\n\Second pass:\n\n\n" );
             $finalUrl = substr( $finalUrl, 0, strpos( $finalUrl, $magicLimit ) );
 //            fwrite( $fp, $finalUrl . "\n\n\n" );
-
 //            flush( $fp );
 
             $result = (Object) array(
