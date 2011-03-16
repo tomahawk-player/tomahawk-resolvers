@@ -253,7 +253,7 @@ class YoutubeResolver extends TomahawkResolver
                 'track' => $request->track,
                 'source' => 'Youtube',
                 'mimetype' => 'video/h264',
-                'url' => "http://" . urldecode( $finalUrl ),
+                'url' => "http://" . urldecode( $finalUrl . "&format=xml" ),
                 'bitrate' => 0,
                 'duration' => (int)$length,
                 'score' => (float)1.0
