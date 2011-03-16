@@ -9,17 +9,29 @@ function getSettings()
     response.name = "Skreemr Resolver";
     response.weight = 85;
     response.timeout = 10;
+    response.blockedServices = new Array();
+    response.blockedServices.push("dreammedia.ru");
 
     return response;
 }
 
-
-function resolve( qid, artist, album, song )
-{
-    var valueFromLinkNode = function(node, key)
+function resolve(qid, artist, album, song) {
+    var valueForSubNode = function(node, tag)
     {
-        return node.getElementsByTagName(key)[0].textContent
+        return node.getElementsByTagName(tag)[0].textContent
     };
+
+    var isFromService = function(url, services)
+    {
+        for(var i=0;i<services.length;i++)
+        {
+            if(url.indexOf(services[i]) >= 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     // build query to skreemr
     var url = "http://skreemr.com/skreemr-web-service/search?";
@@ -52,18 +64,23 @@ function resolve( qid, artist, album, song )
         for(var i=0;i<links.length;i++)
         {
             var link = links[i];
+
+            // if the blocked service is a substr of url dont add it to the results
+            if(isFromService(valueForSubNode(link, "url"), getSettings().blockedServices))
+                continue;
+
             var result = new Object();
-            result.artist = valueFromLinkNode(link, "artist");
-            result.album = valueFromLinkNode(link, "album");
-            result.track = valueFromLinkNode(link, "songtitle");
-            result.year = valueFromLinkNode(link, "year");
+            result.artist = valueForSubNode(link, "artist");
+            result.album = valueForSubNode(link, "album");
+            result.track = valueForSubNode(link, "songtitle");
+            result.year = valueForSubNode(link, "year");
 
             result.source = "Skreemr";
-            result.url = decodeURI(valueFromLinkNode(link, "url"));
+            result.url = decodeURI(valueForSubNode(link, "url"));
             // skreemr only searches mp3s atm
             result.extension = "mp3";
-            result.bitrate = valueFromLinkNode(link, "bitrate")/1000;
-            result.durationString = valueFromLinkNode(link, "duration");
+            result.bitrate = valueForSubNode(link, "bitrate")/1000;
+            result.durationString = valueForSubNode(link, "duration");
             result.score = 1.0;
 
             results.push(result);
