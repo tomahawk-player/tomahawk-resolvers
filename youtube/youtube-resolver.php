@@ -151,7 +151,7 @@ class YoutubeResolver extends PlaydarResolver
     protected $name = 'Youtube Resolver';
     protected $targetTime = 10; // fast atm, it's all hardcoded.
     protected $timeout = 25; // fast atm, it's all hardcoded.
-    protected $weight = 70; // 1-100. higher means preferable.
+    protected $weight = 75; // 1-100. higher means preferable.
     protected $m_urlOut = 'http://www.youtube.com/watch?v=%s';
 
     protected $maxResults = 25;
@@ -252,7 +252,7 @@ class YoutubeResolver extends PlaydarResolver
                 'track' => $request->track,
                 'source' => 'Youtube',
                 'url' => "http://" . urldecode( $finalUrl ),
-                'bitrate' => 128,
+                'bitrate' => 0,
                 'duration' => (int)$length,
                 'score' => (float)1.0
             );
