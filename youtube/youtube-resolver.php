@@ -251,6 +251,7 @@ class YoutubeResolver extends PlaydarResolver
                 'artist' => $request->artist,
                 'track' => $request->track,
                 'source' => 'Youtube',
+                'mimetype' => 'video/h264',
                 'url' => "http://" . urldecode( $finalUrl ),
                 'bitrate' => 0,
                 'duration' => (int)$length,
