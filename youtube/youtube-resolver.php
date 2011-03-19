@@ -4,7 +4,7 @@
 /**
  * @author David Singleton (http://dsingleton.co.uk)
  * @author Christian Muehlhaeuser (http://tomahawk-player.org)
- * A base player resolver written in PHP.
+ * A base tomahawk resolver written in PHP.
  * Handles basic request/response, encoding.
  */
 
