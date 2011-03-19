@@ -15,7 +15,9 @@ function getSettings()
     return response;
 }
 
-function resolve(qid, artist, album, song) {
+
+function resolve( qid, artist, album, track )
+{
     var valueForSubNode = function(node, tag)
     {
         return node.getElementsByTagName(tag)[0].textContent
@@ -35,8 +37,8 @@ function resolve(qid, artist, album, song) {
 
     // build query to skreemr
     var url = "http://skreemr.com/skreemr-web-service/search?";
-    if(song != "" )
-        url += "song=" + encodeURIComponent(song) + "&";
+    if(track != "" )
+        url += "song=" + encodeURIComponent(track) + "&";
 
     if(artist != "" )
         url += "artist=" + encodeURIComponent(artist) + "&";

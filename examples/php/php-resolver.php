@@ -4,7 +4,7 @@
 /**
  * @author David Singleton (http://dsingleton.co.uk)
  * @author Christian Muehlhaeuser (http://tomahawk-player.org)
- * A base player resolver written in PHP.
+ * A base tomahawk resolver written in PHP.
  * Handles basic request/response, encoding.
  */
 
@@ -155,19 +155,20 @@ class ExamplePHPResolver extends TomahawkResolver
 
     public function resolve( $request )
     {
-        $pi = new stdclass;
-        $pi->artist = "Mokele";
-        $pi->track = "Hiding In Your Insides (php)";
-        $pi->album = "You Yourself are Me Myself and I am in Love";
-        $pi->source = "Mokele.co.uk";
-        $pi->size = 4971780;
-        $pi->bitrate = 160;
-        $pi->duration = 248;
-        $pi->mimetype = "audio/mpeg";
+        $result = (Object) array(
+            'artist' => 'Mokele',
+            'album' => 'You Yourself are Me Myself and I am in Love',
+            'track' => 'Hiding In Your Insides (php)',
+            'source' => 'Mokele.co.uk',
+            'mimetype' => 'audio/mpeg',
+            'extension' => 'mp3',
+            'url' => 'http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3',
+            'bitrate' => 160,
+            'duration' => 248,
+            'size' => 4971780,
+            'score' => (float)1.0
+        );
 
-        // NB this url should be url encoded properly:
-        $pi->url = "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3";
-        $pi->score = (float)1.00;
-        return array($pi);
+        return array( $result );
     }
 }

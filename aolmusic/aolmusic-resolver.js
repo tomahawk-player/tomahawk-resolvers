@@ -15,19 +15,19 @@ function getSettings()
 }
 
 
-function resolve(qid, artist, album, song)
+function resolve( qid, artist, album, track )
 {
-    var url = "http://music.aol.com/api/audio/search?songTitle="+ encodeURI(song) + "&artistName=" + encodeURI(artist);
+    var url = "http://music.aol.com/api/audio/search?songTitle="+ encodeURI( track ) + "&artistName=" + encodeURI( artist );
 
     // send request and parse it into javascript
     var xmlHttpRequest = new XMLHttpRequest();
-    xmlHttpRequest.open('GET', url, false);
-    xmlHttpRequest.send(null);
-    //console.log(xmlHttpRequest.responseText);
+    xmlHttpRequest.open( 'GET', url, false );
+    xmlHttpRequest.send( null );
+    //console.log( xmlHttpRequest.responseText );
     var obj = eval('(' + xmlHttpRequest.responseText + ')');
 
     // check the repsonse
-    if(obj.response.statusText == "Ok")
+    if ( obj.response.statusText == "Ok" )
     {
         // walk through the results (called assets by aol) and store it in 'results'
         var results = new Array();
@@ -60,31 +60,6 @@ function resolve(qid, artist, album, song)
         return response;
     }
 
-    console.log("status: not ok");
+    console.log( "Status: not ok" );
     return false;
 }
-
-/*
-//var qid = 1337;
-//var artist = "Iron Maiden";
-//var album =  "";
-//var song = "Wasting Love";
-var qid = phantom.args[0];
-var artist = phantom.args[1];
-var album = "";
-var song = phantom.args[3];
-
-var resolved = resolve(qid, artist, album, song);
-if(resolved)
-{
-    console.log("success");
-    console.log("qid:" + resolved.qid);
-    for(var i=0;i<resolved.results.length;i++)
-    {
-        var curItem = resolved.results[i];
-        console.log("    "+ curItem.artist + " - " + curItem.track + " ( " + curItem.url + " )");
-    }
-} else {
-  console.log("failure");
-}
-*/
