@@ -147,13 +147,12 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     , m_loggedIn( false )
     , m_trackEnded( false )
 {
-    setOrganizationName( QLatin1String( "Tomahawk" ) );
+    setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
     setApplicationVersion( QLatin1String( "0.1" ) );
 
     setupLogfile();
-
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ) );
 
     // read stdin
@@ -389,7 +388,7 @@ QString SpotifyResolver::dataDir()
         }
     }
 #elif defined(Q_WS_MAC)
-        path = appSupportFolderPath();
+        path = QDir::home().filePath( "Library/Application Support" );
 #elif defined(Q_WS_X11)
         path = QDir::home().filePath( ".local/share" );
 #else
@@ -400,7 +399,7 @@ QString SpotifyResolver::dataDir()
     QDir d( path );
     d.mkpath( path );
 
-//     qDebug() << "Using SpotifyResolver log dir:" << path;
+    //ap qDebug() << "Using SpotifyResolver log dir:" << path;
     return path;
 }
 
