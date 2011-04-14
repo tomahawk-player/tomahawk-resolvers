@@ -187,6 +187,8 @@ void AudioHTTPWorker::incomingData()
         m_socket->write( (const char*)d.data, d.numFrames * 4 ); // 4 == channels * ( bits per sample / 8 ) == 2 * ( 16 / 8 )
         m_socket->flush();
 
+        free( d.data );
+
         bytesWritten += d.numFrames * 4;
 //         qDebug() << "Written:" << d.numFrames*4 << "total of:" << bytesWritten;
         if( bytesWritten % 4194304 == 0 ) // 4mb

@@ -204,6 +204,7 @@ static void searchComplete( sp_search *result, void *userdata )
     resp[ "_msgtype" ] = "results";
     QVariantList results;
 
+    // TODO search by popularity!
 //     qDebug() << "Got num results:" << sp_search_num_tracks( result );
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
         int num = qMin( sp_search_num_tracks( result ), 25 );
@@ -230,7 +231,7 @@ static void searchComplete( sp_search *result, void *userdata )
             track[ "bitrate" ] = 192; // TODO
             results << track;
 
-            qDebug() << "Found Track:" << sp_track_name( tr ) << sp_track_artist( tr, 0 ) << sp_track_album( tr ) << "\n\tReporting:" << track["url"];
+            qDebug() << "Found Track:" << sp_track_name( tr ) << sp_track_artist( tr, 0 ) << sp_track_album( tr ) << sp_track_popularity( tr ) << "\n\tReporting:" << track["url"];
         }
 
     }

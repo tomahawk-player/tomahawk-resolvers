@@ -178,6 +178,12 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
 
     m_server = new AudioHTTPServer;
 
+    QFile f( ":/config.ui" );
+    f.open( QIODevice::ReadOnly );
+    QByteArray comp = qCompress( f.readAll(), 9 );
+    m_configWidget = comp.toBase64();
+    f.close();
+
     loadSettings();
 }
 
@@ -198,7 +204,12 @@ void SpotifyResolver::setLoggedIn( bool loggedIn )
     m[ "name" ] = "Spotify";
     m[ "weight" ] = "95";
     m[ "timeout" ] = "100";
-    m[ "preferences" ] = "login";
+
+    QVariantMap prefs;
+    prefs[ "compressed" ] = "true";
+    prefs[ "widget" ] = m_configWidget;
+
+    m[ "preferences" ] = prefs;
 
     sendMessage( m );
 }
@@ -229,17 +240,14 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     }
     QVariantMap m = msg.toMap();
     if( m.value( "_msgtype" ) == "setpref" ) {
-        QVariantList l = m[ "prefs" ].toList();
-        foreach( const QVariant& p, l ) {
-            if( !p.canConvert< QVariantMap >() )
-                continue;
-            QVariantMap pref = p.toMap();
-            Q_ASSERT( pref.contains( "username" ) && pref.contains( "password" ) );
-            m_username = pref[ "username" ].toString();
-            m_pw = pref[ "password" ].toString();
-
-            login();
-        }
+        QVariantMap widgetMap = m[ "widgets" ].toMap();
+        qDebug() << "Got widget map!" << widgetMap;
+//         foreach( const QVariant& p, l ) {
+//             if( !p.canConvert< QVariantMap >() )
+//                 continue;
+//             QVariantMap widgets = p.toMap();
+//             login();
+//         }
     } else if( m.value( "_msgtype" ) == "rq" ) {
         QString qid = m.value( "qid" ).toString();
         QString artist = m.value( "artist" ).toString();
@@ -324,6 +332,9 @@ AudioData SpotifyResolver::getData()
 
 void SpotifyResolver::clearData()
 {
+    while( !m_audioData.isEmpty() ) {
+        free( m_audioData.dequeue().data );
+    }
     m_audioData.clear();
 }
 
@@ -399,7 +410,7 @@ QString SpotifyResolver::dataDir()
     QDir d( path );
     d.mkpath( path );
 
-    //ap qDebug() << "Using SpotifyResolver log dir:" << path;
+//    qDebug() << "Using SpotifyResolver log dir:" << path;
     return path;
 }
 

@@ -11,5 +11,6 @@ include_directories(${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR
 
 set(tomahawkspotify_SRCS spotifyresolver.cpp consolewatcher.cpp audiohttpserver.cpp audiohttpworker.cpp main.cpp)
 qt4_automoc(${tomahawkspotify_SRCS})
-add_executable(tomahawkspotify ${tomahawkspotify_SRCS})
+qt4_add_resources( RC_SRCS "resources.qrc" )
+add_executable(tomahawkspotify ${tomahawkspotify_SRCS} ${RC_SRCS})
 target_link_libraries(tomahawkspotify ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
