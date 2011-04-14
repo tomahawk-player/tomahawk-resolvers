@@ -83,6 +83,7 @@ static void loggedIn(sp_session *session, sp_error error)
             qDebug() << "You need to be a Premium User in order to login";
             break;
         default:
+            qDebug() << "Some other error... wtf?" << sp_error_message( error );
             break;
     }
 }

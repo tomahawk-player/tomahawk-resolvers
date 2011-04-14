@@ -90,7 +90,11 @@ signals:
     void notifyMainThreadSignal();
 
 private:
+    void sendConfWidget();
+    void sendSettingsMessage();
     void loadSettings();
+    void saveSettings() const;
+
     void login();
 
     QThread m_stdinThread;

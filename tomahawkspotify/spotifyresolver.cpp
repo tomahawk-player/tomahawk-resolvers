@@ -178,13 +178,8 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
 
     m_server = new AudioHTTPServer;
 
-    QFile f( ":/config.ui" );
-    f.open( QIODevice::ReadOnly );
-    QByteArray comp = qCompress( f.readAll(), 9 );
-    m_configWidget = comp.toBase64();
-    f.close();
-
     loadSettings();
+    sendConfWidget();
 }
 
 SpotifyResolver::~SpotifyResolver()
@@ -198,18 +193,52 @@ SpotifyResolver::~SpotifyResolver()
 
 void SpotifyResolver::setLoggedIn( bool loggedIn )
 {
+    m_loggedIn = loggedIn;
+
+    if( loggedIn )
+        sendSettingsMessage();
+}
+
+void SpotifyResolver::sendConfWidget()
+{
     // send settings message to tomahawk
+
+    QVariantMap prefs;
+    prefs[ "_msgtype" ] = "confwidget";
+    prefs[ "compressed" ] = "true";
+
+    QFile f( ":/config.ui" );
+    f.open( QIODevice::ReadOnly );
+    QString ui = QString::fromLatin1( f.readAll() );
+    ui.replace( "placeholderUsername", m_username );
+    ui.replace( "placeholderPw", m_pw );
+    QByteArray comp = qCompress( ui.toLatin1(), 9 );
+    qDebug() << "adding compressed UI file:" << comp.toBase64();
+    m_configWidget = comp.toBase64();
+    f.close();
+
+    prefs[ "widget" ] = m_configWidget;
+
+    QVariantMap images;
+    QFile f2( ":/spotify-logo.png" );
+    f2.open( QIODevice::ReadOnly );
+    QByteArray compressed = qCompress( f2.readAll(), 9 );
+    qDebug() << "adding compressed image:" << compressed.toBase64();
+    images[ "spotify-logo.png" ] = compressed.toBase64();
+    f2.close();
+
+    prefs[ "images" ] = images;
+
+    sendMessage( prefs );
+}
+
+void SpotifyResolver::sendSettingsMessage()
+{
     QVariantMap m;
     m[ "_msgtype" ] = "settings";
     m[ "name" ] = "Spotify";
-    m[ "weight" ] = "95";
-    m[ "timeout" ] = "100";
-
-    QVariantMap prefs;
-    prefs[ "compressed" ] = "true";
-    prefs[ "widget" ] = m_configWidget;
-
-    m[ "preferences" ] = prefs;
+    m[ "weight" ] = "90";
+    m[ "timeout" ] = "30";
 
     sendMessage( m );
 }
@@ -241,14 +270,15 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     QVariantMap m = msg.toMap();
     if( m.value( "_msgtype" ) == "setpref" ) {
         QVariantMap widgetMap = m[ "widgets" ].toMap();
-        qDebug() << "Got widget map!" << widgetMap;
-//         foreach( const QVariant& p, l ) {
-//             if( !p.canConvert< QVariantMap >() )
-//                 continue;
-//             QVariantMap widgets = p.toMap();
-//             login();
-//         }
+        m_username = widgetMap[ "usernameEdit" ].toMap()[ "text" ].toString();
+        m_pw = widgetMap[ "passwordEdit" ].toMap()[ "text" ].toString();
+        login();
+
+        saveSettings();
     } else if( m.value( "_msgtype" ) == "rq" ) {
+        if( !m_loggedIn )
+            return;
+
         QString qid = m.value( "qid" ).toString();
         QString artist = m.value( "artist" ).toString();
         QString track = m.value( "track" ).toString();
@@ -371,6 +401,13 @@ void SpotifyResolver::loadSettings()
     m_pw = s.value( "password", QString() ).toString();
 
     login();
+}
+
+void SpotifyResolver::saveSettings() const
+{
+    QSettings s;
+    s.setValue( "username", m_username );
+    s.setValue( "password", m_pw );
 }
 
 void SpotifyResolver::login()
