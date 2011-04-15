@@ -310,7 +310,14 @@ void SpotifyResolver::sendMessage(const QVariant& v)
 void SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track )
 {
     // search spotify..
-    QString query = QString( "%1 %2" ).arg( artist ).arg( track );
+    // do some cleanups.. remove ft/feat
+    QString cleanedTrack = track;
+    if( cleanedTrack.indexOf( "feat" ) > -1 )
+        cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "feat" ) );
+    if( cleanedTrack.indexOf( "ft." ) > -1 )
+        cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );
+
+    QString query = QString( "%1 %2" ).arg( artist ).arg( cleanedTrack );
     QString data = QString( "%1~~~%2" ).arg( query ).arg( qid );
 //     qDebug() << "Searching for:" << query;
     sp_search_create( m_session, query.toUtf8().data(), 0, 25, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, new QString(data) );
