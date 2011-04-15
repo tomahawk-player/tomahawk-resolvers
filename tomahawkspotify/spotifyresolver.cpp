@@ -73,7 +73,12 @@ static sp_session_callbacks callbacks = {
 };
 }
 
+#ifdef Q_WS_MAC
+#define LOGFILE QDir::home().filePath( "Library/Logs/SpotifyResolver.log" ).toLocal8Bit()
+#else
 #define LOGFILE QDir( SpotifyResolver::dataDir() ).filePath( "SpotifyResolver.log" ).toLocal8Bit()
+#endif
+
 #define LOGFILE_SIZE 1024 * 512
 std::ofstream logfile;
 
