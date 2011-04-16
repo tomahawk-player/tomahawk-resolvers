@@ -138,7 +138,7 @@ static int musicDelivery(sp_session *session, const sp_audioformat *format, cons
     d.sampleRate = format->sample_rate;
     sApp->queueData( d );
     m.unlock();
-    sApp->dataWaitCond().wakeAll();
+//     sApp->dataWaitCond().wakeAll();
 
     return numFrames;
 }
@@ -226,7 +226,7 @@ static void searchComplete( sp_search *result, void *userdata )
             track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
             track[ "mimetype" ] = "audio/basic";
             track[ "source" ] = "Spotify";
-            track[ "url" ] = sApp->server()->urlForID( uid );
+            track[ "url" ] = sApp->handler()->urlForID( uid );
             track[ "duration" ] = duration;
             track[ "score" ] = .95; // TODO
             track[ "bitrate" ] = 192; // TODO

@@ -26,91 +26,99 @@
 
 #include "audiohttpserver.h"
 
-#include <QTcpServer>
-#include "audiohttpworker.h"
+#include "spotifyresolver.h"
+#include "QxtWebPageEvent"
+#include "spotifyiodevice.h"
 
-AudioHTTPServer::AudioHTTPServer(QObject* parent)
-    : QTcpServer( parent )
-    , m_curthread( 0 )
-    , m_worker( 0 )
+#include <QString>
+#include <QDebug>
+
+AudioHTTPServer::AudioHTTPServer( QxtAbstractWebSessionManager* sm, int port, QObject* parent )
+    : QxtWebSlotService( sm, parent )
+    , m_port( port )
 {
-    listen( QHostAddress::Any );
+    qDebug() << "NEW AUDIO HTTP SERVER!";
+}
+
+
+void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
+{
+    qDebug() << QThread::currentThreadId() << "HTTP" << event->url.toString() << a;
+
+    if( !sApp->trackIsOver() ) {
+        sApp->endOfTrack();
+    }
+
+    // the requested track
+    QString uid = a.replace( ".wav", "");
+    qDebug() << QThread::currentThreadId() << "Beginning to stream requested track:" << uid;
+    if( uid.isEmpty() || !sApp->hasLinkFromTrack( uid ) ) {
+        qWarning() << "Did not find spotify track UID in our list!" << uid;
+        sendErrorResponse( event );
+
+        return;
+    }
+
+    // get the sp_track
+    sp_link* link = sApp->linkFromTrack( uid );
+
+    sp_track* track = sp_link_as_track( link );
+    if( !track ) {
+        qWarning() << QThread::currentThreadId() << "Uh oh... got null track from link :(" << sp_link_type( link );
+        sendErrorResponse( event );
+        return;
+    }
+    if( !sp_track_is_loaded( track ) ) {
+        qWarning() << QThread::currentThreadId() << "uh oh... track not loaded yet! Asked for:" << sp_track_name( track );
+        sendErrorResponse( event );
+        return;
+    }
+
+    // yay we gots a track
+    qDebug() << QThread::currentThreadId() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
+//     uint duration = 16 * 44100 * sp_track_duration( track ) / 1000;
+
+    sp_error err = sp_session_player_load( sApp->session(), track );
+    if( err != SP_ERROR_OK ) {
+        qWarning() << QThread::currentThreadId() << "Failed to start track from spotify :(" << sp_error_message( err );
+        sendErrorResponse( event );
+        return;
+    }
+
+    qDebug() << QThread::currentThreadId() << "Starting to play!";
+    sp_session_player_play( sApp->session(), true );
+    sApp->startPlaying();
+
+    qDebug() << "Getting iodevice...";
+    spotifyiodev_ptr iodev = sApp->getIODeviceForCurTrack();
+    qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
+    QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
+    wpe->streaming = true;
+    wpe->contentType = "audio/basic";
+    postEvent( wpe );
+
 }
 
 AudioHTTPServer::~AudioHTTPServer()
 {
-    if( m_worker )
-        m_worker->deleteLater();
 
-    if( m_curthread ) {
-        m_curthread->terminate();
-        delete m_curthread;
-    }
 }
 
 
 QString AudioHTTPServer::urlForID( const QString& id )
 {
-    return QString( "http://localhost:%1/%2.wav" ).arg( serverPort() ).arg( id );
+    return QString( "http://localhost:%1/sid/%2.wav" ).arg( m_port ).arg( id );
 }
 
-
-void AudioHTTPServer::incomingConnection( int handle )
+void
+AudioHTTPServer::sendErrorResponse( QxtWebRequestEvent* event )
 {
-    qDebug() << "Got incoming connection!";
-    qDebug() << "current status:" << m_worker << m_curthread;
-    if( m_worker && m_curthread ) {
-        qDebug() << "got new connection and have still existing open connection:" << m_worker << m_curthread;
-        m_worker->stop();
-        QMetaObject::invokeMethod( m_worker, "forceStop", Qt::QueuedConnection );
-
-        connect( m_worker, SIGNAL( finished() ), m_worker, SLOT( deleteLater() ), Qt::UniqueConnection );
-        connect( m_worker, SIGNAL( destroyed( QObject* ) ), m_curthread, SLOT( quit() ), Qt::UniqueConnection );
-        connect( m_curthread, SIGNAL( finished() ), m_curthread, SLOT( deleteLater() ), Qt::UniqueConnection );
-
-    }
-    qDebug() << "Destroyed old thread! starting next....";
-
-    m_curthread = new QThread;
-    m_worker = new AudioHTTPWorker( handle, 0 );
-
-    m_worker->moveToThread( m_curthread );
-    QMetaObject::invokeMethod( m_worker, "init", Qt::QueuedConnection );
-
-    qDebug() << "kicking off next worker thread...";
-    m_curthread->start();
-
-/*
-    if( !m_worker && !m_curthread ) {
-        qDebug() << "Starting directly since no existing connection to kill first:" << m_worker << m_curthread;
-        startNextWorker();
-    }*/
+    qDebug() << "404" << event->url.toString();
+    QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, "<h1>No Such Track</h1>" );
+    wpe->status = 403;
+    wpe->statusMessage = "no track found";
+    postEvent( wpe );
 }
-/*
-void AudioHTTPServer::startNextWorker()
-{
-    qDebug() << Q_FUNC_INFO << "Starting next worker!";
-    if( m_curthread ) {
-        delete m_curthread;
-        m_curthread = 0;
-    }
-
-    if( !m_nextWorker ) {
-        qWarning() << Q_FUNC_INFO << "BAD NEWS BEARS, next worker deleted under us!";
-        return;
-    }
-
-    m_curthread = new QThread;
-    m_worker = m_nextWorker;
-
-    m_worker->moveToThread( m_curthread );
-    QMetaObject::invokeMethod( m_worker, "init", Qt::QueuedConnection );
-
-    qDebug() << "kicking off next worker thread...";
-    m_curthread->start();
-
-    m_nextWorker = 0;
-}*/
 
 
 #include "audiohttpserver.moc"

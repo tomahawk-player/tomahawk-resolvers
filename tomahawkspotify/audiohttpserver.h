@@ -27,27 +27,28 @@
 #ifndef AUDIOHTTPSERVER_H
 #define AUDIOHTTPSERVER_H
 
-#include <QTcpServer>
+#include <QObject>
+#include "qxtwebslotservice.h"
 
-class QThread;
-class AudioHTTPWorker;
-class AudioHTTPServer : public QTcpServer
+class QxtWebRequestEvent;
+class QxtWebPageEvent;
+
+class AudioHTTPServer : public QxtWebSlotService
 {
     Q_OBJECT
 public:
-    explicit AudioHTTPServer(QObject* parent = 0);
+    explicit AudioHTTPServer( QxtAbstractWebSessionManager* sm, int port, QObject* parent = 0 );
     virtual ~AudioHTTPServer();
-
-    virtual void incomingConnection(int handle);
 
     QString urlForID( const QString& id );
 
-private slots:
-//     void startNextWorker();
+public slots:
+    void sid(QxtWebRequestEvent* event, QString a);
 
 private:
-    QThread* m_curthread;
-    AudioHTTPWorker* m_worker;
+    void sendErrorResponse( QxtWebRequestEvent* event );
+
+    int m_port;
 };
 
 #endif // AUDIOHTTPSERVER_H
