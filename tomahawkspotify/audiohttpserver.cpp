@@ -76,7 +76,7 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
 
     // yay we gots a track
     qDebug() << QThread::currentThreadId() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
-//     uint duration = 16 * 44100 * sp_track_duration( track ) / 1000;
+    uint duration = sp_track_duration( track );
 
     sp_error err = sp_session_player_load( sApp->session(), track );
     if( err != SP_ERROR_OK ) {
@@ -90,7 +90,7 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
     sApp->startPlaying();
 
     qDebug() << "Getting iodevice...";
-    spotifyiodev_ptr iodev = sApp->getIODeviceForCurTrack();
+    spotifyiodev_ptr iodev = sApp->getIODeviceForNewTrack( duration );
     qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
     QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
     wpe->streaming = true;

@@ -43,9 +43,11 @@ public:
     virtual qint64 bytesAvailable() const;
     virtual bool isSequential() const  { return true; }
 
+    void setDurationMSec( uint msec );
     void disconnected();
 private:
     QQueue< QPair< char* , qint64 > > m_audioData;
+    QByteArray m_header;
     qint64 m_curSum;
     mutable QMutex m_mutex;
 

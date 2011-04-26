@@ -592,6 +592,7 @@ void QxtHttpSessionManager::sendNextChunk(int requestID)
 {
     const QSharedPointer<QIODevice>& dataSource = connector()->getRequestDataSource( requestID );
     QIODevice* device = connector()->getRequestConnection(requestID);
+    if (dataSource.isNull() || !qxt_d().connectionState.contains(device)) return;
     QxtHttpSessionManagerPrivate::ConnectionState& state = qxt_d().connectionState[device];
     if (state.finishedTransfer)
     {

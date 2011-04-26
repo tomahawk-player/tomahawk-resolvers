@@ -366,10 +366,11 @@ QMutex& SpotifyResolver::dataMutex()
     return m_dataMutex;
 }
 
-spotifyiodev_ptr SpotifyResolver::getIODeviceForCurTrack()
+spotifyiodev_ptr SpotifyResolver::getIODeviceForNewTrack( uint durMsec )
 {
     if( m_iodev.isNull() ) {
         m_iodev = spotifyiodev_ptr( new SpotifyIODevice( this ) );
+        m_iodev->setDurationMSec( durMsec );
         m_iodev->open( QIODevice::ReadWrite );
 
         qDebug() << QThread::currentThreadId() << "Creating SpotifyIODevice for track..:" << m_iodev.data();

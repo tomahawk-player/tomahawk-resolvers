@@ -74,7 +74,7 @@ public:
     // only call if you are holding the dataMutex() from above
     void queueData( const AudioData& data );
     // will emit readyRead() when it has data.
-    spotifyiodev_ptr getIODeviceForCurTrack();
+    spotifyiodev_ptr getIODeviceForNewTrack( uint durationMsec );
 
     // called by callback when track is over
     void startPlaying();
