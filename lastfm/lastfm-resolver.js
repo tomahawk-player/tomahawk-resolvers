@@ -31,11 +31,7 @@ function resolve( qid, artist, album, track ){
   httpRequest.send(null);
   
   var results = new Array();
-  if (myJsonObject.message){
-    return JSON.stringify(myJsonObject.message);
-    //console.log(JSON.stringify(myJsonObject.message));
-  }
-  else if (myJsonObject.track.freedownload){
+  if (myJsonObject.track && myJsonObject.track.freedownload){
     var result = new Object();
     result.artist = myJsonObject.track.artist.name;
     result.track = myJsonObject.track.name;
@@ -53,7 +49,4 @@ function resolve( qid, artist, album, track ){
   response.qid = qid;
   response.results = results;
   return response;
-  //console.log(JSON.stringify(response));
 }
-//resolve(1234,"wrens","","Shift Operator");
-//phantom.exit();

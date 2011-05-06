@@ -106,6 +106,7 @@ class SoundCloudResolver(TomahawkResolver):
             param_string = urllib.urlencode(params)
 
             url = 'http://api.soundcloud.com/tracks.json?client_id=TiNg2DRYhBnp01DA3zNag&'+param_string
+            print param_string
 
             c=urllib2.urlopen(url)
             contents = c.read()
@@ -132,7 +133,7 @@ class SoundCloudResolver(TomahawkResolver):
             song['year'] = data[i]['release_year']
             return [song];
         def test(self):
-            print self.results({'artist':"Bon Jovi", 'track':"You Give Love A Bad Name"})
+            print self.results({'artist':"The Wrens", 'track':"Hopeless"})
                 
 if __name__ == "__main__":
     try:
