@@ -29,6 +29,7 @@
 #include "spotify_key.h"
 #include "consolewatcher.h"
 #include "callbacks.h"
+#include "qxthttpsessionmanager.h"
 
 #include <libspotify/api.h>
 #include "qjson/parser.h"
@@ -47,6 +48,7 @@
 #include <fstream>
 #include "audiohttpserver.h"
 #include <QDateTime>
+#include "spotifyiodevice.h"
 
 namespace SpotifyCallbacks {
 
@@ -142,13 +144,11 @@ void setupLogfile()
     qInstallMsgHandler( LogHandler );
 }
 
-
-
 SpotifyResolver::SpotifyResolver( int argc, char** argv )
     : QCoreApplication( argc, argv )
     , m_session( 0 )
     , m_stdinWatcher( 0 )
-    , m_server( 0 )
+    , m_handler( 0 )
     , m_loggedIn( false )
     , m_trackEnded( false )
 {
@@ -158,7 +158,7 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     setApplicationVersion( QLatin1String( "0.1" ) );
 
     setupLogfile();
-    connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ) );
+    connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
 
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
@@ -181,11 +181,23 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
         qWarning() << "Failed to create spotify session: " << sp_error_message(err);
     }
 
-    m_server = new AudioHTTPServer;
+    m_httpS.setPort( 55050 ); //TODO config
+    m_httpS.setListenInterface( QHostAddress::LocalHost );
+    m_httpS.setConnector( &m_connector );
+
+    m_handler = new AudioHTTPServer( &m_httpS, m_httpS.port() );
+    m_httpS.setStaticContentService( m_handler );
+
+    qDebug() << "Starting HTTPd on" << m_httpS.listenInterface().toString() << m_httpS.port();
+    m_httpS.start();
 
     loadSettings();
     sendConfWidget();
+
+    // testing
+    search( "123", "coldplay", "the scientist" );
 }
+
 
 SpotifyResolver::~SpotifyResolver()
 {
@@ -259,7 +271,9 @@ void SpotifyResolver::notifyMainThread()
 {
     int timeout;
     do {
+        qDebug() << QThread::currentThreadId() << "notifying main thread";
         sp_session_process_events( m_session, &timeout );
+        qDebug() << QThread::currentThreadId()  << "done";
     } while( !timeout );
     QTimer::singleShot( timeout, this, SLOT( notifyMainThread() ) );
 }
@@ -315,7 +329,14 @@ void SpotifyResolver::sendMessage(const QVariant& v)
 void SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track )
 {
     // search spotify..
-    QString query = QString( "%1 %2" ).arg( artist ).arg( track );
+    // do some cleanups.. remove ft/feat
+    QString cleanedTrack = track;
+    if( cleanedTrack.indexOf( "feat" ) > -1 )
+        cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "feat" ) );
+    if( cleanedTrack.indexOf( "ft." ) > -1 )
+        cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );
+
+    QString query = QString( "%1 %2" ).arg( artist ).arg( cleanedTrack );
     QString data = QString( "%1~~~%2" ).arg( query ).arg( qid );
 //     qDebug() << "Searching for:" << query;
     sp_search_create( m_session, query.toUtf8().data(), 0, 25, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, new QString(data) );
@@ -350,33 +371,28 @@ QMutex& SpotifyResolver::dataMutex()
     return m_dataMutex;
 }
 
-QWaitCondition& SpotifyResolver::dataWaitCond()
+spotifyiodev_ptr SpotifyResolver::getIODeviceForNewTrack( uint durMsec )
 {
-    return m_dataWaitCondition;
+    if( m_iodev.isNull() ) {
+        m_iodev = spotifyiodev_ptr( new SpotifyIODevice( this ) );
+        m_iodev->setDurationMSec( durMsec );
+        m_iodev->open( QIODevice::ReadWrite );
+
+        qDebug() << QThread::currentThreadId() << "Creating SpotifyIODevice for track..:" << m_iodev.data();
+    }
+
+    return m_iodev;
 }
+
 
 void SpotifyResolver::queueData( const AudioData& data )
 {
-    m_audioData.enqueue( data );
-}
-
-AudioData SpotifyResolver::getData()
-{
-    return m_audioData.dequeue();
-}
-
-void SpotifyResolver::clearData()
-{
-    while( !m_audioData.isEmpty() ) {
-        free( m_audioData.dequeue().data );
+    if( m_iodev.isNull() ) {
+        qWarning() << "Help! Got data to queue but no iodevice to queue it in...";
+        return;
     }
-    m_audioData.clear();
-}
 
-
-bool SpotifyResolver::hasData() const
-{
-    return !m_audioData.isEmpty();
+    m_iodev->writeData( (const char*)data.data, data.numFrames * 4 ); // 4 == channels * ( bits per sample / 8 ) == 2 * ( 16 / 8 ) == 2 * 2
 }
 
 void SpotifyResolver::startPlaying()
@@ -387,6 +403,16 @@ void SpotifyResolver::startPlaying()
 
 void SpotifyResolver::endOfTrack()
 {
+    qDebug() << QThread::currentThreadId() << "And stopping track";
+    if( !m_iodev.isNull() ) {
+        qDebug() << "Stopping track and closign iodev!";
+        m_iodev->close();
+        m_iodev.clear();
+
+//         sp_session_player_unload( m_session );
+
+        qDebug() << "Done unloading too.";
+    }
     m_trackEnded = true;
 }
 

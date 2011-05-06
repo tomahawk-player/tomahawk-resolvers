@@ -42,7 +42,7 @@ AudioHTTPWorker::AudioHTTPWorker( int socket, QObject* parent )
 
 AudioHTTPWorker::~AudioHTTPWorker()
 {
-    qDebug() << thread() << "AudioHTTPWorker shutting down!" << this;
+    qDebug() << QThread::currentThreadId() << "AudioHTTPWorker shutting down!" << this;
 }
 
 
@@ -50,29 +50,29 @@ void AudioHTTPWorker::init()
 {
     m_socket = new QTcpSocket;
 
-    qDebug() << "Started thread in wrapper:" << thread() << "thread itself:" << m_socket->thread() << "main thread:" << sApp->thread();
+    qDebug() << "Started thread in wrapper:" << QThread::currentThreadId() << "thread itself:" << m_socket->thread() << "main thread:" << sApp->thread();
     if( !m_socket->setSocketDescriptor( m_socketId ) ) {
         qWarning() << "Failed to set socket descriptor on socket!" << m_socket->error() << m_socket->errorString();
         emit error( m_socket->error(), m_socket->errorString() );
     }
-    qDebug() << thread() << "to read:" << m_socket->bytesAvailable();
+    qDebug() << QThread::currentThreadId() << "to read:" << m_socket->bytesAvailable();
     connect( m_socket, SIGNAL( readyRead() ), this, SLOT( incomingData() ) );
 
 }
 
 void AudioHTTPWorker::stop()
 {
-    qDebug() << thread() << "Setting stop to on";
+    qDebug() << QThread::currentThreadId() << "Setting stop to on";
     QMutexLocker l( &m_stopMutex );
     m_stop = true;
-    qDebug() << thread() << "stop is on";
+    qDebug() << QThread::currentThreadId() << "stop is on";
 }
 
 
 void AudioHTTPWorker::incomingData()
 {
     QByteArray data = m_socket->readAll();
-    qDebug() << thread() << "Got data:" << data;
+    qDebug() << QThread::currentThreadId() << "Got data:" << data;
     // we get the request for a certain song. at this point we start streaming it back to the requestor.
 
     // parse the header
@@ -85,7 +85,7 @@ void AudioHTTPWorker::incomingData()
 
     // the requested track
     QString uid = header.path().replace( ".wav", "").mid( 1 ); // remove starting /
-    qDebug() << thread() << "Beginning to stream requested track:" << uid;
+    qDebug() << QThread::currentThreadId() << "Beginning to stream requested track:" << uid;
     if( uid.isEmpty() || !sApp->hasLinkFromTrack( uid ) ) {
         qWarning() << "Did not find spotify track UID in our list!" << uid;
         sendErrorResponse();
@@ -98,18 +98,18 @@ void AudioHTTPWorker::incomingData()
 
     sp_track* track = sp_link_as_track( link );
     if( !track ) {
-        qWarning() << thread() << "Uh oh... got null track from link :(" << sp_link_type( link );
+        qWarning() << QThread::currentThreadId() << "Uh oh... got null track from link :(" << sp_link_type( link );
         sendErrorResponse();
         return;
     }
     if( !sp_track_is_loaded( track ) ) {
-        qWarning() << thread() << "uh oh... track not loaded yet! Asked for:" << sp_track_name( track );
+        qWarning() << QThread::currentThreadId() << "uh oh... track not loaded yet! Asked for:" << sp_track_name( track );
         sendErrorResponse();
         return;
     }
 
     // yay we gots a track
-    qDebug() << thread() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
+    qDebug() << QThread::currentThreadId() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
     uint duration = 16 * 44100 * sp_track_duration( track ) / 1000;
     QHttpResponseHeader response( 200, "OK", 1, 1 );
     response.setValue( "Date", QDateTime::currentDateTime().toString( Qt::ISODate ) );
@@ -126,7 +126,7 @@ void AudioHTTPWorker::incomingData()
     // start spotify track, and start waiting
     sp_error err = sp_session_player_load( sApp->session(), track );
     if( err != SP_ERROR_OK ) {
-        qWarning() << thread() << "Failed to start track from spotify :(" << sp_error_message( err );
+        qWarning() << QThread::currentThreadId() << "Failed to start track from spotify :(" << sp_error_message( err );
         sendErrorResponse();
         return;
     }
@@ -144,12 +144,12 @@ void AudioHTTPWorker::incomingData()
             QMutexLocker l( &m_stopMutex );
             if( m_stop ) {
                 doStop();
-                qDebug() << thread() << "Stopping in audio thread because stop flag was enabled!";
+                qDebug() << QThread::currentThreadId() << "Stopping in audio thread because stop flag was enabled!";
                 break;
             }
         }
 
-//         qDebug() << thread() << "Checking:" << sApp->trackIsOver() << m_socket->isOpen() << m_socket->isWritable();
+//         qDebug() << QThread::currentThreadId() << "Checking:" << sApp->trackIsOver() << m_socket->isOpen() << m_socket->isWritable();
         if( sApp->trackIsOver() || !m_socket->isOpen() && !m_socket->isWritable() ) // die on a disconnect
             break;
 
@@ -192,12 +192,12 @@ void AudioHTTPWorker::incomingData()
         bytesWritten += d.numFrames * 4;
 //         qDebug() << "Written:" << d.numFrames*4 << "total of:" << bytesWritten;
         if( bytesWritten % 4194304 == 0 ) // 4mb
-            qDebug() << thread() << "Got data... written another 4 megabytes with total of" << (double)bytesWritten/1048576;
+            qDebug() << QThread::currentThreadId() << "Got data... written another 4 megabytes with total of" << (double)bytesWritten/1048576;
 
         usleep( 10000 );
 
     }
-    qDebug() << thread() << "Finished streaming, wrote:" << (double)bytesWritten/1048576 << "mb";
+    qDebug() << QThread::currentThreadId() << "Finished streaming, wrote:" << (double)bytesWritten/1048576 << "mb";
 
     m_socket->close();
     emit finished();

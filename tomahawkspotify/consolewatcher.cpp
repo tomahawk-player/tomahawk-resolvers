@@ -80,17 +80,13 @@ void ConsoleWatcher::checkStdin()
         m_curmsg.clear();
     }
 
-
 }
 
 void ConsoleWatcher::parseMsg(const QByteArray& msg)
 {
-     QJson::Parser p;
-     QVariant json = p.parse( msg );
-
-//      qDebug() << "GOT PARSED STDIN:" << json;
-
-     //     sApp->search( "123", "U2", "One" );
+    QJson::Parser p;
+//     qDebug() << "GOT UNPARSED STDIN:" << msg;
+    QVariant json = p.parse( msg );
 
      if( json.isValid() )
          emit lineRead( json );

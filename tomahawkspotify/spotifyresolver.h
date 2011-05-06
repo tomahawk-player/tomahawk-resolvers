@@ -26,6 +26,10 @@
 #ifndef tomahawkspotify_H
 #define tomahawkspotify_H
 
+#include "QxtHttpServerConnector"
+#include "qxthttpsessionmanager.h"
+#include "spotifyiodevice.h"
+
 #include <libspotify/api.h>
 
 #include <QCoreApplication>
@@ -38,10 +42,13 @@
 
 #define sApp static_cast< SpotifyResolver* >( QCoreApplication::instance() )
 
+class QxtHttpSessionManager;
 struct AudioData;
 class AudioHTTPServer;
 class ConsoleWatcher;
 class QSocketNotifer;
+
+typedef QSharedPointer< SpotifyIODevice > spotifyiodev_ptr;
 
 class SpotifyResolver : public QCoreApplication
 {
@@ -64,12 +71,10 @@ public:
 
     // audio data stuff
     QMutex& dataMutex();
-    QWaitCondition& dataWaitCond();
     // only call if you are holding the dataMutex() from above
     void queueData( const AudioData& data );
-    AudioData getData();
-    void clearData();
-    bool hasData() const;
+    // will emit readyRead() when it has data.
+    spotifyiodev_ptr getIODeviceForNewTrack( uint durationMsec );
 
     // called by callback when track is over
     void startPlaying();
@@ -77,11 +82,12 @@ public:
     bool trackIsOver();
 
     sp_session* session() const { return m_session; }
-    AudioHTTPServer* server() const { return m_server; }
+    AudioHTTPServer* handler() const { return m_handler; }
 
     void sendMessage( const QVariant& v );
 
     static QString dataDir();
+
 private slots:
     void notifyMainThread();
     void playdarMessage( const QVariant& );
@@ -99,11 +105,14 @@ private:
 
     QThread m_stdinThread;
     ConsoleWatcher* m_stdinWatcher;
-    AudioHTTPServer* m_server;
+
+    QxtHttpServerConnector m_connector;
+    QxtHttpSessionManager m_httpS;
+    AudioHTTPServer* m_handler;
+
+    spotifyiodev_ptr m_iodev;
 
     QMutex m_dataMutex;
-    QWaitCondition m_dataWaitCondition;
-    QQueue< AudioData > m_audioData;
 
     sp_session_config m_config;
     sp_session *m_session;
