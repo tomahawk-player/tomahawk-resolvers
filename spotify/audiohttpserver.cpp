@@ -119,6 +119,3 @@ AudioHTTPServer::sendErrorResponse( QxtWebRequestEvent* event )
     wpe->statusMessage = "no track found";
     postEvent( wpe );
 }
-
-
-#include "audiohttpserver.moc"

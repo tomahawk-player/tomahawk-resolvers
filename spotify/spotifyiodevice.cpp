@@ -135,5 +135,3 @@ void SpotifyIODevice::disconnected()
 
 }
 
-
-#include "spotifyiodevice.moc"

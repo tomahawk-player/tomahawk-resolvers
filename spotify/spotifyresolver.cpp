@@ -482,5 +482,3 @@ QString SpotifyResolver::dataDir()
 //    qDebug() << "Using SpotifyResolver log dir:" << path;
     return path;
 }
-
-#include "spotifyresolver.moc"

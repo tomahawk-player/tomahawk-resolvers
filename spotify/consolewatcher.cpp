@@ -91,6 +91,3 @@ void ConsoleWatcher::parseMsg(const QByteArray& msg)
      if( json.isValid() )
          emit lineRead( json );
 }
-
-
-#include "consolewatcher.moc"

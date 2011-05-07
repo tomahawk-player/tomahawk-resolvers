@@ -255,5 +255,3 @@ void AudioHTTPWorker::sendEmptyNoise()
     qFree( d );
 }
 
-
-#include "audiohttpworker.moc"
