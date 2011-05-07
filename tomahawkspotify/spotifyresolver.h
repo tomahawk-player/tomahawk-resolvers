@@ -121,6 +121,7 @@ private:
 
     QHash< QString, sp_link* > m_trackLinkMap;
 
+    QByteArray m_apiKey;
     QByteArray m_configWidget;
     QString m_username;
     QString m_pw;

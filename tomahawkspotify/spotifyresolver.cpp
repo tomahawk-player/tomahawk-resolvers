@@ -151,6 +151,7 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     , m_handler( 0 )
     , m_loggedIn( false )
     , m_trackEnded( false )
+    , m_apiKey( QByteArray::fromBase64( spotifyApiKey ) )
 {
     setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
@@ -171,8 +172,8 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     m_config.api_version = SPOTIFY_API_VERSION;
     m_config.cache_location = settingsPath.constData();
     m_config.settings_location = settingsPath.constData();
-    m_config.application_key = g_appkey;
-    m_config.application_key_size = g_appkey_size;
+    m_config.application_key = m_apiKey.constData();
+    m_config.application_key_size = m_apiKey.size();
     m_config.user_agent = "tomahawkresolver";
     m_config.callbacks = &SpotifyCallbacks::callbacks;
 
@@ -195,7 +196,7 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     sendConfWidget();
 
     // testing
-    search( "123", "coldplay", "the scientist" );
+//     search( "123", "coldplay", "the scientist" );
 }
 
 
@@ -255,7 +256,7 @@ void SpotifyResolver::sendSettingsMessage()
     m[ "_msgtype" ] = "settings";
     m[ "name" ] = "Spotify";
     m[ "weight" ] = "90";
-    m[ "timeout" ] = "30";
+    m[ "timeout" ] = "10";
 
     sendMessage( m );
 }
