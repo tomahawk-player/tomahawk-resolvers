@@ -576,8 +576,10 @@ void QxtHttpSessionManager::processEvents()
 void QxtHttpSessionManager::chunkReadyRead(int requestID)
 {
     const QSharedPointer<QIODevice>& dataSource = connector()->getRequestDataSource( requestID );
+    if (dataSource.isNull()) return;
     if (!dataSource->bytesAvailable()) return;
     QIODevice* device = connector()->getRequestConnection(requestID);
+    if (!qxt_d().connectionState.contains(device)) return;
     if (!device->bytesToWrite() || qxt_d().connectionState[device].readyRead == false)
     {
         qxt_d().connectionState[device].readyRead = true;
