@@ -1,4 +1,6 @@
 /*
+ * (c) 2011 lasconic <lasconic@gmail.com>
+ * based on the the skeemr resolver  
  * (c) 2011 Dominik Schmidt <dev@dominik-schmidt.de>
  */
 
