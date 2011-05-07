@@ -14,5 +14,5 @@ include_directories( qxtweb-standalone/qxtweb ${QT_INCLUDES} ${LIBSPOTIFY_INCLUD
 set(tomahawkspotify_SRCS spotifyresolver.cpp consolewatcher.cpp audiohttpserver.cpp spotifyiodevice.cpp main.cpp)
 qt4_automoc(${tomahawkspotify_SRCS})
 qt4_add_resources( RC_SRCS "resources.qrc" )
-add_executable(tomahawkspotify ${tomahawkspotify_SRCS} ${RC_SRCS})
-target_link_libraries(tomahawkspotify qxtweb-standalone ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
+add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS})
+target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
