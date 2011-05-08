@@ -12,12 +12,12 @@ function resolve( qid, artist, album, track ){
   
   var url = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=";
       
-  if(artist != "" )
+  if(artist !== "" ){
     url += encodeURIComponent(artist) + "+";
-
-  if(track != "" )
+  }
+  if(track !== "" ){
     url += encodeURIComponent(track);
-
+  }
   url = url.replace(/\%20/g,'\+');
   var myJsonObject = {};
   var httpRequest = new XMLHttpRequest();

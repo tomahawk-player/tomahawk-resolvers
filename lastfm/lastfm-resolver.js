@@ -11,12 +11,12 @@ function resolve( qid, artist, album, track ){
   
   var settings = getSettings();
   
-  if(artist !== "" )
+  if(artist !== "" ){
     artist = encodeURIComponent(artist);
-
-  if(track !== "" )
+  }
+  if(track !== "" ){
     track = encodeURIComponent(track);
-  
+  }
   var apiQuery = "http://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&artist="+artist+"&track="+track;
   apiQuery = apiQuery.replace(/\%20/g,'\+');
   

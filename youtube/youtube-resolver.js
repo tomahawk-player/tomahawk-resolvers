@@ -13,12 +13,12 @@ function resolve( qid, artist, album, track ){
   
   var properties = getSettings();
   
-  if(artist !== "" )
+  if(artist !== "" ){
     query = encodeURIComponent(artist) + "+";
-
-  if(track !== "" )
+  }
+  if(track !== "" ){
     query += encodeURIComponent(track);
-  
+  }
   var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q="+ query + "&v=2&alt=jsonc&max-results=" + properties.maxResults;
   apiQuery = apiQuery.replace(/\%20/g,'\+');
   
@@ -27,7 +27,7 @@ function resolve( qid, artist, album, track ){
   httpRequest.open('GET', apiQuery, false);
   httpRequest.onreadystatechange = function(){
     if (httpRequest.readyState == 4 && httpRequest.status == 200){
-	myJsonObject = JSON.parse(httpRequest.responseText);
+      myJsonObject = JSON.parse(httpRequest.responseText);
     }
   }
   httpRequest.send(null);
@@ -62,7 +62,7 @@ function resolve( qid, artist, album, track ){
       result.track = myJsonObject.data.items[i].title;
       //result.year = ;
       result.source = properties.name;
-      var urlContents = syncRequest(myJsonObject.data.items[i].player.default);
+      var urlContents = syncRequest(myJsonObject.data.items[i].player['default']);
       result.url = parseVideoUrlFromYtPage(urlContents);
       result.mimetype = "video/h264";
       //result.bitrate = 128;
