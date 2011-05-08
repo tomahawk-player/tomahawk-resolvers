@@ -10,7 +10,7 @@ function getSettings()
     var response = new Object();
     response.name = "4shared Resolver";
     response.weight = 50;
-    response.timeout = 10;
+    response.timeout = 5;
 
     return response;
 }

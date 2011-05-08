@@ -2,8 +2,8 @@ function getSettings()
 {
     var response = new Object();
     response.name = "SoundCloud Resolver";
-    response.weight = 84;
-    response.timeout = 10;
+    response.weight = 85;
+    response.timeout = 5;
 
     return response;
 }

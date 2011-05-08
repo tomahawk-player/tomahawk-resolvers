@@ -9,8 +9,8 @@ function getSettings()
     // prepare the return
     var response = new Object();
     response.name = "Official.fm Resolver";
-    response.weight = 85;
-    response.timeout = 10;
+    response.weight = 70;
+    response.timeout = 5;
 
     return response;
 }

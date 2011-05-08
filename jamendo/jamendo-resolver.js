@@ -9,8 +9,8 @@ function getSettings()
     // prepare the return
     var response = new Object();
     response.name = "Jamendo Resolver";
-    response.weight = 85;
-    response.timeout = 10;
+    response.weight = 75;
+    response.timeout = 5;
 
     return response;
 }

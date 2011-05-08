@@ -1,7 +1,8 @@
-function getSettings(){
+function getSettings()
+{
     var response = new Object();
     response.name = "Last.fm Resolver";
-    response.weight = 87;
+    response.weight = 90;
     response.timeout = 5;
 
     return response;

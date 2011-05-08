@@ -2,8 +2,8 @@ function getSettings()
 {
     var settings = new Object();
     settings.name = "Youtube Resolver";
-    settings.weight = 80;
-    settings.timeout = 10;
+    settings.weight = 50;
+    settings.timeout = 5;
     settings.maxResults = 5;
 
     return settings;
@@ -59,7 +59,7 @@ function resolve( qid, artist, album, track ){
     for (i=0;i<myJsonObject.data.totalItems && i<properties.maxResults;i++){
       var result = new Object();
       result.artist = artist;
-      result.track = myJsonObject.data.items[i].title;
+      result.track = track;
       //result.year = ;
       result.source = properties.name;
       var urlContents = syncRequest(myJsonObject.data.items[i].player['default']);

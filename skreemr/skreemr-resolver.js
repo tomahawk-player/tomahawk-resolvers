@@ -7,8 +7,8 @@ function getSettings()
     // prepare the return
     var response = new Object();
     response.name = "Skreemr Resolver";
-    response.weight = 85;
-    response.timeout = 10;
+    response.weight = 65;
+    response.timeout = 5;
     response.blockedServices = new Array();
     response.blockedServices.push("dreammedia.ru");
 
