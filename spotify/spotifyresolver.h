@@ -29,6 +29,7 @@
 #include "QxtHttpServerConnector"
 #include "qxthttpsessionmanager.h"
 #include "spotifyiodevice.h"
+#include "kdsingleapplicationguard/kdsingleapplicationguard.h"
 
 #include <libspotify/api.h>
 
@@ -88,6 +89,8 @@ public:
 
     static QString dataDir();
 
+public slots:
+    void instanceStarted( KDSingleApplicationGuard::Instance );
 private slots:
     void notifyMainThread();
     void playdarMessage( const QVariant& );

@@ -482,3 +482,10 @@ QString SpotifyResolver::dataDir()
 //    qDebug() << "Using SpotifyResolver log dir:" << path;
     return path;
 }
+
+void
+SpotifyResolver::instanceStarted( KDSingleApplicationGuard::Instance )
+{
+    // well goodbye!
+    qApp->quit();
+}
