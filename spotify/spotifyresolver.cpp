@@ -158,6 +158,20 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
     setApplicationVersion( QLatin1String( "0.1" ) );
 
+}
+
+
+SpotifyResolver::~SpotifyResolver()
+{
+    qDebug() << "exiting...";
+    sp_session_logout( m_session );
+
+    delete m_stdinWatcher;
+    m_stdinThread.exit();
+}
+
+void SpotifyResolver::init()
+{
     setupLogfile();
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
 
@@ -197,16 +211,6 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
 
     // testing
 //     search( "123", "coldplay", "the scientist" );
-}
-
-
-SpotifyResolver::~SpotifyResolver()
-{
-    qDebug() << "exiting...";
-    sp_session_logout( m_session );
-
-    delete m_stdinWatcher;
-    m_stdinThread.exit();
 }
 
 void SpotifyResolver::setLoggedIn( bool loggedIn )

@@ -16,6 +16,7 @@ int main(int argc, char** argv)
     SpotifyResolver app( argc, argv );
     KDSingleApplicationGuard guard( &app, KDSingleApplicationGuard::NoPolicy );
     QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
+    app.init();
 
     return app.exec();
 }

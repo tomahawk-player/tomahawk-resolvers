@@ -58,6 +58,8 @@ public:
     SpotifyResolver( int argc, char** argv );
     virtual ~SpotifyResolver();
 
+    void init();
+
     void setLoggedIn( bool loggedIn );
 
     void sendNotifyThreadSignal();
