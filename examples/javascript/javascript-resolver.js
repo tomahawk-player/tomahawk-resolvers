@@ -30,6 +30,8 @@ function resolve( qid, artist, album, track )
     result.score = 1.0;
     result.extension = "mp3";
     result.mimetype = "audio/mpeg";
+
+    var results = new Array();
     results.push( result );
 
     // prepare the response
