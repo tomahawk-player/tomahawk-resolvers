@@ -224,12 +224,16 @@ static void searchComplete( sp_search *result, void *userdata )
             track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
             track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
             track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
+            track[ "year" ] = sp_album_year( sp_track_album( tr ) );
             track[ "mimetype" ] = "audio/basic";
             track[ "source" ] = "Spotify";
             track[ "url" ] = sApp->handler()->urlForID( uid );
             track[ "duration" ] = duration;
             track[ "score" ] = .95; // TODO
             track[ "bitrate" ] = 192; // TODO
+
+            quint32 bytes = ( duration * 44100 * 2 * 2 );
+            track[ "size" ] = bytes;
             results << track;
 
             qDebug() << "Found Track:" << sp_track_name( tr ) << sp_track_artist( tr, 0 ) << sp_track_album( tr ) << sp_track_popularity( tr ) << "\n\tReporting:" << track["url"];

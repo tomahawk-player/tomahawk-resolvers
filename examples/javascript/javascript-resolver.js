@@ -18,9 +18,9 @@ function getSettings()
 function resolve( qid, artist, album, track )
 {
     var result = new Object();
-    result.artist = "Mokele";
-    result.album = "You Yourself are Me Myself and I am in Love";
-    result.track = "Hiding In Your Insides (php)";
+    result.artist = artist;
+    result.album = album;
+    result.track = track;
     result.source = "Mokele.co.uk";
     result.url = "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3";
     result.bitrate = 160;
