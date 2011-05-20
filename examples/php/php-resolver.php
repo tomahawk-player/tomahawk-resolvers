@@ -11,7 +11,6 @@
 abstract class TomahawkResolver
 {
     protected $name; 
-    protected $targetTime; // Lower is better
     protected $timeout; // After which period of time (in seconds) we do not expect results to arrive anymore
     protected $weight; // 1-100. higher means preferable.
     
@@ -85,7 +84,6 @@ abstract class TomahawkResolver
         $settings = (Object) array(
             '_msgtype' => 'settings',
             'name' => $this->name,
-            'targettime' => $this->targetTime,
             'timeout' => $this->timeout,
             'weight' => $this->weight,
             'localonly' => isset( $this->localonly ) ? $this->localonly : TRUE,
@@ -149,9 +147,8 @@ abstract class TomahawkResolver
 class ExamplePHPResolver extends TomahawkResolver
 {
     protected $name = 'PHP Example Resolver';
-    protected $targetTime = 15; // fast atm, it's all hardcoded.
-    protected $timeout = 25; // fast atm, it's all hardcoded.
-    protected $weight = 80; // 1-100. higher means preferable.
+    protected $timeout = 5; // fast atm, it's all hardcoded.
+    protected $weight = 50; // 1-100. higher means preferable.
 
     public function resolve( $request )
     {

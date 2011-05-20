@@ -8,9 +8,8 @@ function getSettings()
     // Initialize the resolver
     var response = new Object();
     response.name = "JavaScript Example Resolver";
-    response.weight = 80;
-    response.targettime = 10;
-    response.timeout = 15;
+    response.weight = 50;
+    response.timeout = 5;
 
     return response;
 }
