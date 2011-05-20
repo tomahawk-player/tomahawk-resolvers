@@ -150,8 +150,8 @@ abstract class TomahawkResolver
 class YoutubeResolver extends TomahawkResolver
 {
     protected $name = 'Youtube Resolver';
-    protected $targetTime = 10; // fast atm, it's all hardcoded.
-    protected $timeout = 25; // fast atm, it's all hardcoded.
+    protected $targetTime = 5; // fast atm, it's all hardcoded.
+    protected $timeout = 5; // fast atm, it's all hardcoded.
     protected $weight = 75; // 1-100. higher means preferable.
     protected $m_urlOut = 'http://www.youtube.com/watch?v=%s';
 
