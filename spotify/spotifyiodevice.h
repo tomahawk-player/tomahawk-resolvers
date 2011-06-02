@@ -44,6 +44,8 @@ public:
     virtual bool isSequential() const  { return true; }
 
     void setDurationMSec( uint msec );
+
+public slots:
     void disconnected();
 private:
     QQueue< QPair< char* , qint64 > > m_audioData;
