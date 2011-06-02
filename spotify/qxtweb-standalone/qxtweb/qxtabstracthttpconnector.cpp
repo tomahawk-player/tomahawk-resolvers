@@ -47,7 +47,6 @@ headers (by implementing writeHeaders(QIODevice*, const QHttpResponseHeader&)).
 
 #include "qxthttpsessionmanager.h"
 #include "qxtwebcontent.h"
-#include "../../spotifyresolver.h"
 #include <QReadWriteLock>
 #include <QHash>
 #include <QIODevice>
@@ -83,9 +82,9 @@ public:
         requests.remove(requestID);
 
         if( dataSources.contains( requestID ) ) {
-            spotifyiodev_ptr p = dataSources[ requestID ].dynamicCast< SpotifyIODevice >();
+            QSharedPointer<QIODevice> p = dataSources[ requestID ];
             if( !p.isNull() )
-                p->disconnected();
+				QMetaObject::invokeMethod( p.data(), "disconnected", Qt::DirectConnection );
         }
         dataSources.remove(requestID);
     }
