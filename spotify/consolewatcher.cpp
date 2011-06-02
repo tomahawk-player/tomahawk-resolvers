@@ -27,11 +27,11 @@
 #include "consolewatcher.h"
 
 #include "spotifyresolver.h"
+#include <qjson/parser.h>
 
 #include <QTimer>
 #include <QTextStream>
 #include <QDebug>
-#include <parser.h>
 #include <qvariant.h>
 #include <qfile.h>
 #include <qendian.h>
