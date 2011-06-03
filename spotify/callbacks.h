@@ -34,6 +34,7 @@
 #include <QDebug>
 #include "audiohttpserver.h"
 #include <qstringlist.h>
+#include <stdint.h>
 
 struct AudioData {
     void* data;
@@ -43,7 +44,7 @@ struct AudioData {
 
 namespace SpotifyCallbacks {
 
-static void loggedIn(sp_session *session, sp_error error)
+static void SP_CALLCONV loggedIn(sp_session *session, sp_error error)
 {
     Q_UNUSED(session);
 
@@ -88,37 +89,37 @@ static void loggedIn(sp_session *session, sp_error error)
     }
 }
 
-static void loggedOut(sp_session *session)
+static void SP_CALLCONV loggedOut(sp_session *session)
 {
     Q_UNUSED(session);
 //     MainWindow::self()->spotifyLoggedOut();
 }
 
-static void metadataUpdated(sp_session *session)
+static void SP_CALLCONV metadataUpdated(sp_session *session)
 {
     Q_UNUSED(session);
 //     MainWindow::self()->fillPlaylistModel();
 }
 
-static void connectionError(sp_session *session, sp_error error)
+static void SP_CALLCONV connectionError(sp_session *session, sp_error error)
 {
     Q_UNUSED(session);
     Q_UNUSED(error);
 }
 
-static void messageToUser(sp_session *session, const char *message)
+static void SP_CALLCONV messageToUser(sp_session *session, const char *message)
 {
     Q_UNUSED(session);
     Q_UNUSED(message);
 }
 
-static void notifyMainThread(sp_session *session)
+static void SP_CALLCONV notifyMainThread(sp_session *session)
 {
     Q_UNUSED(session);
     sApp->sendNotifyThreadSignal();
 }
 
-static int musicDelivery(sp_session *session, const sp_audioformat *format, const void *frames, int numFrames_)
+static int SP_CALLCONV musicDelivery(sp_session *session, const sp_audioformat *format, const void *frames, int numFrames_)
 {
     Q_UNUSED(session);
 
@@ -128,34 +129,32 @@ static int musicDelivery(sp_session *session, const sp_audioformat *format, cons
 
     const int numFrames = qMin(numFrames_, 8192);
 
-//     qDebug() << "gots me some data:" << numFrames_;
     QMutex &m = sApp->dataMutex();
     m.lock();
     AudioData d;
-    d.data = malloc( numFrames * sizeof(int16_t) * format->channels );
-    memcpy( d.data, frames, numFrames * sizeof(int16_t) * format->channels );
+	quint32 amount = numFrames * sizeof(int16_t) * format->channels;
+    d.data = qMalloc( amount );
+    memcpy( d.data, frames, amount );
     d.numFrames = numFrames;
     d.sampleRate = format->sample_rate;
     sApp->queueData( d );
     m.unlock();
-//     sApp->dataWaitCond().wakeAll();
 
     return numFrames;
 }
 
-static void playTokenLost(sp_session *session)
+static void SP_CALLCONV playTokenLost(sp_session *session)
 {
     Q_UNUSED(session);
-//     MainWindow::self()->spotifyPlayTokenLost();
 }
 
-static void logMessage(sp_session *session, const char *data)
+static void SP_CALLCONV logMessage(sp_session *session, const char *data)
 {
     Q_UNUSED(session);
     Q_UNUSED(data);
 }
 
-static void endOfTrack(sp_session *session)
+static void SP_CALLCONV endOfTrack(sp_session *session)
 {
     Q_UNUSED(session);
     qDebug() << "Got spotify end of track callback!";
@@ -163,36 +162,36 @@ static void endOfTrack(sp_session *session)
 
 }
 
-static void streamingError(sp_session *session, sp_error error)
+static void SP_CALLCONV streamingError(sp_session *session, sp_error error)
 {
     Q_UNUSED(session);
     Q_UNUSED(error);
 }
 
-static void userinfoUpdated(sp_session *session)
+static void SP_CALLCONV userinfoUpdated(sp_session *session)
 {
     Q_UNUSED(session);
 }
 
 #if SPOTIFY_API_VERSION > 4
-static void startPlayback(sp_session *session)
+static void SP_CALLCONV startPlayback(sp_session *session)
 {
     Q_UNUSED(session);
 }
 
-static void stopPlayback(sp_session *session)
+static void SP_CALLCONV stopPlayback(sp_session *session)
 {
     Q_UNUSED(session);
 }
 
-static void getAudioBufferStats(sp_session *session, sp_audio_buffer_stats *stats)
+static void SP_CALLCONV getAudioBufferStats(sp_session *session, sp_audio_buffer_stats *stats)
 {
     Q_UNUSED(session);
     Q_UNUSED(stats);
 }
 #endif
 
-static void searchComplete( sp_search *result, void *userdata )
+static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
 {
     QString *data = static_cast<QString*>(userdata);
     QStringList parts = data->split( "~~~" );
