@@ -50,6 +50,10 @@
 #include <QDateTime>
 #include "spotifyiodevice.h"
 
+#ifdef WIN32
+#include <shlobj.h>
+#endif
+
 namespace SpotifyCallbacks {
 
 static sp_session_callbacks callbacks = {
