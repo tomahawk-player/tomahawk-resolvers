@@ -26,6 +26,10 @@
 #ifndef tomahawkspotify_H
 #define tomahawkspotify_H
 
+#ifdef WIN32
+#define WINVER 0x0501
+#endif
+
 #include "QxtHttpServerConnector"
 #include "qxthttpsessionmanager.h"
 #include "spotifyiodevice.h"
