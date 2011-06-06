@@ -156,6 +156,7 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     , m_loggedIn( false )
     , m_trackEnded( false )
     , m_apiKey( QByteArray::fromBase64( spotifyApiKey ) )
+    , m_highQuality( true )
 {
     setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
@@ -221,8 +222,11 @@ void SpotifyResolver::setLoggedIn( bool loggedIn )
 {
     m_loggedIn = loggedIn;
 
-    if( loggedIn )
+    if( loggedIn ) {
         sendSettingsMessage();
+
+        sp_session_preferred_bitrate( m_session, m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
+    }
 }
 
 void SpotifyResolver::sendConfWidget()
@@ -238,6 +242,7 @@ void SpotifyResolver::sendConfWidget()
     QString ui = QString::fromLatin1( f.readAll() );
     ui.replace( "placeholderUsername", m_username );
     ui.replace( "placeholderPw", m_pw );
+    ui.replace( "STREAMING_DEFAULT", m_highQuality ? "true" : "false" );
     QByteArray comp = qCompress( ui.toLatin1(), 9 );
     qDebug() << "adding compressed UI file:" << comp.toBase64();
     m_configWidget = comp.toBase64();
@@ -300,6 +305,8 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         QVariantMap widgetMap = m[ "widgets" ].toMap();
         m_username = widgetMap[ "usernameEdit" ].toMap()[ "text" ].toString();
         m_pw = widgetMap[ "passwordEdit" ].toMap()[ "text" ].toString();
+        m_highQuality = widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString() == "true";
+
         login();
 
         saveSettings();
@@ -439,7 +446,7 @@ void SpotifyResolver::loadSettings()
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
     m_pw = s.value( "password", QString() ).toString();
-
+    m_highQuality = s.value( "highQualityStreaming", true ).toBool();
     login();
 }
 
@@ -448,6 +455,7 @@ void SpotifyResolver::saveSettings() const
     QSettings s;
     s.setValue( "username", m_username );
     s.setValue( "password", m_pw );
+    s.setValue( "highQualityStreaming", m_highQuality );
 }
 
 void SpotifyResolver::login()

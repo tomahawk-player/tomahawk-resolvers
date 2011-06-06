@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>380</width>
-    <height>307</height>
+    <width>445</width>
+    <height>309</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -97,6 +97,23 @@
        </property>
        <property name="echoMode">
         <enum>QLineEdit::Password</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="streamingLabel">
+       <property name="text">
+        <string>High Quality Streaming</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QCheckBox" name="streamingCheckbox">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="checked">
+        <bool>STREAMING_DEFAULT</bool>
        </property>
       </widget>
      </item>

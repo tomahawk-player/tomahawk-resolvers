@@ -134,6 +134,7 @@ private:
     QByteArray m_configWidget;
     QString m_username;
     QString m_pw;
+    bool m_highQuality;
 };
 
 
