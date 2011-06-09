@@ -32,7 +32,7 @@ function resolve( qid, artist, album, track ){
   if (!token) {
     token = window.sessionStorage["play_token"] = get("http://8tracks.com/sets/new.json?api_key="+api).play_token
   }
-  var token = get("http://8tracks.com/sets/new.json?api_key="+api).play_token;
+  //var token = get("http://8tracks.com/sets/new.json?api_key="+api).play_token;
   var url = "http://8tracks.com/mixes.json?api_key="+api+"&per_page=1&sort=popular&q=";
       
   if(artist != "" )
