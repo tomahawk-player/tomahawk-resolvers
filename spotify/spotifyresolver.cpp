@@ -305,6 +305,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         QVariantMap widgetMap = m[ "widgets" ].toMap();
         m_username = widgetMap[ "usernameEdit" ].toMap()[ "text" ].toString();
         m_pw = widgetMap[ "passwordEdit" ].toMap()[ "text" ].toString();
+        qDebug() << "checked?" << widgetMap[ "streamingCheckbox" ].toMap() << widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString();
         m_highQuality = widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString() == "true";
 
         login();
