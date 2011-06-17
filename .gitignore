@@ -1,0 +1,8 @@
+.directory
+*.a
+*.o
+._*
+*.user
+Makefile*
+moc_*
+*~
