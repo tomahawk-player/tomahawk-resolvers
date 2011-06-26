@@ -1,142 +1,264 @@
-/*
- * (c) 2011 Dominik Schmidt <dev@dominik-schmidt.de>
- */
 
-function getSettings()
+// if run in phantomjs add fake Tomahawk environment
+if(window.Tomahawk === undefined)
 {
-    // prepare the return
-    var response = new Object();
+    alert("PHANTOMJS ENVIRONMENT");
+    var Tomahawk = {
+        resolverData: function()
+        {
+            return {
+                scriptPath: function()
+                {
+                    return "/home/tomahawk/resolver.js";
+                }
+            };
+        }
+    };
+}
 
-    // user data
-    response.username = "";
-    response.password = "";
+Tomahawk.resolver = {
+    scriptPath: Tomahawk.resolverData().scriptPath
+};
 
-    // ampache
-    response.ampache = "http://localhost/ampache";
-    // owncloud - checkout media_player branch, handshake works action=search_songs is not implemented yet
-    //response.ampache = "http://localhost/owncloud/apps/media";
 
-    // generic stuff
-    response.name = "Ampache Resolver";
-    response.weight = 65;
-    response.timeout = 5;
-    response.limit = 10;
+// javascript part of Tomahawk-Object API
+Tomahawk.extend = function(object, members) {
+    var F = function() {};
+    F.prototype = object;
+    var newObject = new F;
 
-    return response;
+    for(var key in members)
+    {
+        newObject[key] = members[key];
+    }
+
+    return newObject;
 }
 
 
-function resolve( qid, artist, album, track )
+// Resolver BaseObject, inherit it to implement your own resolver
+var TomahawkResolver = {
+    scriptPath: function()
+    {
+        return Tomahawk.resolverData().scriptPath;
+    },
+    getConfigUi: function()
+    {
+        return {};
+    },
+    getUserConfig: function()
+    {
+        var configJson = window.localStorage[this.scriptPath()];
+        if(configJson === undefined)
+            configJson = "{}";
+
+        var config = JSON.parse(configJson);
+
+        return config;
+    },
+    saveUserConfig: function()
+    {
+        var config = Tomahawk.resolverData().config;
+        var configJson = JSON.stringify(config);
+
+        window.localStorage[this.scriptPath()] = configJson;
+    }
+};
+
+/**** begin example implementation of a resolver ****/
+
+
+// implement the resolver
+/*
+    var DemoResolver = Tomahawk.extend(TomahawkResolver,
+    {
+        getSettings: function()
+        {
+            return {
+                name: "Demo Resolver",
+                weigth: 95,
+                timeout: 5,
+                limit: 10
+            };
+        },
+        resolve: function( qid, artist, album, track )
+        {
+            return {
+                qid: qid,
+                results: [
+                    {
+                        artist: "Mokele",
+                        album: "You Yourself are Me Myself and I am in Love",
+                        track: "Hiding In Your Insides (php)",
+                        source: "Mokele.co.uk",
+                        url: "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3",
+                        bitrate: 160,
+                        duration: 248,
+                        size: 4971780,
+                        score: 1.0,
+                        extension: "mp3",
+                        mimetype: "audio/mpeg"
+                    }
+                ]
+            };
+        }
+    }
+);
+
+// register the resolver
+Tomahawk.resolver.instance = DemoResolver;*/
+
+/**** end example implementation of a resolver ****/
+
+
+var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
 {
-    if( !getSettings().username || !getSettings().password || !getSettings().ampache )
+    getSettings: function()
     {
-        console.log("Ampache Resolver not properly configured!");
-        return;
-    }
+        return {
+            name: "Ampache Resolver",
+            weigth: 85,
+            timeout: 5,
+            limit: 10
+        };
+    },
+    getConfigUi: function()
+    {
+        var uiData = Tomahawk.readBase64("config.ui");
+        return {
+            "widget": uiData,
+            fields: [
+                { name: "username", widget: ["usernameLineEdit"], property: "text" },
+                { name: "password", widget: ["passwordLineEdit"], property: "text" },
+                { name: "ampache", widget: ["ampacheLineEdit"], property: "text" }
+            ],
+            images: [
+                { "owncloud.png" : Tomahawk.readBase64("owncloud.png") },
+                { "ampache.png" : Tomahawk.readBase64("ampache.png") }
+            ]
+        };
+    },
+    resolve: function( qid, artist, album, track )
+    {
+        var userConfig = this.getUserConfig();
+        if( !userConfig.username || !userConfig.password || !userConfig.ampache )
+        {
+            console.log("Ampache Resolver not properly configured!");
+            return;
+        }
+        var authToken = function( handshakeResult )
+        {
+            var domParser = new DOMParser();
+            xmlDoc = domParser.parseFromString(handshakeResult, "text/xml");
 
-    var valueForSubNode = function(node, tag)
-    {
-        return node.getElementsByTagName(tag)[0].textContent;
-    };
-    var syncRequest = function(url)
-    {
-        var xmlHttpRequest = new XMLHttpRequest();
-        xmlHttpRequest.open('GET', url, false);
-        xmlHttpRequest.send(null);
-        return xmlHttpRequest.responseText;
-    }
-    var authToken = function( handshakeResult )
-    {
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(handshakeResult, "text/xml");
+            var roots = xmlDoc.getElementsByTagName("root");
+            return valueForSubNode(roots[0], "auth");
+        };
 
-        var roots = xmlDoc.getElementsByTagName("root");
-        return valueForSubNode(roots[0], "auth");
-    };
+        if( !window.sessionStorage["ampacheAuth"] )
+        {
+            // do handshake
+            var time = Number( new Date() );
+            var key = SHA256( userConfig.password );//hash('sha256','mypassword');
+            var passphrase = SHA256( time + key );
 
-    if( !window.sessionStorage["ampacheAuth"] )
-    {
-        // do handshake
-        var time = Number( new Date() );
-        var key = SHA256( getSettings().password );//hash('sha256','mypassword');
-        var passphrase = SHA256( time + key );
-
-        var handshakeUrl = getSettings().ampache
+            var handshakeUrl = userConfig.ampache
             + "/server/xml.server.php?action=handshake&auth="+ encodeURIComponent( passphrase )
             + "&timestamp="+ encodeURIComponent( time )
             + "&version=350001"
-            + "&user=" + encodeURIComponent( getSettings().username );
+            + "&user=" + encodeURIComponent( userConfig.username );
 
-        var handshakeResult = syncRequest( handshakeUrl );
-        var auth = authToken( handshakeResult );
-        window.sessionStorage["ampacheAuth"] = auth;
-    }
-    else
-    {
-        // reuse session token
-        auth = window.sessionStorage["ampacheAuth"];
-    }
-
-   var filter = artist + " " + album + " " + track;
-   var searchUrl = getSettings().ampache
-        + "/server/xml.server.php?action=search_songs&auth="+ encodeURIComponent( auth )
-        + "&filter=" + encodeURIComponent( filter );
-        + "&limit="+getSettings().limit;
-
-   var searchResult = syncRequest( searchUrl );
-
-    // parse xml
-    var domParser = new DOMParser();
-    xmlDoc = domParser.parseFromString(searchResult, "text/xml");
-
-    var results = new Array();
-    // check the repsonse
-    if(xmlDoc.getElementsByTagName("song")[0].childNodes.length > 0)
-    {
-        var songs = xmlDoc.getElementsByTagName("song");
-
-        // walk through the results and store it in 'results'
-        for(var i=0;i<songs.length;i++)
-        {
-            var song = songs[i];
-
-            var result = new Object();
-            result.artist = valueForSubNode(song, "artist");
-            result.album = valueForSubNode(song, "album");
-            result.track = valueForSubNode(song, "title");
-
-            //result.year = 0;//valueForSubNode(song, "year");
-            result.source = "Ampache";
-            result.url = valueForSubNode(song, "url");
-            result.mimetype = valueForSubNode(song, "mime");
-            //result.bitrate = valueForSubNode(song, "title");
-            //result.durationString = valueForSubNode(link, "duration");
-            result.score = valueForSubNode(song, "rating");
-
-            results.push(result);
+            var handshakeResult = syncRequest( handshakeUrl );
+            var auth = authToken( handshakeResult );
+            window.sessionStorage["ampacheAuth"] = auth;
         }
+        else
+        {
+            // reuse session token
+            auth = window.sessionStorage["ampacheAuth"];
+        }
+
+        var filter = artist + " " + album + " " + track;
+        var searchUrl = userConfig.ampache
+        + "/server/xml.server.php?action=search_songs&auth="+ encodeURIComponent( auth )
+        + "&filter=" + encodeURIComponent( filter.trim() );
+        + "&limit="+userConfig.limit;
+
+        var searchResult = syncRequest( searchUrl );
+
+        // parse xml
+        var domParser = new DOMParser();
+        xmlDoc = domParser.parseFromString(searchResult, "text/xml");
+
+        var results = new Array();
+        // check the repsonse
+        if(xmlDoc.getElementsByTagName("song")[0].childNodes.length > 0)
+        {
+            var songs = xmlDoc.getElementsByTagName("song");
+
+            // walk through the results and store it in 'results'
+            for(var i=0;i<songs.length;i++)
+            {
+                var song = songs[i];
+
+                var result = {
+                    artist: valueForSubNode(song, "artist"),
+                    album: valueForSubNode(song, "album"),
+                    track: valueForSubNode(song, "title"),
+                    //result.year = 0;//valueForSubNode(song, "year");
+                    source: this.getSettings().name,
+                    url: valueForSubNode(song, "url"),
+                    //mimetype: valueForSubNode(song, "mime"), //FIXME what's up here? it was there before :\
+                    //result.bitrate = valueForSubNode(song, "title");
+                    size: valueForSubNode(song, "size"),
+                    duration: valueForSubNode(song, "time"),
+                    score: valueForSubNode(song, "rating")
+                };
+
+                results.push(result);
+            }
+        }
+
+        // prepare the return
+        return {
+            qid: qid,
+            results: results
+        };
     }
+});
 
-    // prepare the return
-    var response = new Object();
-    response.qid = qid;
-    response.results = results;
+Tomahawk.resolver.instance = AmpacheResolver;
 
-    return response;
+
+
+// help functions
+
+var valueForSubNode = function(node, tag)
+{
+    return node.getElementsByTagName(tag)[0].textContent;
+};
+
+
+var syncRequest = function(url)
+{
+    var xmlHttpRequest = new XMLHttpRequest();
+    xmlHttpRequest.open('GET', url, false);
+    xmlHttpRequest.send(null);
+    return xmlHttpRequest.responseText;
 }
 
 /**
 *
-*  Secure Hash Algorithm (SHA256)
-*  http://www.webtoolkit.info/
+* Secure Hash Algorithm (SHA256)
+* http://www.webtoolkit.info/
 *
-*  Original code by Angel Marin, Paul Johnston.
+* Original code by Angel Marin, Paul Johnston.
 *
 **/
 
 function SHA256(s){
 
-    var chrsz   = 8;
+    var chrsz = 8;
     var hexcase = 0;
 
     function safe_add (x, y) {
@@ -243,7 +365,7 @@ function SHA256(s){
         var str = "";
         for(var i = 0; i < binarray.length * 4; i++) {
             str += hex_tab.charAt((binarray[i>>2] >> ((3 - i%4)*8+4)) & 0xF) +
-            hex_tab.charAt((binarray[i>>2] >> ((3 - i%4)*8  )) & 0xF);
+            hex_tab.charAt((binarray[i>>2] >> ((3 - i%4)*8 )) & 0xF);
         }
         return str;
     }
