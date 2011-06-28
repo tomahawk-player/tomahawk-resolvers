@@ -1,20 +1,19 @@
 
-
 var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
 {
-    getSettings: function()
+    ready: false,
+    settings:
     {
-        return {
-            name: "Ampache Resolver",
-            weigth: 85,
-            timeout: 5,
-            limit: 10
-        };
+        name: 'Ampache Resolver',
+        weigth: 85,
+        timeout: 5,
+        limit: 10
     },
     getConfigUi: function()
     {
         var uiData = Tomahawk.readBase64("config.ui");
         return {
+
             "widget": uiData,
             fields: [
                 { name: "username", widget: ["usernameLineEdit"], property: "text" },
@@ -27,61 +26,83 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             ]
         };
     },
-    resolve: function( qid, artist, album, track )
+    init: function()
     {
+        // check resolver is properly configured
         var userConfig = this.getUserConfig();
         if( !userConfig.username || !userConfig.password || !userConfig.ampache )
         {
-            console.log("Ampache Resolver not properly configured!");
+            alert("Ampache Resolver not properly configured!");
             return;
         }
-        var authToken = function( handshakeResult )
+
+        // don't do anything if we already have a valid auth token
+        if( window.sessionStorage["ampacheAuth"] )
         {
-            var domParser = new DOMParser();
-            xmlDoc = domParser.parseFromString(handshakeResult, "text/xml");
-
-            var roots = xmlDoc.getElementsByTagName("root");
-
-            return (roots[0] === undefined ? false : Tomahawk.valueForSubNode( roots[0], "auth" ) )
-        };
-
-        if( !window.sessionStorage["ampacheAuth"] )
-        {
-            // do handshake
-            var time = Number( new Date() );
-            var key = Tomahawk.sha256( userConfig.password );//hash('sha256','mypassword');
-            var passphrase = Tomahawk.sha256( time + key );
-
-            var handshakeUrl = userConfig.ampache
-            + "/server/xml.server.php?action=handshake&auth="+ encodeURIComponent( passphrase )
-            + "&timestamp="+ encodeURIComponent( time )
-            + "&version=350001"
-            + "&user=" + encodeURIComponent( userConfig.username );
-
-            var handshakeResult = Tomahawk.syncRequest( handshakeUrl );
-            var auth = authToken( handshakeResult );
-            if( !auth )
-                console.log( "No valid response from server, check user, password and url!" );
-
-            window.sessionStorage["ampacheAuth"] = auth;
-        }
-        else
-        {
-            // reuse session token
-            auth = window.sessionStorage["ampacheAuth"];
+            alert("Reusing auth token from sessionStorage");
+            return window.sessionStorage["ampacheAuth"];
         }
 
-        var filter = artist + " " + album + " " + track;
-        var searchUrl = userConfig.ampache
-        + "/server/xml.server.php?action=search_songs&auth="+ encodeURIComponent( auth )
-        + "&filter=" + encodeURIComponent( filter.trim() );
-        + "&limit="+userConfig.limit;
+        // prepare handshake arguments
+        var time = Tomahawk.timestamp();
+        var key = Tomahawk.sha256( userConfig.password );
+        var passphrase = Tomahawk.sha256( time + key );
 
-        var searchResult = Tomahawk.syncRequest( searchUrl );
+        // do the handshake
+        var params = {
+            timestamp: time,
+            version: 350001,
+            user: userConfig.username
+        }
+        var handshakeResult = this.apiCall( 'handshake', passphrase, params );
 
+        // parse the result
+        var domParser = new DOMParser();
+        xmlDoc = domParser.parseFromString(handshakeResult, "text/xml");
+        var roots = xmlDoc.getElementsByTagName("root");
+        this.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode( roots[0], "auth" );
+        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode( roots[0], "session_length" ))*1000;
+
+        // inform the user if something went wrong
+        if( !this.auth )
+            alert( "No valid response from server, check user, password and url!" );
+
+        // all fine, set the resolver to ready state
+        this.ready = true;
+        window.sessionStorage["ampacheAuth"] = this.auth;
+
+        // setup pingTimer
+        if( pingInterval )
+            window.setInterval(this.ping, pingInterval-60);
+
+        Tomahawk.log("Ampache Resolver properly initialised!");
+    },
+    apiCall: function(action, auth, params)
+    {
+        var ampacheUrl = this.getUserConfig().ampache + "/server/xml.server.php?";
+        params['action'] = action;
+        params['auth'] = auth;
+
+        for(param in params)
+        {
+            if( typeof( params[param] ) == 'string' )
+                params[param] = params[param].trim();
+
+            ampacheUrl += encodeURIComponent( param ) + "=" + encodeURIComponent( params[param] ) + "&";
+        }
+        //Tomahawk.log( ampacheUrl );
+        return Tomahawk.syncRequest(ampacheUrl);
+    },
+    ping: function()
+    {
+        // this is called from window scope (setInterval), so we need to make methods and data accessible from there
+        Tomahawk.log( AmpacheResolver.apiCall( 'ping', AmpacheResolver.auth, {} ) );
+    },
+    parseSongResponse: function( qid, responseString )
+    {
         // parse xml
         var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(searchResult, "text/xml");
+        xmlDoc = domParser.parseFromString( responseString, "text/xml");
 
         var results = new Array();
         // check the repsonse
@@ -100,7 +121,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
                     album: Tomahawk.valueForSubNode(song, "album"),
                     track: Tomahawk.valueForSubNode(song, "title"),
                     //result.year = 0;//valueForSubNode(song, "year");
-                    source: this.getSettings().name,
+                    source: this.settings.name,
                     url: Tomahawk.valueForSubNode(song, "url"),
                     //mimetype: valueForSubNode(song, "mime"), //FIXME what's up here? it was there before :\
                     //result.bitrate = valueForSubNode(song, "title");
@@ -114,12 +135,78 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
         }
 
         // prepare the return
-        return {
+        var return1 =  {
             qid: qid,
             results: results
         };
+
+        //Tomahawk.dumpResult( return1 );
+        return return1;
+    },
+    resolve: function( qid, artist, album, title )
+    {
+        return this.search( qid, title );
+    },
+    search: function( qid, searchString )
+    {
+        userConfig = this.getUserConfig();
+
+        var params = {
+            filter: searchString,
+            limit: this.settings.limit
+        };
+        var searchResult = this.apiCall( "search_songs", this.auth, params );
+
+        //Tomahawk.log( searchResult );
+
+        return this.parseSongResponse( qid, searchResult );
     }
 });
 
-
 Tomahawk.resolver.instance = AmpacheResolver;
+
+
+
+
+/*
+ * TEST ENVIRONMENT
+ */
+
+// TomahawkResolver.getUserConfig = function() {
+//     return {
+//         username: "",
+//         password: "",
+//         ampache: ""
+//     };
+// };
+//
+// var resolver = Tomahawk.resolver.instance;
+//
+//
+// // configure tests
+// var search = {
+//     filter: "I Fell"
+// };
+//
+// var resolve = {
+//     artist: "The Aquabats!",
+//     title: "I Fell Asleep On My Arm"
+// };
+// // end configure
+//
+//
+//
+//
+// //tests
+// resolver.init();
+//
+// // test search
+// //Tomahawk.log("Search for: " + search.filter );
+// var response1 = resolver.search( 1234, search.filter );
+// //Tomahawk.dumpResult( response1 );
+//
+// // test resolve
+// //Tomahawk.log("Resolve: " + resolve.artist + " - " + resolve.album + " - " + resolve.title );
+// var response2 = resolver.resolve( 1235, resolve.artist, resolve.album, resolve.title );
+// //Tomahawk.dumpResult( response2 );
+
