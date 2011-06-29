@@ -9,9 +9,9 @@ function getSettings()
 }
 
 function resolve( qid, artist, album, track ){
-  
+
   var settings = getSettings();
-  
+
   if(artist !== "" ){
     artist = encodeURIComponent(artist);
   }
@@ -20,7 +20,7 @@ function resolve( qid, artist, album, track ){
   }
   var apiQuery = "http://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&artist="+artist+"&track="+track;
   apiQuery = apiQuery.replace(/\%20/g,'\+');
-  
+
   var myJsonObject = {};
   var httpRequest = new XMLHttpRequest();
   httpRequest.open('GET', apiQuery, false);
@@ -30,7 +30,7 @@ function resolve( qid, artist, album, track ){
     }
   }
   httpRequest.send(null);
-  
+
   var results = new Array();
   if (myJsonObject.track && myJsonObject.track.freedownload){
     var result = new Object();

@@ -16,9 +16,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
 
             "widget": uiData,
             fields: [
-                { name: "username", widget: ["usernameLineEdit"], property: "text" },
-                { name: "password", widget: ["passwordLineEdit"], property: "text" },
-                { name: "ampache", widget: ["ampacheLineEdit"], property: "text" }
+                { name: "username", widget: "usernameLineEdit", property: "text" },
+                { name: "password", widget: "passwordLineEdit", property: "text" },
+                { name: "ampache", widget: "ampacheLineEdit", property: "text" }
             ],
             images: [
                 { "owncloud.png" : Tomahawk.readBase64("owncloud.png") },
@@ -54,7 +54,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             version: 350001,
             user: userConfig.username
         }
-        var handshakeResult = this.apiCall( 'handshake', passphrase, params );
+        try { handshakeResult = this.apiCall( 'handshake', passphrase, params ); }
+            catch(e) { return; }
 
         // parse the result
         var domParser = new DOMParser();
@@ -65,7 +66,10 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
 
         // inform the user if something went wrong
         if( !this.auth )
+        {
             alert( "No valid response from server, check user, password and url!" );
+            Tomahawk.log("INVALID HANDSHAKE RESPONSE: " + handshakeResult);
+        }
 
         // all fine, set the resolver to ready state
         this.ready = true;
@@ -149,6 +153,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
     },
     search: function( qid, searchString )
     {
+        if( !this.ready ) return { qid: qid };
+
         userConfig = this.getUserConfig();
 
         var params = {
