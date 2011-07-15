@@ -93,7 +93,7 @@ public:
 
     void sendMessage( const QVariant& v );
 
-    static QString dataDir();
+    static QString dataDir( bool configDir = false );
 
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
