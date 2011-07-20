@@ -194,10 +194,9 @@ static void SP_CALLCONV getAudioBufferStats(sp_session *session, sp_audio_buffer
 
 static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
 {
-    QPair<QString, QString> *data = static_cast<QPair<QString, QString>*>(userdata);
-    QString qid = data->second;
-    qDebug() << "Got search result for:" << data->first << "and qid:" << qid;
-    delete data;
+    QString qid = QString( *static_cast<QString*>(userdata) );
+    qDebug() << "Got search result for qid:" << qid;
+    delete static_cast<QString*>(userdata);
 
     // we return the top 25 results
     QVariantMap resp;
@@ -245,8 +244,6 @@ static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
     sp_search_release( result );
 
     sApp->sendMessage( resp );
-
-    delete data;
 }
 
 }

@@ -354,8 +354,7 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
         cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );
 
     QString query = QString( "%1 %2" ).arg( artist ).arg( cleanedTrack );
-    QPair<QString, QString>* data = new QPair<QString, QString>( query, qid );
-    sp_search_create( m_session, query.toUtf8().data(), 0, 25, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, data );
+    sp_search_create( m_session, query.toUtf8().data(), 0, 25, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, new QString(qid) );
 }
 
 
