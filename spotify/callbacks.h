@@ -32,6 +32,7 @@
 
 #include <QString>
 #include <QDebug>
+#include <QPair>
 #include "audiohttpserver.h"
 #include <qstringlist.h>
 #include <stdint.h>
@@ -193,10 +194,10 @@ static void SP_CALLCONV getAudioBufferStats(sp_session *session, sp_audio_buffer
 
 static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
 {
-    QString *data = static_cast<QString*>(userdata);
-    QStringList parts = data->split( "~~~" );
-    QString qid = parts.at( 1 );
-//     qDebug() << "Got search result for:" << parts.at(0) << "and qid:" << parts.at(1);
+    QPair<QString, QString> *data = static_cast<QPair<QString, QString>*>(userdata);
+    QString qid = data->second;
+    qDebug() << "Got search result for:" << data->first << "and qid:" << qid;
+    delete data;
 
     // we return the top 25 results
     QVariantMap resp;
