@@ -41,8 +41,9 @@ var JamendoResolver = Tomahawk.extend(TomahawkResolver,
 		xmlDoc = domParser.parseFromString(xmlString, "text/xml");
 		
 		var results = new Array();
+		var r = xmlDoc.getElementsByTagName("data");
 		// check the response
-		if(xmlDoc.getElementsByTagName("data")[0].childNodes.length > 0)
+		if(r.length > 0 && r[0].childNodes.length > 0)
 		{
 		    var links = xmlDoc.getElementsByTagName("track");
 		
