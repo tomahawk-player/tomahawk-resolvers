@@ -62,8 +62,8 @@ public:
     SpotifyResolver( int argc, char** argv );
     virtual ~SpotifyResolver();
 
-    void init();
-
+    void setup();
+    
     void setLoggedIn( bool loggedIn );
 
     void sendNotifyThreadSignal();
@@ -97,10 +97,12 @@ public:
 
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
+    
 private slots:
     void notifyMainThread();
     void playdarMessage( const QVariant& );
-
+    void initSpotify();
+    
 signals:
     void notifyMainThreadSignal();
 

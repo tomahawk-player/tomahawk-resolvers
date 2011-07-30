@@ -40,14 +40,16 @@
 #include <QSettings>
 #include <QSocketNotifier>
 #include <QDir>
+#include <QDateTime>
 #include <QUuid>
+#include <QtCore/QTimer>
+#include <QtCore/QFile>
 #include <qendian.h>
 
 #include <iostream>
 #include <stdio.h>
 #include <fstream>
 #include "audiohttpserver.h"
-#include <QDateTime>
 #include "spotifyiodevice.h"
 
 #ifdef WIN32
@@ -162,7 +164,6 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
     setApplicationVersion( QLatin1String( "0.1" ) );
-
 }
 
 
@@ -175,7 +176,7 @@ SpotifyResolver::~SpotifyResolver()
     m_stdinThread.exit();
 }
 
-void SpotifyResolver::init()
+void SpotifyResolver::setup()
 {
     setupLogfile();
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
@@ -185,8 +186,12 @@ void SpotifyResolver::init()
     connect( m_stdinWatcher, SIGNAL( lineRead( QVariant ) ), this, SLOT( playdarMessage( QVariant ) ) );
     m_stdinWatcher->moveToThread( &m_stdinThread );
     m_stdinThread.start( QThread::LowPriority );
+}
 
+void SpotifyResolver::initSpotify()
+{
     //initialize spotify session
+    qDebug() << "Initializing Spotify";
     const QByteArray storagePath = dataDir().toUtf8();
     const QByteArray configPath = dataDir( true ).toUtf8();
     m_config.api_version = SPOTIFY_API_VERSION;
@@ -296,7 +301,7 @@ void SpotifyResolver::notifyMainThread()
 void
 SpotifyResolver::playdarMessage( const QVariant& msg )
 {
-//     qDebug() << "Got playdar message!" << msg;
+    qDebug() << "Got playdar message!" << msg;
     if( !msg.canConvert< QVariantMap >() ) {
         qWarning() << "Got non-map in json!";
         return;
@@ -323,6 +328,57 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         qDebug() << "Resolving:" << qid << artist << track;
 
         search( qid, artist, track );
+    } else if( m.value( "_msgtype" ) == "config" ) {
+        const QByteArray configPath = dataDir().toUtf8();
+        QString settingsFilename( QString( configPath ) + "/settings" );
+        qDebug() << "Looking for spotify settings file at " << settingsFilename;
+        QFile settingsFile( settingsFilename );
+        QVariantMap spotifySettings;
+        bool ok = true;
+        if ( settingsFile.exists() && settingsFile.size() > 0 )
+        {
+            qDebug() << "Found spotify settings file, parsing...";
+            QJson::Parser parser;
+            settingsFile.open( QIODevice::ReadOnly | QIODevice::Text );
+            QString settingsString = settingsFile.readAll();
+            settingsFile.close();
+            spotifySettings = parser.parse( settingsString.toLocal8Bit(), &ok ).toMap();
+        }
+
+        if ( !ok )
+        {
+            qDebug() << "Previous spotify settings file found but could not be read successfully";
+            QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
+            return;
+        }
+        
+        if ( m.value( "proxytype" ) == "socks5" ) {
+            if ( m.value( "proxypass" ).toString().isEmpty() )
+            {
+                QString proxyString = QString( "%1:%2@socks5" ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );
+                spotifySettings["proxy"] = proxyString;
+                spotifySettings["proxy_mode"] = 2;
+                spotifySettings["proxy_pass"] = QString();
+            }
+            else
+            {
+                qDebug() << "The Spotify resolver does not currently support SOCKS5 proxies with a username and password";
+                QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
+                return;
+            }
+        }
+        else
+        {
+            spotifySettings.remove( "proxy" );
+            spotifySettings.remove( "proxy_pass" );
+            spotifySettings.remove( "proxy_mode" );
+        }
+        settingsFile.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate );
+        QJson::Serializer serializer;
+        QByteArray json = serializer.serialize( spotifySettings );
+        settingsFile.write( json );
+        settingsFile.close();
+        QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
     }
 }
 

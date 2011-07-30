@@ -10,13 +10,15 @@
 // SEE COPYING FILE FOR MORE INFORMATION
 
 #include "kdsingleapplicationguard/kdsingleapplicationguard.h"
+#include <QtCore/QTimer>
 
 int main(int argc, char** argv)
 {
     SpotifyResolver app( argc, argv );
     KDSingleApplicationGuard guard( &app, KDSingleApplicationGuard::NoPolicy );
     QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
-    app.init();
+
+    app.setup();
 
     return app.exec();
 }
