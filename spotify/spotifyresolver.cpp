@@ -329,7 +329,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         search( qid, artist, track );
     } else if( m.value( "_msgtype" ) == "config" ) {
-        const QByteArray configPath = dataDir().toUtf8();
+        const QByteArray configPath = dataDir( true ).toUtf8();
         QString settingsFilename( QString( configPath ) + "/settings" );
         qDebug() << "Looking for spotify settings file at " << settingsFilename;
         QFile settingsFile( settingsFilename );
