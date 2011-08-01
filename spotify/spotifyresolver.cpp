@@ -187,10 +187,11 @@ void SpotifyResolver::init()
     m_stdinThread.start( QThread::LowPriority );
 
     //initialize spotify session
-    const QByteArray settingsPath = dataDir().toUtf8();
+    const QByteArray storagePath = dataDir().toUtf8();
+    const QByteArray configPath = dataDir( true ).toUtf8();
     m_config.api_version = SPOTIFY_API_VERSION;
-    m_config.cache_location = settingsPath.constData();
-    m_config.settings_location = settingsPath.constData();
+    m_config.cache_location = storagePath.constData();
+    m_config.settings_location = configPath.constData();
     m_config.application_key = m_apiKey.constData();
     m_config.application_key_size = m_apiKey.size();
     m_config.user_agent = "tomahawkresolver";
@@ -466,7 +467,7 @@ void SpotifyResolver::login()
 }
 
 
-QString SpotifyResolver::dataDir()
+QString SpotifyResolver::dataDir( bool configDir )
 {
     QString path;
 
@@ -485,7 +486,7 @@ QString SpotifyResolver::dataDir()
 #elif defined(Q_WS_MAC)
         path = QDir::home().filePath( "Library/Application Support" );
 #elif defined(Q_WS_X11)
-        path = QDir::home().filePath( ".local/share" );
+        path = QDir::home().filePath( configDir ? ".config" : ".local/share" );
 #else
         path = QCoreApplication::applicationDirPath();
 #endif

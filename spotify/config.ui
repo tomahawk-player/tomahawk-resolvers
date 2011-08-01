@@ -78,7 +78,7 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item alignment="Qt::AlignVCenter">
+     <item>
       <spacer name="horizontalSpacer_5">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -104,7 +104,7 @@
        </property>
       </widget>
      </item>
-     <item alignment="Qt::AlignVCenter">
+     <item>
       <spacer name="horizontalSpacer_6">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
