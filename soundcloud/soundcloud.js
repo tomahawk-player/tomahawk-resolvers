@@ -1,7 +1,7 @@
 var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 {
 	cleanTitle: function(artist, title){
-		if (title.search("\\[|\\]|\\(|\\)|\\*|\\+") != 1){
+		if (title.search("\\[|\\]|\\(|\\)|\\*|\\+|\\?") != 1){
 			title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+|\\?", "gi"), "");
 		}
 		var stripArtist = new RegExp("\\W*[by]*[the]*\\W*"+artist+"\\W*", "gi");
@@ -30,8 +30,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 		artist = encodeURIComponent(artist).replace(/\%20/g,'\+').trim();
 		track = encodeURIComponent(track).replace(/\%20/g,'\+').trim();
 		var soundcloudUrl = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q="+artist+"+"+track;
-		return JSON.parse(Tomahawk.syncRequest(soundcloudUrl));
-	},
+		try {
+			return JSON.parse(Tomahawk.syncRequest(soundcloudUrl));
+		}
+		catch (e){
+			return null;
+		}	},
 	parseSongResponse: function( qid, artist, responseString )
 	{
 	var results = new Array();
