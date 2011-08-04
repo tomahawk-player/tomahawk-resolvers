@@ -2,7 +2,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 {
 	cleanTitle: function(artist, title){
 		if (title.search("\\[|\\]|\\(|\\)|\\*|\\+") != 1){
-			title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+", "gi"), "");
+			title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+|\\?", "gi"), "");
 		}
 		var stripArtist = new RegExp("\\W*[by]*[the]*\\W*"+artist+"\\W*", "gi");
 		var stripAppendingQuotes = new RegExp("\"", "gi");
