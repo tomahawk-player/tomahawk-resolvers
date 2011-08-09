@@ -21,7 +21,7 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver,
 	parseSongResponse: function( qid, responseString )
 	{
 		var results = new Array();
-		if (typeof responseString.track != "undefined" && responseString.track.freedownload)
+		if (responseString != null && typeof responseString.track != "undefined" && responseString.track.freedownload)
 		{
 			var result = new Object();
 			result.artist = responseString.track.artist.name;
@@ -48,9 +48,9 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver,
 	},
 	resolve: function( qid, artist, album, title )
 	{
-		return this.search( qid, title );
+		return this.search( qid, artist, album, title );
 	},
-	search: function( qid, searchString )
+	search: function( qid, artist, album, title )
 	{
 		var searchResult = this.apiCall(artist, title);
 		return this.parseSongResponse( qid, searchResult );
