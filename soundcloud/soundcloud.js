@@ -1,12 +1,13 @@
 var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 {
 	cleanTitle: function(artist, title){
-		if (title.search("\\[|\\]|\\(|\\)|\\*|\\+|\\?") != 1){
-			title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+|\\?", "gi"), "");
+		if (title.search("\\[|\\]|\\(|\\)|\\*|\\+|\\?|\\/") != 1){
+			title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+|\\?|\\/", "gi"), "");
 		}
 		var stripArtist = new RegExp("\\W*[by]*[the]*\\W*"+artist+"\\W*", "gi");
 		var stripAppendingQuotes = new RegExp("\"", "gi");
-		if (title.search(new RegExp(artist, "gi")) != -1 && title.search(new RegExp(title, "gi")) != 1){
+		if (title.search(new RegExp(artist, "gi")) != -1 && 
+			title.search(new RegExp(title, "gi")) != 1){
 			if (title.search(stripArtist) != -1){
 				title = title.replace(stripArtist, "").trim();
 				if (title.search(stripAppendingQuotes) == title.length - 1  && title.search(stripAppendingQuotes) != 0){
@@ -21,7 +22,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 	},
 	settings:
 	{
-		name: 'Soundcloud Resolver',
+		name: 'Soundcloud',
 		weight: 85,
 		timeout: 5
 	},
@@ -35,7 +36,8 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 		}
 		catch (e){
 			return null;
-		}	},
+		}
+	},
 	parseSongResponse: function( qid, artist, responseString )
 	{
 	var results = new Array();
