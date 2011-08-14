@@ -18,19 +18,21 @@ var DummyResolver = Tomahawk.extend(TomahawkResolver,
     {
         return {
             qid: qid,
-            results: {
-                artist: "Mokele",
-                album: "You Yourself are Me Myself and I am in Love",
-                track: "Hiding In Your Insides (php)",
-                source: "Mokele.co.uk",
-                url: "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3",
-                bitrate: 160,
-                duration: 248,
-                size: 4971780,
-                score: 1.0,
-                extension: "mp3",
-                mimetype: "audio/mpeg"
-            }
+            results: [
+                {
+                    artist: "Mokele",
+                    album: "You Yourself are Me Myself and I am in Love",
+                    track: "Hiding In Your Insides (php)",
+                    source: "Mokele.co.uk",
+                    url: "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3",
+                    bitrate: 160,
+                    duration: 248,
+                    size: 4971780,
+                    score: 1.0,
+                    extension: "mp3",
+                    mimetype: "audio/mpeg"
+                }
+            ]
 
         };
     }
