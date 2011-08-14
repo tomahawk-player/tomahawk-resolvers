@@ -72,12 +72,13 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 	},
 	resolve: function( qid, artist, album, title )
 	{
-		return this.search( qid, artist, album, title );
-	},
-	search: function( qid, artist, album, title )
-	{
 		var searchResult = this.apiCall(artist, title);
+		Tomahawk.log("searchresult is " + searchResult);
 		return this.parseSongResponse( qid, artist, searchResult );
+	},
+	search: function( qid, searchString )
+	{
+		return this.resolve( qid, searchString, "", "" );
 	}
 });
 
