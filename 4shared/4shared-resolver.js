@@ -6,17 +6,13 @@ var FSharedResolver = Tomahawk.extend(TomahawkResolver,
 {
 	settings:
 	{
-		name: '4shared Resolver',
+		name: '4shared',
 		weight: 50,
 		timeout: 5
 	},
 	resolve: function( qid, artist, album, title )
 	{
-		return this.search( qid, artist, album, title );
-	},
-	search: function( qid, artist, album, title )
-	{
-	 	var valueForSubNode = function(node, tag)
+		var valueForSubNode = function(node, tag)
 	    {
 	        return node.getElementsByTagName(tag)[0].textContent;
 	    };
@@ -66,7 +62,6 @@ var FSharedResolver = Tomahawk.extend(TomahawkResolver,
 	            result.bitrate = 128;
 	            //result.duration = valueForSubNode(link, "duration");
 	            result.score = 0.80;
-	
 	            results.push(result);
 	        }
 	    }
@@ -76,6 +71,15 @@ var FSharedResolver = Tomahawk.extend(TomahawkResolver,
 			results: results
 		};
 		return return1;
+
+	},
+	search: function( qid, searchString )
+	{
+		var return1 =  {
+			qid: qid,
+			results: new Array()
+		};
+		return return1;	
 	}
 });
 

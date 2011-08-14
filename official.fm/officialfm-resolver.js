@@ -6,17 +6,13 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver,
 {
 	settings:
 	{
-		name: 'Official.fm Resolver',
+		name: 'Official.fm',
 		weight: 70,
 		timeout: 5
 	},
-	resolve: function( qid, artist, album, title )
+	process: function( qid, artist, album, title, strict ) 
 	{
-		return this.search( qid, artist, album, title );
-	},
-	search: function( qid, artist, album, title )
-	{
-		var applicationKey = "ixHOUAG9r9csybvGtGuf";
+	var applicationKey = "ixHOUAG9r9csybvGtGuf";
     
     	var valueForSubNode = function(node, tag)
     	{
@@ -35,6 +31,7 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver,
 	    url += encodeURIComponent(request);
     
     	url += "?key=" + applicationKey;
+    	Tomahawk.log(url);
     	// send request and parse it into javascript
     	var xmlString = Tomahawk.syncRequest(url);
 
@@ -62,7 +59,7 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver,
 	            result.duration = valueForSubNode(link, "length");
 	            result.score = 0.95;
 	            result.id = valueForSubNode(link, "id");
-            	if(result.artist == artist && result.track == title) 
+            	if(!strict || (result.artist == artist && result.track == title)) 
             	{           
 	               	var urlStream = 'http://api.official.fm/track/'+result.id+'/stream?key='+applicationKey+"&format=json";
 	               
@@ -72,12 +69,20 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver,
 	                results.push(result);
             	}
         	}
-        	var return1 =  {
-				qid: qid,
-				results: results
-			};
-			return return1;
     	}
+   	    var return1 =  {
+			qid: qid,
+			results: results
+		};
+		return return1;
+	},
+	resolve: function( qid, artist, album, title )
+	{	
+		return this.process( qid, artist, album, title, true);
+	},
+	search: function( qid, searchString )
+	{
+		return this.process( qid, "", "", searchString, false);
 	}
 });
 
