@@ -1,42 +1,39 @@
 /*
- * (c) 2011 Christian Muehlhaeuser <muesli@tomahawk-player.org>
- *
+ * (c) 2011 Dominik Schmidt <domme@tomahawk-player.org>
  */
 
-function getSettings()
+var DummyResolver = Tomahawk.extend(TomahawkResolver,
 {
-    // Initialize the resolver
-    var response = new Object();
-    response.name = "JavaScript Example Resolver";
-    response.weight = 50;
-    response.timeout = 5;
+    settings:
+    {
+        name: 'Dummy Resolver',
+        weight: 75,
+        timeout: 5
+    },
+    resolve: function( qid, artist, album, title )
+    {
+        return this.search( qid, title );
+    },
+    search: function( qid, searchString )
+    {
+        return {
+            qid: qid,
+            results: {
+                artist: "Mokele",
+                album: "You Yourself are Me Myself and I am in Love",
+                track: "Hiding In Your Insides (php)",
+                source: "Mokele.co.uk",
+                url: "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3",
+                bitrate: 160,
+                duration: 248,
+                size: 4971780,
+                score: 1.0,
+                extension: "mp3",
+                mimetype: "audio/mpeg"
+            }
 
-    return response;
-}
+        };
+    }
+});
 
-
-function resolve( qid, artist, album, track )
-{
-    var result = new Object();
-    result.artist = "Mokele";
-    result.album = "You Yourself are Me Myself and I am in Love";
-    result.track = "Hiding In Your Insides (php)";
-    result.source = "Mokele.co.uk";
-    result.url = "http://play.mokele.co.uk/music/Hiding%20In%20Your%20Insides.mp3";
-    result.bitrate = 160;
-    result.duration = 248;
-    result.size = 4971780;
-    result.score = 1.0;
-    result.extension = "mp3";
-    result.mimetype = "audio/mpeg";
-
-    var results = new Array();
-    results.push( result );
-
-    // prepare the response
-    var response = new Object();
-    response.qid = qid;
-    response.results = results;
-
-    return response;
-}
+Tomahawk.resolver.instance = DummyResolver;
