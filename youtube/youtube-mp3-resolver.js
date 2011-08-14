@@ -6,7 +6,7 @@ var YouTubeResolver = Tomahawk.extend(TomahawkResolver,
 {
 	settings:
 	{
-		name: 'Youtube',
+		name: 'YouTube',
 		weight: 50,
 		timeout: 5,
 		maxResults: 2
