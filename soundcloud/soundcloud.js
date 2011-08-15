@@ -78,7 +78,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 	},
 	search: function( qid, searchString )
 	{
-		return this.resolve( qid, searchString, "", "" );
+		return this.resolve( qid, "", "", searchString );
 	}
 });
 
