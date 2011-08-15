@@ -12,9 +12,13 @@ var DummyResolver = Tomahawk.extend(TomahawkResolver,
     },
     resolve: function( qid, artist, album, title )
     {
-        return this.search( qid, title );
+        return Tomahawk.addTrackResults( this.internalSearch( qid ) );
     },
     search: function( qid, searchString )
+    {
+        Tomahawk.addTrackResults( this.internalSearch( qid ) );
+    },
+    internalSearch: function( qid )
     {
         return {
             qid: qid,
