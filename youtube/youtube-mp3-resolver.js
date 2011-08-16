@@ -11,45 +11,45 @@ var YouTubeResolver = Tomahawk.extend(TomahawkResolver,
 		timeout: 5,
 		maxResults: 2
 	},
-		process: function (videoPageUrl) {
+	process: function (qid, videoPageUrl, result) {
 		var q = 'http://www.youtube-mp3.org/api/pushItem/?item='+encodeURIComponent(videoPageUrl)+'&xy=true';
 		var videoId = Tomahawk.syncRequest(q);
 		if(videoId && videoId !== '$$$LIMIT$$$' ) {
-			var qPoll = 'http://www.youtube-mp3.org/api/itemInfo/?video_id=' + videoId;
-			var mp3Url;
-			var pushItemYTError = function() {
-				Tomahawk.log("Youtube Error");
+			var qPoll = 'http://www.youtube-mp3.org/api/itemInfo/?video_id=' + videoId;		
+			var count = 0;
+			var pushItemYTError = function() { //defined in return string
+				//Tomahawk.log("Youtube Error");
 			};
 			var poll = function() {
-					var ret = Tomahawk.syncRequest(qPoll);
-					if(ret == '$$$ERROR$$$')
-						return false;
-					else {
-						eval(ret); // define var info
-						if(info === 'undefined')
-							return false;
-						if(info['status'] == 'captcha')
-							return false;
-						if (info['status'] !== 'serving') {
-							return true;
-						} else {
-							mp3Url =  'http://www.youtube-mp3.org/get?video_id=' + videoId + '&h=' + info['h'];
-							return false;
-						}
+				if(count > 24) //max 2 minutes
+					return;
+				var ret = Tomahawk.syncRequest(qPoll);
+				if(ret == '$$$ERROR$$$')
+					return;
+				else {
+					eval(ret); // define var info
+					if('undefined' === info)
+						return;
+					if(info['status'] == 'captcha')
+						return;
+					if (info['status'] !== 'serving') {
+						count++;
+						setTimeout(argument.callee, 5000);
+					} else {
+						result.url = 'http://www.youtube-mp3.org/get?video_id=' + videoId + '&h=' + info['h'];
+						var results = [result];
+						var return1 =  {
+							qid: qid,
+							results: results
+						};
+						Tomahawk.addTrackResults(return1);
 					}
-				
-			}
-			var sleep = function(time) {
-				var ret = Tomahawk.syncRequest('http://lasconic.com/public/sleep.php?ms=' + time);
-			}
-			
-			while(poll()){
-				sleep(5000);
-			}
-			return mp3Url;
+				}	
+			} //poll
+			poll();
 		}
-		else{
-			return 'undefined';
+		else {
+			//Tomahawk.log('$$$LIMIT$$$');
 		}
 	},
 	resolve: function( qid, artist, album, title )
@@ -76,32 +76,20 @@ var YouTubeResolver = Tomahawk.extend(TomahawkResolver,
 		    		if ( item  !== 'undefined') {
 		    			if (item.status && item.status['value'] == 'restricted')
 		    				continue;
-			    		var url = this.process(item.player['default']);
-			    		if (url !== 'undefined') {
-			    			Tomahawk.log("found :" + title + " - " + artist + ": " + url);
-			        		var result = new Object();
-			        		result.artist = artist;
-			        		result.track = title;
-			        		//result.year = ;
-			        		result.source = this.settings.name;
-			        		result.url = url;
-			        		result.mimetype = "audio/mp3";
-			        		//result.extension = "mp3";
-			        		result.bitrate = 128;
-			        		result.duration = item.duration;
-			        		result.score = 1.00;
-			        		results.push(result);
-			    		}
-		    		}
-		  		}	
-	    	}
+					 	var result = new Object();
+		        		result.artist = artist;
+		        		result.track = title;
+		        		result.album = album;
+		        		result.source = this.settings.name;
+		        		result.mimetype = "audio/mp3";
+		        		result.bitrate = 128;
+		        		result.duration = item.duration;
+		        		result.score = 1.00;
+		        		this.process(qid, item.player['default'], result);
+			    	}
+		    	}
+		  	}	
 	    }
-
-       	var return1 =  {
-			qid: qid,
-			results: results
-		};
-		return return1;
 	},
 	search: function( qid, searchString )
 	{
