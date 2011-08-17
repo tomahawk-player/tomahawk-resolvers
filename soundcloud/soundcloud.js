@@ -40,45 +40,47 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
 	},
 	parseSongResponse: function( qid, artist, responseString )
 	{
-	var results = new Array();
-	if (responseString != null){
-		for (i=0;i<responseString.length;i++){
-			var result = new Object();
-			result.artist = artist;
-			if (this.cleanTitle(artist, responseString[i].title)){
-				result.track = this.cleanTitle(artist, responseString[i].title);
+		var results = new Array();
+		if (responseString != null){
+			for (i=0;i<responseString.length;i++){
+				var result = new Object();
+				result.artist = artist;
+				if (this.cleanTitle(artist, responseString[i].title)){
+					result.track = this.cleanTitle(artist, responseString[i].title);
+				}
+				else {
+					continue;
+				}
+				result.album = "";
+				result.year = responseString[i].release_year;
+				result.source = "SoundCloud";
+				result.url = responseString[i].stream_url+".json?client_id=TiNg2DRYhBnp01DA3zNag";
+				result.mimetype = "audio/mpeg";
+				result.bitrate = 128;
+				result.duration = responseString[i].duration/1000;
+				result.score = 1.00;
+				results.push(result);
 			}
-			else {
-				continue;
-			}
-			result.year = responseString[i].release_year;
-			result.source = "SoundCloud";
-			result.url = responseString[i].stream_url+".json?client_id=TiNg2DRYhBnp01DA3zNag";
-			result.mimetype = "audio/mpeg";
-			result.bitrate = 128;
-			result.duration = responseString[i].duration/1000;
-			result.score = 1.00;
-			results.push(result);
+			var return1 =  {
+				qid: qid,
+				results: results
+			};
+			Tomahawk.log("Resolved to: " + JSON.stringify(return1));
+			return return1;
 		}
-		var return1 =  {
-			qid: qid,
-			results: results
-		};
-		return return1;
-	}
-	else{
-		return;
-	}
+		else{
+			return;
+		}
 	},
 	resolve: function( qid, artist, album, title )
 	{
-		var searchResult = this.apiCall(artist, title);
-		Tomahawk.log("searchresult is " + searchResult);
-		return this.parseSongResponse( qid, artist, searchResult );
+		var resolveResult = this.apiCall( artist, title );
+		return this.parseSongResponse( qid, artist, resolveResult );
 	},
 	search: function( qid, searchString )
 	{
-		return this.resolve( qid, "", "", searchString );
+		// Soundcloud can't return an artist thus search is disabled for this resolver, sorry
+		return this.parseSongResponse(qid, "", "");
 	}
 });
 

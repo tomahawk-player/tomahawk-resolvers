@@ -49,17 +49,18 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver,
 			qid: qid,
 			results: results
 		};
+		Tomahawk.log("Resolved to: " + JSON.stringify(return1));
 		return return1;
 	},
 	resolve: function( qid, artist, album, title )
 	{
-		var searchResult = this.apiCall(artist, title);
-		return this.parseSongResponse( qid, searchResult );
+		var resolveResult = this.apiCall(artist, title);
+		return this.parseSongResponse( qid, resolveResult );
 	},
 	search: function( qid, searchString )
 	{
-		//var searchResult = this.apiCall(searchString);
-		this.resolve( qid, searchString, "", "" );
+		// Not yet possible, sorry
+		this.resolve( qid, "", "", "" );
 	}
 });
 
