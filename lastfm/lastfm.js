@@ -21,15 +21,20 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver,
 	parseSongResponse: function( qid, responseString )
 	{
 		var results = new Array();
-		if (typeof responseString != "undefined" && typeof responseString.track != "undefined" && responseString.track.freedownload)
+		if (responseString != undefined && 
+			responseString.track != undefined && 
+			responseString.track.freedownload)
 		{
 			var result = new Object();
 			result.artist = responseString.track.artist.name;
 			result.track = responseString.track.name;
-			if (typeof responseString.track.album != "undefined"){
+			if (responseString.track.album != undefined){
 				result.album = responseString.track.album.title;
 			}
-			if (typeof responseString.track.year != "undefined"){
+			else {
+				result.album = "";
+			}
+			if (responseString.track.year != undefined){
 				result.year = responseString.track.year;
 			}
 			result.source = this.settings.name;
@@ -44,17 +49,18 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver,
 			qid: qid,
 			results: results
 		};
+		Tomahawk.log("Resolved to: " + JSON.stringify(return1));
 		return return1;
 	},
 	resolve: function( qid, artist, album, title )
 	{
-		var searchResult = this.apiCall(artist, title);
-		return this.parseSongResponse( qid, searchResult );
+		var resolveResult = this.apiCall(artist, title);
+		return this.parseSongResponse( qid, resolveResult );
 	},
 	search: function( qid, searchString )
 	{
-		//var searchResult = this.apiCall(searchString);
-		return this.resolve( qid, searchString, "", "" );
+		// Not yet possible, sorry
+		this.resolve( qid, "", "", "" );
 	}
 });
 
