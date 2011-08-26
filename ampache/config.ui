@@ -66,7 +66,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="ampacheLabel">
        <property name="text">
-        <string>Ampache</string>
+         <string>Server URL</string>
        </property>
       </widget>
      </item>
