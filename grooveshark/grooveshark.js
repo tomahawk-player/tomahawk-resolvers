@@ -67,7 +67,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver,
                 }
             }
         }
-        Tomahawk.log("Post Body: " + body);
+        // Tomahawk.log("Post Body: " + body);
         xmlHttpRequest.send(body);
     },
 
@@ -89,8 +89,6 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver,
         } else if( !this.countryId) {
             this.getCountry();
         }
-        
-        this.getCountry();
     },
     
     getSessionId: function() {
