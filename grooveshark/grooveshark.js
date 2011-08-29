@@ -1,41 +1,9 @@
-// : Start a session using startSession and then use authenticate to authenticate your user.
-// Verify that they are an Anywhere user and then proceed. Be sure to keep the sessionID
-//    generated from startSession and send it along with all stream requests.
-// 1. get session id
-// 2. get country id
-// 3. search for song getSongSearchResultsEx to get songId
-// 4. Request StreamKey
-// 5. Make a request to getStreamKeyStreamServer or getSubscriberStreamKey with your sessionID, songID and country.
-//     You can use lowBitrate=1 to get a low bitrate file, otherwise send lowBitrate=0.
-
 var GroovesharkResolver = Tomahawk.extend(TomahawkResolver,
 {
     secret : "499ca17500cd8e20afb1613c2d264e7e",
     apiKey : "tomahawkplayer",
     sessionId : "",
     streamKeys: [],
-    
-        // 
-        // cleanTitle: function(artist, title){
-        //  if (title.search("\\[|\\]|\\(|\\)|\\*|\\+|\\?|\\/") != 1){
-        //      title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+|\\?|\\/", "gi"), "");
-        //  }
-        //  var stripArtist = new RegExp("\\W*[by]*[the]*\\W*"+artist+"\\W*", "gi");
-        //  var stripAppendingQuotes = new RegExp("\"", "gi");
-        //  if (title.search(new RegExp(artist, "gi")) != -1 && 
-        //      title.search(new RegExp(title, "gi")) != 1){
-        //      if (title.search(stripArtist) != -1){
-        //          title = title.replace(stripArtist, "").trim();
-        //          if (title.search(stripAppendingQuotes) == title.length - 1  && title.search(stripAppendingQuotes) != 0){
-        //              title = title.replace(stripAppendingQuotes, "").trim();
-        //          }
-        //          if (title.search(stripAppendingQuotes) != title.length - 1  && title.search(stripAppendingQuotes) == 0){
-        //              title = title.replace(stripAppendingQuotes, "").trim();
-        //          }
-        //      }
-        //      return title;
-        //  }
-        // },
         
 	settings:
 	{
@@ -228,8 +196,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver,
     },
 	search: function( qid, searchString )
 	{
-		// Soundcloud can't return an artist thus search is disabled for this resolver, sorry
-        // return this.parseSongResponse(qid, "", "");
+        //TODO
 	}
 });
 
