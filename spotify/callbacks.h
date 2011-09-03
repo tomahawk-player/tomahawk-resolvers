@@ -58,7 +58,6 @@ static void SP_CALLCONV loggedIn(sp_session *session, sp_error error)
     switch (error) {
         case SP_ERROR_BAD_API_VERSION:
         case SP_ERROR_API_INITIALIZATION_FAILED:
-        case SP_ERROR_RESOURCE_NOT_LOADED:
         case SP_ERROR_BAD_APPLICATION_KEY:
         case SP_ERROR_CLIENT_TOO_OLD:
         case SP_ERROR_BAD_USER_AGENT:
