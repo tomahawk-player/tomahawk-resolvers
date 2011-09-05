@@ -518,7 +518,11 @@ void SpotifyResolver::login()
 {
     if( !m_username.isEmpty() && !m_pw.isEmpty() ) { // log in
         qDebug() << "Logging in with username:" << m_username;
+#if SPOTIFY_API_VERSION > 8
         sp_session_login(m_session, m_username.toLatin1(),  m_pw.toLatin1(), false);
+#else
+        sp_session_login(m_session, m_username.toLatin1(),  m_pw.toLatin1());
+#endif
     }
 }
 
