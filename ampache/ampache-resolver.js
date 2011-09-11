@@ -33,14 +33,14 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
         var userConfig = this.getUserConfig();
         if( !userConfig.username || !userConfig.password || !userConfig.ampache )
         {
-            alert("Ampache Resolver not properly configured!");
+            Tomahawk.log("Ampache Resolver not properly configured!");
             return;
         }
 
         // don't do anything if we already have a valid auth token
         if( window.sessionStorage["ampacheAuth"] )
         {
-            alert("Reusing auth token from sessionStorage");
+            Tomahawk.log("Ampache resolver not using auth token from sessionStorage");
             return window.sessionStorage["ampacheAuth"];
         }
 
@@ -70,7 +70,6 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
         // inform the user if something went wrong
         if( !this.auth )
         {
-            alert( "No valid response from server, check user, password and url!" );
             Tomahawk.log("INVALID HANDSHAKE RESPONSE: " + handshakeResult);
         }
 
