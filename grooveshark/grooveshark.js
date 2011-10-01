@@ -3,11 +3,12 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     apiKey: "tomahawkplayer",
     sessionId: "",
     streamKeys: [],
+    ip: "",
 
     settings: {
         name: 'Grooveshark',
-        weight: 85,
-        timeout: 5
+        weight: 30,
+        timeout: 20
     },
     getConfigUi: function () {
         var uiData = Tomahawk.readBase64("config.ui");
@@ -36,6 +37,15 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
             this.init();
         }
+    },
+    getClientIP: function() {
+        var that = this;
+        Tomahawk.asyncRequest( "http://jsonip.appspot.com/", function(xhr) {
+            var result = JSON.parse(xhr.responseText);
+            if (result.ip) {
+                that.ip = result.ip;
+            }
+        });
     },
     apiCallSync: function (methodName, args) {
         var payload = {
@@ -85,8 +95,10 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
     doPost: function (url, body, callback) {
         var xmlHttpRequest = new XMLHttpRequest();
+        //Tomahawk.log("DOing post:" + url + ", with body:" + body);
         xmlHttpRequest.open('POST', url, true);
         xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
+        xmlHttpRequest.setRequestHeader("X-Client-IP", this.ip);
         xmlHttpRequest.onreadystatechange = function () {
 
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
@@ -115,9 +127,9 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         this.sessionId = window.localStorage['sessionId'];
         this.countryId = window.localStorage['countryId'];
 
-        Tomahawk.log("Adding handler.");
+        this.getClientIP();
+
         Tomahawk.addCustomUrlHandler( "groove", "getStreamUrl" );
-        Tomahawk.log("Done Adding handler.");
         
         if (!this.sessionId) {
             this.getSessionId();
@@ -146,7 +158,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         };
         var that = this;
         this.apiCall("authenticate", params, function (xhr) {
-            Tomahawk.log("Got result of authenticate: " + xhr.responseText);
+            //Tomahawk.log("Got result of authenticate: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (ret.result.success) {
                 if (!ret.result.IsAnywhere) {
@@ -173,7 +185,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     getStreamUrl: function (ourUrl) {
         var songId = ourUrl.replace("groove://", "");
         
-        Tomahawk.log("Got factory function called to get grooveshark streaming url from:" + ourUrl + " and songId:" + songId);
+        //Tomahawk.log("Got factory function called to get grooveshark streaming url from:" + ourUrl + " and songId:" + songId);
         var params = {
             songID: songId,
             country: JSON.parse(this.countryId),
@@ -181,7 +193,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         };
         
         var streamResult = this.apiCallSync('getSubscriberStreamKey', params );
-        Tomahawk.log("Got song stream server: " + streamResult);
+        //Tomahawk.log("Got song stream server: " + streamResult);
         var ret = JSON.parse(streamResult);
         if (ret.errors) {
             Tomahawk.log("Got error doing getSubscriberStreamKey api call: " + streamResult);
@@ -208,7 +220,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         };
         var that = this;
         this.apiCall("getSongSearchResults", params, function (xhr) {
-            Tomahawk.log("Got song search results: " + xhr.responseText);
+            //Tomahawk.log("Got song search results: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (!ret || !ret.result || !ret.result.songs) return;
             var songs = ret.result.songs;
