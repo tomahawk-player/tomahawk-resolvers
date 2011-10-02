@@ -54,6 +54,7 @@ class ConsoleWatcher;
 class QSocketNotifer;
 
 typedef QSharedPointer< SpotifyIODevice > spotifyiodev_ptr;
+typedef QHash<QString, QString > CacheEntry;
 
 class SpotifyResolver : public QCoreApplication
 {
@@ -63,7 +64,7 @@ public:
     virtual ~SpotifyResolver();
 
     void setup();
-    
+
     void setLoggedIn( bool loggedIn );
 
     void sendNotifyThreadSignal();
@@ -97,12 +98,15 @@ public:
 
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
-    
+
 private slots:
     void notifyMainThread();
     void playdarMessage( const QVariant& );
     void initSpotify();
-    
+
+    void loadCache();
+    void saveCache();
+
 signals:
     void notifyMainThreadSignal();
 
@@ -132,6 +136,9 @@ private:
 
     QHash< QString, sp_link* > m_trackLinkMap;
 
+    bool m_dirty;
+    CacheEntry m_cachedTrackLinkMap;
+
     QByteArray m_apiKey;
     QByteArray m_configWidget;
     QString m_username;
@@ -139,5 +146,6 @@ private:
     bool m_highQuality;
 };
 
+Q_DECLARE_METATYPE( CacheEntry )
 
 #endif // tomahawkspotify_H

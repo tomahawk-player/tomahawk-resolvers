@@ -150,6 +150,32 @@ void setupLogfile()
     qInstallMsgHandler( LogHandler );
 }
 
+inline QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
+{
+    out << (quint32)cache.count();
+    foreach( const QString& key, cache.keys() )
+    {
+
+        out << key << cache[ key ];
+    }
+    return out;
+}
+
+
+inline QDataStream& operator>>(QDataStream& in, CacheEntry& cache)
+{
+    quint32 count = 0;
+    in >> count;
+    for ( uint i = 0; i < count; i++ )
+    {
+        QString key, val;
+        in >> key;
+        in >> val;
+        cache[ key ] = val;
+    }
+    return in;
+}
+
 SpotifyResolver::SpotifyResolver( int argc, char** argv )
     : QCoreApplication( argc, argv )
     , m_session( 0 )
@@ -164,6 +190,10 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
     setApplicationVersion( QLatin1String( "0.1" ) );
+
+    qRegisterMetaType<CacheEntry>( "CacheEntry" );
+    qRegisterMetaTypeStreamOperators<CacheEntry>("CacheEntry");
+
 }
 
 
@@ -217,7 +247,14 @@ void SpotifyResolver::initSpotify()
     qDebug() << "Starting HTTPd on" << m_httpS.listenInterface().toString() << m_httpS.port();
     m_httpS.start();
 
+    m_dirty = false;
+    QTimer* t = new QTimer( this );
+    t->setInterval( 5000 );
+    connect( t, SIGNAL( timeout() ), this, SLOT( saveCache() ) );
+    t->start();
+
     loadSettings();
+    loadCache();
     sendConfWidget();
 
     // testing
@@ -291,9 +328,9 @@ void SpotifyResolver::notifyMainThread()
 {
     int timeout;
     do {
-        qDebug() << QThread::currentThreadId() << "notifying main thread";
+//         qDebug() << QThread::currentThreadId() << "notifying main thread";
         sp_session_process_events( m_session, &timeout );
-        qDebug() << QThread::currentThreadId()  << "done";
+//         qDebug() << QThread::currentThreadId()  << "done";
     } while( !timeout );
     QTimer::singleShot( timeout, this, SLOT( notifyMainThread() ) );
 }
@@ -351,7 +388,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
             QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
             return;
         }
-        
+
         if ( m.value( "proxytype" ) == "socks5" ) {
             if ( m.value( "proxypass" ).toString().isEmpty() )
             {
@@ -414,18 +451,63 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
     sp_search_create( m_session, query.toUtf8().data(), 0, 25, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, new QString(qid) );
 }
 
+void
+SpotifyResolver::loadCache()
+{
+    QSettings s;
+    m_cachedTrackLinkMap = s.value( "cachedSIDs" ).value<CacheEntry>();
+
+#ifdef Q_WS_WIN
+    // Don;t support registry on windows, can't cehck file size obv.
+    if ( s.format() == QSettings::NativeFormat )
+        return;
+#endif
+
+    if ( QFileInfo( s.fileName() ).size() > 10 * LOGFILE_SIZE )
+    {
+        s.remove( "cachedSIDs" );
+    }
+}
+
+
+void
+SpotifyResolver::saveCache()
+{
+    if ( !m_dirty )
+        return;
+
+    QSettings s;
+    s.setValue( "cachedSIDs", QVariant::fromValue<CacheEntry>( m_cachedTrackLinkMap ) );
+}
+
 
 QString SpotifyResolver::addToTrackLinkMap(sp_link* link)
 {
     QString uid = QUuid::createUuid().toString().replace( "{", "" ).replace( "}", "" ).replace( "-", "" );
     m_trackLinkMap.insert( uid, link );
 
+    QSettings s;
+    char url[1024];
+    sp_link_as_string( link, url, sizeof( url ) );
+
+    m_cachedTrackLinkMap[ uid ] = url;
+    m_dirty = true;
     return uid;
 }
 
-sp_link* SpotifyResolver::linkFromTrack(const QString& linkStr)
+sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
 {
-    return m_trackLinkMap.value( linkStr, 0 );
+    if ( sp_link* l = m_trackLinkMap.value( uid, 0 ) )
+        return l;
+
+    QString linkStr = m_cachedTrackLinkMap.value( uid );
+    if (!linkStr.isEmpty() )
+    {
+        sp_link* l = sp_link_create_from_string( linkStr.toAscii() );
+        m_trackLinkMap[ uid ] = l;
+        return l;
+    }
+    return 0;
 }
 
 void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
@@ -435,7 +517,7 @@ void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
 {
-   return m_trackLinkMap.contains( linkStr );
+   return m_trackLinkMap.contains( linkStr ) || m_cachedTrackLinkMap.contains( linkStr );
 }
 
 QMutex& SpotifyResolver::dataMutex()
@@ -450,7 +532,7 @@ spotifyiodev_ptr SpotifyResolver::getIODeviceForNewTrack( uint durMsec )
         m_iodev->setDurationMSec( durMsec );
         m_iodev->open( QIODevice::ReadWrite );
 
-        qDebug() << QThread::currentThreadId() << "Creating SpotifyIODevice for track..:" << m_iodev.data();
+        qDebug() << QThread::currentThreadId() << "Creating SpotifyIODevice for track..:" << m_iodev.data() << m_iodev->thread()->currentThreadId();
     }
 
     return m_iodev;
@@ -477,7 +559,7 @@ void SpotifyResolver::endOfTrack()
 {
     qDebug() << QThread::currentThreadId() << "And stopping track";
     if( !m_iodev.isNull() ) {
-        qDebug() << "Stopping track and closign iodev!";
+        qDebug() << "Stopping track and closign iodev! from thread with other:" << QThread::currentThreadId() << "and iodev:" << m_iodev->thread()->currentThreadId();
         m_iodev->close();
         m_iodev.clear();
 
