@@ -9,20 +9,54 @@ var DilandauResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5,
         strictMatch: true
     },
-
+	parseISODuration: function( duration ) 
+	{
+		  var splitDurationRegex_ = new RegExp(
+		    '^(-)?P(?:(\\d+)Y)?(?:(\\d+)M)?(?:(\\d+)D)?' +
+		    '(T(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+(?:\\.\\d+)?)S)?)?$');
+		  
+		  Tomahawk.log(typeof(duration));
+		  var parts = duration.match(splitDurationRegex_);
+		  if (!parts) {
+		    return null;
+		  }
+		
+		  var timeEmpty = !(parts[6] || parts[7] || parts[8]);
+		  var dateTimeEmpty = timeEmpty && !(parts[2] || parts[3] || parts[4]);
+		  if (dateTimeEmpty || timeEmpty && parts[5]) {
+		    return 0;
+		  }
+		
+		  var negative = parts[1];
+		  var years = parseInt(parts[2], 10) || 0;
+		  var months = parseInt(parts[3], 10) || 0;
+		  var days = parseInt(parts[4], 10) || 0;
+		  var hours = parseInt(parts[6], 10) || 0;
+		  var minutes = parseInt(parts[7], 10) || 0;
+		  var seconds = parseFloat(parts[8]) || 0;
+		  return negative ? (-days * 24 * 3600 - hours * 3600 - minutes*60 -seconds) :
+		                    (days * 24 * 3600 + hours * 3600 + minutes*60 + seconds);
+		
+	},
     handleResponse: function(qid, artist, album, title) {
         var that = this;
         return function (xhr) {
             var matches = [];
             var xmlString = xhr.responseText;
-            xmlString.replace(/<a class="button download_button" title="[^"]*"  href="([^"]*)"/g, function () {
-                matches.push(Array.prototype.slice.call(arguments, 1, 2));
-            });
-
-            var matchesTitle = [];
-            xmlString.replace(/<h2 class="title_song item" title="([^"]*)"/g, function () {
-                matchesTitle.push(Array.prototype.slice.call(arguments, 1, 2));
-            });
+			xmlString.replace(/<a class="button tip download_button" title="[^"]*"  href="([^"]*)"/g, function() {
+				matches.push(Array.prototype.slice.call(arguments,1,2));
+			});
+			
+			var matchesTitle = [];
+			xmlString.replace(/<h2 class="title_song" title="([^"]*)"/g, function() {
+				matchesTitle.push(Array.prototype.slice.call(arguments,1,2));
+			});
+			
+			//TODO duration are not yet accurate on dilandau
+			//var matchesDuration = [];
+			//xmlString.replace(/<meta itemprop="duration" content="([^"]*)"/g, function() {
+			//	matchesDuration.push(Array.prototype.slice.call(arguments,1,2));
+			//});
 
             var results = [];
             if (matches.length > 0 && matches.length == matchesTitle.length) {
@@ -31,12 +65,20 @@ var DilandauResolver = Tomahawk.extend(TomahawkResolver, {
                     var link = matches[i];
                     var dTitle = matchesTitle[i];
                     var dTitleLower = dTitle.toString().toLowerCase();
-
+                    
+                   	var dDuration = 0;
+		            //TODO Currently dilandau duration are not accurate.
+		            //if(matchesDuration.length == matchesTitle.length) {
+		            	//Tomahawk.log(matchesDuration[i]);
+		            	//dDuration = this.parseISODuration(matchesDuration[i].toString());
+		            //}
+		            
                     if (!that.settings.strictMatch || (dTitleLower.indexOf(artist.toLowerCase()) !== -1 && dTitleLower.indexOf(title.toLowerCase()) !== -1)) {
                         var result = {};
                         result.artist = artist;
                         result.album = album;
                         result.track = title;
+                        result.duration - dDuration;
 
                         result.source = that.settings.name;
                         result.url = decodeURI(link);
