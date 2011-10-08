@@ -71,11 +71,9 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
     search: function (qid, searchString) {
-        var return1 = {
-            qid: qid,
-            results: new Array()
-        };
-        return return1;
+    	this.settings.strictMatch = false;
+		this.resolve(qid, "", "", searchString);
+		this.settings.strictMatch = true;
     }
 });
 
