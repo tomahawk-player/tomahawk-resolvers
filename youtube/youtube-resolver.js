@@ -60,7 +60,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                 var d = new Date(Date.parse(myJsonObject.data.items[i].uploaded));
                 result.year = d.getFullYear();
 
-                Tomahawk.log("Getting video url from youtube." );
                 (function(i, qid, result) {
                     var xmlHttpRequest = new XMLHttpRequest();
                     xmlHttpRequest.open('GET', myJsonObject.data.items[i].player['default'], true);
@@ -70,7 +69,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                         }
 
                         count = count - 1;
-                        Tomahawk.log("Got video response from youtube.");
                         if (xmlHttpRequest.status == 200) {
                             result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
                             if (result.url.indexOf("<html>") == -1 ) { // dumb check for bad parsing
@@ -83,7 +81,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
 
 
                         if (count === 0) { // we're done
-                            Tomahawk.log("Sending results back to Tomahawk, with qid:" + qid + "and results:" + results);
+                            //Tomahawk.log("Sending results back to Tomahawk, with qid:" + qid + "and results:" + results);
                             var toReturn = {
                                 results: results,
                                 qid: qid
