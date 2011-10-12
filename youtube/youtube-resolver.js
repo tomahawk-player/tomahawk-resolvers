@@ -39,25 +39,34 @@ function resolve(qid, artist, album, track) {
         }
 
     var decodeurl = function (url) {
-            return unescape(url); /*.replace(/%2C/g, ",").replace(/%20/g, " ").replace(/%3A/g, ":");*/
+        // Some crazy replacement going on overhere! lol
+        return url.replace(/%25252C/g, ",").replace(/%20/g, " ").replace(/%3A/g, ":").replace(/%252F/g, "/").replace(/%253F/g, "?").replace(/%252C/g, ",").replace(/%253D/g, "=").replace(/%2526/g, "&").replace(/%26/g, "&").replace(/%3D/g, "=");
+
         };
 
 
     var parseVideoUrlFromYtPage = function (html) {
-            var magic = "fmt_stream_map=";
+            var magic = "url_encoded_fmt_stream_map=";
             var magicFmt = "18";
-            var magicLimit = "%7C";
+            var magicLimit = "fallback_host";
             var pos = html.indexOf(magic) + magic.length;
             html = html.slice(pos);
             html = html.slice(html.indexOf(magicFmt + magicLimit) + (magic + magicLimit).length);
             finalUrl = html.slice(0, html.indexOf(magicLimit));
-            return "http://" + decodeurl(finalUrl) + "&format=xml";
+            return "http://o-o.preferred." + decodeurl(finalUrl);
         }
 
 
     var results = new Array();
     if (myJsonObject.data.totalItems > 0) {
         for (i = 0; i < myJsonObject.data.totalItems && i < properties.maxResults; i++) {
+
+            // Need some more validation here
+            // This doesnt help it seems, or it just throws the error anyhow, and skips?
+            if(myJsonObject.data.items[i] === undefined)
+                continue;
+            if(myJsonObject.data.items[i].duration === undefined)
+                continue;
             var result = new Object();
             result.artist = artist;
             result.track = track;
@@ -70,6 +79,7 @@ function resolve(qid, artist, album, track) {
             result.duration = myJsonObject.data.items[i].duration;
             result.score = 1.00;
             results.push(result);
+
         }
     }
     var response = new Object();
