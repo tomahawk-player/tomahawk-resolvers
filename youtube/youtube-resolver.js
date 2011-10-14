@@ -71,7 +71,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                         count = count - 1;
                         if (xmlHttpRequest.status == 200) {
                             result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
-                            if (result.url.indexOf("<html>") == -1 ) { // dumb check for bad parsing
+                            if (result.url.indexOf("</body>") == -1 ) { // dumb check for bad parsing
                                 results.push(result);
                             }
                         } else if (xmlHttpRequest.readyState === 4) {
