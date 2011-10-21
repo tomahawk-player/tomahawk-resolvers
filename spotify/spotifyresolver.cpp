@@ -44,6 +44,7 @@
 #include <QUuid>
 #include <QtCore/QTimer>
 #include <QtCore/QFile>
+#include <QDesktopServices>
 #include <qendian.h>
 
 #include <iostream>
@@ -150,7 +151,7 @@ void setupLogfile()
     qInstallMsgHandler( LogHandler );
 }
 
-inline QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
+QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
 {
     out << (quint32)cache.count();
     foreach( const QString& key, cache.keys() )
@@ -162,7 +163,7 @@ inline QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
 }
 
 
-inline QDataStream& operator>>(QDataStream& in, CacheEntry& cache)
+QDataStream& operator>>(QDataStream& in, CacheEntry& cache)
 {
     quint32 count = 0;
     in >> count;
@@ -190,9 +191,6 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
     setApplicationVersion( QLatin1String( "0.1" ) );
-
-    qRegisterMetaType<CacheEntry>( "CacheEntry" );
-    qRegisterMetaTypeStreamOperators<CacheEntry>("CacheEntry");
 
 }
 
@@ -454,18 +452,19 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
 void
 SpotifyResolver::loadCache()
 {
-    QSettings s;
-    m_cachedTrackLinkMap = s.value( "cachedSIDs" ).value<CacheEntry>();
-
-#ifdef Q_WS_WIN
-    // Don;t support registry on windows, can't cehck file size obv.
-    if ( s.format() == QSettings::NativeFormat )
+    QFile f( QDesktopServices::storageLocation( QDesktopServices::CacheLocation ) + "/SpotifyResolver/cache.dat" );
+    if ( !f.open( QIODevice::ReadOnly ) )
         return;
-#endif
+    QDataStream stream( &f );
+//     m_cachedTrackLinkMap = s.value( "cachedSIDs" ).value<CacheEntry>();
 
-    if ( QFileInfo( s.fileName() ).size() > 10 * LOGFILE_SIZE )
+    stream >> m_cachedTrackLinkMap;
+    qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
+    f.close();
+
+    if ( QFileInfo( f.fileName() ).size() > 10 * LOGFILE_SIZE )
     {
-        s.remove( "cachedSIDs" );
+        QFile::remove( f.fileName() );
     }
 }
 
@@ -475,9 +474,23 @@ SpotifyResolver::saveCache()
 {
     if ( !m_dirty )
         return;
+    m_dirty = false;
 
-    QSettings s;
-    s.setValue( "cachedSIDs", QVariant::fromValue<CacheEntry>( m_cachedTrackLinkMap ) );
+    const QString dir = QDesktopServices::storageLocation( QDesktopServices::CacheLocation );
+    QDir d( dir );
+    if ( !d.exists( "SpotifyResolver" ) )
+    {
+        bool ret = d.mkpath( "SpotifyResolver/" );
+    }
+
+    QFile f( QDesktopServices::storageLocation( QDesktopServices::CacheLocation ) + "/SpotifyResolver/cache.dat" );
+    if ( !f.open( QIODevice::WriteOnly ) )
+        return;
+
+    QDataStream stream( &f );
+
+    stream << m_cachedTrackLinkMap;
+    f.close();
 }
 
 

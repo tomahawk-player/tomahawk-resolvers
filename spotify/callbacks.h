@@ -204,7 +204,7 @@ static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
     QVariantList results;
 
     // TODO search by popularity!
-//     qDebug() << "Got num results:" << sp_search_num_tracks( result );
+     qDebug() << "Got num results:" << sp_search_num_tracks( result );
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
         int num = qMin( sp_search_num_tracks( result ), 25 );
         for( int i = 0; i < num; i++ ) {

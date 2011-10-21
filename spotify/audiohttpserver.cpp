@@ -70,10 +70,36 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
     }
     if( !sp_track_is_loaded( track ) ) {
         qWarning() << QThread::currentThreadId() << "uh oh... track not loaded yet! Asked for:" << sp_track_name( track );
-        sendErrorResponse( event );
+        m_savedEvent = event;
+        m_savedTrack = track;
+        QTimer::singleShot( 250, this, SLOT( checkForLoaded() ) );
+//         sendErrorResponse( event );
         return;
+//         sendErrorResponse( event );
+//         while ( !sp_track_is_loaded( track ) ) {
+//             SleepThread::msleep( 250 );
+//             qDebug() << "zzz";
+
+//         return;
+    } else {
+        startStreamingResponse( event, track );
+    }
+}
+
+void AudioHTTPServer::checkForLoaded()
+{
+//     qDebug() << "Checking...";
+    if( !sp_track_is_loaded( m_savedTrack ) ) {
+//         qWarning() << QThread::currentThreadId() << "uh oh... track not loaded yet! Asked for:" << sp_track_name( m_savedTrack );
+        QTimer::singleShot( 250, this, SLOT( checkForLoaded() ) );
+    } else {
+        startStreamingResponse( m_savedEvent, m_savedTrack );
     }
 
+}
+
+void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_track* track )
+{
     // yay we gots a track
     qDebug() << QThread::currentThreadId() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
     uint duration = sp_track_duration( track );
@@ -96,8 +122,8 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
     wpe->streaming = true;
     wpe->contentType = "audio/basic";
     postEvent( wpe );
-
 }
+
 
 AudioHTTPServer::~AudioHTTPServer()
 {
