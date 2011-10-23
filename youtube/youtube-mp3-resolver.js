@@ -90,7 +90,7 @@ var YouTubeResolver = Tomahawk.extend(TomahawkResolver,
 		    	}
 		  	}	
 	    }
-	},
+	}/*,
 	search: function( qid, searchString )
 	{
 		var return1 =  {
@@ -98,7 +98,7 @@ var YouTubeResolver = Tomahawk.extend(TomahawkResolver,
 			results: new Array()
 		};
 		return return1;	
-	}
+	}*/
 });
 
 Tomahawk.resolver.instance = YouTubeResolver;
