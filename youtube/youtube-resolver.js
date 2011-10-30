@@ -4,7 +4,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
     {
             name: 'Youtube',
             weight: 70,
-            timeout: 10
+            timeout: 15
+    },
+    init: function() {
+        String.prototype.capitalize = function(){
+            return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
+        };
     },
     decodeUrl: function (url) {
         // Some crazy replacement going on overhere! lol
@@ -107,7 +112,20 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
     },
     search: function( qid, searchString )
     {
-        this.searchYoutube(qid, searchString, 20, "", "");
+        // First we get the artist name out of the search string with echonest's artist/extract function
+        // HACK because Echo Nest is case-sensitive for artist/extract. we capitalize all words in the query just as a precaution. maybe a bad idea..
+        // NOTE that this can often be slow, so the results can time out. However, Tomahawk can't deal with results without artists, so we *need an artist, so we try anyway
+        var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=familiarity-desc&text=" + escape(searchString.capitalize());
+        var that = this;
+        Tomahawk.asyncRequest(url, function(xhr) {
+            var response = JSON.parse(xhr.responseText).response;
+            var artist = "";
+            Tomahawk.log("Got echonest artist/extract response: " + xhr.responseText);
+            if (response && response.artists && response.artists.length > 0) {
+                artist = response.artists[1];
+                that.searchYoutube(qid, searchString, 20, "", artist);
+            }
+        });
     }
 });
 
