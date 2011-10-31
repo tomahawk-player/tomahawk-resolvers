@@ -1,67 +1,52 @@
-var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
-	
-	getConfigUi: function () {
-		var uiData = Tomahawk.readBase64("config.ui");
-		return {
-			"widget": uiData,
-			fields: [{
-				name: "includeCovers",
-				widget: "covers",
-				property: "checked"
-			}, {
-				name: "includeRemixes",
-				widget: "remixes",
-				property: "checked"
-			}, {
-				name: "includeLive",
-				widget: "live",
-				property: "checked"
-			}],
-			images: [{
-				"soundcloud.png" : Tomahawk.readBase64("soundcloud.png")
-			}]
-		};
-	},
-
-	newConfigSaved: function () {
-		var userConfig = this.getUserConfig();
-		if((userConfig.includeCovers != this.includeCovers) || (userConfig.includeRemixes != this.includeRemixes) || (userConfig.includeLive != this.includeLive)) {
-			this.includeCovers = userConfig.includeCovers;
-			this.includeRemixes = userConfig.includeRemixes;
-			this.includeLive = userConfig.includeLive;
+var SoundcloudResolver = Tomahawk.extend(TomahawkResolver,
+{
+	cleanTitle: function(artist, title){
+		if (title.search("\\[|\\]|\\(|\\)|\\*|\\+|\\?|\\/") != 1){
+			title = title.replace(new RegExp("\\[|\\]|\\(|\\)|\\*|\\+|\\?|\\/", "gi"), "");
+		}
+		var stripArtist = new RegExp("\\W*[by]*[the]*\\W*"+artist+"\\W*", "gi");
+		var stripAppendingQuotes = new RegExp("\"", "gi");
+		if (title.search(new RegExp(artist, "gi")) != -1 && 
+			title.search(new RegExp(title, "gi")) != 1){
+			if (title.search(stripArtist) != -1){
+				title = title.replace(stripArtist, "").trim();
+				if (title.search(stripAppendingQuotes) == title.length - 1  && title.search(stripAppendingQuotes) != 0){
+					title = title.replace(stripAppendingQuotes, "").trim();
+				}
+				if (title.search(stripAppendingQuotes) != title.length - 1  && title.search(stripAppendingQuotes) == 0){
+					title = title.replace(stripAppendingQuotes, "").trim();
+				}
+			}
+			return title;
 		}
 	},
-	
-	settings: {
+	settings:
+	{
 		name: 'Soundcloud',
 		weight: 85,
 		timeout: 5
 	},
-
-	getTrack: function (trackTitle, origTitle) {
-		if (this.includeCovers == "false" && trackTitle.search(/cover/i) != -1 && origTitle.search(/cover/i) == -1){
-			return null;
+	apiCall: function(artist, track)
+	{
+		artist = encodeURIComponent(artist).replace(/\%20/g,'\+').trim();
+		track = encodeURIComponent(track).replace(/\%20/g,'\+').trim();
+		var soundcloudUrl = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q="+artist+"+"+track;
+		try {
+			return JSON.parse(Tomahawk.syncRequest(soundcloudUrl));
 		}
-		if (this.includeRemixes == "false" && trackTitle.search(/remix/i) != -1 && origTitle.search(/remix/i) == -1){
+		catch (e){
 			return null;
-		}
-		if (this.includeLive == "false" && trackTitle.search(/live/i) != -1 && origTitle.search(/live/i) == -1){
-			return null;
-		}
-		else {
-			return trackTitle;
 		}
 	},
-
-	parseSongResponse: function (qid, artist, title, responseString) {
-		var userConfig = this.getUserConfig();
+	parseSongResponse: function( qid, artist, responseString )
+	{
 		var results = new Array();
-		if (responseString !== null) {
-			for (i = 0; i < responseString.length; i++) {
+		if (responseString != null){
+			for (i=0;i<responseString.length;i++){
 				var result = new Object();
 				result.artist = artist;
-				if (responseString[i].title != undefined && responseString[i].title.search(new RegExp(artist, "gi")) != -1 && responseString[i].title.search(new RegExp(title, "gi")) != -1 && this.getTrack(responseString[i].title, title)){
-					result.track = title;
+				if (this.cleanTitle(artist, responseString[i].title)){
+					result.track = this.cleanTitle(artist, responseString[i].title);
 				}
 				else {
 					continue;
@@ -69,33 +54,31 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 				result.album = "";
 				result.year = responseString[i].release_year;
 				result.source = "SoundCloud";
-				result.url = responseString[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
+				result.url = responseString[i].stream_url+".json?client_id=TiNg2DRYhBnp01DA3zNag";
 				result.mimetype = "audio/mpeg";
 				result.bitrate = 128;
-				result.duration = responseString[i].duration / 1000;
+				result.duration = responseString[i].duration/1000;
 				result.score = 1.00;
 				results.push(result);
 			}
-			var return1 = {
+			var return1 =  {
 				qid: qid,
 				results: results
 			};
-			Tomahawk.addTrackResults(return1);
+			Tomahawk.log("Resolved to: " + JSON.stringify(return1));
+			return return1;
+		}
+		else{
+			return;
 		}
 	},
-
-	resolve: function (qid, artist, album, title) {
-		artist = encodeURIComponent(artist).replace(/\%20/g, '\+').trim();
-		track = encodeURIComponent(title).replace(/\%20/g, '\+').trim();
-		var soundcloudUrl = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + artist + "+" + track;
-		var that = this;
-		Tomahawk.asyncRequest(soundcloudUrl, function(xhr) {
-			var resp = JSON.parse(xhr.responseText);
-			that.parseSongResponse(qid, artist, title, resp);
-		});
+	resolve: function( qid, artist, album, title )
+	{
+		var resolveResult = this.apiCall( artist, title );
+		return this.parseSongResponse( qid, artist, resolveResult );
 	},
-
-	search: function (qid, searchString) {
+	search: function( qid, searchString )
+	{
 		// Soundcloud can't return an artist thus search is disabled for this resolver, sorry
 		return this.parseSongResponse(qid, "", "");
 	}
