@@ -31,21 +31,28 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
         apiQuery = apiQuery.replace(/\%20/g, '\+');
 
         var that = this;
-        Tomahawk.log("Doing async request:" + apiQuery + "title:" + title + " artist:" + artist + "qid:" + qid);
+        Tomahawk.log("Doing async request:" + apiQuery + " title: " + title + " artist: " + artist + " qid: " + qid);
         Tomahawk.asyncRequest(apiQuery, function(xhr) {
             var myJsonObject = JSON.parse(xhr.responseText);
-            if (myJsonObject.data.totalItems === 0)
-                return;
+            if (myJsonObject.data.totalItems === 0){
+		return;
+	    }
 
             var count = limit;
             var results = [];
             for (i = 0; i < myJsonObject.data.totalItems && i < limit; i++) {
                 // Need some more validation here
                 // This doesnt help it seems, or it just throws the error anyhow, and skips?
-                if(myJsonObject.data.items[i] === undefined)
+                if(myJsonObject.data.items[i] === undefined){
                     continue;
-                if(myJsonObject.data.items[i].duration === undefined)
+		}
+                if(myJsonObject.data.items[i].duration === undefined){
                     continue;
+		}
+		// Check whether the artist is in the title, discard otherwise -Thierry
+		if (myJsonObject.data.items[i].title.search(new RegExp(artist, "gi")) === -1) {
+			continue;
+		}
                 var result = new Object();
                 if (artist !== "") {
                     result.artist = artist;
@@ -107,7 +114,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
         if (title !== "") {
             query += encodeURIComponent(title);
         }
-        Tomahawk.log("Resolving:" + qid + " :" + title + " - " + artist);
+        Tomahawk.log("Resolving: " + qid + ": " + title + " - " + artist);
         this.searchYoutube(qid, query, 1, title, artist);
     },
     search: function( qid, searchString )
