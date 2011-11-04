@@ -54,12 +54,12 @@ var DilandauResolver = Tomahawk.extend(TomahawkResolver, {
             //  matchesDuration.push(Array.prototype.slice.call(arguments,1,2));
             //});
             var results = [];
-            var limit = matches.length <= 10 ? 9 : matches.length;
-            var total = limit;
-            var count = 0;
+            var limit = 5; // how many checks we should do
+            var current = 0; // how many valid urls we have tried to check
+            var count = 0; // how many checks we've received results for
             if (matches.length > 0 && matches.length == matchesTitle.length) {
                 // walk through the results and store it in 'results'
-                for (var i = 0; i < limit; i++) {
+                for (var i = 0; i < matches.length; i++) {
                     var link = matches[i];
                     var dTitle = matchesTitle[i];
                     var dTitleLower = dTitle.toString().toLowerCase();
@@ -71,6 +71,10 @@ var DilandauResolver = Tomahawk.extend(TomahawkResolver, {
                     //dDuration = this.parseISODuration(matchesDuration[i].toString());
                     //}
                     if (!that.settings.strictMatch || (dTitleLower.indexOf(artist.toLowerCase()) !== -1 && dTitleLower.indexOf(title.toLowerCase()) !== -1)) {
+                        current = current + 1;
+                        if (current > limit) // this is it
+                            break;
+
                         var result = {};
                         result.artist = artist;
                         result.album = album;
