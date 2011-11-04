@@ -4,16 +4,6 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
         weight: 85,
         timeout: 5
     },
-    apiCall: function (artist, track) {
-        artist = encodeURIComponent(artist).replace(/\%20/g, '\+').trim();
-        track = encodeURIComponent(track).replace(/\%20/g, '\+').trim();
-        var lastfmUrl = "http://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&autocorrect=1&artist=" + artist + "&track=" + track;
-        try {
-            return JSON.parse(Tomahawk.syncRequest(lastfmUrl));
-        } catch (e) {
-            return null;
-        }
-    },
     parseSongResponse: function (qid, responseString) {
         var results = new Array();
         if (responseString != undefined && responseString.track != undefined && responseString.track.freedownload) {
