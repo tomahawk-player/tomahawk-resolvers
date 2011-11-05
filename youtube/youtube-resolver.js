@@ -31,7 +31,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
         apiQuery = apiQuery.replace(/\%20/g, '\+');
 
         var that = this;
-        Tomahawk.log("Doing async request:" + apiQuery + " title: " + title + " artist: " + artist + " qid: " + qid);
         Tomahawk.asyncRequest(apiQuery, function(xhr) {
             var myJsonObject = JSON.parse(xhr.responseText);
             if (myJsonObject.data.totalItems === 0){
@@ -87,13 +86,11 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                                 results.push(result);
                             }
                         } else if (xmlHttpRequest.readyState === 4) {
-                            Tomahawk.log("Failed to do GET request to: " + url);
+                            Tomahawk.log("Failed to do GET request to: " + result.url);
                             Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
                         }
 
-
                         if (count === 0) { // we're done
-                            //Tomahawk.log("Sending results back to Tomahawk, with qid:" + qid + "and results:" + results);
                             var toReturn = {
                                 results: results,
                                 qid: qid
@@ -114,7 +111,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
         if (title !== "") {
             query += encodeURIComponent(title);
         }
-        Tomahawk.log("Resolving: " + qid + ": " + title + " - " + artist);
         this.searchYoutube(qid, query, 1, title, artist);
     },
     search: function( qid, searchString )
@@ -122,14 +118,14 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
         // First we get the artist name out of the search string with echonest's artist/extract function
         // HACK because Echo Nest is case-sensitive for artist/extract. we capitalize all words in the query just as a precaution. maybe a bad idea..
         // NOTE that this can often be slow, so the results can time out. However, Tomahawk can't deal with results without artists, so we *need an artist, so we try anyway
-        var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=familiarity-desc&text=" + escape(searchString.capitalize());
+        searchString = encodeURIComponent(searchString.capitalize())
+        var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + searchString;
         var that = this;
         Tomahawk.asyncRequest(url, function(xhr) {
             var response = JSON.parse(xhr.responseText).response;
             var artist = "";
-            Tomahawk.log("Got echonest artist/extract response: " + xhr.responseText);
             if (response && response.artists && response.artists.length > 0) {
-                artist = response.artists[1];
+                artist = response.artists[0].name;
                 that.searchYoutube(qid, searchString, 20, "", artist);
             }
         });
