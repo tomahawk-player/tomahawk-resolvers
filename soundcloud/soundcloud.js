@@ -39,13 +39,13 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	getTrack: function (trackTitle, origTitle) {
-		if (this.includeCovers == "false" && trackTitle.search(/cover/i) != -1 && origTitle.search(/cover/i) == -1){
+		if (this.includeCovers === "false" && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1){
 			return null;
 		}
-		if (this.includeRemixes == "false" && trackTitle.search(/remix/i) != -1 && origTitle.search(/remix/i) == -1){
+		if (this.includeRemixes === "false" && trackTitle.search(/remix/i) !== -1 && origTitle.search(/remix/i) === -1){
 			return null;
 		}
-		if (this.includeLive == "false" && trackTitle.search(/live/i) != -1 && origTitle.search(/live/i) == -1){
+		if (this.includeLive === "false" && trackTitle.search(/live/i) !== -1 && origTitle.search(/live/i) === -1){
 			return null;
 		}
 		else {
@@ -60,7 +60,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 			for (i = 0; i < responseString.length; i++) {
 				var result = new Object();
 				result.artist = artist;
-				if (responseString[i].title != undefined && responseString[i].title.search(new RegExp(artist, "gi")) != -1 && responseString[i].title.search(new RegExp(title, "gi")) != -1 && this.getTrack(responseString[i].title, title)){
+				if (responseString[i].title !== undefined && responseString[i].title.toLowerCase().indexOf(artist.toLowerCase()) !== -1 && responseString[i].title.toLowerCase().indexOf(title.toLowerCase()) !== -1 && this.getTrack(responseString[i].title, title)){
 					result.track = title;
 				}
 				else {
