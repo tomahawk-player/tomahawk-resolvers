@@ -56,7 +56,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	parseSongResponse: function (qid, artist, title, responseString) {
 		var userConfig = this.getUserConfig();
 		var results = new Array();
-		if (responseString !== null) {
+		if (responseString !== undefined && responseString !== null) {
 			for (i = 0; i < responseString.length; i++) {
 				var result = new Object();
 				result.artist = artist;
