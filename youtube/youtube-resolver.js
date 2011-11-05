@@ -29,27 +29,31 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
     searchYoutube: function( qid, query, limit, title, artist ) {
         var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + query + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
         apiQuery = apiQuery.replace(/\%20/g, '\+');
-
+	
         var that = this;
         Tomahawk.asyncRequest(apiQuery, function(xhr) {
             var myJsonObject = JSON.parse(xhr.responseText);
             if (myJsonObject.data.totalItems === 0){
 		return;
 	    }
-
-            var count = limit;
+	    	    
+            var count = Math.min(limit,myJsonObject.data.totalItems);
             var results = [];
             for (i = 0; i < myJsonObject.data.totalItems && i < limit; i++) {
                 // Need some more validation here
                 // This doesnt help it seems, or it just throws the error anyhow, and skips?
                 if(myJsonObject.data.items[i] === undefined){
-                    continue;
+			count = count -1;
+			continue;
 		}
                 if(myJsonObject.data.items[i].duration === undefined){
-                    continue;
+			count = count -1;
+			continue;
 		}
-		// Check whether the artist is in the title, discard otherwise -Thierry
-		if (myJsonObject.data.items[i].title.search(new RegExp(artist, "gi")) === -1) {
+		
+		// Check whether the artist and title (if set) are in the returned title, discard otherwise -Thierry
+		if (myJsonObject.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && myJsonObject.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
+			count = count -1;
 			continue;
 		}
                 var result = new Object();
@@ -61,7 +65,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                 } else {
                     result.track = myJsonObject.data.items[i].title;
                 }
-
+                
+                Tomahawk.log("Definite title then is: \"" + result.track + "\"");
+		
                 //result.year = ;
                 result.source = that.settings.name;
                 result.mimetype = "video/h264";
@@ -75,21 +81,19 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                     var xmlHttpRequest = new XMLHttpRequest();
                     xmlHttpRequest.open('GET', myJsonObject.data.items[i].player['default'], true);
                     xmlHttpRequest.onreadystatechange = function() {
-                        if (xmlHttpRequest.readyState !== 4) {// We only care when the request is finished
-                            return;
-                        }
-
-                        count = count - 1;
-                        if (xmlHttpRequest.status == 200) {
-                            result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
-                            if (result.url.indexOf("</body>") == -1 ) { // dumb check for bad parsing
-                                results.push(result);
-                            }
-                        } else if (xmlHttpRequest.readyState === 4) {
-                            Tomahawk.log("Failed to do GET request to: " + result.url);
-                            Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
-                        }
-
+			if (xmlHttpRequest.readyState === 4){
+				if(xmlHttpRequest.status === 200) {
+					result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
+					if (result.url.indexOf("</body>") === -1) {
+						results.push(result);
+						count = count - 1;
+					}
+				}
+				else {
+					Tomahawk.log("Failed to do GET request to: " + myJsonObject.data.items[i].player['default']);
+					Tomahawk.log("Error: " + xmlHttpRequest.status + " " + xmlHttpRequest.statusText);
+				}
+			}
                         if (count === 0) { // we're done
                             var toReturn = {
                                 results: results,
@@ -118,7 +122,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
         // First we get the artist name out of the search string with echonest's artist/extract function
         // HACK because Echo Nest is case-sensitive for artist/extract. we capitalize all words in the query just as a precaution. maybe a bad idea..
         // NOTE that this can often be slow, so the results can time out. However, Tomahawk can't deal with results without artists, so we *need an artist, so we try anyway
-        searchString = encodeURIComponent(searchString.capitalize())
+        searchString = encodeURIComponent(searchString.capitalize());
         var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + searchString;
         var that = this;
         Tomahawk.asyncRequest(url, function(xhr) {
