@@ -17,7 +17,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
 
     },
     parseVideoUrlFromYtPage: function (html) {
-        var magic = "url_encoded_fmt_stream_map=";
+        var magic = "url_encoded_fmt_stream_map";
         var magicFmt = "18";
         var magicLimit = "fallback_host";
         var pos = html.indexOf(magic) + magic.length;
@@ -66,8 +66,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver,
                     result.track = myJsonObject.data.items[i].title;
                 }
                 
-                Tomahawk.log("Definite title then is: \"" + result.track + "\"");
-		
                 //result.year = ;
                 result.source = that.settings.name;
                 result.mimetype = "video/h264";
