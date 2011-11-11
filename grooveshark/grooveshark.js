@@ -1,9 +1,10 @@
 var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
-    secret: "499ca17500cd8e20afb1613c2d264e7e",
     apiKey: "tomahawkplayer",
     sessionId: "",
     streamKeys: [],
     ip: "",
+
+    spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
     settings: {
         name: 'Grooveshark',
@@ -62,7 +63,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         var json = JSON.stringify(payload);
         var sig = Tomahawk.hmac(this.secret, json);
         var url = "https://api.grooveshark.com/ws/3.0/?sig=" + sig;
-        
+
         var xmlHttpRequest = new XMLHttpRequest();
         xmlHttpRequest.open('POST', url, false);
         xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
@@ -75,7 +76,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
         }
     },
-    
+
     apiCall: function (methodName, args, callback) {
         var payload = {
             method: methodName
@@ -129,8 +130,10 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.getClientIP();
 
+        this.secret = this.spell("499pn17500pq8r20nso1613p2q264r7r");
+
         Tomahawk.addCustomUrlHandler( "groove", "getStreamUrl" );
-        
+
         if (!this.sessionId) {
             this.getSessionId();
         } else if (!this.countryId) {
@@ -184,14 +187,14 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
     getStreamUrl: function (ourUrl) {
         var songId = ourUrl.replace("groove://", "");
-        
+
         //Tomahawk.log("Got factory function called to get grooveshark streaming url from:" + ourUrl + " and songId:" + songId);
         var params = {
             songID: songId,
             country: JSON.parse(this.countryId),
             lowBitrate: 0
         };
-        
+
         var streamResult = this.apiCallSync('getSubscriberStreamKey', params );
         //Tomahawk.log("Got song stream server: " + streamResult);
         var ret = JSON.parse(streamResult);
@@ -204,7 +207,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
             return url;
         }
-        
+
         return "";
     },
 
