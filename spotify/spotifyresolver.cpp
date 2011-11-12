@@ -222,6 +222,7 @@ void SpotifyResolver::initSpotify()
     qDebug() << "Initializing Spotify";
     const QByteArray storagePath = dataDir().toUtf8();
     const QByteArray configPath = dataDir( true ).toUtf8();
+    const QString tracePath = dataDir() + "/" + "trace.dat";
     m_config.api_version = SPOTIFY_API_VERSION;
     m_config.cache_location = storagePath.constData();
     m_config.settings_location = configPath.constData();
@@ -229,10 +230,11 @@ void SpotifyResolver::initSpotify()
     m_config.application_key_size = m_apiKey.size();
     m_config.user_agent = "tomahawkresolver";
     m_config.callbacks = &SpotifyCallbacks::callbacks;
+    m_config.tracefile = tracePath.toUtf8();
 
     sp_error err = sp_session_create(&m_config, &m_session);
     if (SP_ERROR_OK != err) {
-        qWarning() << "Failed to create spotify session: " << sp_error_message(err);
+        qWarning() << "Failed to create spotify session: " << sp_error_message(err) << (int)err;
     }
 
     m_httpS.setPort( 55050 ); //TODO config
