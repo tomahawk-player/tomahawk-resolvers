@@ -7,7 +7,7 @@ debugMode = false;
 function xhrRequest(url, method, data, callback){
     var xhr = new XMLHttpRequest()
 
-    if (debugMode == true) { console.debug('Sending request:', url+'?'+data); }
+    if (debugMode == true) { Tomahawk.log('Sending request:', url+'?'+data); }
 
     if(method == "POST"){
         xhr.open(method, url, true)
@@ -24,7 +24,7 @@ function xhrRequest(url, method, data, callback){
 
     xhr.onreadystatechange = function(){
         if(xhr.readyState == 4){
-            if (debugMode == true) { console.log("Response on "+url+" :", xhr); }
+            //if (debugMode == true) { console.log("Response on "+url+" :", xhr); }
             callback(xhr)
         }
     }
@@ -38,10 +38,10 @@ function xhrRequest(url, method, data, callback){
 **/
 var VK = {
     determineSearchMethod: function(callback){
-        if (debugMode == true) { console.log("Trying to determine search method"); }
+        if (debugMode == true) { Tomahawk.log("Trying to determine search method"); }
 
         xhrRequest("http://vkontakte.ru", "GET", null, function(xhr){
-            if (debugMode == true) { console.log(xhr.responseText.match(/logout/)); }
+            //if (debugMode == true) { console.log(xhr.responseText.match(/logout/)); }
             
             if(!xhr.responseText.match(/logout/)){
                 xhrRequest("http://vk.com", "GET", null, function(xhr_vk){
@@ -104,14 +104,14 @@ var VK = {
                 })
             }
 
-            if (debugMode == true) { console.log("Tracks:", audio_data); }
+            if (debugMode == true) { Tomahawk.log("Tracks: "+JSON.stringify(audio_data)); }
 
             if(audio_data.length > 0){
 
                 audio_data.lastIndex = 0
 
                 for(var i=0;i<audio_data.length; i++){
-                    if (debugMode == true) { console.log(audio_data[i], Math.abs(parseInt(audio_data[i].duration) - duration), artist, song, audio_data[i].artist.toLowerCase(), artist.toLowerCase() == audio_data[i].artist.toLowerCase()); }
+                    //if (debugMode == true) { console.log(audio_data[i], Math.abs(parseInt(audio_data[i].duration) - duration), artist, song, audio_data[i].artist.toLowerCase(), artist.toLowerCase() == audio_data[i].artist.toLowerCase()); }
 
                     if(audio_data[i].artist.toLowerCase() == artist && audio_data[i].title.toLowerCase() == song){
                         if(!duration || Math.abs(parseInt(audio_data[i].duration) - duration) <= 2){
@@ -150,9 +150,9 @@ var VK = {
         [4824199, 1915951, 'pvHpN0V001'],
         [5573107, 1914989, 'CChij669jU'],
 
-        [6240007, 1972474, 'DMXPeITyti'], // ÐžÑ‚ Ð²ÐºÐ¾Ð½Ñ‚Ð°ÐºÑ‚ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ  
-        [102802046, 1985438, 'sPZCZS5YxJ'], //ivaninvanov@mail.ru
-        [102813567, 1985491, 'UjgLqfMPgc'], //ivaninvanov1@mail.ru
+        [6240007, 1972474, 'DMXPeITyti'],
+        [102802046, 1985438, 'sPZCZS5YxJ'],
+        [102813567, 1985491, 'UjgLqfMPgc'],
         [102815638, 1985494, 'vI7EmQNdS9'],
         [102819736, 1985507, '3V0H9Y7zo9']
 
@@ -176,10 +176,10 @@ var VK = {
         md5hash = Tomahawk.md5(api[0]+'api_id='+api[1]+'count=10format=jsonmethod=audio.searchq='+track+'sort=2test_mode=1'+api[2])
         var data = 'api_id='+api[1]+'&method=audio.search&format=json&sig='+md5hash+'&sort=2&test_mode=1&count=10&q='+encodeURIComponent(track)
 
-        if (debugMode == true) { console.log("Search url: " + url+'?'+data); }
+        if (debugMode == true) { Tomahawk.log("Search url: "+url+'?'+data); }
 
         xhrRequest("http://chromusapp.appspot.com/sign_data", "POST", "track="+encodeURIComponent(artist+song), function(xhr){
-            if (debugMode == true) { console.log(xhr.responseText); }
+            if (debugMode == true) { Tomahawk.log(xhr.responseText); }
         }) 
 
         xhrRequest(url, "GET", data, function(xhr){
@@ -198,7 +198,7 @@ var VK = {
                 return
             }
 
-            if (debugMode == true) { console.log(xhr.responseText); }
+            if (debugMode == true) { Tomahawk.log(xhr.responseText); }
             try {
                 var response_text = xhr.responseText.replace(/\u001D/g,'').replaceEntities()
             } catch(err) {
@@ -207,8 +207,6 @@ var VK = {
  
             var results = JSON.parse(response_text);
 
-            if (debugMode == true) { console.log(results); }
-         
             if(results.response){
                 var vk_tracks = []
 
@@ -217,7 +215,7 @@ var VK = {
                     for(var i=1; i<results.response.length; i++){
                         var audio = results.response[i].audio
 
-                        if (debugMode == true) { console.log(audio); }
+                        if (debugMode == true) { Tomahawk.log(JSON.stringify(audio)); }
                         vk_tracks.push(audio)
 
                         if(audio.artist.toLowerCase() == artist && audio.title.toLowerCase() == song){
@@ -230,7 +228,7 @@ var VK = {
                             vk_tracks.lastIndex = vk_tracks.length - 1
                         }
                     }
-                    if (debugMode == true) { console.log("Selected track:", vk_tracks[vk_tracks.lastIndex]); }
+                    if (debugMode == true) { Tomahawk.log("Selected track: "+JSON.stringify(vk_tracks[vk_tracks.lastIndex])); }
                 }
                  
                 if(vk_tracks && vk_tracks.length > 0){
@@ -247,7 +245,7 @@ var VK = {
                 if(results.error)
                     callback({error:results.error})
                 else{                    
-                    if (debugMode == true) { console.error("ERROR!:", results); }
+                    if (debugMode == true) { Tomahawk.log("ERROR!: Unknown error while searching track"); }
                     callback({error:'Unknown error while searching track'})
                 }
             }
@@ -262,12 +260,11 @@ var VK = {
         - callback (Function): Function to be called when search compete, to obtain results. 
     **/    
     search: function(artist, song, duration, callback){
-        if (debugMode == true) { console.log("Seaching:", artist, " - ", song); }
-        if (debugMode == true) { console.log("Search method:", this.search_method); }
+        if (debugMode == true) { Tomahawk.log("Seaching: "+artist+" - "+song); }
 
         if(this.search_method == undefined){
             this.determineSearchMethod(function(response){
-                if (debugMode == true) { console.log("Search method:", response.search_method); }
+                if (debugMode == true) { Tomahawk.log("Search method: "+response.search_method); }
 
                 VK.search_method = response.search_method
 
@@ -293,7 +290,7 @@ var VK = {
         else
             this._rawSearch(artist, song, duration, callback)
         
-        if (debugMode == true) { console.log("Setting search method to null"); }
+        if (debugMode == true) { Tomahawk.log("Setting search method to null"); }
         this.search_method = undefined;
     }
 }
