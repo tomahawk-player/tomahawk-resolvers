@@ -45,3 +45,11 @@ qt4_wrap_cpp( tomahawkspotify_MOC_HDRS ${tomahawkspotify_HDRS})
 qt4_add_resources( RC_SRCS "resources.qrc" )
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_MOC_HDRS} ${tomahawkspotify_NOMOC_HDRS} )
 target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
+
+if("${CMAKE_VERSION}" STREQUAL "2.8.5" OR "${CMAKE_VERSION}" STRGREATER "2.8.5")
+    include(GNUInstallDirs)
+elseif(NOT CMAKE_INSTALL_LIBEXECDIR)
+    set(CMAKE_INSTALL_LIBEXECDIR "libexec")
+endif()
+
+install(TARGETS spotify_tomahawkresolver RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
