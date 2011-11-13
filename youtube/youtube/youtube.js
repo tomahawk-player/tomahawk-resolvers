@@ -154,7 +154,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 
 			// Check whether the artist and title (if set) are in the returned title, discard otherwise
-			if (myJsonObject.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && myJsonObject.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
+			if (myJsonObject.data.items[i].title !== undefined && myJsonObject.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && myJsonObject.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
 				count = count -1;
 				continue;
 			}
@@ -165,7 +165,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			/*if (title !== "") {
 				result.track = title;
 			}*/
-			if (myJsonObject.data.items[i].title !== undefined && myJsonObject.data.items[i].title.search(new RegExp(artist, "gi")) !== -1 && myJsonObject.data.items[i].title.search(new RegExp(title, "gi")) !== -1 && that.getTrack(myJsonObject.data.items[i].title, title)){
+			if (that.getTrack(myJsonObject.data.items[i].title, title)){
 				result.track = title;
 			}
 			else {
@@ -179,7 +179,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			//result.bitrate = 128;
 			result.duration = myJsonObject.data.items[i].duration;
 			result.score = 0.85;
-			result.year = myJsonObject.data.items[i].uploaded.slice(0,3);
+			result.year = myJsonObject.data.items[i].uploaded.slice(0,4);
 
 			(function(i, qid, result) {
 				var xmlHttpRequest = new XMLHttpRequest();
