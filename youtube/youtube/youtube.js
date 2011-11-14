@@ -44,20 +44,20 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		timeout: 15
 	},
 	
-		getTrack: function (trackTitle, origTitle) {
-			if (this.includeCovers === false && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1){
-				return;
-			}
-			if (this.includeRemixes === false && trackTitle.search(/remix/i) !== -1 && origTitle.search(/remix/i) === -1){
-				return;
-			}
-			if (this.includeLive === false && trackTitle.search(/live/i) !== -1 && origTitle.search(/live/i) === -1){
-				return;
-			}
-			else {
-				return trackTitle;
-			}
-		},
+	getTrack: function (trackTitle, origTitle) {
+		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1){
+			return null;
+		}
+		if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/remix/i) !== -1 && origTitle.search(/remix/i) === -1){
+			return null;
+		}
+		if ((this.includeLive === false || this.includeLive === undefined) && trackTitle.search(/live/i) !== -1 && origTitle.search(/live/i) === -1){
+			return null;
+		}
+		else {
+			return trackTitle;
+		}
+	},
 		
 	init: function() {
 		String.prototype.capitalize = function(){
@@ -188,9 +188,14 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					if (xmlHttpRequest.readyState === 4){
 						if(xmlHttpRequest.status === 200) {
 							result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
+							Tomahawk.log(artist + " - " + title);
 							if (result.url.indexOf("</body>") === -1) {
 								results.push(result);
 								count = count - 1;
+								if(title !== ""){ // which means that resolve was used, right? anyway, don't look for more urls once one is returned
+									count = 0;
+									i = Math.min(limit,myJsonObject.data.totalItems);
+								}
 							}
 						}
 						else {
@@ -199,11 +204,11 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						}
 					}
 					if (count === 0) { // we're done
-					var toReturn = {
-						results: results,
-						qid: qid
-					};
-					Tomahawk.addTrackResults(toReturn);
+						var toReturn = {
+							results: results,
+							qid: qid
+						};
+						Tomahawk.addTrackResults(toReturn);
 					}
 				};
 				xmlHttpRequest.send(null);
