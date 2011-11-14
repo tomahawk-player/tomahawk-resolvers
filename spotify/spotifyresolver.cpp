@@ -231,6 +231,7 @@ void SpotifyResolver::initSpotify()
     m_config.user_agent = "tomahawkresolver";
     m_config.callbacks = &SpotifyCallbacks::callbacks;
     m_config.tracefile = tracePath.toUtf8();
+    m_config.device_id = "tomahawkspotify";
 
     sp_error err = sp_session_create(&m_config, &m_session);
     if (SP_ERROR_OK != err) {
