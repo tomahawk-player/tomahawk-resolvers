@@ -192,6 +192,8 @@ SpotifyResolver::SpotifyResolver( int argc, char** argv )
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
     setApplicationVersion( QLatin1String( "0.1" ) );
 
+    memset( &m_config, 0, sizeof( m_config ) );
+    memset( &SpotifyCallbacks::callbacks, 0, sizeof( SpotifyCallbacks::callbacks ) );
 }
 
 
