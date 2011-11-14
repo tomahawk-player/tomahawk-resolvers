@@ -1,5 +1,6 @@
 var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     apiKey: "tomahawkplayer",
+    tinySongKey: "2b8a3ea77bfd0f57bd5d06abae606dbc",
     sessionId: "",
     streamKeys: [],
     ip: "",
@@ -33,6 +34,10 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
         if ((userConfig.username != this.username) || (userConfig.password != this.password)) {
+            Tomahawk.log("Saving new Grooveshark credentials with username:" << userConfig.username);
+            this.sessionId = "";
+            this.countryId = "";
+
             this.username = userConfig.username;
             this.password = userConfig.password;
 
@@ -108,6 +113,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
                 Tomahawk.log("Failed to do POST request: to: " + url + " and with body: " + body);
                 Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
                 if (this.sessionId) { // if an error occurred, try re-fetching session id once
+                    this.sessionId = "";
                     this.getSessionId();
                 }
             }
@@ -122,6 +128,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Grooveshark Resolver not properly configured!");
             return;
         }
+        Tomahawk.log("Doing Grooveshark resolver init, got credentials: " + userConfig.username + ":" + userConfig.password );
         this.username = userConfig.username;
         this.password = userConfig.password;
 
@@ -146,6 +153,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         this.apiCall("startSession", [], function (xhr) {
             var res = JSON.parse(xhr.responseText);
             if (res.result.success) {
+                Tomahawk.log("Got grooveshark session id");
                 that.sessionId = res.result.sessionID;
                 window.localStorage['sessionId'] = that.sessionId;
                 that.authenticate();
@@ -160,6 +168,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             password: Tomahawk.md5(this.password)
         };
         var that = this;
+        Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username );
         this.apiCall("authenticate", params, function (xhr) {
             //Tomahawk.log("Got result of authenticate: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
@@ -175,6 +184,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     getCountry: function () {
+        Tomahawk.log("Grooveshark resolver Getting country..." );
         this.apiCall('getCountry', [], function (xhr) {
             var ret = JSON.parse(xhr.responseText);
             this.countryId = JSON.stringify(ret.result);
@@ -213,24 +223,61 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
     resolve: function (qid, artist, album, title) {
         if (!this.countryId) {
+            Tomahawk.log("No country id, skipping resolving");
+            return;
+        }
+        if (!this.sessionId) {
+            Tomahawk.log("No session id, skipping resolving");
             return;
         }
 
+//         var query = artist + " " + title;
+//         var that = this;
+//         var url = "http://tinysong.com/b/" + query + "?format=json&key=" + this.tinySongKey;
+//         Tomahawk.asyncRequest(url, function(xhr) {
+//             Tomahawk.log("Got song search results: " + xhr.responseText);
+//             var ret = JSON.parse(xhr.responseText);
+//             if (!ret || !ret.SongID) {
+//                 Tomahawk.log("Grooveshark could not parse output of TinySong query or SongID:" + xhr.responseText);
+//                 return;
+//             }
+//             Tomahawk.log("Returning: " + ret.SongID );
+//             var songResult = {
+//                 artist: ret.ArtistName,
+//                 album: ret.AlbumName,
+//                 track: ret.SongName,
+//                 source: that.settings.name,
+//                 url: "groove://" + ret.SongID,
+//                 mimetype: 'audio/mpeg',
+// //                 duration: ret.result.uSecs / 1000000,
+//                 // score: Tomahawk.valueForSubNode(song, "rating")
+//             }
+//
+//             var toReturn = {
+//                 results: [ songResult ],
+//                 qid: qid
+//             };
+//             Tomahawk.addTrackResults(toReturn);
+//         });
+
+        // Using grooveshark api directly means no artist in search, so bad results
         var params = {
             query: title,
             country: this.countryId,
             limit: 10
         };
+
+
         var that = this;
         this.apiCall("getSongSearchResults", params, function (xhr) {
-            //Tomahawk.log("Got song search results: " + xhr.responseText);
+//            Tomahawk.log("Got song search results: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (!ret || !ret.result || !ret.result.songs) return;
             var songs = ret.result.songs;
             var results = []
 
             if (songs.length === 0) return;
-
+            Tomahawk.log("Got search result with num of songs: " + songs.length);
             for (var i = 0; i < songs.length; i++) {
                 var song = songs[i];
                 var songResult = {
