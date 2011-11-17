@@ -64,6 +64,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
 		};
 	},
+	
 	parseVideoUrlFromYtPage: function (html) {
 		var magic = "url_encoded_fmt_stream_map\": \"url=";
 		var magicLimit = "\", ";
@@ -91,7 +92,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 		var finalUrl;
 		if(!this.qualityPreference){
-			this.qualityPreference = 0;
+			this.qualityPreference = 1;
 		}		
 		if(this.qualityPreference === 0){
 			finalUrl = urlsArray[0];
@@ -128,100 +129,109 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 		return finalUrl;
 	},
-
+	
 	searchYoutube: function( qid, query, limit, title, artist ) {
-	    	var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + query + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
+		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + query + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
 		Tomahawk.asyncRequest(apiQuery, function(xhr) {
-		var myJsonObject = JSON.parse(xhr.responseText);
-		if (myJsonObject.data.totalItems === 0){
-			return;
-		}
-		
-		var count = Math.min(limit,myJsonObject.data.totalItems);
-		var results = [];
-		for (i = 0; i < myJsonObject.data.totalItems && i < limit; i++) {
-			// Need some more validation here
-			// This doesnt help it seems, or it just throws the error anyhow, and skips?
-			if(myJsonObject.data.items[i] === undefined){
-				count = count -1;
-				continue;
+			var resp = JSON.parse(xhr.responseText);
+			if (resp.data.totalItems === 0){
+				return;
 			}
-			if(myJsonObject.data.items[i].duration === undefined){ //TODO don't be that strict here
-				count = count -1;
-				continue;
-			}
-
-			// Check whether the artist and title (if set) are in the returned title, discard otherwise
-			if (myJsonObject.data.items[i].title !== undefined && myJsonObject.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && myJsonObject.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
-				count = count -1;
-				continue;
-			}
-			var result = new Object();
-			if (artist !== "") {
-				result.artist = artist;
-			}
-			if (that.getTrack(myJsonObject.data.items[i].title, title)){
-				if (title !== ""){
-					result.track = title;
+			
+			var results = [];
+			var stop = Math.min(limit, resp.data.totalItems);
+			for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
+				// Need some more validation here
+				// This doesnt help it seems, or it just throws the error anyhow, and skips?
+				if(resp.data.items[i] === undefined){
+					stop = stop - 1;
+					continue;
 				}
-				else {
-					if (myJsonObject.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase() + " - ") === 0){
-						result.track = myJsonObject.data.items[i].title.slice((artist.toLowerCase() + " - ").length);
+				if(resp.data.items[i].duration === undefined){ //TODO don't be that strict here
+					stop = stop -1;
+					continue;
+				}
+	
+				// Check whether the artist and title (if set) are in the returned title, discard otherwise
+				if (resp.data.items[i].title !== undefined && resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
+					stop = stop - 1;
+					continue;
+				}
+				var result = new Object();
+				if (artist !== "") {
+					result.artist = artist;
+				}
+				if (that.getTrack(resp.data.items[i].title, title)){
+					if (title !== ""){
+						result.track = title;
 					}
 					else {
-						result.track = myJsonObject.data.items[i].title; // remove artist from here
-					}
-				}
-			}
-			else {
-				count = count - 1;
-				continue;
-			}
-
-			
-			result.source = that.settings.name;
-			result.mimetype = "video/h264";
-			//result.bitrate = 128;
-			result.duration = myJsonObject.data.items[i].duration;
-			result.score = 0.85;
-			result.year = myJsonObject.data.items[i].uploaded.slice(0,4);
-
-			(function(i, qid, result) {
-				var xmlHttpRequest = new XMLHttpRequest();
-				xmlHttpRequest.open('GET', myJsonObject.data.items[i].player['default'], true);
-				xmlHttpRequest.onreadystatechange = function() {
-					if (xmlHttpRequest.readyState === 4){
-						if(xmlHttpRequest.status === 200) {
-							result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
-							if (result.url.indexOf("</body>") === -1) {
-								results.push(result);
-								count = count - 1;
-								if(title !== ""){ // which means that resolve was used, right? anyway, don't look for more urls once one is returned
-									count = 0;
-									i = Math.min(limit,myJsonObject.data.totalItems);
-								}
-							}
+						if (resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase() + " - ") === 0){
+							result.track = resp.data.items[i].title.slice((artist.toLowerCase() + " - ").length);
 						}
 						else {
-							Tomahawk.log("Failed to do GET request to: " + myJsonObject.data.items[i].player['default']);
-							Tomahawk.log("Error: " + xmlHttpRequest.status + " " + xmlHttpRequest.statusText);
+							result.track = resp.data.items[i].title; // remove artist from here
 						}
 					}
-					if (count === 0) { // we're done
-						var toReturn = {
-							results: results,
-							qid: qid
-						};
-						Tomahawk.addTrackResults(toReturn);
-					}
-				};
-				xmlHttpRequest.send(null);
-			})(i, qid, result);
-		}
+				}
+				else {
+					stop = stop - 1;
+					continue;
+				}
+	
+				
+				result.source = that.settings.name;
+				result.mimetype = "video/h264";
+				//result.bitrate = 128;
+				result.duration = resp.data.items[i].duration;
+				result.score = 0.85;
+				result.year = resp.data.items[i].uploaded.slice(0,4);
+				
+				(function(i, qid, result) {
+					var xmlHttpRequest = new XMLHttpRequest();
+					xmlHttpRequest.open('GET', resp.data.items[i].player['default'], true);
+					xmlHttpRequest.onreadystatechange = function() {
+						if (xmlHttpRequest.readyState === 4){
+							if(xmlHttpRequest.status === 200) {
+								result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
+								if (result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
+									results.push(result);
+									stop = stop - 1;
+								}
+								else {
+									stop = stop - 1;
+								}	
+							}
+							else {
+								Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
+								Tomahawk.log("Error: " + xmlHttpRequest.status + " " + xmlHttpRequest.statusText);
+							}
+						}
+						if (stop === 0) {
+							var toReturn = {
+								results: results,
+								qid: qid
+							};
+							if (title !== ""){ // resolve
+								var resolveReturn = {
+									results: [toReturn.results[0]],
+									qid: qid
+								};
+								Tomahawk.addTrackResults(resolveReturn);
+							}
+							else { // search
+								Tomahawk.addTrackResults(toReturn);
+							}
+						}
+					};
+					xmlHttpRequest.send(null);
+				})(i, qid, result);
+			}
 		});
 	},
+	
 	resolve: function(qid, artist, album, title)
 	{
 		if (artist !== "") {
@@ -233,6 +243,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 		this.searchYoutube(qid, query, 10, title, artist);
 	},
+	
 	search: function( qid, searchString )
 	{
 		// First we get the artist name out of the search string with echonest's artist/extract function

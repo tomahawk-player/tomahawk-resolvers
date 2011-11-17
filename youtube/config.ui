@@ -96,7 +96,7 @@
     <string>Choose your preferred quality setting</string>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <item>
     <property name="text">
