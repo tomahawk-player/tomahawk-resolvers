@@ -103,12 +103,14 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					finalUrl = urlsArray[i];
 				}
 			}
-			if(finalUrl === ""){
-				if(urlsArray[i].indexOf("quality=small") !== -1){
-					finalUrl = urlsArray[i];
+			if(finalUrl === undefined){
+				for (i = 0; i < urlsArray.length; i++){
+					if(urlsArray[i].indexOf("quality=small") !== -1){
+						finalUrl = urlsArray[i];
+					}
 				}
 			}
-			if(finalUrl === ""){
+			if(finalUrl === undefined){
 				finalUrl = urlsArray[0];
 			}
 		}
@@ -118,12 +120,14 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					finalUrl = urlsArray[i];
 				}
 			}
-			if(finalUrl === ""){
-				if(urlsArray[i].indexOf("quality=medium") !== -1){
-					finalUrl = urlsArray[i];
+			if(finalUrl === undefined){
+				for (i = 0; i < urlsArray.length; i++){
+					if(urlsArray[i].indexOf("quality=medium") !== -1){
+						finalUrl = urlsArray[i];
+					}
 				}
 			}
-			if(finalUrl === ""){
+			if(finalUrl === undefined){
 				finalUrl = urlsArray[0];
 			}
 		}
@@ -196,7 +200,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						if (xmlHttpRequest.readyState === 4){
 							if(xmlHttpRequest.status === 200) {
 								result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
-								if (result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
+								if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
 									results.push(result);
 									stop = stop - 1;
 								}
