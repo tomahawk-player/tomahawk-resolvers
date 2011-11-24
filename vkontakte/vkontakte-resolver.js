@@ -7,7 +7,7 @@ debugMode = false;
 function xhrRequest(url, method, data, callback){
     var xhr = new XMLHttpRequest()
 
-    if (debugMode == true) { Tomahawk.log('Sending request:', url+'?'+data); }
+    if (debugMode == true) { Tomahawk.log('Sending request:' + url + '?' + data); }
 
     if(method == "POST"){
         xhr.open(method, url, true)
@@ -179,26 +179,29 @@ var VK = {
         if (debugMode == true) { Tomahawk.log("Search url: "+url+'?'+data); }
 
         xhrRequest("http://chromusapp.appspot.com/sign_data", "POST", "track="+encodeURIComponent(artist+song), function(xhr){
-            if (debugMode == true) { Tomahawk.log(xhr.responseText); }
+            if (debugMode == true) { Tomahawk.log("XHR response: "+xhr.responseText); }
         }) 
 
         xhrRequest(url, "GET", data, function(xhr){
-            // Too many requests and now we banned for some time
-            if(xhr.responseText.match(/\:false/)){
-                // Checking if user logged into vkontakte
-                VK.determineSearchMethod(function(response){
-                    if(response.search_method == "test_mode"){
-                        callback({error:'overload'})
-                    } else {
-                        VK.search_method = response.search_method
-                        VK.search(artist, song, duration, callback)
-                    }
-                })
+            try {
+                // Too many requests and now we banned for some time
+                if(xhr.responseText.match(/\:false/)){
+                    // Checking if user logged into vkontakte
+                    VK.determineSearchMethod(function(response){
+                        if(response.search_method == "test_mode"){
+                            callback({error:'overload'})
+                        } else {
+                            VK.search_method = response.search_method
+                            VK.search(artist, song, duration, callback)
+                        }
+                    })
 
-                return
+                    return
+                }
+            } catch(err) {
+                Tomahawk.log("Error while preparsing response");
             }
 
-            if (debugMode == true) { Tomahawk.log(xhr.responseText); }
             try {
                 var response_text = xhr.responseText.replace(/\u001D/g,'').replaceEntities()
             } catch(err) {
@@ -207,47 +210,51 @@ var VK = {
  
             var results = JSON.parse(response_text);
 
-            if(results.response){
-                var vk_tracks = []
+            try {
+                if(results.response){
+                    var vk_tracks = []
 
-                if(results.response[1]){
-                    vk_tracks.lastIndex = 0
-                    for(var i=1; i<results.response.length; i++){
-                        var audio = results.response[i].audio
+                    if(results.response[1]){
+                        vk_tracks.lastIndex = 0
+                        for(var i=1; i<results.response.length; i++){
+                            var audio = results.response[i].audio
 
-                        if (debugMode == true) { Tomahawk.log(JSON.stringify(audio)); }
-                        vk_tracks.push(audio)
+                            if (debugMode == true) { Tomahawk.log(JSON.stringify(audio)); }
+                            vk_tracks.push(audio)
 
-                        if(audio.artist.toLowerCase() == artist && audio.title.toLowerCase() == song){
-                            if(!duration || Math.abs((parseInt(audio.duration) - duration) <= 2)){
+                            if(audio.artist.toLowerCase() == artist && audio.title.toLowerCase() == song){
+                                if(!duration || Math.abs((parseInt(audio.duration) - duration) <= 2)){
+                                    vk_tracks.lastIndex = vk_tracks.length - 1
+
+                                    break
+                                }
+                            } else if(!audio.title.toLowerCase().match(/(remix|mix)/) && audio.artist.toLowerCase() == artist){
                                 vk_tracks.lastIndex = vk_tracks.length - 1
-
-                                break
                             }
-                        } else if(!audio.title.toLowerCase().match(/(remix|mix)/) && audio.artist.toLowerCase() == artist){
-                            vk_tracks.lastIndex = vk_tracks.length - 1
                         }
+                        if (debugMode == true) { Tomahawk.log("Selected track: "+JSON.stringify(vk_tracks[vk_tracks.lastIndex])); }
                     }
-                    if (debugMode == true) { Tomahawk.log("Selected track: "+JSON.stringify(vk_tracks[vk_tracks.lastIndex])); }
-                }
-                 
-                if(vk_tracks && vk_tracks.length > 0){
-                    //vk_track.duration = parseInt(vk_track.duration)
-
-                    //Caching for 3 hours
-                    //CACHE.set(track, vk_tracks, 1000*60*60*3)
                     
-                    callback(vk_tracks)
-                } else {
-                    callback({error:'not_found'})
+                    if(vk_tracks && vk_tracks.length > 0){
+                        //vk_track.duration = parseInt(vk_track.duration)
+
+                        //Caching for 3 hours
+                        //CACHE.set(track, vk_tracks, 1000*60*60*3)
+                        
+                        callback(vk_tracks)
+                    } else {
+                        callback({error:'not_found'})
+                    }
+                } else {            
+                    if(results.error)
+                        callback({error:results.error})
+                    else{                    
+                        if (debugMode == true) { Tomahawk.log("ERROR!: Unknown error while searching track"); }
+                        callback({error:'Unknown error while searching track'})
+                    }
                 }
-            } else {            
-                if(results.error)
-                    callback({error:results.error})
-                else{                    
-                    if (debugMode == true) { Tomahawk.log("ERROR!: Unknown error while searching track"); }
-                    callback({error:'Unknown error while searching track'})
-                }
+            } catch(err) {
+                Tomahawk.log("Error while parsing response");
             }
         })
     },
@@ -325,7 +332,7 @@ var VKResolver = Tomahawk.extend(TomahawkResolver,
                 };
                 data.results.push(songinfo);
             }
-            return Tomahawk.addTrackResults( data );
+            Tomahawk.addTrackResults( data );
         });
     },
     search: function( qid, searchString )
