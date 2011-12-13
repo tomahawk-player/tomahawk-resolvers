@@ -41,7 +41,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	{
 		name: 'YouTube',
 		weight: 70,
-		timeout: 25
+		timeout: 10
 	},
 	
 	getTrack: function (trackTitle, origTitle) {
@@ -102,7 +102,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			subUrl = decodeURIComponent(subUrl).replace(/%2C/g, ",").replace(/\\u0026/g, "&");
 			if (subUrl.indexOf("quality=hd720") !== -1 || subUrl.indexOf("quality=medium") !== -1 || subUrl.indexOf("quality=small") !== -1) {
 				urlsArray.push(subUrl);
-				//Tomahawk.log("Found url: " + subUrl);
 			}
 		}
 		var finalUrl;
@@ -146,7 +145,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				finalUrl = urlsArray[0];
 			}
 		}
-		//Tomahawk.log("Returning: " + finalUrl);
 		return finalUrl;
 	},
 	
@@ -162,55 +160,96 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + query + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
+		var empty = {
+			results: [],
+			qid: qid
+		};
 		Tomahawk.asyncRequest(apiQuery, function(xhr) {
-			var resp = JSON.parse(xhr.responseText);
-			if (resp.data.totalItems === 0){
-				return;
-			}
-			
 			var results = [];
-			var stop = Math.min(limit, resp.data.totalItems);
-			for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
-
-				if(resp.data.items[i] === undefined){
-					continue;
-				}
-				
-				if(resp.data.items[i].duration === undefined){
-					continue;
-				}
-	
-				// Check whether the artist and title (if set) are in the returned title, discard otherwise
-				if (resp.data.items[i].title !== undefined && resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
-					continue;
-				}
-				
-				if (that.getTrack(resp.data.items[i].title, title)){
-					var result = new Object();
-					if (artist !== "") {
-						result.artist = artist;
+			var resp = JSON.parse(xhr.responseText);
+			if (resp.data.totalItems !== 0){
+				var stop = Math.min(limit, resp.data.totalItems);
+				for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
+					if(resp.data.items[i] === undefined){
+						stop = stop - 1;
+						continue;
 					}
-						
 					
-					result.source = that.settings.name;
-					result.mimetype = "video/h264";
-					result.duration = resp.data.items[i].duration;
-					result.score = 0.85;
-					result.year = resp.data.items[i].uploaded.slice(0,4);
-					result.track = title;
-					var self = that;
-					results.push(result);
-					Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2){
-						result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
-						result.bitrate = self.getBitrate(result.url);
-						var resolveReturn = {
-							results: [results[0]],
-							qid: qid
-						};
-						Tomahawk.addTrackResults(resolveReturn);
-					});
-					i = Math.min(limit, resp.data.totalItems);
+					if(resp.data.items[i].duration === undefined){
+						stop = stop - 1;
+						continue;
+					}
+		
+					// Check whether the artist and title (if set) are in the returned title, discard otherwise
+					if (resp.data.items[i].title !== undefined && resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
+						stop = stop - 1;
+						continue;
+					}
+					
+					if (that.getTrack(resp.data.items[i].title, title)){
+						var result = new Object();
+						if (artist !== "") {
+							result.artist = artist;
+						}
+							
+						result.source = that.settings.name;
+						result.mimetype = "video/h264";
+						result.duration = resp.data.items[i].duration;
+						result.score = 0.85;
+						result.year = resp.data.items[i].uploaded.slice(0,4);
+						result.track = title;
+						var self = that;
+						(function(i, qid, result) {
+							var xhr2 = new XMLHttpRequest();
+							xhr2.open('GET', resp.data.items[i].player['default'], true);
+							xhr2.onreadystatechange = function() {
+								if (xhr2.readyState === 4){
+									if(xhr2.status === 200) {
+										if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
+											result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
+											result.bitrate = self.getBitrate(result.url);
+											result.id = i;
+											results.push(result);
+											stop = stop - 1;
+											if (stop === 0){
+												var best = i + 1;
+												for (var j = 0; j < results.length; j++){
+													if (results[j].id < best){
+														best = results[j].id;
+														var finalResult = results[j];
+													}
+												}
+												delete finalResult.id;
+												var resolveReturn = {
+													results: [finalResult],
+													qid: qid
+												};
+												Tomahawk.addTrackResults(resolveReturn);
+											}
+										}
+										else {
+											stop = stop - 1;
+										}
+									}
+									else {
+										Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
+										Tomahawk.log("Error: " + xhr2.status + " " + xhr2.statusText);
+									}
+								}
+							};
+							xhr2.send(null);
+						})(i, qid, result);
+					}
+					else {
+						stop = stop - 1;
+					}
 				}
+				if (stop === 0){ // if no results had appropriate titles, return empty
+					Tomahawk.addTrackResults(empty);
+				}
+			}
+			else {
+				Tomahawk.addTrackResults(empty);
 			}
 		});
 	},
@@ -221,113 +260,125 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
+		var empty = {
+			results: [],
+			qid: qid
+		};
 		Tomahawk.asyncRequest(apiQuery, function(xhr) {
 			var resp = JSON.parse(xhr.responseText);
-			if (resp.data.totalItems === 0){
-				return;
-			}
+			if (resp.data.totalItems !== 0){
+				var results = [];
+				var stop = Math.min(limit, resp.data.totalItems);
+				for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
+					if(resp.data.items[i] === undefined){
+						stop = stop - 1;
+						continue;
+					}
+					if(resp.data.items[i].duration === undefined){
+						stop = stop -1;
+						continue;
+					}
+		
+					// Check whether the artist and title (if set) are in the returned title, discard otherwise
+					if (resp.data.items[i].title === undefined) {
+						stop = stop - 1;
+						continue;
+					}
 
-			//Tomahawk.log("Found " + resp.data.totalItems + " items.");
-			var results = [];
-			var stop = Math.min(limit, resp.data.totalItems);
-			for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
-				if(resp.data.items[i] === undefined){
-					stop = stop - 1;
-					continue;
-				}
-				if(resp.data.items[i].duration === undefined){
-					stop = stop -1;
-					continue;
-				}
-	
-				// Check whether the artist and title (if set) are in the returned title, discard otherwise
-				if (resp.data.items[i].title === undefined) {
-					stop = stop - 1;
-					continue;
-				}
-
-				if (that.getTrack(resp.data.items[i].title, "")){
-					var result = new Object();
-					
-					result.source = that.settings.name;
-					result.mimetype = "video/h264";
-					result.duration = resp.data.items[i].duration;
-					result.score = 0.85;
-					result.year = resp.data.items[i].uploaded.slice(0,4);
-					var track = resp.data.items[i].title;
-					if(track.indexOf(" - ") !== -1){
-						result.track = track.slice(track.indexOf(" - ") + 3);
-						result.artist = track.slice(0, track.indexOf(" - "));
-					}
-					else if(track.indexOf(" -") !== -1){
-						result.track = track.slice(track.indexOf(" -") + 2);
-						result.artist = track.slice(0, track.indexOf(" -"));
-					}
-					else if(track.indexOf(": ") !== -1){
-						result.track = track.slice(track.indexOf(": ") + 2);
-						result.artist = track.slice(0, track.indexOf(": "));
-					}
-					else if(track.indexOf("-") !== -1){
-						result.track = track.slice(track.indexOf("-") + 1);
-						result.artist = track.slice(0, track.indexOf("-"));
-					}
-					else if(track.indexOf(":") !== -1){
-						result.track = track.slice(track.indexOf(":") + 1);
-						result.artist = track.slice(0, track.indexOf(":"));
+					if (that.getTrack(resp.data.items[i].title, "")){
+						var result = new Object();
+						
+						result.source = that.settings.name;
+						result.mimetype = "video/h264";
+						result.duration = resp.data.items[i].duration;
+						result.score = 0.85;
+						result.year = resp.data.items[i].uploaded.slice(0,4);
+						var track = resp.data.items[i].title;
+						if(track.indexOf(" - ") !== -1){
+							result.track = track.slice(track.indexOf(" - ") + 3);
+							result.artist = track.slice(0, track.indexOf(" - "));
+						}
+						else if(track.indexOf(" -") !== -1){
+							result.track = track.slice(track.indexOf(" -") + 2);
+							result.artist = track.slice(0, track.indexOf(" -"));
+						}
+						else if(track.indexOf(": ") !== -1){
+							result.track = track.slice(track.indexOf(": ") + 2);
+							result.artist = track.slice(0, track.indexOf(": "));
+						}
+						else if(track.indexOf("-") !== -1){
+							result.track = track.slice(track.indexOf("-") + 1);
+							result.artist = track.slice(0, track.indexOf("-"));
+						}
+						else if(track.indexOf(":") !== -1){
+							result.track = track.slice(track.indexOf(":") + 1);
+							result.artist = track.slice(0, track.indexOf(":"));
+						}
+						else {
+							stop = stop - 1;
+							continue;
+						}
+						(function(i, qid, result) {
+							var xmlHttpRequest = new XMLHttpRequest();
+							xmlHttpRequest.open('GET', resp.data.items[i].player['default'], true);
+							xmlHttpRequest.onreadystatechange = function() {
+								if (xmlHttpRequest.readyState === 4){
+									if(xmlHttpRequest.status === 200) {
+										result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
+										var artist = encodeURIComponent(result.artist.capitalize());
+										var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=5&sort=hotttnesss-desc&text=" + artist;
+										var self = that;
+										Tomahawk.asyncRequest(url, function(xhr) {
+											var response = JSON.parse(xhr.responseText).response;
+											if (response && response.artists && response.artists.length > 0) {
+												artist = response.artists[0].name;
+												result.artist = artist;
+												if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
+													result.bitrate = that.getBitrate(result.url);
+													result.id = i;
+													results.push(result);
+													stop = stop - 1;
+												}
+												else {
+													stop = stop - 1;
+												}
+											}
+											else {
+												stop = stop - 1;
+											}
+											if (stop === 0) {
+												function sortResults(a, b){
+													return a.id - b.id;
+												}
+												results = results.sort(sortResults);
+												for (var j = 0; j < results.length; j++){
+													delete results[j].id;
+												}
+												var toReturn = {
+													results: results,
+													qid: qid
+												};
+												Tomahawk.addTrackResults(toReturn);
+											}
+										});
+									}
+									else {
+										Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
+										Tomahawk.log("Error: " + xmlHttpRequest.status + " " + xmlHttpRequest.statusText);
+									}
+								}
+							};
+							xmlHttpRequest.send(null);
+						})(i, qid, result);
 					}
 					else {
 						stop = stop - 1;
 						continue;
 					}
-					(function(i, qid, result) {
-						var xmlHttpRequest = new XMLHttpRequest();
-						xmlHttpRequest.open('GET', resp.data.items[i].player['default'], true);
-						xmlHttpRequest.onreadystatechange = function() {
-							if (xmlHttpRequest.readyState === 4){
-								if(xmlHttpRequest.status === 200) {
-									result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
-									var artist = encodeURIComponent(result.artist.capitalize());
-									var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=5&sort=hotttnesss-desc&text=" + artist;
-									var self = that;
-									Tomahawk.asyncRequest(url, function(xhr) {
-										var response = JSON.parse(xhr.responseText).response;
-										if (response && response.artists && response.artists.length > 0) {
-											artist = response.artists[0].name;
-											result.artist = artist;
-											if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
-												result.bitrate = that.getBitrate(result.url);
-												results.push(result);
-												stop = stop - 1;
-											}
-											else {
-												stop = stop - 1;
-											}
-										}
-										else {
-											stop = stop - 1;
-										}
-										if (stop === 0) {
-											var toReturn = {
-												results: results,
-												qid: qid
-											};
-											Tomahawk.addTrackResults(toReturn);
-										}
-									});
-								}
-								else {
-									Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
-									Tomahawk.log("Error: " + xmlHttpRequest.status + " " + xmlHttpRequest.statusText);
-								}
-							}
-						};
-						xmlHttpRequest.send(null);
-					})(i, qid, result);
 				}
-				else {
-					stop = stop - 1;
-					continue;
-				}
+			}
+			else {
+				Tomahawk.addTrackResults(empty);
 			}
 		});
 	}
