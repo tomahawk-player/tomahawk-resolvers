@@ -152,7 +152,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         var that = this;
         this.apiCall("startSession", [], function (xhr) {
             var res = JSON.parse(xhr.responseText);
-            if (res.result.success) {
+            if ( res.result && res.result.success) {
                 Tomahawk.log("Got grooveshark session id");
                 that.sessionId = res.result.sessionID;
                 window.localStorage['sessionId'] = that.sessionId;
