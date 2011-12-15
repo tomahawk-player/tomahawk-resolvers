@@ -166,7 +166,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             filter: searchString,
             limit: this.settings.limit
         };
-        var searchResult = this.apiCall( "search_songs", this.auth, params );
+        var searchResult = this.apiCall( "search_songs", AmpacheResolver.auth, params );
 
         //Tomahawk.log( searchResult );
 
@@ -174,7 +174,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
     },
     getArtists: function( qid )
     {
-        var searchResult = this.apiCall( "artists", this.auth );
+        var searchResult = this.apiCall( "artists", AmpacheResolver.auth );
 
         Tomahawk.log( searchResult );
 
@@ -209,7 +209,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             filter: artistId
         };
 
-        var searchResult = this.apiCall( "artist_albums", this.auth, params );
+        var searchResult = this.apiCall( "artist_albums", AmpacheResolver.auth, params );
 
         //Tomahawk.log( searchResult );
 
@@ -251,7 +251,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             filter: albumId
         };
 
-        var searchResult = this.apiCall( "album_songs", this.auth, params );
+        var searchResult = this.apiCall( "album_songs", AmpacheResolver.auth, params );
 
         //Tomahawk.log( searchResult );
 
