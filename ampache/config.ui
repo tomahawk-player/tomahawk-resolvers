@@ -38,7 +38,27 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="label_3">
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+       <italic>true</italic>
+      </font>
+     </property>
+     <property name="text">
+      <string>For owncloud installs, server url is
+http://[owncloud url]/apps/media</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
     <layout class="QFormLayout" name="formLayout">
+     <property name="fieldGrowthPolicy">
+      <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="usernameLabel">
        <property name="text">
@@ -66,7 +86,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="ampacheLabel">
        <property name="text">
-         <string>Server URL</string>
+        <string>Server URL</string>
        </property>
       </widget>
      </item>
