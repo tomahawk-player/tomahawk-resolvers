@@ -6,7 +6,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
     settings:
     {
         name: 'Ampache Resolver',
-        weigth: 85,
+        weight: 85,
         timeout: 5,
         limit: 10
     },
@@ -55,39 +55,46 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             version: 350001,
             user: userConfig.username
         }
-        try { handshakeResult = this.apiCall( 'handshake', passphrase, params ); }
-            catch(e) { return; }
+        try {
+            var that = this;
+            this.apiCall( 'handshake', passphrase, params, function(xhr) {
 
-        Tomahawk.log(handshakeResult);
+                Tomahawk.log(xhr.responseText);
 
-        // parse the result
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(handshakeResult, "text/xml");
-        var roots = xmlDoc.getElementsByTagName("root");
-        this.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode( roots[0], "auth" );
-        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode( roots[0], "session_length" ))*1000;
+                // parse the result
+                var domParser = new DOMParser();
+                xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
+                var roots = xmlDoc.getElementsByTagName("root");
+                that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode( roots[0], "auth" );
+                var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode( roots[0], "session_length" ))*1000;
 
-        // inform the user if something went wrong
-        if( !this.auth )
+                // inform the user if something went wrong
+                if( !that.auth )
+                {
+                    Tomahawk.log("INVALID HANDSHAKE RESPONSE: " + xhr.responseText);
+                }
+
+                // all fine, set the resolver to ready state
+                that.ready = true;
+                window.sessionStorage["ampacheAuth"] = that.auth;
+
+                // setup pingTimer
+                if( pingInterval )
+                    window.setInterval(that.ping, pingInterval-60);
+
+                Tomahawk.log("Ampache Resolver properly initialised!");
+
+            });
+        } catch(e)
         {
-            Tomahawk.log("INVALID HANDSHAKE RESPONSE: " + handshakeResult);
+            Tomahawk.log("Caught exception in Ampache resolver doing auth handshake request");
+            return;
         }
-
-        // all fine, set the resolver to ready state
-        this.ready = true;
-        window.sessionStorage["ampacheAuth"] = this.auth;
-
-        // setup pingTimer
-        if( pingInterval )
-            window.setInterval(this.ping, pingInterval-60);
-
-        Tomahawk.log("Ampache Resolver properly initialised!");
     },
-    apiCall: function(action, auth, params)
-    {
+    generateUrl: function(action, auth, params) {
         var ampacheUrl = this.getUserConfig().ampache + "/server/xml.server.php?";
         if( params === undefined ) params = [];
-        params['action'] = action;
+                                      params['action'] = action;
         params['auth'] = auth;
 
 
@@ -98,14 +105,26 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
 
             ampacheUrl += encodeURIComponent( param ) + "=" + encodeURIComponent( params[param] ) + "&";
         }
-        var result = Tomahawk.syncRequest(ampacheUrl);
-        //Tomahawk.log( result );
-        return result;
+        return ampacheUrl;
     },
+
+    apiCallSync: function(action, auth, params) {
+        var ampacheUrl = this.generateUrl(action, auth, params);
+
+        return Tomahawk.syncRequest(ampacheUrl, callback);
+    },
+
+    apiCall: function(action, auth, params, callback)
+    {
+        var ampacheUrl = this.generateUrl(action, auth, params);
+
+        Tomahawk.asyncRequest(ampacheUrl, callback);
+    },
+
     ping: function()
     {
         // this is called from window scope (setInterval), so we need to make methods and data accessible from there
-        Tomahawk.log( AmpacheResolver.apiCall( 'ping', AmpacheResolver.auth, {} ) );
+        Tomahawk.log( AmpacheResolver.apiCall( 'ping', AmpacheResolver.auth, {}, function() {} ) );
     },
     parseSongResponse: function( qid, responseString )
     {
@@ -149,8 +168,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             results: results
         };
 
+        Tomahawk.addTrackResults(return1);
         //Tomahawk.dumpResult( return1 );
-        return return1;
     },
     resolve: function( qid, artist, album, title )
     {
@@ -166,15 +185,17 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             filter: searchString,
             limit: this.settings.limit
         };
-        var searchResult = this.apiCall( "search_songs", AmpacheResolver.auth, params );
+
+        var that = this;
+        this.apiCall( "search_songs", AmpacheResolver.auth, params, function(xhr) {
+            that.parseSongResponse( qid, xhr.responseText );
+        });
 
         //Tomahawk.log( searchResult );
-
-        return this.parseSongResponse( qid, searchResult );
     },
     getArtists: function( qid )
     {
-        var searchResult = this.apiCall( "artists", AmpacheResolver.auth );
+        var searchResult = this.apiCallSync( "artists", AmpacheResolver.auth );
 
         Tomahawk.log( searchResult );
 
@@ -209,7 +230,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             filter: artistId
         };
 
-        var searchResult = this.apiCall( "artist_albums", AmpacheResolver.auth, params );
+        var searchResult = this.apiCallSync( "artist_albums", AmpacheResolver.auth, params );
 
         //Tomahawk.log( searchResult );
 
@@ -251,7 +272,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             filter: albumId
         };
 
-        var searchResult = this.apiCall( "album_songs", AmpacheResolver.auth, params );
+        var searchResult = this.apiCallSync( "album_songs", AmpacheResolver.auth, params );
 
         //Tomahawk.log( searchResult );
 
