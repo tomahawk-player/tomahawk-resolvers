@@ -27,6 +27,19 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             ]
         };
     },
+    newConfigSaved: function () {
+        var userConfig = this.getUserConfig();
+        if ((userConfig.username != this.username) || (userConfig.password != this.password) || (userConfig.ampache != this.ampache)) {
+            Tomahawk.log("Saving new Ampache credentials with username:" << userConfig.username);
+
+            this.username = userConfig.username;
+            this.password = userConfig.password;
+            this.ampache = userConfig.ampache;
+
+            window.sessionStorage["ampacheAuth"] = "";
+            this.init();
+        }
+    },
     init: function()
     {
         // check resolver is properly configured
@@ -44,16 +57,20 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
             return window.sessionStorage["ampacheAuth"];
         }
 
+        this.username = userConfig.username;
+        this.password = userConfig.password;
+        this.ampache = userConfig.ampache;
+
         // prepare handshake arguments
         var time = Tomahawk.timestamp();
-        var key = Tomahawk.sha256( userConfig.password );
+        var key = Tomahawk.sha256( this.password );
         var passphrase = Tomahawk.sha256( time + key );
 
         // do the handshake
         var params = {
             timestamp: time,
             version: 350001,
-            user: userConfig.username
+            user: this.username
         }
         try {
             var that = this;
@@ -92,9 +109,10 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver,
         }
     },
     generateUrl: function(action, auth, params) {
-        var ampacheUrl = this.getUserConfig().ampache + "/server/xml.server.php?";
-        if( params === undefined ) params = [];
-                                      params['action'] = action;
+        var ampacheUrl = this.ampache + "/server/xml.server.php?";
+        if( params === undefined )
+            params = [];
+        params['action'] = action;
         params['auth'] = auth;
 
 
