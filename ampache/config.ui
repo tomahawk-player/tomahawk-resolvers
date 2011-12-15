@@ -56,9 +56,6 @@ http://[owncloud url]/apps/media</string>
    </item>
    <item>
     <layout class="QFormLayout" name="formLayout">
-     <property name="fieldGrowthPolicy">
-      <enum>QFormLayout::FieldsStayAtSizeHint</enum>
-     </property>
      <item row="0" column="0">
       <widget class="QLabel" name="usernameLabel">
        <property name="text">
