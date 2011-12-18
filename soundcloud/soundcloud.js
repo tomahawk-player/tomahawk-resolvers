@@ -27,18 +27,15 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		var userConfig = this.getUserConfig();
 		if((userConfig.includeCovers != this.includeCovers) || (userConfig.includeRemixes != this.includeRemixes) || (userConfig.includeLive != this.includeLive)) {
 			this.includeCovers = userConfig.includeCovers;
-			Tomahawk.log("Include Covers is set to: " + this.includeCovers);
 			this.includeRemixes = userConfig.includeRemixes;
-			Tomahawk.log("Include Remixes is set to: " + this.includeRemixes);
 			this.includeLive = userConfig.includeLive;
-			Tomahawk.log("Include Live is set to: " + this.includeLive);
 		}
 	},
 	
 	settings: {
 		name: 'Soundcloud',
 		weight: 85,
-		timeout: 5
+		timeout: 15
 	},
 	
 	init: function() {
@@ -62,76 +59,6 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 	},
 
-	searchSoundcloud: function( qid, query, title, artist ) {
-		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + query;
-		var that = this;
-		Tomahawk.asyncRequest(apiQuery, function(xhr) {
-			var resp = JSON.parse(xhr.responseText);
-			if (resp.length === 0){
-				return;
-			}
-			
-			var results = [];
-			var stop = 0;
-			if (title !== ""){ 
-				stop = 1;
-			}
-			else{ 
-				stop = resp.length;
-			}
-			for (i = 0; i < stop; i++) {
-				// Need some more validation here
-				// This doesnt help it seems, or it just throws the error anyhow, and skips?
-				if(resp[i] === undefined){
-					continue;
-				}
-	
-				// Check whether the artist and title (if set) are in the returned title, discard otherwise
-				if (resp[i].title !== undefined && resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
-					continue;
-				}
-				var result = new Object();
-				if (artist !== "") {
-					result.artist = artist;
-				}
-				if (that.getTrack(resp[i].title, title)){
-					if (title !== ""){
-						result.track = title;
-					}
-					else {
-						if (resp[i].title.toLowerCase().indexOf(artist.toLowerCase() + " - ") === 0){
-							result.track = resp[i].title.slice((artist.toLowerCase() + " - ").length);
-						}
-						else if (resp[i].title.toLowerCase().indexOf(artist.toLowerCase() + " — ") === 0){
-							result.track = resp[i].title.slice((artist.toLowerCase() + " — ").length);
-						}
-						else {
-							result.track = resp[i].title; // remove artist from here
-						}
-					}
-				}
-				else {
-					continue;
-				}
-	
-				
-				result.source = that.settings.name;
-				result.mimetype = "audio/mpeg";
-				result.bitrate = 128;
-				result.duration = resp[i].duration / 1000;
-				result.score = 0.85;
-				result.year = resp[i].release_year;
-				result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
-				results.push(result);
-			}
-			var return1 = {
-				qid: qid,
-				results: results
-			};
-			Tomahawk.addTrackResults(return1);
-		});
-	},
-
 	resolve: function(qid, artist, album, title)
 	{
 		if (artist !== "") {
@@ -140,26 +67,168 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		if (title !== "") {
 			query += encodeURIComponent(title);
 		}
-		this.searchSoundcloud(qid, query, title, artist);
+		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + query;
+		var that = this;
+		var empty = {
+			results: [],
+			qid: qid
+		};
+		Tomahawk.asyncRequest(apiQuery, function(xhr) {
+			var resp = JSON.parse(xhr.responseText);
+			if (resp.length !== 0){
+				var results = [];
+				for (i = 0; i < resp.length; i++) {
+					// Need some more validation here
+					// This doesnt help it seems, or it just throws the error anyhow, and skips?
+					if(resp[i] === undefined){
+						continue;
+					}
+		
+					// Check whether the artist and title (if set) are in the returned title, discard otherwise
+					if (resp[i].title !== undefined && resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1) {
+						continue;
+					}
+					var result = new Object();
+					result.artist = artist;
+					if (that.getTrack(resp[i].title, title)){
+						result.track = title;
+					}
+					else {
+						continue;
+					}
+		
+					
+					result.source = that.settings.name;
+					result.mimetype = "audio/mpeg";
+					result.bitrate = 128;
+					result.duration = resp[i].duration / 1000;
+					result.score = 0.85;
+					result.year = resp[i].release_year;
+					result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
+					results.push(result);
+				}
+				var return1 = {
+					qid: qid,
+					results: [results[0]]
+				};
+				Tomahawk.addTrackResults(return1);
+			}
+			else {
+				Tomahawk.addTrackResults(empty);
+			}
+		});
 	},
 	
 	search: function( qid, searchString )
 	{
-		// First we get the artist name out of the search string with echonest's artist/extract function
-		// HACK because Echo Nest is case-sensitive for artist/extract. we capitalize all words in the query just as a precaution. maybe a bad idea..
-		// NOTE that this can often be slow, so the results can time out. However, Tomahawk can't deal with results without artists, so we *need an artist, so we try anyway
-		searchString = encodeURIComponent(searchString.capitalize());
-		var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + searchString;
+		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + encodeURIComponent(searchString);
 		var that = this;
-		Tomahawk.asyncRequest(url, function(xhr) {
-			var response = JSON.parse(xhr.responseText).response;
-			var artist = "";
-			if (response && response.artists && response.artists.length > 0) {
-				artist = response.artists[0].name;
-				
-				Tomahawk.log("Found artist " + artist + " for search string \"" + searchString + "\"");
-				
-				that.searchSoundcloud(qid, searchString, "", artist);
+		var empty = {
+			results: [],
+			qid: qid
+		};
+		Tomahawk.asyncRequest(apiQuery, function(xhr) {
+			var resp = JSON.parse(xhr.responseText);
+			if (resp.length !== 0){
+				var results = [];
+				var stop = resp.length;
+				for (i = 0; i < resp.length; i++) {
+					if(resp[i] === undefined){
+						stop = stop - 1;
+						continue;
+					}
+					var result = new Object();
+
+					if (that.getTrack(resp[i].title, "")){
+						var track = resp[i].title;
+						if(track.indexOf(" - ") !== -1){
+							result.track = track.slice(track.indexOf(" - ") + 3).trim();
+							result.artist = track.slice(0, track.indexOf(" - ")).trim();
+						}
+						else if(track.indexOf(" -") !== -1){
+							result.track = track.slice(track.indexOf(" -") + 2).trim();
+							result.artist = track.slice(0, track.indexOf(" -")).trim();
+						}
+						else if(track.indexOf(": ") !== -1){
+							result.track = track.slice(track.indexOf(": ") + 2).trim();
+							result.artist = track.slice(0, track.indexOf(": ")).trim();
+						}
+						else if(track.indexOf("-") !== -1){
+							result.track = track.slice(track.indexOf("-") + 1).trim();
+							result.artist = track.slice(0, track.indexOf("-")).trim();
+						}
+						else if(track.indexOf(":") !== -1){
+							result.track = track.slice(track.indexOf(":") + 1).trim();
+							result.artist = track.slice(0, track.indexOf(":")).trim();
+						}
+						else if(track.indexOf("\u2014") !== -1){
+							result.track = track.slice(track.indexOf("\u2014") + 2).trim();
+							result.artist = track.slice(0, track.indexOf("\u2014")).trim();
+						}
+						else {
+							stop = stop - 1;
+							continue;
+						}
+					}
+					else {
+						stop = stop - 1;
+						continue;
+					}
+
+					result.source = that.settings.name;
+					result.mimetype = "audio/mpeg";
+					result.bitrate = 128;
+					result.duration = resp[i].duration / 1000;
+					result.score = 0.85;
+					result.year = resp[i].release_year;
+					result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
+					
+					(function(i, result) {
+						var artist = encodeURIComponent(result.artist.capitalize());
+						var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + artist;
+						var xhr = new XMLHttpRequest();
+						xhr.open('GET', url, true);
+						xhr.onreadystatechange = function() {
+								if (xhr.readyState === 4){
+									if(xhr.status === 200) {
+										var response = JSON.parse(xhr.responseText).response;
+										if (response && response.artists && response.artists.length > 0) {
+											artist = response.artists[0].name;
+											result.artist = artist;
+											result.id = i;
+											results.push(result);
+											stop = stop - 1;
+										}
+										else {
+											stop = stop - 1;
+										}
+										if (stop === 0) {
+											function sortResults(a, b){
+												return a.id - b.id;
+											}
+											results = results.sort(sortResults);
+											for (var j = 0; j < results.length; j++){
+												delete results[j].id;
+											}
+											var toReturn = {
+												results: results,
+												qid: qid
+											};
+											Tomahawk.addTrackResults(toReturn);
+										}
+									}
+									else {
+										Tomahawk.log("Failed to do GET request to: " + url);
+										Tomahawk.log("Error: " + xhr.status + " " + xhr.statusText);
+									}
+								}
+						};
+						xhr.send(null);
+					})(i, result);	
+				}
+			}
+			else {
+				Tomahawk.addTrackResults(empty);
 			}
 		});
 	}
