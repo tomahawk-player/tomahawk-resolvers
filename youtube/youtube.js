@@ -41,7 +41,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	{
 		name: 'YouTube',
 		weight: 70,
-		timeout: 10
+		timeout: 15
 	},
 	
 	getTrack: function (trackTitle, origTitle) {
