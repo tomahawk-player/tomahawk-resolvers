@@ -26,9 +26,9 @@
 #ifndef QXTGLOBAL_H
 #define QXTGLOBAL_H
 
-#ifdef WIN32
-#define WINVER 0x0501
-#endif
+//#ifdef WIN32
+//#define WINVER 0x0501
+//#endif
 
 #include <QtGlobal>
 
