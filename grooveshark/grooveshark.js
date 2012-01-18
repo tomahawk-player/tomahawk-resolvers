@@ -46,7 +46,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
     getClientIP: function() {
         var that = this;
-        Tomahawk.asyncRequest( "http://jsonip.appspot.com/", function(xhr) {
+        Tomahawk.asyncRequest( "http://toma.hk?stat=1", function(xhr) {
             var result = JSON.parse(xhr.responseText);
             if (result.ip) {
                 that.ip = result.ip;
