@@ -101,13 +101,14 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
     doPost: function (url, body, callback) {
         var xmlHttpRequest = new XMLHttpRequest();
-        //Tomahawk.log("DOing post:" + url + ", with body:" + body);
+        Tomahawk.log("DOing post:" + url + ", with body:" + body);
         xmlHttpRequest.open('POST', url, true);
         xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
         xmlHttpRequest.setRequestHeader("X-Client-IP", this.ip);
         xmlHttpRequest.onreadystatechange = function () {
 
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                Tomahawk.log("Succeeded to do POST request: to: " + url + " and with body: " + body + "\n" + xmlHttpRequest.responseText);
                 callback.call(window, xmlHttpRequest);
             } else if (xmlHttpRequest.readyState === 4) {
                 Tomahawk.log("Failed to do POST request: to: " + url + " and with body: " + body);
@@ -128,7 +129,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Grooveshark Resolver not properly configured!");
             return;
         }
-        Tomahawk.log("Doing Grooveshark resolver init, got credentials: " + userConfig.username + ":" + userConfig.password );
+        Tomahawk.log("Doing Grooveshark resolver init, got credentials: " + userConfig.username );
         this.username = userConfig.username;
         this.password = userConfig.password;
 
@@ -146,6 +147,11 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         } else if (!this.countryId) {
             this.getCountry();
         }
+
+        Tomahawk.log("Getting playlist songs!");
+        this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
+            Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
+        });
     },
 
     getSessionId: function () {
