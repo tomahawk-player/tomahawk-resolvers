@@ -85,7 +85,8 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 					}
 		
 					// Check whether the artist and title (if set) are in the returned title, discard otherwise
-					if (resp[i].title !== undefined && resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1) {
+					// But also, the artist could be the username
+					if (resp[i].title !== undefined && resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 && resp[i].user.username.toLowerCase().indexOf( artist.toLowerCase() ) === -1){
 						continue;
 					}
 					var result = new Object();
@@ -96,8 +97,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 					else {
 						continue;
 					}
-		
-					
+
 					result.source = that.settings.name;
 					result.mimetype = "audio/mpeg";
 					result.bitrate = 128;
@@ -121,7 +121,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	search: function( qid, searchString )
 	{
-		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + encodeURIComponent(searchString);
+		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" +  encodeURIComponent(searchString.replace('"', '').replace("'", ""));
 		var that = this;
 		var empty = {
 			results: [],
@@ -165,7 +165,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 							result.track = track.slice(track.indexOf("\u2014") + 2).trim();
 							result.artist = track.slice(0, track.indexOf("\u2014")).trim();
 						}
-						else {
+						else if( resp[i].title !== "" && resp[i].user.username !== ""){
+							// Last resort, the artist is the username
+							result.track = resp[i].title;
+							result.artist = resp[i].user.username;
+							
+						}else{
 							stop = stop - 1;
 							continue;
 						}
@@ -200,6 +205,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 											stop = stop - 1;
 										}
 										else {
+											
 											stop = stop - 1;
 										}
 										if (stop === 0) {
