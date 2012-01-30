@@ -56,7 +56,7 @@ class SpotifyResolver : public QCoreApplication
 {
     Q_OBJECT
 public:
-    SpotifyResolver( int argc, char** argv );
+    SpotifyResolver( int& argc, char** argv );
     virtual ~SpotifyResolver();
 
     void setup();

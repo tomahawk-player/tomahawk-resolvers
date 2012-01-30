@@ -177,7 +177,7 @@ QDataStream& operator>>(QDataStream& in, CacheEntry& cache)
     return in;
 }
 
-SpotifyResolver::SpotifyResolver( int argc, char** argv )
+SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     : QCoreApplication( argc, argv )
     , m_session( 0 )
     , m_stdinWatcher( 0 )
