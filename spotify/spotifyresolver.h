@@ -28,7 +28,6 @@
 
 #include "QxtHttpServerConnector"
 #include "qxthttpsessionmanager.h"
-#include "spotifyiodevice.h"
 #include "kdsingleapplicationguard/kdsingleapplicationguard.h"
 
 #include <libspotify/api.h>
@@ -40,31 +39,24 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QQueue>
-
+#include "spotifysession.h"
+#include "audiohttpserver.h"
 #define sApp static_cast< SpotifyResolver* >( QCoreApplication::instance() )
 
 class QxtHttpSessionManager;
-struct AudioData;
-class AudioHTTPServer;
-class ConsoleWatcher;
-class QSocketNotifer;
 
-typedef QSharedPointer< SpotifyIODevice > spotifyiodev_ptr;
+class ConsoleWatcher;
+
 typedef QHash<QString, QString > CacheEntry;
 
 class SpotifyResolver : public QCoreApplication
 {
     Q_OBJECT
 public:
-    SpotifyResolver( int& argc, char** argv );
+
+    explicit SpotifyResolver( int& argc, char** argv );
     virtual ~SpotifyResolver();
-
     void setup();
-
-    void setLoggedIn( bool loggedIn );
-
-    void sendNotifyThreadSignal();
-
     void search( const QString& qid, const QString& artist, const QString& track );
 
     // adds a track to the link map, returns a unique ID for identifying it
@@ -73,73 +65,57 @@ public:
     sp_link* linkFromTrack( const QString& linkStr );
     bool hasLinkFromTrack( const QString& linkStr );
 
-    // audio data stuff
-    QMutex& dataMutex();
-    // only call if you are holding the dataMutex() from above
-    void queueData( const AudioData& data );
-    // will emit readyRead() when it has data.
-    spotifyiodev_ptr getIODeviceForNewTrack( uint durationMsec );
-
-    // called by callback when track is over
-    void startPlaying();
-    void endOfTrack();
-    bool trackIsOver();
-
-    sp_session* session() const { return m_session; }
     AudioHTTPServer* handler() const { return m_handler; }
-
-    void sendMessage( const QVariant& v );
-
     static QString dataDir( bool configDir = false );
-
+    void sendMessage( const QVariant& v );
+    // Session
+    SpotifySession *m_session;
+    int m_port;
+    QString m_qid;
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
 private slots:
-    void notifyMainThread();
     void playdarMessage( const QVariant& );
-    void initSpotify();
-
     void loadCache();
     void saveCache();
+    void initSpotify();
+    void notifyLoggedIn();
 
-signals:
-    void notifyMainThreadSignal();
 
 private:
     void sendConfWidget();
     void sendSettingsMessage();
     void loadSettings();
     void saveSettings() const;
-
     void login();
 
+    // STDin
     QThread m_stdinThread;
     ConsoleWatcher* m_stdinWatcher;
 
+    // Cache
+    QHash< QString, sp_link* > m_trackLinkMap;
+    bool m_dirty;
+    CacheEntry m_cachedTrackLinkMap;
+
+
+
+    // Http
     QxtHttpServerConnector m_connector;
     QxtHttpSessionManager m_httpS;
     AudioHTTPServer* m_handler;
 
-    spotifyiodev_ptr m_iodev;
-
-    QMutex m_dataMutex;
-
-    sp_session_config m_config;
-    sp_session *m_session;
-    bool m_loggedIn;
-    bool m_trackEnded;
-
-    QHash< QString, sp_link* > m_trackLinkMap;
-
-    bool m_dirty;
-    CacheEntry m_cachedTrackLinkMap;
-
+    // Spotify
     QByteArray m_apiKey;
     QByteArray m_configWidget;
+
     QString m_username;
     QString m_pw;
+
     bool m_highQuality;
+    bool m_loggedIn;
+
 };
 
 Q_DECLARE_METATYPE( CacheEntry )
