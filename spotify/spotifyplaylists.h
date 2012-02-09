@@ -116,7 +116,6 @@ signals:
    void send( int );
 
 private:
-
     QList<Sync> m_syncPlaylists;
 
 };

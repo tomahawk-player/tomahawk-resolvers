@@ -50,6 +50,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     m_SpotifyPlaylists->moveToThread( &m_playlistThread );
     m_playlistThread.start( QThread::LowPriority );
 
+
     m_SpotifyPlayback = new SpotifyPlayback;
 
     // Connect to signals
@@ -100,7 +101,6 @@ SpotifySession::~SpotifySession(){
 
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
-    qDebug() << Q_FUNC_INFO;
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
     if (error == SP_ERROR_OK) {
         qDebug() << "Logged in successfully!!";
@@ -108,6 +108,7 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
         _session->setSession(session);
         _session->setLoggedIn(true);
 
+        qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
          sp_playlistcontainer_add_callbacks(
                 sp_session_playlistcontainer(session),

@@ -16,6 +16,7 @@
 #include "spotifyplaylists.h"
 #include "callbacks.h"
 #include <QObject>
+#include <QThread>
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
 {
@@ -23,6 +24,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     /**
         Read the QSettings to set the sync states from previous settings
     **/
+
     QSettings settings;
     int size = settings.beginReadArray( "syncPlaylists" );
 
@@ -79,7 +81,9 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
 {
 
     qDebug() << Q_FUNC_INFO;
+
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    qDebug() << "Callback on thread" << _playlists->thread()->currentThreadId();
 
     // If the playlist isn't loaded yet we have to wait
     if ( !sp_playlist_is_loaded( pl ) )
