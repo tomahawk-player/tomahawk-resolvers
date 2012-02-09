@@ -25,6 +25,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QString>
+#include <QThread>
 
 SpotifySession* SpotifySession::s_instance = 0;
 
@@ -45,11 +46,15 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
 
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists;
+    connect( m_SpotifyPlaylists, SIGNAL(send(int)), this, SLOT(get(int)) );
+    m_SpotifyPlaylists->moveToThread( &m_playlistThread );
+    m_playlistThread.start( QThread::LowPriority );
+
     m_SpotifyPlayback = new SpotifyPlayback;
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
-    connect( m_SpotifyPlaylists, SIGNAL(send(int)), this, SLOT(get(int)) );
+
 
     if(config.application_key != NULL ){
 

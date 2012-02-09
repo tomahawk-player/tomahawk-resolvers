@@ -119,7 +119,7 @@ private slots:
 private:
 
     static SpotifySession* s_instance;
-
+    QThread m_playlistThread;
     SpotifyPlaylists *m_SpotifyPlaylists;
     SpotifyPlayback *m_SpotifyPlayback;
     sp_session_config m_config;

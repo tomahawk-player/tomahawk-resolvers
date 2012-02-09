@@ -20,7 +20,6 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
 {
 
-
     /**
         Read the QSettings to set the sync states from previous settings
     **/
