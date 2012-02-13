@@ -104,10 +104,24 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
 void
 SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
 {
-
     qDebug() << "Sync state changed";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    _playlists->doSend();
+    _playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
+}
+
+/**
+ getLoadedPLaylist( sp_playlist )
+   Gets a specific playlist from the list with id (uri)
+**/
+SpotifyPlaylists::LoadedPlaylist
+SpotifyPlaylists::getLoadedPlaylist( sp_playlist *&playlist )
+{
+    LoadedPlaylist pl;
+    pl.playlist_ = playlist;
+    int index = m_playlists.indexOf( pl );
+    if( index != -1)
+        return m_playlists.at( index );
+    return pl;
 }
 
 /**
@@ -133,6 +147,7 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
     sp_playlist* starredTracks = sp_session_starred_create( _session->Session() );
     sp_playlist_add_callbacks( starredTracks, &SpotifyCallbacks::syncPlaylistCallbacks, _session->Playlists() );
 
+    _session->Playlists()->addPlaylist( starredTracks );
     _session->setPlaylistContainer( pc );
 
     qDebug() << Q_FUNC_INFO << "done";
@@ -229,9 +244,9 @@ SpotifyPlaylists::setSyncPlaylist( const QString id )
     {
          // Set QSettings to be able to remember state on startup
 
-             Sync syncThis;
-             syncThis.id_ = id;
-             syncThis.sync_ = true;
+        Sync syncThis;
+        syncThis.id_ = id;
+        syncThis.sync_ = true;
         if( !m_syncPlaylists.contains( syncThis ) )
         {
              m_syncPlaylists.append( syncThis );
@@ -321,6 +336,9 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
+    playlist.starContainer_ = false;
+    playlist.sync_ = false;
+    playlist.isLoaded = false;
     char linkStr[256];
     sp_link *pl_link = sp_link_create_from_playlist( pl );
     sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
@@ -337,11 +355,11 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         playlist.starContainer_ = true;
     }
 
-    for ( int i=0 ; i< sp_playlist_num_tracks(pl); ++i )
+    for ( int i=0 ; i< sp_playlist_num_tracks( pl ); ++i )
     {
-        sp_track* track = sp_playlist_track(pl, i);
-        sp_track_add_ref(track);
-        playlist.tracks_.push_back(track);
+        sp_track* track = sp_playlist_track( pl, i );
+        sp_track_add_ref( track );
+        playlist.tracks_.push_back( track );
     }
 
     // Playlist is loaded and ready

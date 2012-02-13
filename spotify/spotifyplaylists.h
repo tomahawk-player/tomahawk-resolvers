@@ -35,11 +35,6 @@ public:
     void setSyncPlaylist( const QString id );
     //void sendSyncSignal();
 
-    void doSend()
-      {
-        qDebug() << "Sending 7";
-        emit( send( 7 ) );
-      }
 
     struct LoadedPlaylist{
       bool starContainer_;
@@ -55,7 +50,15 @@ public:
          bool sync_;
      };
 
+
+    void doSend( LoadedPlaylist playlist)
+      {
+        qDebug() << "Sending " << sp_playlist_name( playlist.playlist_ );
+        emit( send( playlist ) );
+      }
+
     LoadedPlaylist getPlaylist( const QString id );
+    LoadedPlaylist getLoadedPlaylist( sp_playlist *&playlist );
     QList<LoadedPlaylist> getPlaylists() const { return m_playlists; }
     QList<LoadedPlaylist> m_playlists;
     QList<Sync> getSyncPlaylists() const { return m_syncPlaylists; }
@@ -113,8 +116,8 @@ public:
 
 
 signals:
-   void send( int );
-
+   void send( SpotifyPlaylists::LoadedPlaylist );
+   void sendPl( SpotifyPlaylists::LoadedPlaylist );
 private:
     QList<Sync> m_syncPlaylists;
 

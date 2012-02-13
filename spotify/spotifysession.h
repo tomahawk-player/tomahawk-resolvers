@@ -105,16 +105,14 @@ public:
 signals:
     void notifyMainThreadSignal();
     void notifyLoggedInSignal();
+    void notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
+    void notifyStarredUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
 
 public slots:
-     //void notifyLoggedIn();
-     void get( int x )
-     {
-         qDebug() << "Received: " << x;
-     }
+     void get( SpotifyPlaylists::LoadedPlaylist playlist);
+
 private slots:
     void notifyMainThread();
-
 
 private:
 

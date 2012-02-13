@@ -116,10 +116,8 @@ void SpotifyResolver::setup()
     const QByteArray storagePath = dataDir().toUtf8();
     const QByteArray configPath = dataDir( true ).toUtf8();
     const QString tracePath = dataDir() + "/" + "trace.dat";
-    qDebug() << tracePath;
-    qDebug() << storagePath;
-    qDebug() << configPath;
 
+    // sessionConfig
     sessionConfig config;
     config.cache_location = storagePath.constData();
     config.settings_location = configPath.constData();
@@ -133,6 +131,11 @@ void SpotifyResolver::setup()
     m_session = new SpotifySession(config);
     connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
 
+    // Signals
+    connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
+    connect( m_session, SIGNAL(notifyStarredUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifyStarredUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
+
+
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
     connect( m_stdinWatcher, SIGNAL( lineRead( QVariant ) ), this, SLOT( playdarMessage( QVariant ) ) );
@@ -140,6 +143,36 @@ void SpotifyResolver::setup()
     m_stdinThread.start( QThread::LowPriority );
 
 }
+
+void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
+{
+    qDebug() << "Got playlist to update";
+}
+
+void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
+{
+    qDebug() << "Got starred playlist to update";
+
+    QVariantMap resp;
+    resp[ "qid" ] = pl.id_;
+    resp[ "_msgtype" ] = "playlist";
+
+    QVariantList results;
+
+    foreach( sp_track *tr, pl.tracks_ )
+    {
+
+        QVariantMap track;
+        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+        track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+        results << track;
+    }
+
+    resp[ "playlist" ] = results;
+    sendMessage( resp );
+
+}
+
 
 void SpotifyResolver::initSpotify()
 {
@@ -165,13 +198,13 @@ void SpotifyResolver::initSpotify()
     loadCache();
     sendConfWidget();
 
+
     // testing
 //     search( "123", "coldplay", "the scientist" );
 }
 
 void SpotifyResolver::notifyLoggedIn()
 {
-
     qDebug() << "Succesfully logged in!";
     m_loggedIn = true;
 
@@ -180,6 +213,7 @@ void SpotifyResolver::notifyLoggedIn()
         sp_session_preferred_bitrate( m_session->Session(), m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
     }
 }
+
 
 void SpotifyResolver::sendConfWidget()
 {
@@ -196,7 +230,8 @@ void SpotifyResolver::sendConfWidget()
     ui.replace( "placeholderPw", m_pw );
     ui.replace( "STREAMING_DEFAULT", m_highQuality ? "true" : "false" );
     QByteArray comp = qCompress( ui.toLatin1(), 9 );
-    qDebug() << "adding compressed UI file:" << comp.toBase64();
+
+    //qDebug() << "adding compressed UI file:" << comp.toBase64();
     m_configWidget = comp.toBase64();
     f.close();
 
@@ -206,7 +241,7 @@ void SpotifyResolver::sendConfWidget()
     QFile f2( ":/spotify-logo.png" );
     f2.open( QIODevice::ReadOnly );
     QByteArray compressed = qCompress( f2.readAll(), 9 );
-    qDebug() << "adding compressed image:" << compressed.toBase64();
+    //qDebug() << "adding compressed image:" << compressed.toBase64();
     images[ "spotify-logo.png" ] = compressed.toBase64();
     f2.close();
 
@@ -230,23 +265,30 @@ void SpotifyResolver::sendSettingsMessage()
 void
 SpotifyResolver::playdarMessage( const QVariant& msg )
 {
-    qDebug() << "Got playdar message!" << msg;
+    //qDebug() << "Got playdar message!" << msg;
+
     if( !msg.canConvert< QVariantMap >() ) {
         qWarning() << "Got non-map in json!";
         return;
     }
+
     QVariantMap m = msg.toMap();
-    if( m.value( "_msgtype" ) == "setpref" ) {
+
+    if( m.value( "_msgtype" ) == "setpref" )
+    {
+
         QVariantMap widgetMap = m[ "widgets" ].toMap();
         m_username = widgetMap[ "usernameEdit" ].toMap()[ "text" ].toString();
         m_pw = widgetMap[ "passwordEdit" ].toMap()[ "text" ].toString();
-        qDebug() << "checked?" << widgetMap[ "streamingCheckbox" ].toMap() << widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString();
+        //qDebug() << "checked?" << widgetMap[ "streamingCheckbox" ].toMap() << widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString();
         m_highQuality = widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString() == "true";
 
         login();
-
         saveSettings();
-    } else if( m.value( "_msgtype" ) == "rq" ) {
+
+    }
+    else if( m.value( "_msgtype" ) == "rq" )
+    {
         if( !m_loggedIn )
             return;
 
@@ -255,15 +297,20 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         QString track = m.value( "track" ).toString();
 
         qDebug() << "Resolving:" << qid << artist << track;
-
         search( qid, artist, track );
-    } else if( m.value( "_msgtype" ) == "config" ) {
+
+    }
+    else if( m.value( "_msgtype" ) == "config" )
+    {
         const QByteArray configPath = dataDir( true ).toUtf8();
         QString settingsFilename( QString( configPath ) + "/settings" );
+
         qDebug() << "Looking for spotify settings file at " << settingsFilename;
+
         QFile settingsFile( settingsFilename );
         QVariantMap spotifySettings;
         bool ok = true;
+
         if ( settingsFile.exists() && settingsFile.size() > 0 )
         {
             qDebug() << "Found spotify settings file, parsing...";
@@ -281,7 +328,8 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
             return;
         }
 
-        if ( m.value( "proxytype" ) == "socks5" ) {
+        if ( m.value( "proxytype" ) == "socks5" )
+        {
             if ( m.value( "proxypass" ).toString().isEmpty() )
             {
                 QString proxyString = QString( "%1:%2@socks5" ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );

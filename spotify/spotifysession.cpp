@@ -46,10 +46,9 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
 
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists;
-    connect( m_SpotifyPlaylists, SIGNAL(send(int)), this, SLOT(get(int)) );
+    connect( m_SpotifyPlaylists, SIGNAL(send(SpotifyPlaylists::LoadedPlaylist)), this, SLOT(get(SpotifyPlaylists::LoadedPlaylist)) );
     m_SpotifyPlaylists->moveToThread( &m_playlistThread );
     m_playlistThread.start( QThread::LowPriority );
-
 
     m_SpotifyPlayback = new SpotifyPlayback;
 
@@ -101,7 +100,7 @@ SpotifySession::~SpotifySession(){
 
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
-    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+       SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
     if (error == SP_ERROR_OK) {
         qDebug() << "Logged in successfully!!";
 
@@ -168,6 +167,8 @@ void SpotifySession::login()
         qDebug() << "Logging in with username:" << m_username << m_password;
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false);
     }
+    else
+        qDebug() << "No username or password provided!";
 }
 
 void SpotifySession::sendNotifyLoggedInSignal()
@@ -177,6 +178,22 @@ void SpotifySession::sendNotifyLoggedInSignal()
 }
 
 
+void
+SpotifySession::get( SpotifyPlaylists::LoadedPlaylist playlist)
+{
+    if( playlist.isLoaded && playlist.sync_ )
+    {
+        qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
+        emit notifySyncUpdateSignal( playlist );
+    }
+
+    if( playlist.isLoaded && playlist.starContainer_ )
+    {
+        qDebug() << "Received starred: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
+        emit notifyStarredUpdateSignal( playlist );
+    }
+
+}
 
 void SpotifySession::sendNotifyThreadSignal()
 {

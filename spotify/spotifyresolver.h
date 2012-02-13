@@ -49,6 +49,7 @@ class ConsoleWatcher;
 
 typedef QHash<QString, QString > CacheEntry;
 
+
 class SpotifyResolver : public QCoreApplication
 {
     Q_OBJECT
@@ -81,7 +82,8 @@ private slots:
     void saveCache();
     void initSpotify();
     void notifyLoggedIn();
-
+    void notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist );
+    void notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist );
 
 private:
     void sendConfWidget();
@@ -98,8 +100,6 @@ private:
     QHash< QString, sp_link* > m_trackLinkMap;
     bool m_dirty;
     CacheEntry m_cachedTrackLinkMap;
-
-
 
     // Http
     QxtHttpServerConnector m_connector;

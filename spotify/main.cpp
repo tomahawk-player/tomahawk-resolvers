@@ -27,7 +27,7 @@
 #include "spotifysession.h"
 #include "main.h"
 #include "spotifyresolver.h"
-
+//#include "appkey.h"
 int main(int argc, char *argv[])
 {
 
@@ -43,4 +43,28 @@ int main(int argc, char *argv[])
 
     app.setup();
     return app.exec();
+/*
+
+    QCoreApplication a(argc, argv);
+
+    //  Sometimes location causes errors, so if your not able
+    //  to login, change the location or rm the dirs + trace
+
+    sessionConfig config;
+    config.cache_location = "/tmp";
+    config.settings_location = "/tmp";
+    config.application_key = g_appkey;
+    config.application_key_size = g_appkey_size;
+    config.user_agent = "spotifyApi";
+    config.tracefile = "/tmp/trace.dat";
+    config.device_id = "spotifyApi";
+
+
+    SpotifySession *Spotify = new SpotifySession(config);
+    Spotify->setCredentials( "kabenlin", "sportstugan6");
+    Spotify->login();
+
+   return a.exec();
+    */
+    /** END EXAMPLE **/
 }
