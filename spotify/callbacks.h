@@ -225,7 +225,7 @@ static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
             track[ "albumpos" ] = sp_track_index( tr );
             track[ "discnumber"] = sp_track_disc( tr );
             track[ "year" ] = sp_album_year( sp_track_album( tr ) );
-            track[ "mimetype" ] = "audio/basic";
+            track[ "mimetype" ] = "audio/wav";
             track[ "source" ] = "Spotify";
             track[ "url" ] = sApp->handler()->urlForID( uid );
             track[ "duration" ] = duration;
