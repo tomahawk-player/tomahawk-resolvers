@@ -176,7 +176,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         var that = this;
         Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username );
         this.apiCall("authenticate", params, function (xhr) {
-            //Tomahawk.log("Got result of authenticate: " + xhr.responseText);
+            Tomahawk.log("Got result of authenticate: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (ret.result.success) {
                 if (!ret.result.IsAnywhere) {
