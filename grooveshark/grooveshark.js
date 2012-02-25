@@ -4,6 +4,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     sessionId: "",
     streamKeys: [],
     ip: "",
+    numSessionKeysTries : 0,
 
     spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
@@ -33,10 +34,13 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
+        Tomahawk.log("In newConfigSaved... " + userConfig.username + " compared to " + this.username);
         if ((userConfig.username != this.username) || (userConfig.password != this.password)) {
-            Tomahawk.log("Saving new Grooveshark credentials with username:" << userConfig.username);
+            Tomahawk.log("Saving new Grooveshark credentials with username:" + userConfig.username);
             this.sessionId = "";
             this.countryId = "";
+            window.localStorage['sessionId'] = "";
+            window.localStorage['countryId'] = "";
 
             this.username = userConfig.username;
             this.password = userConfig.password;
@@ -148,10 +152,11 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             this.getCountry();
         }
 
-        Tomahawk.log("Getting playlist songs!");
-        this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
-            Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
-        });
+        // Testing only
+//         Tomahawk.log("Getting playlist songs!");
+//         this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
+//             Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
+//         });
     },
 
     getSessionId: function () {
@@ -216,6 +221,13 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         var ret = JSON.parse(streamResult);
         if (ret.errors) {
             Tomahawk.log("Got error doing getSubscriberStreamKey api call: " + streamResult);
+            if (this.numSessionKeysTries < 5)
+            {
+                console.log("Retrying to get a new session key!")
+                this.sessionId = "";
+                this.getSessionId();
+                this.numSessionKeysTries = this.numSessionKeysTries + 1;
+            }
         } else {
             var url = unescape(ret.result.url);
             Tomahawk.log("Found MP3 URL: " + ret.result.url);
