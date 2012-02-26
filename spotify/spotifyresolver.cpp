@@ -147,6 +147,25 @@ void SpotifyResolver::setup()
 void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 {
     qDebug() << "Got playlist to update";
+
+    QVariantMap resp;
+    resp[ "qid" ] = pl.id_;
+    resp[ "identifier" ] = pl.name_;
+    resp[ "_msgtype" ] = "playlist";
+
+    QVariantList results;
+
+    foreach( sp_track *tr, pl.tracks_ )
+    {
+
+        QVariantMap track;
+        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+        track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+        results << track;
+    }
+
+    resp[ "playlist" ] = results;
+    sendMessage( resp );
 }
 
 void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
@@ -155,6 +174,7 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 
     QVariantMap resp;
     resp[ "qid" ] = pl.id_;
+    resp[ "identifier" ] = pl.name_;
     resp[ "_msgtype" ] = "playlist";
 
     QVariantList results;

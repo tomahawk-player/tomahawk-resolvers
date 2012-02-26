@@ -147,7 +147,10 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
     sp_playlist* starredTracks = sp_session_starred_create( _session->Session() );
     sp_playlist_add_callbacks( starredTracks, &SpotifyCallbacks::syncPlaylistCallbacks, _session->Playlists() );
 
+    QString name = sp_user_canonical_name( sp_session_user( _session->Session() ) );
+    QString starredId = "spotify:user:" + name + ":playlist:0000000000000000000000";
     _session->Playlists()->addPlaylist( starredTracks );
+    _session->Playlists()->setSyncPlaylist( starredId );
     _session->setPlaylistContainer( pc );
 
     qDebug() << Q_FUNC_INFO << "done";
@@ -210,9 +213,65 @@ SpotifyPlaylists::tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num
 {
     qDebug() << "Tracks Added";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    _playlists->addPlaylist( pl );
+    _playlists->addTracks( pl, tracks, num_tracks, position);
 }
 
+
+
+/**
+   addTracks(sp_playlist*, sp_tracks * const *tracks, int num_tracks)
+**/
+void
+SpotifyPlaylists::addTracks(sp_playlist* pl, sp_track *const*tracks, int num_tracks, int pos)
+{
+    qDebug() << "Adding tracks to" << sp_playlist_name(pl);
+
+    LoadedPlaylist playlist;
+    playlist.playlist_ = pl;
+
+    const int index = m_playlists.indexOf( playlist );
+    if( index != -1 ){
+
+        for ( int i=0 ; i< num_tracks; ++i )
+        {
+            qDebug() << "Pos" << pos;
+            sp_track* track = *(tracks++);
+            qDebug() << "Adding track " << i << sp_track_name( track );
+            sp_track_add_ref( track );
+            playlist.tracks_.insert(pos, track );
+            pos++;
+        }
+
+         doSend( playlist );
+    }
+
+}
+
+/**
+  removeTracks(sp_playlist*, const int*tracks, int num_tracks)
+**/
+void
+SpotifyPlaylists::removeTracks(sp_playlist* pl, const int *tracks, int num_tracks)
+{
+    qDebug() << "Removing tracks from " << sp_playlist_name(pl);
+
+    LoadedPlaylist playlist;
+    playlist.playlist_ = pl;
+
+    const int index = m_playlists.indexOf( playlist );
+    if( index != -1 ){
+
+        for ( int i=0 ; i< num_tracks; ++i )
+        {
+            int pos = *(tracks)++;
+            qDebug() << "Remvoing track at" << pos;
+            playlist.tracks_.removeAt( pos );
+        }
+
+         doSend( playlist );
+    }
+
+}
 /**
  getPLaylist( const QString )
    Gets a specific playlist from the list with id (uri)
@@ -322,6 +381,8 @@ SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
 
 }
 
+
+
 /**
  addPlaylist( sp_playlist *)
    This function is called from callback
@@ -344,6 +405,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
     sp_link_release( pl_link );
     playlist.id_ = linkStr;
+    playlist.name_ = sp_playlist_name(pl);
 
     /**
       Starred playlist folder will get a 0 hash as linkstr
@@ -351,7 +413,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     **/
     if( playlist.id_.contains( "0000000000000000000000" ) )
     {
-        playlist.id_ = "starred";
+        playlist.name_ =  "Starred Tracks";
         playlist.starContainer_ = true;
     }
 

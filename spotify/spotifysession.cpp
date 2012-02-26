@@ -181,7 +181,7 @@ void SpotifySession::sendNotifyLoggedInSignal()
 void
 SpotifySession::get( SpotifyPlaylists::LoadedPlaylist playlist)
 {
-    if( playlist.isLoaded && playlist.sync_ )
+    if( playlist.isLoaded /*&& playlist.sync_*/ )
     {
         qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
         emit notifySyncUpdateSignal( playlist );
@@ -205,7 +205,7 @@ void SpotifySession::sendNotifyThreadSignal()
 
 void SpotifySession::notifyMainThread()
 {
-    int timeout;
+    int timeout(0);
     do {
         sp_session_process_events( m_session, &timeout );
     } while( !timeout );

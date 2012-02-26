@@ -29,6 +29,8 @@ public:
     explicit SpotifyPlaylists( QObject *parent = 0);
     virtual ~SpotifyPlaylists();
     void addPlaylist( sp_playlist *);
+    void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
+    void removeTracks(sp_playlist* pl, int const *tracks, int num_tracks);
     void removePlaylist( sp_playlist *playlist );
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
@@ -40,6 +42,8 @@ public:
       bool starContainer_;
       bool sync_;
       bool isLoaded;
+
+      QString name_;
       QString id_;
       sp_playlist* playlist_;
       QList<sp_track*> tracks_;
@@ -52,10 +56,10 @@ public:
 
 
     void doSend( LoadedPlaylist playlist)
-      {
+    {
         qDebug() << "Sending " << sp_playlist_name( playlist.playlist_ );
         emit( send( playlist ) );
-      }
+    }
 
     LoadedPlaylist getPlaylist( const QString id );
     LoadedPlaylist getLoadedPlaylist( sp_playlist *&playlist );
@@ -111,7 +115,7 @@ public:
         Q_UNUSED( num_tracks );
         qDebug() << "Tracks removed";
         SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->addPlaylist( pl );
+        _playlists->removeTracks( pl, tracks, num_tracks );
     }
 
 
