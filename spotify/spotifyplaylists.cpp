@@ -107,6 +107,11 @@ void
 SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
 {
     qDebug() << "Sync state changed";
+    if ( !sp_playlist_is_loaded( pl ) )
+    {
+      qDebug() << "Playlist isn't loaded yet, waiting";
+      return;
+    }
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
     _playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
 }
@@ -324,6 +329,37 @@ SpotifyPlaylists::setSyncPlaylist( const QString id )
         m_playlists[ index ].sync_ = true;
         sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
     }
+}
+
+
+/**
+  tracksMoved
+  **/
+void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int num_tracks, int new_position, void *userdata)
+{
+
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    LoadedPlaylist pl;
+    pl.playlist_ = playlist;
+
+    qDebug() << "Numtracks:" << num_tracks << " tracks:" << *tracks;
+
+    int index = _playlists->getPlaylists().indexOf( pl );
+    if( index != -1)
+    {
+        for(int i = 0; i < num_tracks; i++)
+        {
+            qDebug() << "Moving track nr" << i << "at pos " << tracks[i] << " to pos" << new_position;
+            _playlists->getPlaylists()[index].tracks_.move(tracks[i], new_position++);
+
+        }
+
+        for(int i = 0; i < _playlists->getPlaylists()[index].tracks_.count(); i++)
+            qDebug() << "Track" << sp_track_name(_playlists->getPlaylists()[index].tracks_[i]);
+    }
+
+    qDebug() << "Tracks moved";
+
 }
 
 /**

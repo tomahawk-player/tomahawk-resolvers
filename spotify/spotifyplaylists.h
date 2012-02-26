@@ -100,16 +100,7 @@ public:
         Q_UNUSED( userdata );
         qDebug() << "Playlist renamned";
     }
-    static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata)
-    {
-
-        Q_UNUSED( tracks );
-        Q_UNUSED( num_tracks );
-        Q_UNUSED( new_position );
-        qDebug() << "Tracks moved";
-        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->addPlaylist( pl );
-    }
+    static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata)
     {
         Q_UNUSED( tracks );
