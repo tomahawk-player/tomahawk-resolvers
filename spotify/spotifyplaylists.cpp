@@ -36,6 +36,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
          qDebug() << sync.id_;
          sync.sync_ = settings.value( "sync" ).toBool();
          m_syncPlaylists.append( sync );
+         setSyncPlaylist( sync.id_ );
     }
 
     settings.endArray();
@@ -99,6 +100,7 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
   Callback
     State changed
     Called from libspotify when state changed on playlist
+    @note: Will send the playlist when loaded, at startup
 **/
 
 void
@@ -238,11 +240,10 @@ SpotifyPlaylists::addTracks(sp_playlist* pl, sp_track *const*tracks, int num_tra
             sp_track* track = *(tracks++);
             qDebug() << "Adding track " << i << sp_track_name( track );
             sp_track_add_ref( track );
-            playlist.tracks_.insert(pos, track );
+            m_playlists[index].tracks_.insert(pos, track );
             pos++;
         }
 
-         doSend( playlist );
     }
 
 }
@@ -261,14 +262,15 @@ SpotifyPlaylists::removeTracks(sp_playlist* pl, const int *tracks, int num_track
     const int index = m_playlists.indexOf( playlist );
     if( index != -1 ){
 
+        if( num_tracks == m_playlists[index].tracks_.count() )
+            m_playlists[index].tracks_.clear();
+
         for ( int i=0 ; i< num_tracks; ++i )
         {
             int pos = *(tracks)++;
             qDebug() << "Remvoing track at" << pos;
-            playlist.tracks_.removeAt( pos );
+            m_playlists[index].tracks_.removeAt( pos );
         }
-
-         doSend( playlist );
     }
 
 }
@@ -377,6 +379,8 @@ SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
     if( index != -1 ){
         qDebug() << "Playlist progress is" << (done ? "done" : "still loading..." ) << index;
         m_playlists[ index ].isLoaded = done;
+        if(done && m_playlists[index].sync_)
+            doSend( m_playlists[index] ); //_playlists->doSend();
     }
 
 }
@@ -393,10 +397,16 @@ void
 SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 {
 
-    qDebug() << "Adding" << sp_playlist_name(pl);
 
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
+
+    int index = m_playlists.indexOf( playlist );
+    if( index != -1 )
+        return;
+
+    qDebug() << "Adding" << sp_playlist_name(pl);
+
     playlist.starContainer_ = false;
     playlist.sync_ = false;
     playlist.isLoaded = false;
@@ -447,11 +457,11 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
             setSyncPlaylist( playlist.id_ );
         }
     }
-    else
+    /*else
     {
         qDebug() << "Something changed, will replace at index" << m_playlists.indexOf( playlist );
         m_playlists.replace( m_playlists.indexOf( playlist ), playlist);
-    }
+    }*/
 
 
 }

@@ -73,7 +73,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             track[ "size" ] = bytes;
             results << track;
 
-            qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
+            //qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
         }
 
     }

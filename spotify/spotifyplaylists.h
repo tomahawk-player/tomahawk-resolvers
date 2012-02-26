@@ -92,6 +92,7 @@ public:
         qDebug() << "Update in progress";
         SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
         _playlists->setPlaylistInProgress( pl, done );
+
     }
     static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata)
     {

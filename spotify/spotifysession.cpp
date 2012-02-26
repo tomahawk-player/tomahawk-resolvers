@@ -181,13 +181,13 @@ void SpotifySession::sendNotifyLoggedInSignal()
 void
 SpotifySession::get( SpotifyPlaylists::LoadedPlaylist playlist)
 {
-    if( playlist.isLoaded /*&& playlist.sync_*/ )
+    if( playlist.isLoaded && playlist.sync_ )
     {
         qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
         emit notifySyncUpdateSignal( playlist );
     }
 
-    if( playlist.isLoaded && playlist.starContainer_ )
+    else if( playlist.isLoaded && playlist.starContainer_ )
     {
         qDebug() << "Received starred: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
         emit notifyStarredUpdateSignal( playlist );
