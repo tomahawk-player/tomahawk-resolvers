@@ -223,7 +223,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Got error doing getSubscriberStreamKey api call: " + streamResult);
             if (this.numSessionKeysTries < 5)
             {
-                console.log("Retrying to get a new session key!")
+                Tomahawk.log("Retrying to get a new session key!")
                 this.sessionId = "";
                 this.getSessionId();
                 this.numSessionKeysTries = this.numSessionKeysTries + 1;
