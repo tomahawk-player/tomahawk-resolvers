@@ -193,20 +193,18 @@ static void SP_CALLCONV getAudioBufferStats(sp_session *session, sp_audio_buffer
 
 static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
 {
-    QString qid = QString( *static_cast<QString*>(userdata) );
-    qDebug() << "Got search result for qid:" << qid;
-    delete static_cast<QString*>(userdata);
+    UserData* data = static_cast<UserData*>(userdata);
+    qDebug() << "Got search result for qid:" << data->qid;
 
-    // we return the top 25 results
     QVariantMap resp;
-    resp[ "qid" ] = qid;
+    resp[ "qid" ] = data->qid;
     resp[ "_msgtype" ] = "results";
     QVariantList results;
 
     // TODO search by popularity!
      qDebug() << "Got num results:" << sp_search_num_tracks( result );
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
-        int num = qMin( sp_search_num_tracks( result ), 25 );
+        int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 1 );
         for( int i = 0; i < num; i++ ) {
             sp_track *const tr = sp_search_track( result, i );
             if( !tr || !sp_track_is_loaded( tr ) ) {
@@ -230,7 +228,7 @@ static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
             track[ "url" ] = sApp->handler()->urlForID( uid );
             track[ "duration" ] = duration;
             track[ "score" ] = .95; // TODO
-            track[ "bitrate" ] = 192; // TODO
+            track[ "bitrate" ] = sApp->highQualityStreaming() ? 320 : 160; // TODO
 
             quint32 bytes = ( duration * 44100 * 2 * 2 );
             track[ "size" ] = bytes;
@@ -245,6 +243,8 @@ static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
     sp_search_release( result );
 
     sApp->sendMessage( resp );
+
+    delete data;
 }
 
 }

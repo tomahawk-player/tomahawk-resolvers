@@ -52,6 +52,13 @@ class QSocketNotifer;
 typedef QSharedPointer< SpotifyIODevice > spotifyiodev_ptr;
 typedef QHash<QString, QString > CacheEntry;
 
+struct UserData {
+    QString qid;
+    bool fulltext;
+
+    UserData( const QString& qidd ) : qid( qidd ), fulltext( false ) {}
+};
+
 class SpotifyResolver : public QCoreApplication
 {
     Q_OBJECT
@@ -65,7 +72,9 @@ public:
 
     void sendNotifyThreadSignal();
 
-    void search( const QString& qid, const QString& artist, const QString& track );
+    void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText );
+
+    bool highQualityStreaming() const { return m_highQuality; }
 
     // adds a track to the link map, returns a unique ID for identifying it
     QString addToTrackLinkMap( sp_link* link );

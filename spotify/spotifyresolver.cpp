@@ -359,13 +359,14 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         if( !m_loggedIn )
             return;
 
-        QString qid = m.value( "qid" ).toString();
-        QString artist = m.value( "artist" ).toString();
-        QString track = m.value( "track" ).toString();
+        const QString qid = m.value( "qid" ).toString();
+        const QString artist = m.value( "artist" ).toString();
+        const QString track = m.value( "track" ).toString();
+        const QString fullText = m.value( "fulltext" ).toString();
 
-        qDebug() << "Resolving:" << qid << artist << track;
+        qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText;
 
-        search( qid, artist, track );
+        search( qid, artist, track, fullText );
     } else if( m.value( "_msgtype" ) == "config" ) {
         const QByteArray configPath = dataDir( true ).toUtf8();
         QString settingsFilename( QString( configPath ) + "/settings" );
@@ -438,18 +439,31 @@ void SpotifyResolver::sendMessage(const QVariant& v)
 }
 
 
-void SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track )
+void SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track, const QString& fullText )
 {
     // search spotify..
     // do some cleanups.. remove ft/feat
-    QString cleanedTrack = track;
-    if( cleanedTrack.indexOf( "feat" ) > -1 )
-        cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "feat" ) );
-    if( cleanedTrack.indexOf( "ft." ) > -1 )
-        cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );
+    QString query;
+    UserData* data = new UserData( qid );
 
-    QString query = QString( "%1 %2" ).arg( artist ).arg( cleanedTrack );
-    sp_search_create( m_session, query.toUtf8().data(), 0, 25, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, new QString(qid) );
+    if ( fullText.isEmpty() )
+    {
+        // Not a search, just a track resolve.
+        QString cleanedTrack = track;
+        if( cleanedTrack.indexOf( "feat" ) > -1 )
+            cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "feat" ) );
+        if( cleanedTrack.indexOf( "ft." ) > -1 )
+            cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );
+
+        query = QString( "%1 %2" ).arg( artist ).arg( cleanedTrack );
+    }
+    else
+    {
+        // fulltext search
+        query = fullText;
+        data->fulltext = true;
+    }
+    sp_search_create( m_session, query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, data );
 }
 
 void
