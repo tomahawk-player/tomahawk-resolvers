@@ -33,7 +33,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 	
 	settings: {
-		name: 'Soundcloud',
+		name: 'SoundCloud',
 		weight: 85,
 		timeout: 15
 	},
