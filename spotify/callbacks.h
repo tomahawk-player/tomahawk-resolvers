@@ -230,7 +230,8 @@ static void SP_CALLCONV searchComplete( sp_search *result, void *userdata )
             track[ "score" ] = .95; // TODO
             track[ "bitrate" ] = sApp->highQualityStreaming() ? 320 : 160; // TODO
 
-            quint32 bytes = ( duration * 44100 * 2 * 2 );
+            // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
+            quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
             track[ "size" ] = bytes;
             results << track;
 
