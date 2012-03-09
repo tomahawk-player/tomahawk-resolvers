@@ -83,7 +83,7 @@ void ConsoleWatcher::checkStdin()
 void ConsoleWatcher::parseMsg(const QByteArray& msg)
 {
     QJson::Parser p;
-    qDebug() << "GOT UNPARSED STDIN:" << msg;
+//     qDebug() << "GOT UNPARSED STDIN:" << msg;
     QVariant json = p.parse( msg );
 
      if( json.isValid() )

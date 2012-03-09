@@ -35,12 +35,6 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    , m_username( "" )
    , m_password ( "" )
 {
-
-    // Set applicationName
-    QCoreApplication::setOrganizationName("org.SpotifyApi");
-    QCoreApplication::setOrganizationDomain("spotifyapi-git");
-    QCoreApplication::setApplicationName("SpotifyApi");
-
     // Instance
     s_instance = this;
 
@@ -164,7 +158,7 @@ void SpotifySession::login()
     qDebug() << Q_FUNC_INFO;
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
-        qDebug() << "Logging in with username:" << m_username << m_password;
+        qDebug() << "Logging in with username:" << m_username;
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false);
     }
     else

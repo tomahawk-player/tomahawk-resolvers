@@ -148,6 +148,12 @@ void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 {
     qDebug() << "Got playlist to update";
 
+    if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
+    {
+        qDebug() << "NULL or not loaded playlist in callbacK!";
+        return;
+    }
+
     QVariantMap resp;
     resp[ "qid" ] = pl.id_;
     resp[ "identifier" ] = pl.name_;
@@ -157,10 +163,15 @@ void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 
     foreach( sp_track *tr, pl.tracks_ )
     {
+        if ( !tr || sp_track_is_loaded( tr ) )
+        {
+            qDebug() << "IGNORING not loaded track!";
+            continue;
+        }
 
         QVariantMap track;
-        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
-        track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+        track[ "track" ] = "Test Track Name"; //QString::fromUtf8( sp_track_name( tr ) );
+        track[ "artist" ] = "Test Artist"; // QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
         results << track;
     }
 
@@ -172,6 +183,12 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 {
     qDebug() << "Got starred playlist to update";
 
+    if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
+    {
+        qDebug() << "NULL or not loaded playlist in callbacK!";
+        return;
+    }
+
     QVariantMap resp;
     resp[ "qid" ] = pl.id_;
     resp[ "identifier" ] = pl.name_;
@@ -181,10 +198,14 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 
     foreach( sp_track *tr, pl.tracks_ )
     {
-
+        if ( !tr || sp_track_is_loaded( tr ) )
+        {
+            qDebug() << "IGNORING not loaded track in starred!";
+            continue;
+        }
         QVariantMap track;
-        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
-        track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+        track[ "track" ] = "Test Track Name"; //QString::fromUtf8( sp_track_name( tr ) );
+        track[ "artist" ] = "Test Artist"; // QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
         results << track;
     }
 
@@ -563,7 +584,7 @@ QString SpotifyResolver::dataDir( bool configDir )
     QDir d( path );
     d.mkpath( path );
 
-//    qDebug() << "Using SpotifyResolver log dir:" << path;
+    qDebug() << "Using SpotifyResolver log dir:" << path;
     return path;
 }
 
