@@ -17,7 +17,12 @@ set(tomahawkspotify_SRCS
     kdsingleapplicationguard/kdsharedmemorylocker.cpp
     kdsingleapplicationguard/kdtoolsglobal.cpp
     kdsingleapplicationguard/kdlockedsharedmemorypointer.cpp
-
+    spotifyhttpserver.cpp
+    spotifyloghandler.cpp
+    spotifyplayback.cpp
+    spotifysearch.cpp
+    spotifyplaylists.cpp
+    spotifysession.cpp
     spotifyresolver.cpp
     consolewatcher.cpp
     audiohttpserver.cpp
@@ -33,7 +38,12 @@ set( tomahawkspotify_NOMOC_HDRS
 
 set( tomahawkspotify_HDRS
     kdsingleapplicationguard/kdsingleapplicationguard.h
-
+    spotifyhttpserver.h
+    spotifyloghandler.h
+    spotifyplayback.h
+    spotifysearch.h
+    spotifyplaylists.h
+    spotifysession.h
     spotifyresolver.h
     consolewatcher.h
     audiohttpserver.h

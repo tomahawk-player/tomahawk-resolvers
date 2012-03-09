@@ -28,13 +28,13 @@
 
 #include "spotify_key.h"
 #include "consolewatcher.h"
-#include "callbacks.h"
 #include "qxthttpsessionmanager.h"
-
+#include "spotifysearch.h"
 #include <libspotify/api.h>
 #include "qjson/parser.h"
 #include "qjson/serializer.h"
-
+#include "spotifyloghandler.h"
+#include "spotifysession.h"
 #include <QTimer>
 #include <QTextStream>
 #include <QSettings>
@@ -51,105 +51,11 @@
 #include <stdio.h>
 #include <fstream>
 #include "audiohttpserver.h"
-#include "spotifyiodevice.h"
 
 #ifdef WIN32
 #include <shlobj.h>
 #endif
 
-namespace SpotifyCallbacks {
-
-static sp_session_callbacks callbacks = {
-    &SpotifyCallbacks::loggedIn,
-    &SpotifyCallbacks::loggedOut,
-    &SpotifyCallbacks::metadataUpdated,
-    &SpotifyCallbacks::connectionError,
-    &SpotifyCallbacks::messageToUser,
-    &SpotifyCallbacks::notifyMainThread,
-    &SpotifyCallbacks::musicDelivery,
-    &SpotifyCallbacks::playTokenLost,
-    &SpotifyCallbacks::logMessage,
-    &SpotifyCallbacks::endOfTrack,
-    &SpotifyCallbacks::streamingError,
-    #if SPOTIFY_API_VERSION > 4
-    &SpotifyCallbacks::userinfoUpdated,
-    &SpotifyCallbacks::startPlayback,
-    &SpotifyCallbacks::stopPlayback,
-    &SpotifyCallbacks::getAudioBufferStats
-    #else
-    &SpotifyCallbacks::userinfoUpdated
-    #endif
-};
-}
-
-#ifdef Q_WS_MAC
-#define LOGFILE QDir::home().filePath( "Library/Logs/SpotifyResolver.log" ).toLocal8Bit()
-#else
-#define LOGFILE QDir( SpotifyResolver::dataDir() ).filePath( "SpotifyResolver.log" ).toLocal8Bit()
-#endif
-
-#define LOGFILE_SIZE 1024 * 512
-std::ofstream logfile;
-
-void LogHandler( QtMsgType type, const char *msg )
-{
-    static QMutex s_mutex;
-
-    QMutexLocker locker( &s_mutex );
-    switch( type )
-    {
-        case QtDebugMsg:
-            logfile << QTime::currentTime().toString().toAscii().data() << " Debug: " << msg << "\n";
-            break;
-
-        case QtCriticalMsg:
-            logfile << QTime::currentTime().toString().toAscii().data() << " Critical: " << msg << "\n";
-            break;
-
-        case QtWarningMsg:
-            logfile << QTime::currentTime().toString().toAscii().data() << " Warning: " << msg << "\n";
-            break;
-
-        case QtFatalMsg:
-            logfile << QTime::currentTime().toString().toAscii().data() << " Fatal: " << msg << "\n";
-            logfile.flush();
-/*
-            cout << msg << "\n";
-            cout.flush();*/
-            abort();
-            break;
-    }
-
-//     std::cout << msg << "\n";
-//     cout.flush();
-    logfile.flush();
-}
-
-void setupLogfile()
-{
-    if ( QFileInfo( LOGFILE ).size() > LOGFILE_SIZE )
-    {
-        QByteArray lc;
-        {
-            QFile f( LOGFILE );
-            f.open( QIODevice::ReadOnly | QIODevice::Text );
-            lc = f.readAll();
-            f.close();
-        }
-
-        QFile::remove( LOGFILE );
-
-        {
-            QFile f( LOGFILE );
-            f.open( QIODevice::WriteOnly | QIODevice::Text );
-            f.write( lc.right( LOGFILE_SIZE - (LOGFILE_SIZE / 4) ) );
-            f.close();
-        }
-    }
-
-    logfile.open( LOGFILE, std::ios::app );
-    qInstallMsgHandler( LogHandler );
-}
 
 QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
 {
@@ -183,14 +89,13 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     , m_stdinWatcher( 0 )
     , m_handler( 0 )
     , m_loggedIn( false )
-    , m_trackEnded( false )
     , m_apiKey( QByteArray::fromBase64( spotifyApiKey ) )
     , m_highQuality( true )
 {
     setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
     setApplicationName( QLatin1String( "SpotifyResolver" ) );
-    setApplicationVersion( QLatin1String( "0.1" ) );
+    setApplicationVersion( QLatin1String( "2.0" ) );
 
 }
 
@@ -198,8 +103,7 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
 SpotifyResolver::~SpotifyResolver()
 {
     qDebug() << "exiting...";
-    sp_session_logout( m_session );
-
+    delete m_session;
     delete m_stdinWatcher;
     m_stdinThread.exit();
 }
@@ -207,38 +111,93 @@ SpotifyResolver::~SpotifyResolver()
 void SpotifyResolver::setup()
 {
     setupLogfile();
-    connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
+
+    qDebug() << "Initializing Spotify";
+    const QByteArray storagePath = dataDir().toUtf8();
+    const QByteArray configPath = dataDir( true ).toUtf8();
+    const QString tracePath = dataDir() + "/" + "trace.dat";
+
+    // sessionConfig
+    sessionConfig config;
+    config.cache_location = storagePath.constData();
+    config.settings_location = configPath.constData();
+    config.application_key = m_apiKey.constData();
+    config.application_key_size = m_apiKey.size();
+    config.user_agent = "tomahawkresolver";
+    config.tracefile = tracePath.toUtf8();
+    config.device_id = "tomahawkspotify";
+
+    // When signal is emitted, you are logged in
+    m_session = new SpotifySession(config);
+    connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
+
+    // Signals
+    connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
+    connect( m_session, SIGNAL(notifyStarredUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifyStarredUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
+
 
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
     connect( m_stdinWatcher, SIGNAL( lineRead( QVariant ) ), this, SLOT( playdarMessage( QVariant ) ) );
     m_stdinWatcher->moveToThread( &m_stdinThread );
     m_stdinThread.start( QThread::LowPriority );
+
 }
+
+void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
+{
+    qDebug() << "Got playlist to update";
+
+    QVariantMap resp;
+    resp[ "qid" ] = pl.id_;
+    resp[ "identifier" ] = pl.name_;
+    resp[ "_msgtype" ] = "playlist";
+
+    QVariantList results;
+
+    foreach( sp_track *tr, pl.tracks_ )
+    {
+
+        QVariantMap track;
+        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+        track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+        results << track;
+    }
+
+    resp[ "playlist" ] = results;
+    sendMessage( resp );
+}
+
+void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
+{
+    qDebug() << "Got starred playlist to update";
+
+    QVariantMap resp;
+    resp[ "qid" ] = pl.id_;
+    resp[ "identifier" ] = pl.name_;
+    resp[ "_msgtype" ] = "playlist";
+
+    QVariantList results;
+
+    foreach( sp_track *tr, pl.tracks_ )
+    {
+
+        QVariantMap track;
+        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+        track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+        results << track;
+    }
+
+    resp[ "playlist" ] = results;
+    sendMessage( resp );
+
+}
+
 
 void SpotifyResolver::initSpotify()
 {
-    //initialize spotify session
-    qDebug() << "Initializing Spotify";
-    const QByteArray storagePath = dataDir().toUtf8();
-    const QByteArray configPath = dataDir( true ).toUtf8();
-    const QString tracePath = dataDir() + "/" + "trace.dat";
-    m_config.api_version = SPOTIFY_API_VERSION;
-    m_config.cache_location = storagePath.constData();
-    m_config.settings_location = configPath.constData();
-    m_config.application_key = m_apiKey.constData();
-    m_config.application_key_size = m_apiKey.size();
-    m_config.user_agent = "tomahawkresolver";
-    m_config.callbacks = &SpotifyCallbacks::callbacks;
-    m_config.tracefile = tracePath.toUtf8();
-    m_config.device_id = "tomahawkspotify";
-
-    sp_error err = sp_session_create(&m_config, &m_session);
-    if (SP_ERROR_OK != err) {
-        qWarning() << "Failed to create spotify session: " << sp_error_message(err) << (int)err;
-    }
-
-    m_httpS.setPort( 55050 ); //TODO config
+    m_port = 55050;
+    m_httpS.setPort( m_port ); //TODO config
     m_httpS.setListenInterface( QHostAddress::LocalHost );
     m_httpS.setConnector( &m_connector );
 
@@ -258,20 +217,22 @@ void SpotifyResolver::initSpotify()
     loadCache();
     sendConfWidget();
 
+
     // testing
 //     search( "123", "coldplay", "the scientist" );
 }
 
-void SpotifyResolver::setLoggedIn( bool loggedIn )
+void SpotifyResolver::notifyLoggedIn()
 {
-    m_loggedIn = loggedIn;
+    qDebug() << "Succesfully logged in!";
+    m_loggedIn = true;
 
-    if( loggedIn ) {
+    if( m_loggedIn ) {
         sendSettingsMessage();
-
-        sp_session_preferred_bitrate( m_session, m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
+        sp_session_preferred_bitrate( m_session->Session(), m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
     }
 }
+
 
 void SpotifyResolver::sendConfWidget()
 {
@@ -288,7 +249,8 @@ void SpotifyResolver::sendConfWidget()
     ui.replace( "placeholderPw", m_pw );
     ui.replace( "STREAMING_DEFAULT", m_highQuality ? "true" : "false" );
     QByteArray comp = qCompress( ui.toLatin1(), 9 );
-    qDebug() << "adding compressed UI file:" << comp.toBase64();
+
+    //qDebug() << "adding compressed UI file:" << comp.toBase64();
     m_configWidget = comp.toBase64();
     f.close();
 
@@ -298,7 +260,7 @@ void SpotifyResolver::sendConfWidget()
     QFile f2( ":/spotify-logo.png" );
     f2.open( QIODevice::ReadOnly );
     QByteArray compressed = qCompress( f2.readAll(), 9 );
-    qDebug() << "adding compressed image:" << compressed.toBase64();
+    //qDebug() << "adding compressed image:" << compressed.toBase64();
     images[ "spotify-logo.png" ] = compressed.toBase64();
     f2.close();
 
@@ -319,43 +281,33 @@ void SpotifyResolver::sendSettingsMessage()
 }
 
 
-void SpotifyResolver::sendNotifyThreadSignal()
-{
-    emit notifyMainThreadSignal();
-}
-
-
-void SpotifyResolver::notifyMainThread()
-{
-    int timeout;
-    do {
-//         qDebug() << QThread::currentThreadId() << "notifying main thread";
-        sp_session_process_events( m_session, &timeout );
-//         qDebug() << QThread::currentThreadId()  << "done";
-    } while( !timeout );
-    QTimer::singleShot( timeout, this, SLOT( notifyMainThread() ) );
-}
-
 void
 SpotifyResolver::playdarMessage( const QVariant& msg )
 {
-    qDebug() << "Got playdar message!" << msg;
+    //qDebug() << "Got playdar message!" << msg;
+
     if( !msg.canConvert< QVariantMap >() ) {
         qWarning() << "Got non-map in json!";
         return;
     }
+
     QVariantMap m = msg.toMap();
-    if( m.value( "_msgtype" ) == "setpref" ) {
+
+    if( m.value( "_msgtype" ) == "setpref" )
+    {
+
         QVariantMap widgetMap = m[ "widgets" ].toMap();
         m_username = widgetMap[ "usernameEdit" ].toMap()[ "text" ].toString();
         m_pw = widgetMap[ "passwordEdit" ].toMap()[ "text" ].toString();
-        qDebug() << "checked?" << widgetMap[ "streamingCheckbox" ].toMap() << widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString();
+        //qDebug() << "checked?" << widgetMap[ "streamingCheckbox" ].toMap() << widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString();
         m_highQuality = widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString() == "true";
 
         login();
-
         saveSettings();
-    } else if( m.value( "_msgtype" ) == "rq" ) {
+
+    }
+    else if( m.value( "_msgtype" ) == "rq" )
+    {
         if( !m_loggedIn )
             return;
 
@@ -367,13 +319,17 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText;
 
         search( qid, artist, track, fullText );
-    } else if( m.value( "_msgtype" ) == "config" ) {
+    }
+    else if( m.value( "_msgtype" ) == "config" ) {
         const QByteArray configPath = dataDir( true ).toUtf8();
         QString settingsFilename( QString( configPath ) + "/settings" );
+
         qDebug() << "Looking for spotify settings file at " << settingsFilename;
+
         QFile settingsFile( settingsFilename );
         QVariantMap spotifySettings;
         bool ok = true;
+
         if ( settingsFile.exists() && settingsFile.size() > 0 )
         {
             qDebug() << "Found spotify settings file, parsing...";
@@ -391,7 +347,8 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
             return;
         }
 
-        if ( m.value( "proxytype" ) == "socks5" ) {
+        if ( m.value( "proxytype" ) == "socks5" )
+        {
             if ( m.value( "proxypass" ).toString().isEmpty() )
             {
                 QString proxyString = QString( "%1:%2@socks5" ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );
@@ -444,7 +401,7 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
     // search spotify..
     // do some cleanups.. remove ft/feat
     QString query;
-    UserData* data = new UserData( qid );
+    UserData* data = new UserData( qid, this );
 
     if ( fullText.isEmpty() )
     {
@@ -463,7 +420,7 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
         query = fullText;
         data->fulltext = true;
     }
-    sp_search_create( m_session, query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifyCallbacks::searchComplete, data );
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
 }
 
 void
@@ -473,13 +430,12 @@ SpotifyResolver::loadCache()
     if ( !f.open( QIODevice::ReadOnly ) )
         return;
     QDataStream stream( &f );
-//     m_cachedTrackLinkMap = s.value( "cachedSIDs" ).value<CacheEntry>();
 
     stream >> m_cachedTrackLinkMap;
     qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
     f.close();
 
-    if ( QFileInfo( f.fileName() ).size() > 10 * LOGFILE_SIZE )
+    if ( QFileInfo( f.fileName() ).size() > 10 * SPOTIFY_LOGFILE_SIZE )
     {
         QFile::remove( f.fileName() );
     }
@@ -550,63 +506,6 @@ bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
    return m_trackLinkMap.contains( linkStr ) || m_cachedTrackLinkMap.contains( linkStr );
 }
 
-QMutex& SpotifyResolver::dataMutex()
-{
-    return m_dataMutex;
-}
-
-spotifyiodev_ptr SpotifyResolver::getIODeviceForNewTrack( uint durMsec )
-{
-    if( m_iodev.isNull() ) {
-        m_iodev = spotifyiodev_ptr( new SpotifyIODevice( this ) );
-        m_iodev->setDurationMSec( durMsec );
-        m_iodev->open( QIODevice::ReadWrite );
-
-        qDebug() << QThread::currentThreadId() << "Creating SpotifyIODevice for track..:" << m_iodev.data() << m_iodev->thread()->currentThreadId();
-    }
-
-    return m_iodev;
-}
-
-
-void SpotifyResolver::queueData( const AudioData& data )
-{
-    if( m_iodev.isNull() ) {
-        qWarning() << "Help! Got data to queue but no iodevice to queue it in...";
-        return;
-    }
-
-    m_iodev->writeData( (const char*)data.data, data.numFrames * 4 ); // 4 == channels * ( bits per sample / 8 ) == 2 * ( 16 / 8 ) == 2 * 2
-}
-
-void SpotifyResolver::startPlaying()
-{
-    m_trackEnded = false;
-}
-
-
-void SpotifyResolver::endOfTrack()
-{
-    qDebug() << QThread::currentThreadId() << "And stopping track";
-    if( !m_iodev.isNull() ) {
-        qDebug() << "Stopping track and closign iodev! from thread with other:" << QThread::currentThreadId() << "and iodev:" << m_iodev->thread()->currentThreadId();
-        m_iodev->close();
-        m_iodev.clear();
-
-//         sp_session_player_unload( m_session );
-
-        qDebug() << "Done unloading too.";
-    }
-    m_trackEnded = true;
-}
-
-bool SpotifyResolver::trackIsOver()
-{
-    return m_trackEnded;
-}
-
-
-
 /// misc stuff
 
 void SpotifyResolver::loadSettings()
@@ -630,11 +529,8 @@ void SpotifyResolver::login()
 {
     if( !m_username.isEmpty() && !m_pw.isEmpty() ) { // log in
         qDebug() << "Logging in with username:" << m_username;
-#if SPOTIFY_API_VERSION > 8
-        sp_session_login(m_session, m_username.toLatin1(),  m_pw.toLatin1(), false);
-#else
-        sp_session_login(m_session, m_username.toLatin1(),  m_pw.toLatin1());
-#endif
+        m_session->setCredentials( m_username, m_pw  );
+        m_session->login();
     }
 }
 

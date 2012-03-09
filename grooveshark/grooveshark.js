@@ -76,8 +76,9 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         var xmlHttpRequest = new XMLHttpRequest();
         xmlHttpRequest.open('POST', url, false);
         xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
+        Tomahawk.log("URL: " + url);
         Tomahawk.log("Post Body: " + json);
-        xmlHttpRequest.send(json);
+//         xmlHttpRequest.send(json);
         if (xmlHttpRequest.status == 200) {
             return xmlHttpRequest.responseText;
         } else {
@@ -157,6 +158,9 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 //         this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
 //             Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
 //         });
+//         this.apiCall('getSongsInfo', { songIDs: ['3GBAjY'] }, function(xhr) {
+//             Tomahawk.log("GOT SONG INFO:" + xhr.responseText );
+//         });
     },
 
     getSessionId: function () {
@@ -212,7 +216,8 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         //Tomahawk.log("Got factory function called to get grooveshark streaming url from:" + ourUrl + " and songId:" + songId);
         var params = {
             songID: songId,
-            country: JSON.parse(this.countryId)
+            country: JSON.parse(this.countryId),
+            lowBitrate: 0
         };
 
         var streamResult = this.apiCallSync('getSubscriberStreamKey', params );
