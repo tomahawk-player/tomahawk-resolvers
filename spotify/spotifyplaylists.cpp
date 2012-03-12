@@ -44,6 +44,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     qRegisterMetaType< sp_playlist* >("sp_playlist*");
     qRegisterMetaType< int* >("int*");
     qRegisterMetaType< sp_playlistcontainer* >("sp_playlist_continer*");
+    qRegisterMetaType< SpotifyPlaylists::LoadedPlaylist >("SpotifyPlaylists::LoadedPlaylist");
 }
 
 
@@ -121,8 +122,8 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
       qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }
-    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    _playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
+    //SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    //_playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
 }
 
 /**
@@ -321,7 +322,10 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl )
         // Hash later with appropriate hash algorithm.
         pl->oldRev = pl->newRev;
         pl->newRev = timestamp;
+
     }
+    //if( pl->sync_ )
+    //    doSend( *(pl) );
 
 }
 
@@ -339,7 +343,10 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl, int qualifier )
         // Hash later with appropriate hash algorithm.
         pl->oldRev = pl->newRev;
         pl->newRev = qualifier;
+
     }
+    //if( pl->sync_ )
+    //    doSend( *(pl) );
 }
 
 
@@ -555,12 +562,8 @@ SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
     if( index != -1 ){
         qDebug() << "Playlist progress is" << (done ? "done" : "still loading..." ) << index;
         m_playlists[ index ].isLoaded = done;
-
-        if(done && m_playlists[index].sync_)
-        {
-            qDebug() << "Playlist progress done, revision: " << m_playlists[ index ].newRev << " old rev " << m_playlists[ index ].oldRev;
-            doSend( m_playlists[index] ); //_playlists->doSend();
-        }
+        if( done && m_playlists[index].sync_)
+            doSend( m_playlists[ index ] );
     }
 
 
@@ -671,6 +674,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
             qDebug() << "Adding syncing for  playlist " << playlist.id_;
             setSyncPlaylist( playlist.id_ );
         }
+
         // Want to test sync? Add all playlists to syncing
         //setSyncPlaylist( playlist.id_ );
     }
