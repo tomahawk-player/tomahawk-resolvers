@@ -22,6 +22,7 @@
 #include <QSettings>
 #include <QObject>
 
+
 class SpotifyPlaylists : public QObject
 {
     Q_OBJECT
@@ -32,6 +33,7 @@ public:
     void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
     void removeTracks(sp_playlist* pl, int const *tracks, int num_tracks);
     void removePlaylist( sp_playlist *playlist );
+    void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id );
@@ -42,6 +44,12 @@ public:
       bool starContainer_;
       bool sync_;
       bool isLoaded;
+      /**
+        Revision
+        @todo: hash string
+        **/
+      int newRev;
+      int oldRev;
 
       QString name_;
       QString id_;
@@ -87,13 +95,7 @@ public:
         _playlists->addPlaylist( pl );
     }
 
-    static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata)
-    {
-        qDebug() << "Update in progress";
-        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->setPlaylistInProgress( pl, done );
-
-    }
+    static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
     static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata)
     {
         Q_UNUSED( pl );
@@ -101,20 +103,15 @@ public:
         qDebug() << "Playlist renamned";
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
-    static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata)
-    {
-        Q_UNUSED( tracks );
-        Q_UNUSED( num_tracks );
-        qDebug() << "Tracks removed";
-        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->removeTracks( pl, tracks, num_tracks );
-    }
+    static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
 
 
 signals:
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
 private:
+    void updateRevision( LoadedPlaylist *pl );
+    void updateRevision( LoadedPlaylist *pl, int qualifier );
     QList<Sync> m_syncPlaylists;
 
 };

@@ -17,6 +17,7 @@
 #include "callbacks.h"
 #include <QObject>
 #include <QThread>
+#include <QDateTime>
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
 {
@@ -91,8 +92,8 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
     {
       qDebug() << "Playlist isn't loaded yet, waiting";
       return;
-    }
-    _playlists->addPlaylist( pl );
+    }else
+        _playlists->addPlaylist( pl );
 }
 
 
@@ -171,11 +172,19 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 **/
 
 void
-SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist, int position, void* userdata ) {
+SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist, int position, void* userdata )
+{
 
-    Q_UNUSED( playlist );
-    Q_UNUSED( userdata );
-    qDebug() << "Playlist added";
+    // If the playlist isn't loaded yet we have to wait
+    if ( !sp_playlist_is_loaded( playlist ) )
+    {
+      qDebug() << "Playlist isn't loaded yet, waiting";
+      return;
+    }
+   qDebug() << "Playlist added";
+   SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
+   qDebug() << "Callback on thread" << _session->Playlists()->thread()->currentThreadId();
+   _session->Playlists()->addPlaylist( playlist );
 
 }
 /**
@@ -235,7 +244,6 @@ SpotifyPlaylists::addTracks(sp_playlist* pl, sp_track *const*tracks, int num_tra
 
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
-
     const int index = m_playlists.indexOf( playlist );
     if( index != -1 ){
 
@@ -248,10 +256,70 @@ SpotifyPlaylists::addTracks(sp_playlist* pl, sp_track *const*tracks, int num_tra
             m_playlists[index].tracks_.insert(pos, track );
             pos++;
         }
+        //qDebug() << "Playlist changed, updateing revision";
+        updateRevision( &m_playlists[index] );
 
     }
 
 }
+
+/**
+  updateRevision
+  Will update the revision with a timestamp
+**/
+
+void
+SpotifyPlaylists::updateRevision( LoadedPlaylist *pl )
+{
+    qDebug() << Q_FUNC_INFO << "count" << pl->tracks_.count();
+    int timestamp(0);
+    for( int i = 0; i < pl->tracks_.count(); i++)
+    {
+        int tmpTimestamp = sp_playlist_track_create_time( pl->playlist_, i );
+
+        if( timestamp < tmpTimestamp )
+            timestamp = tmpTimestamp;
+
+        qDebug() << "Revision timestamp" << tmpTimestamp << "current highest timestamp" << timestamp;
+    }
+
+    /**
+      @note: Todo, confirm this. Though it seems its correct.
+      timestamp is 0, that means the playlist is cleared of contents, or was empty to begin with
+      @note This applies if no timestamp was set from within this application, not the API
+    **/
+    if( timestamp == 0 )
+    {
+        qDebug() << "Revision playlist was cleared from contents!";
+        pl->newRev = 0;
+    }
+    else if( timestamp > pl->newRev )
+    {
+        qDebug() << "Setting new revision " << timestamp <<  "Old rev: " << pl->oldRev;
+        // Hash later with appropriate hash algorithm.
+        pl->oldRev = pl->newRev;
+        pl->newRev = timestamp;
+    }
+
+}
+
+/**
+  updateRevision with qualifier
+  Will update the revision with a hashed qualifier
+**/
+void
+SpotifyPlaylists::updateRevision( LoadedPlaylist *pl, int qualifier )
+{
+    qDebug() << Q_FUNC_INFO << "Qualifier " << qualifier << "rev " << pl->oldRev;
+    if( qualifier > pl->newRev)
+    {
+        qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl->oldRev;
+        // Hash later with appropriate hash algorithm.
+        pl->oldRev = pl->newRev;
+        pl->newRev = qualifier;
+    }
+}
+
 
 /**
   removeTracks(sp_playlist*, const int*tracks, int num_tracks)
@@ -273,13 +341,56 @@ SpotifyPlaylists::removeTracks(sp_playlist* pl, const int *tracks, int num_track
         for ( int i=0 ; i< num_tracks; ++i )
         {
             int pos = *(tracks)++;
-            qDebug() << "Remvoing track at" << pos;
+            qDebug() << "Removing track at" << pos;
             m_playlists[index].tracks_.removeAt( pos );
         }
+        // We need to update the revision with current timestamp
+        int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
+        qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
+        updateRevision( &m_playlists[index], timestamp );
     }
 
 }
+
 /**
+    moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position)
+    called from callback
+**/
+
+void
+SpotifyPlaylists::moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position)
+{
+
+    qDebug() << "Moving tracks in " << sp_playlist_name(pl);
+
+    LoadedPlaylist playlist;
+    playlist.playlist_ = pl;
+
+    const int index = m_playlists.indexOf( playlist );
+    if( index != -1 ){
+    {
+        for(int i = 0; i < num_tracks; i++)
+        {
+            qDebug() << "Moving track nr" << i << "at pos " << tracks[i] << " to pos" << new_position;
+            m_playlists[index].tracks_.move(tracks[i], new_position++);
+
+        }
+
+        for(int i = 0; i < m_playlists[index].tracks_.count(); i++)
+            qDebug() << "Track" << sp_track_name(m_playlists[index].tracks_[i]);
+        }
+
+
+        qDebug() << "Tracks moved";
+        // We need to update the revision with current timestamp
+        int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
+        qDebug() << "Updateing revision with move track timestamp " << timestamp;
+        updateRevision( &m_playlists[index], timestamp );
+    }
+}
+
+/**
+
  getPLaylist( const QString )
    Gets a specific playlist from the list with id (uri)
 **/
@@ -333,34 +444,29 @@ SpotifyPlaylists::setSyncPlaylist( const QString id )
 
 
 /**
+  tracksRemoved
+  Callback from spotify
+  **/
+void SpotifyPlaylists::tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata)
+{
+    qDebug() << "Tracks removed";
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    _playlists->removeTracks( pl, tracks, num_tracks );
+}
+
+/**
   tracksMoved
   **/
 void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int num_tracks, int new_position, void *userdata)
 {
 
+    qDebug() << "Tracks removed";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    LoadedPlaylist pl;
-    pl.playlist_ = playlist;
-
-    qDebug() << "Numtracks:" << num_tracks << " tracks:" << *tracks;
-
-    int index = _playlists->getPlaylists().indexOf( pl );
-    if( index != -1)
-    {
-        for(int i = 0; i < num_tracks; i++)
-        {
-            qDebug() << "Moving track nr" << i << "at pos " << tracks[i] << " to pos" << new_position;
-            _playlists->getPlaylists()[index].tracks_.move(tracks[i], new_position++);
-
-        }
-
-        for(int i = 0; i < _playlists->getPlaylists()[index].tracks_.count(); i++)
-            qDebug() << "Track" << sp_track_name(_playlists->getPlaylists()[index].tracks_[i]);
-    }
-
-    qDebug() << "Tracks moved";
+    _playlists->moveTracks( playlist, tracks, num_tracks, new_position );
 
 }
+
+
 
 /**
  setPosition( sp_playlist *, int, int )
@@ -415,12 +521,29 @@ SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
     if( index != -1 ){
         qDebug() << "Playlist progress is" << (done ? "done" : "still loading..." ) << index;
         m_playlists[ index ].isLoaded = done;
+
         if(done && m_playlists[index].sync_)
+        {
+            qDebug() << "Playlist progress done, revision: " << m_playlists[ index ].newRev << " old rev " << m_playlists[ index ].oldRev;
             doSend( m_playlists[index] ); //_playlists->doSend();
+        }
     }
+
 
 }
 
+/**
+  playlistUpdateInProgress
+  Callback, fired whenever a change is processed
+  **/
+void
+SpotifyPlaylists::playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata)
+{
+    qDebug() << "Update in progress";
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    _playlists->setPlaylistInProgress( pl, done );
+
+}
 
 
 /**
@@ -433,7 +556,8 @@ void
 SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 {
 
-
+    if( !sp_playlist_is_loaded( pl ) )
+        return;
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
@@ -446,11 +570,19 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     playlist.starContainer_ = false;
     playlist.sync_ = false;
     playlist.isLoaded = false;
+
+    // Revision, initially -1
+    playlist.oldRev = -1;
+    playlist.newRev = -1;
+    int tmpRev(0);
+
+    // Get the spotify id for the playlist
     char linkStr[256];
     sp_link *pl_link = sp_link_create_from_playlist( pl );
     sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
     sp_link_release( pl_link );
     playlist.id_ = linkStr;
+
     playlist.name_ = sp_playlist_name(pl);
 
     /**
@@ -467,8 +599,17 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     {
         sp_track* track = sp_playlist_track( pl, i );
         sp_track_add_ref( track );
+
+        // Set revision on initation
+        int timestamp = sp_playlist_track_create_time( pl, i);
+        if( tmpRev < timestamp)
+            tmpRev = timestamp;
+
         playlist.tracks_.push_back( track );
     }
+
+    qDebug() << "Updateing revision with " << tmpRev;
+    updateRevision( &playlist, tmpRev );
 
     // Playlist is loaded and ready
     playlist.isLoaded = true;
@@ -492,13 +633,9 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
             qDebug() << "Adding syncing for  playlist " << playlist.id_;
             setSyncPlaylist( playlist.id_ );
         }
+        // Want to test sync? Add all playlists to syncing
+        //setSyncPlaylist( playlist.id_ );
     }
-    /*else
-    {
-        qDebug() << "Something changed, will replace at index" << m_playlists.indexOf( playlist );
-        m_playlists.replace( m_playlists.indexOf( playlist ), playlist);
-    }*/
-
 
 }
 

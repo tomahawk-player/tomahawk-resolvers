@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
 
     app.setup();
     return app.exec();
-/*
 
+    /*
     QCoreApplication a(argc, argv);
 
     //  Sometimes location causes errors, so if your not able
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
 
     SpotifySession *Spotify = new SpotifySession(config);
-    Spotify->setCredentials( "kabenlin", "sportstugan6");
+    Spotify->setCredentials( "", "");
     Spotify->login();
 
    return a.exec();
