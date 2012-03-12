@@ -33,12 +33,11 @@ public:
     void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
     void removeTracks(sp_playlist* pl, int const *tracks, int num_tracks);
     void removePlaylist( sp_playlist *playlist );
-    void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
+    //void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id );
     //void sendSyncSignal();
-
 
     struct LoadedPlaylist{
       bool starContainer_;
@@ -105,7 +104,9 @@ public:
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
 
-
+public slots:
+   // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
+    void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);
 signals:
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
@@ -114,9 +115,12 @@ private:
     void updateRevision( LoadedPlaylist *pl, int qualifier );
     QList<Sync> m_syncPlaylists;
 
+
 };
 
 
 
 
+Q_DECLARE_METATYPE( sp_playlist* );
+Q_DECLARE_METATYPE( const int* );
 #endif // SPOTIFYPLAYLISTS_H

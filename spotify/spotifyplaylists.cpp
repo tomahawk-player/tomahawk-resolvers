@@ -41,6 +41,8 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     }
 
     settings.endArray();
+    qRegisterMetaType< sp_playlist* >("sp_playlist*");
+    qRegisterMetaType< int* >("int*");
 }
 
 
@@ -358,28 +360,20 @@ SpotifyPlaylists::removeTracks(sp_playlist* pl, const int *tracks, int num_track
 **/
 
 void
-SpotifyPlaylists::moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position)
+SpotifyPlaylists::moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position)
 {
-
-    qDebug() << "Moving tracks in " << sp_playlist_name(pl);
 
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
     const int index = m_playlists.indexOf( playlist );
-    if( index != -1 ){
+    if( index != -1 && sp_playlist_is_loaded( m_playlists[index].playlist_ ) )
     {
-        for(int i = 0; i < num_tracks; i++)
+        for(int i = 0; i < num_tracks-1; i++)
         {
-            qDebug() << "Moving track nr" << i << "at pos " << tracks[i] << " to pos" << new_position;
+            qDebug() << "Moving track nr" << i << "at pos " << *(tracks++) << " to pos" << new_position;
             m_playlists[index].tracks_.move(tracks[i], new_position++);
-
         }
-
-        for(int i = 0; i < m_playlists[index].tracks_.count(); i++)
-            qDebug() << "Track" << sp_track_name(m_playlists[index].tracks_[i]);
-        }
-
 
         qDebug() << "Tracks moved";
         // We need to update the revision with current timestamp
@@ -388,6 +382,8 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, const int *tracks, int num_tracks,
         updateRevision( &m_playlists[index], timestamp );
     }
 }
+
+
 
 /**
 
@@ -460,20 +456,27 @@ void SpotifyPlaylists::tracksRemoved(sp_playlist *pl, const int *tracks, int num
 void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int num_tracks, int new_position, void *userdata)
 {
 
-    qDebug() << "Tracks removed";
+    qDebug() << "Tracks moved";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    _playlists->moveTracks( playlist, tracks, num_tracks, new_position );
 
+    int *tracksList = new int[num_tracks];
+    for (int i = 0; i < num_tracks; i++)
+        tracksList[i] = tracks[i];
+
+    if( QThread::currentThread() != _playlists->thread() )
+        QMetaObject::invokeMethod( _playlists, "moveTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(int*, tracksList), Q_ARG(int, num_tracks), Q_ARG(int, new_position) );
+    //_playlists->moveTracks( playlist, tracks, num_tracks, new_position );
+    delete []tracksList;
 }
 
 
 
 /**
+
  setPosition( sp_playlist *, int, int )
    Updates the position of the playlist, if moved
 **/
-void
-SpotifyPlaylists::setPosition( sp_playlist *playlist, int oPos, int nPost )
+void SpotifyPlaylists::setPosition( sp_playlist *playlist, int oPos, int nPost )
 {
     LoadedPlaylist pl;
     pl.playlist_ = playlist;
