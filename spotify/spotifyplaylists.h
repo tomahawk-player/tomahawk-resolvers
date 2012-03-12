@@ -29,15 +29,14 @@ class SpotifyPlaylists : public QObject
 public:
     explicit SpotifyPlaylists( QObject *parent = 0);
     virtual ~SpotifyPlaylists();
-    void addPlaylist( sp_playlist *);
+    //void addPlaylist( sp_playlist *);
     void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
-    void removeTracks(sp_playlist* pl, int const *tracks, int num_tracks);
+    //void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
     void removePlaylist( sp_playlist *playlist );
     //void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
-    void setPlaylistInProgress( sp_playlist *pl, bool done );
+    //void setPlaylistInProgress( sp_playlist *pl, bool done );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id );
-    //void sendSyncSignal();
 
     struct LoadedPlaylist{
       bool starContainer_;
@@ -107,6 +106,10 @@ public:
 public slots:
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);
+    void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
+    void loadContainerSlot(sp_playlistcontainer* pc);
+    void addPlaylist( sp_playlist *);
+    void setPlaylistInProgress( sp_playlist *pl, bool done );
 signals:
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
@@ -120,7 +123,7 @@ private:
 
 
 
-
+Q_DECLARE_METATYPE( sp_playlistcontainer* );
 Q_DECLARE_METATYPE( sp_playlist* );
 Q_DECLARE_METATYPE( const int* );
 #endif // SPOTIFYPLAYLISTS_H

@@ -25,7 +25,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     /**
         Read the QSettings to set the sync states from previous settings
     **/
-
+    qDebug() << "Starting playlists in thread id" << thread()->currentThreadId();
     QSettings settings;
     int size = settings.beginReadArray( "syncPlaylists" );
 
@@ -43,6 +43,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     settings.endArray();
     qRegisterMetaType< sp_playlist* >("sp_playlist*");
     qRegisterMetaType< int* >("int*");
+    qRegisterMetaType< sp_playlistcontainer* >("sp_playlist_continer*");
 }
 
 
@@ -95,7 +96,12 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
       qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }else
-        _playlists->addPlaylist( pl );
+    {
+        qDebug() << "Invoking addPlaylist from thread id" << _playlists->thread()->currentThreadId();
+        if( QThread::currentThread() !=_playlists->thread() )
+                QMetaObject::invokeMethod( _playlists, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl) );
+        //_playlists->addPlaylist( pl );
+    }
 }
 
 
@@ -146,25 +152,39 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
 
+    qDebug() << "Invoking container load from thread id" << _session->Playlists()->thread()->currentThreadId();
+    if( QThread::currentThread() != _session->Playlists()->thread() )
+        QMetaObject::invokeMethod( _session->Playlists(), "loadContainerSlot", Qt::QueuedConnection, Q_ARG(sp_playlistcontainer*, pc) );
+
+}
+
+void
+SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
+
+    qDebug() << "Container load from thread id" << thread()->currentThreadId();
     for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( pc ) ; ++i )
     {
         sp_playlist* playlist = sp_playlistcontainer_playlist( pc, i );
-        sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, _session->Playlists() );
+        sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this );
     }
     /**
       This creates the starred tracks playlist, and will automatically add it to the synclist
     **/
-    sp_playlist* starredTracks = sp_session_starred_create( _session->Session() );
-    sp_playlist_add_callbacks( starredTracks, &SpotifyCallbacks::syncPlaylistCallbacks, _session->Playlists() );
+    sp_playlist* starredTracks = sp_session_starred_create( SpotifySession::getInstance()->Session() );
+    sp_playlist_add_callbacks( starredTracks, &SpotifyCallbacks::syncPlaylistCallbacks, this );
 
-    QString name = sp_user_canonical_name( sp_session_user( _session->Session() ) );
+    QString name = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
     QString starredId = "spotify:user:" + name + ":playlist:0000000000000000000000";
-    _session->Playlists()->addPlaylist( starredTracks );
-    _session->Playlists()->setSyncPlaylist( starredId );
-    _session->setPlaylistContainer( pc );
+
+    qDebug() << "Invoking addPlaylist from thread id" << thread()->currentThreadId();
+    if( QThread::currentThread() != thread() )
+        QMetaObject::invokeMethod( this, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, starredTracks) );
+
+    //addPlaylist( starredTracks );
+    setSyncPlaylist( starredId );
+    SpotifySession::getInstance()->setPlaylistContainer( pc );
 
     qDebug() << Q_FUNC_INFO << "done";
-
 }
 
 /**
@@ -327,10 +347,10 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl, int qualifier )
   removeTracks(sp_playlist*, const int*tracks, int num_tracks)
 **/
 void
-SpotifyPlaylists::removeTracks(sp_playlist* pl, const int *tracks, int num_tracks)
+SpotifyPlaylists::removeTracks(sp_playlist* pl, int *tracks, int num_tracks)
 {
-    qDebug() << "Removing tracks from " << sp_playlist_name(pl);
 
+    qDebug() << "Removing tracks in thread id" << thread()->currentThreadId();
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
@@ -363,6 +383,7 @@ void
 SpotifyPlaylists::moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position)
 {
 
+    qDebug() << "Moving tracks in thread id" << thread()->currentThreadId();
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
@@ -443,11 +464,20 @@ SpotifyPlaylists::setSyncPlaylist( const QString id )
   tracksRemoved
   Callback from spotify
   **/
-void SpotifyPlaylists::tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata)
+void SpotifyPlaylists::tracksRemoved(sp_playlist *playlist, const int *tracks, int num_tracks, void *userdata)
 {
     qDebug() << "Tracks removed";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    _playlists->removeTracks( pl, tracks, num_tracks );
+
+    int *tracksList = new int[num_tracks];
+    for (int i = 0; i < num_tracks; i++)
+        tracksList[i] = tracks[i];
+
+    qDebug() << "Invoking remove from thread id" << _playlists->thread()->currentThreadId();
+    if( QThread::currentThread() != _playlists->thread() )
+        QMetaObject::invokeMethod( _playlists, "removeTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(int*, tracksList), Q_ARG(int, num_tracks) );
+
+    delete []tracksList;
 }
 
 /**
@@ -463,9 +493,10 @@ void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int
     for (int i = 0; i < num_tracks; i++)
         tracksList[i] = tracks[i];
 
+    qDebug() << "Invoking move from thread id" << _playlists->thread()->currentThreadId();
     if( QThread::currentThread() != _playlists->thread() )
         QMetaObject::invokeMethod( _playlists, "moveTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(int*, tracksList), Q_ARG(int, num_tracks), Q_ARG(int, new_position) );
-    //_playlists->moveTracks( playlist, tracks, num_tracks, new_position );
+
     delete []tracksList;
 }
 
@@ -515,7 +546,7 @@ void
 SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
 {
     qDebug() << "In Progress" << sp_playlist_name(pl);
-
+    qDebug() << "In Progress in thread id" << thread()->currentThreadId();
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
@@ -544,7 +575,11 @@ SpotifyPlaylists::playlistUpdateInProgress(sp_playlist *pl, bool done, void *use
 {
     qDebug() << "Update in progress";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-    _playlists->setPlaylistInProgress( pl, done );
+    qDebug() << "Invoking setPlaylistInProgress from thread id" << _playlists->thread()->currentThreadId();
+    if( QThread::currentThread() != _playlists->thread() )
+        QMetaObject::invokeMethod( _playlists, "setPlaylistInProgress", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl), Q_ARG(bool, done) );
+
+    //_playlists->setPlaylistInProgress( pl, done );
 
 }
 
@@ -558,7 +593,7 @@ SpotifyPlaylists::playlistUpdateInProgress(sp_playlist *pl, bool done, void *use
 void
 SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 {
-
+    qDebug() << "addPlaylist from thread id" << thread()->currentThreadId();
     if( !sp_playlist_is_loaded( pl ) )
         return;
     LoadedPlaylist playlist;
