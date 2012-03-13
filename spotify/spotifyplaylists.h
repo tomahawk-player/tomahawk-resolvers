@@ -38,6 +38,13 @@ public:
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id );
 
+    struct RevisionChanges{
+
+        int revId;
+        QList<sp_track*> changedTracks;
+
+    };
+
     struct LoadedPlaylist{
       bool starContainer_;
       bool sync_;
@@ -48,11 +55,13 @@ public:
         **/
       int newRev;
       int oldRev;
+      int sentRev;
 
       QString name_;
       QString id_;
       sp_playlist* playlist_;
       QList<sp_track*> tracks_;
+      QList<RevisionChanges> revisions;
 
     };
     struct Sync {

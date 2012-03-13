@@ -324,8 +324,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl )
         pl->newRev = timestamp;
 
     }
-    //if( pl->sync_ )
-    //    doSend( *(pl) );
+
 
 }
 
@@ -340,13 +339,44 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl, int qualifier )
     if( qualifier > pl->newRev)
     {
         qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl->oldRev;
+
+        RevisionChanges oldRev;
+        oldRev.revId = pl->oldRev;
+
+        RevisionChanges revision;
+        revision.revId = pl->newRev;
+
+        int revIndex = pl->revisions.indexOf( oldRev );
+
+        if( revision.revId != -1 )
+        {
+
+            for(int i = 0; i < sp_playlist_num_tracks( pl->playlist_ )-1; i++)
+            {
+                foreach( sp_track* track, pl->revisions[ revIndex ].changedTracks )
+                {
+                    if( sp_track_name( track ) != sp_track_name(sp_playlist_track(pl->playlist_, i) ) )
+                    {
+                        if(!revision.changedTracks.contains( track )){
+                            qDebug() << "changed track" << sp_track_name(sp_playlist_track(pl->playlist_, i));
+                            revision.changedTracks.insert(i, track);
+                        }
+
+                    }
+                }
+            }
+            // Append the new revision
+            revision.changedTracks = pl->tracks_;
+
+        }else
+            revision.changedTracks = pl->tracks_;
+
+        pl->revisions.append( revision );
         // Hash later with appropriate hash algorithm.
         pl->oldRev = pl->newRev;
         pl->newRev = qualifier;
 
     }
-    //if( pl->sync_ )
-    //    doSend( *(pl) );
 }
 
 
@@ -407,7 +437,9 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int n
         // We need to update the revision with current timestamp
         int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
         qDebug() << "Updateing revision with move track timestamp " << timestamp;
+
         updateRevision( &m_playlists[index], timestamp );
+
     }
 }
 
@@ -563,7 +595,17 @@ SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
         qDebug() << "Playlist progress is" << (done ? "done" : "still loading..." ) << index;
         m_playlists[ index ].isLoaded = done;
         if( done && m_playlists[index].sync_)
-            doSend( m_playlists[ index ] );
+        {
+            // Sometimes, the api will send the playlist twice, dont do this
+            // if its allready been sent.
+
+            if( m_playlists[ index ].sentRev != m_playlists[ index ].newRev ){
+                m_playlists[ index ].sentRev = m_playlists[ index ].newRev;
+                foreach( RevisionChanges changes, m_playlists[index].revisions)
+                    qDebug() << "Revision id " << changes.revId;
+                doSend( m_playlists[ index ] );
+            }
+        }
     }
 
 
@@ -695,6 +737,12 @@ bool operator==(SpotifyPlaylists::LoadedPlaylist one, SpotifyPlaylists::LoadedPl
 bool operator==(SpotifyPlaylists::Sync one, SpotifyPlaylists::Sync two)
 {
     if(one.id_ == two.id_)
+        return true;
+    return false;
+}
+bool operator==(SpotifyPlaylists::RevisionChanges one, SpotifyPlaylists::RevisionChanges two)
+{
+    if(one.revId == two.revId)
         return true;
     return false;
 }
