@@ -281,9 +281,14 @@ void SpotifyResolver::sendConfWidget()
     QFile f2( ":/spotify-logo.png" );
     f2.open( QIODevice::ReadOnly );
     QByteArray compressed = qCompress( f2.readAll(), 9 );
-    //qDebug() << "adding compressed image:" << compressed.toBase64();
     images[ "spotify-logo.png" ] = compressed.toBase64();
     f2.close();
+
+    QFile f3( ":/spotifycore-logo.png" );
+    f3.open( QIODevice::ReadOnly );
+    compressed = qCompress( f3.readAll(), 9 );
+    images[ "spotifycore-logo.png" ] = compressed.toBase64();
+    f3.close();
 
     prefs[ "images" ] = images;
 
