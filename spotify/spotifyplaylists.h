@@ -111,7 +111,8 @@ public:
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
-
+    void sendPlaylistByRevision( int rev );
+    LoadedPlaylist getPlaylistByRevision( int rev );
 public slots:
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);

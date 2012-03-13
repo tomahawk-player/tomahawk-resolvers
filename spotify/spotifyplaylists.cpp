@@ -122,6 +122,7 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
       qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }
+
     //SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
     //_playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
 }
@@ -366,7 +367,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl, int qualifier )
                 }
             }
             // Append the new revision
-            revision.changedTracks = pl->tracks_;
+            //revision.changedTracks = pl->tracks_;
 
         }else
             revision.changedTracks = pl->tracks_;
@@ -379,7 +380,47 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist *pl, int qualifier )
     }
 }
 
+/**
+  getPlaylistByRevision
+  Get the playlist by last known revision,
+  return empty LoadedPlaylist if non found.
+**/
+SpotifyPlaylists::LoadedPlaylist
+SpotifyPlaylists::getPlaylistByRevision( int revision )
+{
+    RevisionChanges rev;
+    rev.revId = revision;
 
+    LoadedPlaylist playlist;
+    foreach( LoadedPlaylist pl, m_playlists)
+    {
+        if( pl.revisions.contains( rev ) )
+            return pl;
+    }
+    return playlist;
+
+}
+
+/**
+  sendPlaylistByRevision
+  **/
+void
+SpotifyPlaylists::sendPlaylistByRevision( int revision )
+{
+    RevisionChanges rev;
+    rev.revId = revision;
+
+    foreach( LoadedPlaylist pl, m_playlists)
+    {
+        if( pl.revisions.contains( rev ) ){
+            qDebug() << "Sending revision";
+            doSend( pl );
+            break;
+        }
+    }
+
+
+}
 /**
   removeTracks(sp_playlist*, const int*tracks, int num_tracks)
 **/
