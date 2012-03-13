@@ -113,6 +113,8 @@ public:
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
     void sendPlaylistByRevision( int rev );
     LoadedPlaylist getPlaylistByRevision( int rev );
+    void addNewPlaylist( QVariantMap data );
+    void removeFromSpotifyPlaylist( QVariantMap data );
 public slots:
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);

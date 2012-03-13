@@ -29,6 +29,57 @@
 #include <QDebug>
 
 void
+SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
+{
+    qDebug() << Q_FUNC_INFO;
+    sp_playlist *playlist = reinterpret_cast<sp_playlist*>(userdata);
+    if(!sp_playlist_is_loaded( playlist ) )
+    {
+        qDebug() << "Search Playlist is not loaded";
+        return;
+    }
+
+    // Need to pass a ** to add_tracks
+    sp_track **tracks = static_cast<sp_track **>(malloc(sizeof(sp_track*)));
+
+    if( sp_search_num_tracks( result ) > 0 )
+    {
+        int num = qMin( sp_search_num_tracks( result ), 1 );
+        for( int i = 0; i < num; i++ )
+        {
+            sp_track *const tr = sp_search_track( result, i );
+            if( !tr || !sp_track_is_loaded( tr ) ) {
+                qDebug() << "Got still loading track, skipping";
+                continue;
+            }
+
+            qDebug() << "Adding track to playlist" << sp_track_name( tr );
+            *(tracks++) = tr;
+            sp_error err = sp_playlist_add_tracks(playlist, tracks, 1, sp_playlist_num_tracks( playlist ), SpotifySession::getInstance()->Session());
+
+            switch(err) {
+                case SP_ERROR_OK:
+                    qDebug() << "Added tracks to pos" << sp_playlist_num_tracks( playlist )-1;
+                    break;
+                case SP_ERROR_INVALID_INDATA:
+                    qDebug() << "Invalid position";
+                    break;
+
+                case SP_ERROR_PERMISSION_DENIED:
+                    qDebug() << "Access denied";
+                    break;
+                default:
+                    qDebug() << "Other error (should not happen)";
+                    break;
+                }
+        }
+
+    }
+    delete []tracks;
+
+}
+
+void
 SpotifySearch::searchComplete( sp_search *result, void *userdata )
 {
     UserData* data = reinterpret_cast<UserData*>( userdata );
