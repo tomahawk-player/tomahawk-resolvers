@@ -42,6 +42,8 @@ typedef struct
     QByteArray tracefile;
     QByteArray device_id;
     QByteArray application_key;
+    // Use if your appkey isnt encrypted
+    const void *g_app_key;
     size_t application_key_size;
 
 

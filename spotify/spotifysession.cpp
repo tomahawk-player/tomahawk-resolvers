@@ -58,12 +58,12 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
 
 
-    if(!config.application_key.isEmpty()) {
+    if(!config.application_key.isEmpty() || config.g_app_key != NULL) {
 
         m_config.api_version = SPOTIFY_API_VERSION;
         m_config.cache_location = config.cache_location;
         m_config.settings_location = config.settings_location;
-        m_config.application_key = config.application_key;
+        m_config.application_key = ( config.application_key.isEmpty() ? config.g_app_key : config.application_key);
         m_config.application_key_size = config.application_key_size;
         m_config.user_agent = config.user_agent;
         m_config.callbacks = &SpotifyCallbacks::callbacks;

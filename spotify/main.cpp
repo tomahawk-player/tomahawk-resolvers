@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
     /*
       See main.h
     */
+
     SpotifyResolver app( argc, argv );
     // To force dtors
     //SpotifyCallbacks::CleanExit cleanExit;
@@ -53,7 +54,7 @@ int main(int argc, char *argv[])
     sessionConfig config;
     config.cache_location = "/tmp";
     config.settings_location = "/tmp";
-    config.application_key = g_appkey;
+    config.g_app_key = g_appkey;
     config.application_key_size = g_appkey_size;
     config.user_agent = "spotifyApi";
     config.tracefile = "/tmp/trace.dat";
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
     Spotify->setCredentials( "", "");
     Spotify->login();
 
-   return a.exec();
-    */
+   return a.exec();*/
+
     /** END EXAMPLE **/
 }
