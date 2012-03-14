@@ -119,9 +119,9 @@ void SpotifyResolver::setup()
 
     // sessionConfig
     sessionConfig config;
-    config.cache_location = storagePath.constData();
-    config.settings_location = configPath.constData();
-    config.application_key = m_apiKey.constData();
+    config.cache_location = storagePath;
+    config.settings_location = configPath;
+    config.application_key = m_apiKey;
     config.application_key_size = m_apiKey.size();
     config.user_agent = "tomahawkresolver";
     config.tracefile = tracePath.toUtf8();
