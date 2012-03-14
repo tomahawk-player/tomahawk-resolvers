@@ -60,10 +60,12 @@ void ConsoleWatcher::checkStdin()
     if( m_msgsize == 0 )
     {
 
-//         if( m_stdin->bytesAvailable() < 4 ) return;
         quint32 len_nbo;
-        m_stdin->read( (char*) &len_nbo, 4 );
-        m_msgsize = qFromBigEndian( len_nbo );
+        const qint64 nread = m_stdin->read( (char*) &len_nbo, 4 );
+        if ( nread == 4 )
+            m_msgsize = qFromBigEndian( len_nbo );
+        else if ( nread != 0 )
+            qWarning() << "Read" << nread << "bytes when expecting message size (4 bytes)";
     }
 
     if( m_msgsize > 0 )
