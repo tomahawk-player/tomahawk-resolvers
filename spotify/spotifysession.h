@@ -36,12 +36,12 @@
 **/
 typedef struct
 {
-    const char* cache_location;
-    const char* settings_location;
-    const char* user_agent;
-    const char* tracefile;
-    const char* device_id;
-    const void* application_key;
+    QByteArray cache_location;
+    QByteArray settings_location;
+    QByteArray user_agent;
+    QByteArray tracefile;
+    QByteArray device_id;
+    QByteArray application_key;
     size_t application_key_size;
 
 

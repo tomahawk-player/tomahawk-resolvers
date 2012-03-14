@@ -58,7 +58,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
 
 
-    if(config.application_key != NULL ){
+    if(!config.application_key.isEmpty()) {
 
         m_config.api_version = SPOTIFY_API_VERSION;
         m_config.cache_location = config.cache_location;
