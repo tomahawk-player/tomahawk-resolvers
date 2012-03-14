@@ -54,8 +54,8 @@ struct UserData {
     QString qid;
     bool fulltext;
     SpotifyResolver* resolver;
-
-    UserData( const QString& qidd, SpotifyResolver* resolverr ) : qid( qidd ), fulltext( false ), resolver( resolverr ) {}
+    int searchCount;
+    UserData( const QString& qidd, SpotifyResolver* resolverr ) : qid( qidd ), fulltext( false ), resolver( resolverr ), searchCount(0) {}
 };
 
 class SpotifyResolver : public QCoreApplication
