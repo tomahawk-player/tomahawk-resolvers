@@ -124,11 +124,24 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
             track[ "size" ] = bytes;
             results << track;
-
+            data->searchCount = 0;
             //qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
         }
 
+    }else
+    {
+        QString didYouMean = QString::fromUtf8(sp_search_did_you_mean(	result ) );
+        if(data->searchCount <= 1  ){
+            qDebug() << "Try nr." << data->searchCount << " Searched for" << QString::fromUtf8(sp_search_query(	result ) ) << "Did you mean?"<< didYouMean;
+            //int distance = QString::compare(QString::fromUtf8(sp_search_query(	result ) ), QString::fromUtf8(sp_search_did_you_mean(	result ) ), Qt::CaseInsensitive);
+            //qDebug() << "Distance for query is " << distance;//if( distance < 4)
+            sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(	result ) , 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+            data->searchCount++;
+            return;
+        }
+
     }
+
     resp[ "results" ] = results;
     sp_search_release( result );
     data->resolver->sendMessage( resp );
