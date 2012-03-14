@@ -829,9 +829,26 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     // Get the spotify id for the playlist
     char linkStr[256];
     sp_link *pl_link = sp_link_create_from_playlist( pl );
-    sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
-    sp_link_release( pl_link );
-    playlist.id_ = linkStr;
+    if( pl_link ){
+
+        sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
+        sp_link_release( pl_link );
+        playlist.id_ = linkStr;
+    }
+    else
+    {
+        /**
+            Due to reasons in the playlist backend design and the Spotify URI scheme you need to
+            wait for the playlist to be loaded before you can successfully construct an URI.
+            If sp_link_create_from_playlist() returns NULL, try again after teh playlist_state_changed callback has fired
+    .       @author Spotify dev
+
+            Will be added at next state change
+        **/
+        qDebug() << "Failed to get URI! Aborting...";
+        sp_link_release( pl_link );
+        return;
+    }
 
     playlist.name_ = sp_playlist_name(pl);
 
