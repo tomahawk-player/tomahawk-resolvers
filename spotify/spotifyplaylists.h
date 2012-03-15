@@ -124,7 +124,6 @@ public slots:
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void addStarredTracksToContainer();
     void allPlaylistsLoaded();
-    void checkLoadedContainerSlot();
 signals:
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
@@ -137,6 +136,7 @@ private:
    QList<Sync> m_syncPlaylists;
    QSettings m_settings;
    int m_currentPlaylistCount;
+   int m_realCount;
    bool m_allLoaded;
 
 

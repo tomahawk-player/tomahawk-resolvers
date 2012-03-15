@@ -24,11 +24,11 @@
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
    , m_currentPlaylistCount( 0 )
+   , m_realCount( 0 )
    , m_allLoaded( false )
 {
     qDebug() << "Starting playlists in thread id" << thread()->currentThreadId();
     connect( this, SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( allPlaylistsLoaded() ), Qt::QueuedConnection );
-    QTimer::singleShot( 6000, this, SLOT( checkLoadedContainerSlot() ) );
     /**
       Metatypes for invokeMethod
       **/
@@ -184,34 +184,44 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 }
 
 void
-SpotifyPlaylists::checkLoadedContainerSlot()
-{
-    qDebug() << Q_FUNC_INFO;
-    loadContainerSlot(SpotifySession::getInstance()->PlaylistContainer());
-}
-
-void
 SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
     if( !m_allLoaded)
     {
-    qDebug() << "Container load from thread id" << thread()->currentThreadId();
+        qDebug() << "Container load from thread id" << thread()->currentThreadId();
 
-    for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( pc ) ; ++i )
-    {
-        sp_playlist* playlist = sp_playlistcontainer_playlist( pc, i );
-        sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this );
-    }
+        for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( pc )-1 ; ++i )
+        {
+            sp_playlist_type type = sp_playlistcontainer_playlist_type(pc, i);
+            /**
+              There are 4 types of playlist
+                Placeholder ( Can be anything, artist, track, playlist whatever (resides in inbox)
+                Folder Start
+                Folder End
+                Playlist
+              Folder is just a name for a parent
+              Placeholder we dont care about atm
+              Playlist is what we want. Thus, sp_playlistcontainer_num_playlist is not
+              really a great nominee for playlistcount. Use m_realCount instead.
+              **/
+            if( type == SP_PLAYLIST_TYPE_PLAYLIST )
+            {
+                sp_playlist* playlist = sp_playlistcontainer_playlist( pc, i );
+                sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this );
+                m_realCount++;
+            }
+        }
 
-    // Add starredTracks, should be an option
-    addStarredTracksToContainer();
+            SpotifySession::getInstance()->setPlaylistContainer( pc );
 
-    SpotifySession::getInstance()->setPlaylistContainer( pc );
-    //emit notifyContainerLoadedSignal();
-
-    qDebug() << "Done loading container";
     }else
-        QTimer::singleShot( 6000, this, SLOT( checkLoadedContainerSlot() ) );
+
+    {
+        // Add starredTracks, should be an option
+        //addStarredTracksToContainer();
+        emit notifyContainerLoadedSignal();
+        qDebug() << "Done loading container";
+    }
 
 }
 
@@ -967,10 +977,10 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     // else, append it
 
     if( SpotifySession::getInstance()->PlaylistContainer() &&
-        m_currentPlaylistCount <= sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) )
+        m_currentPlaylistCount <= m_realCount )
     {
 
-        qDebug() << "Loaded " << m_currentPlaylistCount << " but has " << sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) << "left";
+        qDebug() << "Loaded " << m_currentPlaylistCount << " but has " << m_realCount << "left";
         if(m_playlists.contains( playlist ) )
         {
             int index = m_playlists.indexOf( playlist );
@@ -999,7 +1009,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 
         /// Loaded playlist done
         /// @note: sometimes, doesnt load all. need to connect to QTimer
-        if( m_currentPlaylistCount >= sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) )
+        if( m_currentPlaylistCount >= m_realCount )
            emit notifyContainerLoadedSignal();
 
     }
