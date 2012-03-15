@@ -23,10 +23,12 @@
 
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
-   , m_currentPlaylistCount(0)
+   , m_currentPlaylistCount( 0 )
+   , m_allLoaded( false )
 {
     qDebug() << "Starting playlists in thread id" << thread()->currentThreadId();
     connect( this, SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( allPlaylistsLoaded() ), Qt::QueuedConnection );
+    QTimer::singleShot( 6000, this, SLOT( checkLoadedContainerSlot() ) );
     /**
       Metatypes for invokeMethod
       **/
@@ -182,8 +184,17 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 }
 
 void
+SpotifyPlaylists::checkLoadedContainerSlot()
+{
+    qDebug() << Q_FUNC_INFO;
+    loadContainerSlot(SpotifySession::getInstance()->PlaylistContainer());
+}
+
+void
 SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
+    if( !m_allLoaded)
+    {
     qDebug() << "Container load from thread id" << thread()->currentThreadId();
 
     for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( pc ) ; ++i )
@@ -199,6 +210,8 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
     //emit notifyContainerLoadedSignal();
 
     qDebug() << "Done loading container";
+    }else
+        QTimer::singleShot( 6000, this, SLOT( checkLoadedContainerSlot() ) );
 
 }
 
@@ -776,6 +789,7 @@ SpotifyPlaylists::allPlaylistsLoaded()
 
     removeFromSpotifyPlaylist( data );
     */
+    m_allLoaded = true;
     qDebug() << "All playlists added";
 }
 
