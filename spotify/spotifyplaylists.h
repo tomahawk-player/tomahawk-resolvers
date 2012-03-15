@@ -122,13 +122,20 @@ public slots:
     void loadContainerSlot(sp_playlistcontainer* pc);
     void addPlaylist( sp_playlist *);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
+    void addStarredTracksToContainer();
+    void allPlaylistsLoaded();
 signals:
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
+   void notifyContainerLoadedSignal();
+   void notifyStarredTracksLoadedSignal();
 private:
-    void updateRevision( LoadedPlaylist *pl );
-    void updateRevision( LoadedPlaylist *pl, int qualifier );
-    QList<Sync> m_syncPlaylists;
+   void readSettings();
+   void updateRevision( LoadedPlaylist *pl );
+   void updateRevision( LoadedPlaylist *pl, int qualifier );
+   QList<Sync> m_syncPlaylists;
+   QSettings m_settings;
+   int m_currentPlaylistCount;
 
 
 };

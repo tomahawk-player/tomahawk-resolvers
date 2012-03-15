@@ -175,7 +175,6 @@ void SpotifySession::login()
 
 void SpotifySession::sendNotifyLoggedInSignal()
 {
-
     emit notifyLoggedInSignal();
 }
 
