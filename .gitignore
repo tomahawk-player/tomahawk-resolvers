@@ -6,3 +6,4 @@
 Makefile*
 moc_*
 *~
+.DS_Store
