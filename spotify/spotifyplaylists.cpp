@@ -218,7 +218,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
     {
         // Add starredTracks, should be an option
-        //addStarredTracksToContainer();
+        addStarredTracksToContainer();
         emit notifyContainerLoadedSignal();
         qDebug() << "Done loading container";
     }
@@ -938,7 +938,6 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
             Will be added at next state change
         **/
         qDebug() << "Failed to get URI! Aborting...";
-        sp_link_release( pl_link );
         return;
     }
 
