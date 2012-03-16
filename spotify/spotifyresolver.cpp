@@ -236,7 +236,6 @@ void SpotifyResolver::initSpotify()
 
     loadSettings();
     loadCache();
-    sendConfWidget();
 
 
     // testing
@@ -254,46 +253,6 @@ void SpotifyResolver::notifyLoggedIn()
     }
 }
 
-
-void SpotifyResolver::sendConfWidget()
-{
-    // send settings message to tomahawk
-
-    QVariantMap prefs;
-    prefs[ "_msgtype" ] = "confwidget";
-    prefs[ "compressed" ] = "true";
-
-    QFile f( ":/config.ui" );
-    f.open( QIODevice::ReadOnly );
-    QString ui = QString::fromLatin1( f.readAll() );
-    ui.replace( "placeholderUsername", m_username );
-    ui.replace( "placeholderPw", m_pw );
-    ui.replace( "STREAMING_DEFAULT", m_highQuality ? "true" : "false" );
-    QByteArray comp = qCompress( ui.toLatin1(), 9 );
-
-    //qDebug() << "adding compressed UI file:" << comp.toBase64();
-    m_configWidget = comp.toBase64();
-    f.close();
-
-    prefs[ "widget" ] = m_configWidget;
-
-    QVariantMap images;
-    QFile f2( ":/spotify-logo.png" );
-    f2.open( QIODevice::ReadOnly );
-    QByteArray compressed = qCompress( f2.readAll(), 9 );
-    images[ "spotify-logo.png" ] = compressed.toBase64();
-    f2.close();
-
-    QFile f3( ":/spotifycore-logo.png" );
-    f3.open( QIODevice::ReadOnly );
-    compressed = qCompress( f3.readAll(), 9 );
-    images[ "spotifycore-logo.png" ] = compressed.toBase64();
-    f3.close();
-
-    prefs[ "images" ] = images;
-
-    sendMessage( prefs );
-}
 
 void SpotifyResolver::sendSettingsMessage()
 {
@@ -319,18 +278,28 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
     QVariantMap m = msg.toMap();
 
-    if( m.value( "_msgtype" ) == "setpref" )
+    if( m.value( "_msgtype" ) == "saveSettings" )
     {
-
-        QVariantMap widgetMap = m[ "widgets" ].toMap();
-        m_username = widgetMap[ "usernameEdit" ].toMap()[ "text" ].toString();
-        m_pw = widgetMap[ "passwordEdit" ].toMap()[ "text" ].toString();
-        //qDebug() << "checked?" << widgetMap[ "streamingCheckbox" ].toMap() << widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString();
-        m_highQuality = widgetMap[ "streamingCheckbox" ].toMap()[ "checked" ].toString() == "true";
+        m_username = m[ "username" ].toString();
+        m_pw = m[ "password" ].toString();
+        m_highQuality = m[ "highQuality" ].toBool();
 
         login();
         saveSettings();
 
+    }
+    else if ( m.value( "_msgtype" ) == "getCredentials" )
+    {
+        // For migrating to tomahawk accounts
+        qDebug() << "Tomahawk asked for credentials, sending!";
+        QVariantMap msg;
+
+        msg[ "_msgtype" ] = "credentials";
+        msg[ "username" ] = m_username;
+        msg[ "password" ] = m_pw;
+        msg[ "highQuality" ] = m_highQuality;
+
+        sendMessage( msg );
     }
     else if( m.value( "_msgtype" ) == "rq" )
     {

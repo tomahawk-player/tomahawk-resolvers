@@ -52,7 +52,6 @@ set( tomahawkspotify_HDRS
 
 qt4_wrap_cpp( tomahawkspotify_MOC_HDRS ${tomahawkspotify_HDRS})
 
-qt4_add_resources( RC_SRCS "resources.qrc" )
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_MOC_HDRS} ${tomahawkspotify_NOMOC_HDRS} )
 target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
 
