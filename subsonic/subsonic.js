@@ -96,13 +96,15 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         return {
             artist: this.getXmlAttribute("artist", song_attributes),
             album: this.getXmlAttribute("album", song_attributes),
-            title: this.getXmlAttribute("title", song_attributes),
-            track: this.getXmlAttribute("track", song_attributes),
+            track: this.getXmlAttribute("title", song_attributes),
+            albumpos: this.getXmlAttribute("track", song_attributes),
             source: this.settings.name,
             size: this.getXmlAttribute("size", song_attributes),
             duration: this.getXmlAttribute("duration", song_attributes),
             bitrate: this.getXmlAttribute("bitRate", song_attributes),
-            url: this.buildBaseUrl("/rest/stream.view") + "&id=" + this.getXmlAttribute("id", song_attributes)
+            url: this.buildBaseUrl("/rest/stream.view") + "&id=" + this.getXmlAttribute("id", song_attributes),
+            extension: this.getXmlAttribute("suffix", song_attributes),
+            year: this.getXmlAttribute("year", song_attributes)
         };
     },
     
