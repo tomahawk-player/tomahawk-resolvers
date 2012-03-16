@@ -39,7 +39,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         {    
             this.user = userConfig.user;
             this.password = userConfig.password;
-            this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
+	    this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
             this.subsonic_api = userConfig.subsonic_api;
             
             this.init();
@@ -102,7 +102,9 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             size: this.getXmlAttribute("size", song_attributes),
             duration: this.getXmlAttribute("duration", song_attributes),
             bitrate: this.getXmlAttribute("bitRate", song_attributes),
-            url: this.buildBaseUrl("/rest/stream.view") + "&id=" + this.getXmlAttribute("id", song_attributes)
+            url: this.buildBaseUrl("/rest/stream.view") + "&id=" + this.getXmlAttribute("id", song_attributes),
+            extension: this.getXmlAttribute("suffix", song_attributes),
+	    year: this.getXmlAttribute("year", song_attributes)
         };
     },
     
