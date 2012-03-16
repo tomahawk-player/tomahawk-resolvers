@@ -37,11 +37,6 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             this.subsonic_url !== userConfig.subsonice_url ||
             this.subsonic_api !== userConfig.subsonic_api)
         {    
-            this.user = userConfig.user;
-            this.password = userConfig.password;
-            this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
-            this.subsonic_api = userConfig.subsonic_api;
-            
             this.init();
         }
     },
@@ -51,6 +46,19 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         name: 'Subsonic',
         weight: 70,
         timeout: 15
+    },
+   
+    encodePassword : function(password)
+    {
+	var hex_slice;
+	var hex_string = "";
+	var padding = [ "", "0", "00" ];
+	for (pos = 0; pos < password.length; hex_string += hex_slice)
+	{
+		hex_slice = password.charCodeAt(pos++).toString(16);
+		hex_slice = hex_slice.length < 2 ? (padding[2 - hex_slice.length] + hex_slice) : hex_slice;
+	}
+	return "enc:" + hex_string;
     },
     
     init: function() {
@@ -62,7 +70,8 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         
         Tomahawk.log("Doing Subsonic resolver init, got credentials from config.  User: " + userConfig.user);
         this.user = userConfig.user;
-        this.password = userConfig.password;
+	var enc_password = this.encodePassword(userConfig.password);
+        this.password = enc_password;
         this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
         this.subsonic_api = userConfig.subsonic_api;
     },
