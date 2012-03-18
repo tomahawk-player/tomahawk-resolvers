@@ -117,6 +117,8 @@ void SpotifyResolver::setup()
     const QByteArray configPath = dataDir( true ).toUtf8();
     const QString tracePath = dataDir() + "/" + "trace.dat";
 
+    loadSettings();
+
     // sessionConfig
     sessionConfig config;
     config.cache_location = storagePath;
@@ -234,7 +236,7 @@ void SpotifyResolver::initSpotify()
     connect( t, SIGNAL( timeout() ), this, SLOT( saveCache() ) );
     t->start();
 
-    loadSettings();
+    login();
     loadCache();
 
 
@@ -509,7 +511,6 @@ void SpotifyResolver::loadSettings()
     m_username = s.value( "username", QString() ).toString();
     m_pw = s.value( "password", QString() ).toString();
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
-    login();
 }
 
 void SpotifyResolver::saveSettings() const
