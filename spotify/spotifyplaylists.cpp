@@ -212,14 +212,12 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
             }
         }
 
-            SpotifySession::getInstance()->setPlaylistContainer( pc );
-
-    }else
-
-    {
         // Add starredTracks, should be an option
         addStarredTracksToContainer();
-        emit notifyContainerLoadedSignal();
+        SpotifySession::getInstance()->setPlaylistContainer( pc );
+
+    }else
+    {
         qDebug() << "Done loading container";
     }
 
@@ -799,7 +797,11 @@ SpotifyPlaylists::allPlaylistsLoaded()
 
     removeFromSpotifyPlaylist( data );
     */
+
+
     m_allLoaded = true;
+    // Not really necessary but we can do some checks later on, if all is truly added.
+    // QMetaObject::invokeMethod( this, "loadContainerSlot", Qt::QueuedConnection, Q_ARG(sp_playlistcontainer*, SpotifySession::getInstance()->PlaylistContainer() ) );
     qDebug() << "All playlists added";
 }
 
@@ -979,7 +981,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         m_currentPlaylistCount <= m_realCount )
     {
 
-        qDebug() << "Loaded " << m_currentPlaylistCount << " but has " << m_realCount << "left";
+        qDebug() << "Loaded playlist " << m_currentPlaylistCount << " but has " << (m_realCount-m_currentPlaylistCount) << "left";
         if(m_playlists.contains( playlist ) )
         {
             int index = m_playlists.indexOf( playlist );
