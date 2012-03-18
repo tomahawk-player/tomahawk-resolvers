@@ -137,6 +137,7 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
     connect( m_session, SIGNAL(notifyStarredUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifyStarredUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
 
+    connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
@@ -214,6 +215,29 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
     resp[ "playlist" ] = results;
     sendMessage( resp );
 
+}
+
+
+void
+SpotifyResolver::notifyAllPlaylistsLoaded()
+{
+    qDebug() << Q_FUNC_INFO << "Sending all spotify playlists, found:" << m_session->Playlists()->getPlaylists().size();
+    // Send a list of all the users's playlists and sync states
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "allPlaylists";
+    QVariantList playlists;
+    foreach ( const SpotifyPlaylists::LoadedPlaylist& pl, m_session->Playlists()->getPlaylists() )
+    {
+        QVariantMap plObj;
+        plObj[ "name" ] = pl.name_;
+        plObj[ "id" ] = pl.id_;
+        plObj[ "revid" ] = pl.revisions.last().revId;
+        plObj[ "sync" ] = pl.sync_;
+
+        playlists << plObj;
+    }
+    msg[ "playlists" ] = playlists;
+    sendMessage( msg );
 }
 
 

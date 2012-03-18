@@ -94,6 +94,7 @@ private slots:
     void notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist );
     void notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist );
 
+    void notifyAllPlaylistsLoaded();
 private:
     void sendSettingsMessage();
     void loadSettings();
