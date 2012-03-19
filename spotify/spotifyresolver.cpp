@@ -333,8 +333,11 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
             return;
 
         const QString qid = m.value( "qid" ).toString();
-        const QString artist = m.value( "artist" ).toString();
-        const QString track = m.value( "track" ).toString();
+        // Spotify is sensitive, - equals minus next string, not so good in
+        // examples like Queen Breakthru - 2011 remastered == Queen Breaktru ( Does not exist )
+        // Also, for some reason, spotify cant find Camelcases at times.
+        const QString artist = m.value( "artist" ).toString().replace(" - ", " ").toLower();
+        const QString track = m.value( "track" ).toString().replace(" - ", " ").toLower();
         const QString fullText = m.value( "fulltext" ).toString();
 
         qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText;

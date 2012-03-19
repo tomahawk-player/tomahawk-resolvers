@@ -131,14 +131,22 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     }else
     {
         QString didYouMean = QString::fromUtf8(sp_search_did_you_mean(	result ) );
-        if(data->searchCount <= 1  ){
-            qDebug() << "Try nr." << data->searchCount << " Searched for" << QString::fromUtf8(sp_search_query(	result ) ) << "Did you mean?"<< didYouMean;
-            //int distance = QString::compare(QString::fromUtf8(sp_search_query(	result ) ), QString::fromUtf8(sp_search_did_you_mean(	result ) ), Qt::CaseInsensitive);
-            //qDebug() << "Distance for query is " << distance;//if( distance < 4)
-            sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(	result ) , 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+        QString queryString = QString::fromUtf8(sp_search_query(	result ) );
+        if(data->searchCount <= 1 ){
+            if( didYouMean.isEmpty() )
+                qDebug() << "Tried DidYouMean, but no suggestions available for " << queryString;
+            else
+            {
+                qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
+                //int distance = QString::compare(queryString, didYouMean, Qt::CaseInsensitive);
+                //qDebug() << "Distance for query is " << distance;//if( distance < 4)
+                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(	result ) , 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+            }
             data->searchCount++;
             return;
-        }
+        }else
+            qDebug() << "Tried to find suggestion to many times";
+
 
     }
 
