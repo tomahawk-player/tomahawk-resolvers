@@ -217,6 +217,38 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 
 }
 
+void
+SpotifyResolver::getPlaylist( const QString plid, bool sync )
+{
+
+    qDebug() << Q_FUNC_INFO;
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
+    if( playlist.isLoaded )
+    {
+        if( sync )
+            m_session->Playlists()->setSyncPlaylist( plid, sync );
+
+        // Send the asked playlist, even if its not sync == true
+        notifySyncUpdate( playlist );
+    }else
+        qDebug() << "Requested playlist isnt loaded!";
+
+}
+
+void
+SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos )
+{
+
+    qDebug() << Q_FUNC_INFO;
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev.toInt() );
+    if( !playlist.id_.isEmpty() )
+    {
+        m_session->Playlists()->addTracksToSpotifyPlaylist( tracks, pos, playlist );
+
+    }else
+        qDebug() << "Failed to add tracks! for revId" << oldRev.toInt();
+
+}
 
 void
 SpotifyResolver::notifyAllPlaylistsLoaded()
@@ -226,6 +258,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     QVariantMap msg;
     msg[ "_msgtype" ] = "allPlaylists";
     QVariantList playlists;
+
     foreach ( const SpotifyPlaylists::LoadedPlaylist& pl, m_session->Playlists()->getPlaylists() )
     {
         QVariantMap plObj;
@@ -234,7 +267,6 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         plObj[ "revid" ] = pl.revisions.last().revId;
         plObj[ "sync" ] = pl.sync_;
 
-        playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
     sendMessage( msg );

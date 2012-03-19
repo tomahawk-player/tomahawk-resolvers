@@ -26,14 +26,17 @@
 #include "spotifysearch.h"
 #include "spotifysession.h"
 #include "spotifyresolver.h"
+#include "spotifyplaylists.h"
 #include <QDebug>
+class SpotifyPlaylists;
 
 void
 SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 {
     qDebug() << Q_FUNC_INFO;
-    sp_playlist *playlist = reinterpret_cast<sp_playlist*>(userdata);
-    if(!sp_playlist_is_loaded( playlist ) )
+    SpotifyPlaylists::AddTracksData *data = reinterpret_cast<SpotifyPlaylists::AddTracksData*>(userdata);
+
+    if(!sp_playlist_is_loaded( data->pl.playlist_ ) )
     {
         qDebug() << "Search Playlist is not loaded";
         return;
@@ -55,11 +58,12 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 
             qDebug() << "Adding track to playlist" << sp_track_name( tr );
             *(tracks++) = tr;
-            sp_error err = sp_playlist_add_tracks(playlist, tracks, 1, sp_playlist_num_tracks( playlist ), SpotifySession::getInstance()->Session());
+
+            sp_error err = sp_playlist_add_tracks(data->pl.playlist_, tracks, 1, data->pos, SpotifySession::getInstance()->Session());
 
             switch(err) {
                 case SP_ERROR_OK:
-                    qDebug() << "Added tracks to pos" << sp_playlist_num_tracks( playlist )-1;
+                    qDebug() << "Added tracks to pos" << data->pos;
                     break;
                 case SP_ERROR_INVALID_INDATA:
                     qDebug() << "Invalid position";

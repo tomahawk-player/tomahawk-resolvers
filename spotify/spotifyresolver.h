@@ -75,13 +75,14 @@ public:
     sp_link* linkFromTrack( const QString& linkStr );
     bool hasLinkFromTrack( const QString& linkStr );
 
-    AudioHTTPServer* handler() const { return m_handler; }
+
     static QString dataDir( bool configDir = false );
     void sendMessage( const QVariant& v );
-
     int port() const { return m_port; }
-    SpotifySession* session() const { return m_session; }
 
+    SpotifySession* session() const { return m_session; }
+    void getPlaylist( const QString plid, bool sync );
+    void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
