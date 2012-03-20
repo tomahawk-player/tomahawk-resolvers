@@ -29,12 +29,9 @@ class SpotifyPlaylists : public QObject
 public:
     explicit SpotifyPlaylists( QObject *parent = 0);
     virtual ~SpotifyPlaylists();
-    //void addPlaylist( sp_playlist *);
+
     void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
-    //void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
     void removePlaylist( sp_playlist *playlist );
-    //void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
-    //void setPlaylistInProgress( sp_playlist *pl, bool done );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id, bool sync );
     void unsetAllLoaded(){ m_allLoaded = false; m_realCount = 0; m_currentPlaylistCount = 0; }
@@ -87,7 +84,13 @@ public:
     QList<LoadedPlaylist> getPlaylists() const { return m_playlists; }
     QList<LoadedPlaylist> m_playlists;
     QList<Sync> getSyncPlaylists() const { return m_syncPlaylists; }
+
     void addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl );
+    void sendPlaylistByRevision( int rev );
+    LoadedPlaylist getPlaylistByRevision( int rev );
+    void addNewPlaylist( QVariantMap data );
+    void removeFromSpotifyPlaylist( QVariantMap data );
+
 
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );
@@ -117,11 +120,10 @@ public:
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
-    void sendPlaylistByRevision( int rev );
-    LoadedPlaylist getPlaylistByRevision( int rev );
-    void addNewPlaylist( QVariantMap data );
-    void removeFromSpotifyPlaylist( QVariantMap data );
+
+
 public slots:
+
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);
     void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
@@ -131,11 +133,13 @@ public slots:
     void addStarredTracksToContainer();
     void allPlaylistsLoaded();
 signals:
+
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
 private:
+
    void readSettings();
    void updateRevision( LoadedPlaylist *pl );
    void updateRevision( LoadedPlaylist *pl, int qualifier );

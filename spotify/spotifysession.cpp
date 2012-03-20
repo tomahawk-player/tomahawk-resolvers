@@ -14,7 +14,7 @@
  */
 
 #include "spotifysession.h"
-#include "spotifyhttpserver.h"
+//#include "spotifyhttpserver.h"
 #include "spotifyplaylists.h"
 #include "spotifyplayback.h"
 #include <QCoreApplication>
