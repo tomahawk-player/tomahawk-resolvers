@@ -81,7 +81,8 @@ public:
 
     int port() const { return m_port; }
     SpotifySession* session() const { return m_session; }
-
+    void getPlaylist( const QString plid, bool sync );
+    void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
@@ -93,8 +94,8 @@ private slots:
     void notifyLoggedIn();
     void notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist );
     void notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist );
-
     void notifyAllPlaylistsLoaded();
+    void testLoginSucceeded( bool, const QString& msg );
 private:
     void sendSettingsMessage();
     void loadSettings();
@@ -125,6 +126,7 @@ private:
 
     QString m_username;
     QString m_pw;
+    QString m_checkLoginQid;
 
     bool m_highQuality;
     bool m_loggedIn;

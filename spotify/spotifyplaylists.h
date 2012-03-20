@@ -36,7 +36,8 @@ public:
     //void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
     //void setPlaylistInProgress( sp_playlist *pl, bool done );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
-    void setSyncPlaylist( const QString id );
+    void setSyncPlaylist( const QString id, bool sync );
+    void unsetAllLoaded(){ m_allLoaded = false; m_realCount = 0; m_currentPlaylistCount = 0; }
 
     struct RevisionChanges{
 
@@ -69,7 +70,12 @@ public:
          bool sync_;
      };
 
+    struct AddTracksData{
 
+        LoadedPlaylist pl;
+        int pos;
+
+    };
     void doSend( LoadedPlaylist playlist)
     {
         qDebug() << "Sending " << sp_playlist_name( playlist.playlist_ );
@@ -81,7 +87,7 @@ public:
     QList<LoadedPlaylist> getPlaylists() const { return m_playlists; }
     QList<LoadedPlaylist> m_playlists;
     QList<Sync> getSyncPlaylists() const { return m_syncPlaylists; }
-
+    void addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl );
 
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );

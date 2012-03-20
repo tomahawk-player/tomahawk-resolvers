@@ -34,6 +34,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    , m_pcLoaded( false )
    , m_username( "" )
    , m_password ( "" )
+   , m_testLogin( false )
 {
 
     // Set applicationName
@@ -102,22 +103,56 @@ SpotifySession::~SpotifySession(){
 
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
-       SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+   SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+
+   if (_session->m_testLogin)
+    {
+       _session->m_testLogin = false;
+       emit _session->testLoginSucceeded( error == SP_ERROR_OK, QString::fromAscii( sp_error_message( error ) ) );
+
+       if (_session->m_loggedInBeforeTest)
+       {
+           _session->m_loggedInBeforeTest = false;
+           // We were logged in and then did a test login, re-log in with our old credentials.
+           _session->login();
+       }
+    }
+
     if (error == SP_ERROR_OK) {
-        qDebug() << "Logged in successfully!!";
+    qDebug() << "Logged in successfully!!";
 
-        _session->setSession(session);
-        _session->setLoggedIn(true);
+    _session->setSession(session);
+    _session->setLoggedIn(true);
 
-        qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
+    qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
-         sp_playlistcontainer_add_callbacks(
-                sp_session_playlistcontainer(session),
-                &SpotifyCallbacks::containerCallbacks, _session);
+    /// Clear old list
+    /// @todo: if sp_username != oldUsername!
+    /*if( _session->Playlists()->getPlaylists().size() != 0){
 
-        emit _session->notifyLoggedInSignal();
+        for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) ; ++i )
+        {
+            sp_playlist* playlist = sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), i );
+            qDebug() << "Remvoing callbacks on " << sp_playlist_name( playlist );
+            sp_playlist_remove_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
+            if( i < _session->Playlists()->getPlaylists().size() )
+            {
+                sp_playlist_release( _session->Playlists()->getPlaylists()[i].playlist_ );
+            }
 
-        return;
+        }
+        _session->Playlists()->unsetAllLoaded();
+        _session->Playlists()->getPlaylists().clear();
+
+    }*/
+
+     sp_playlistcontainer_add_callbacks(
+            sp_session_playlistcontainer(session),
+            &SpotifyCallbacks::containerCallbacks, _session);
+
+    emit _session->notifyLoggedInSignal();
+
+    return;
     }
 
     switch (error) {
@@ -153,6 +188,15 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
             break;
     }
 
+}
+
+void SpotifySession::testLogin(const QString& username, const QString& pw)
+{
+    qDebug() << "Testing login with username:" << username;
+    m_testLogin = true;
+    m_loggedInBeforeTest = true;
+    sp_session_logout(m_session);
+    sp_session_login(m_session, username.toLatin1(), pw.toLatin1(), false);
 }
 
 void SpotifySession::setCredentials(QString username, QString password)

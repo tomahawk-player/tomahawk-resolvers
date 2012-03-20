@@ -56,7 +56,7 @@ void SpotifyHTTPServer::sync( QxtWebRequestEvent* event, QString id )
 {
     QByteArray response;
     QVariantList data;
-    SpotifySession::getInstance()->Playlists()->setSyncPlaylist( id );
+    SpotifySession::getInstance()->Playlists()->setSyncPlaylist( id, true );
 
     //response.append( QxtJSON::stringify( data ) );
 

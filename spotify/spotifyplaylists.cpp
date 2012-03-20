@@ -60,7 +60,7 @@ SpotifyPlaylists::readSettings()
          qDebug() << sync.id_;
          sync.sync_ = m_settings.value( "sync" ).toBool();
          m_syncPlaylists.append( sync );
-         setSyncPlaylist( sync.id_ );
+         setSyncPlaylist( sync.id_, true );
     }
 
     m_settings.endArray();
@@ -189,8 +189,14 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
     if( !m_allLoaded)
     {
         qDebug() << "Container load from thread id" << thread()->currentThreadId();
-
-        for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( pc )-1 ; ++i )
+        int numPls = sp_playlistcontainer_num_playlists( pc );
+        if(numPls == -1)
+        {
+            qDebug() << "Container is empty!";
+            return;
+        }
+        numPls = 4;
+        for ( int i = 0 ; i < numPls; ++i )
         {
             sp_playlist_type type = sp_playlistcontainer_playlist_type(pc, i);
             /**
@@ -207,6 +213,10 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
             if( type == SP_PLAYLIST_TYPE_PLAYLIST )
             {
                 sp_playlist* playlist = sp_playlistcontainer_playlist( pc, i );
+
+                if( !sp_playlist_is_loaded( playlist ) )
+                    sp_playlist_add_ref( playlist );
+
                 sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this );
                 m_realCount++;
             }
@@ -243,7 +253,7 @@ SpotifyPlaylists::addStarredTracksToContainer()
         QMetaObject::invokeMethod( this, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, starredTracks) );
 
     // Set it to syncSettings
-    setSyncPlaylist( starredId );
+    setSyncPlaylist( starredId, true );
 
     emit notifyStarredTracksLoadedSignal();
 
@@ -574,7 +584,7 @@ SpotifyPlaylists::getPlaylist( const QString id )
    Saves state to QSettings
 **/
 void
-SpotifyPlaylists::setSyncPlaylist( const QString id )
+SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
 {
     LoadedPlaylist pl;
     pl.id_ = id;
@@ -583,27 +593,39 @@ SpotifyPlaylists::setSyncPlaylist( const QString id )
     if( index != -1 )
     {
          // Set QSettings to be able to remember state on startup
-
         Sync syncThis;
         syncThis.id_ = id;
-        syncThis.sync_ = true;
-        if( !m_syncPlaylists.contains( syncThis ) )
+        syncThis.sync_ = sync;
+        int syncIndex = m_syncPlaylists.indexOf( syncThis );
+
+        // The playlist isnt in syncmode yet, set it
+        if( !m_syncPlaylists.contains( syncThis ) && sync )
         {
              m_syncPlaylists.append( syncThis );
-             QSettings settings;
-             settings.beginWriteArray("syncPlaylists");
-             for ( int i = 0; i < m_syncPlaylists.size(); ++i )
-             {
-                 settings.setArrayIndex( i );
-                 settings.setValue( "id" , m_syncPlaylists.at( i ).id_ );
-                 settings.setValue( "sync" , m_syncPlaylists.at( i ).sync_ );
-             }
-             settings.endArray();
-         }
-        m_playlists[ index ].sync_ = true;
-        sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
+             m_playlists[ index ].sync_ = true;
+             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
+        }
+        // The playlist is in syncmode, but user wants to remove it
+        else if( syncIndex != -1 && !sync )
+        {
+                m_syncPlaylists.removeAt( index );
+                sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
+        }
+
+        // Rewrite settings
+        m_settings.beginWriteArray("syncPlaylists");
+        // Clear settings?
+        // settings.clear();
+        for ( int i = 0; i < m_syncPlaylists.size(); ++i )
+        {
+            m_settings.setArrayIndex( i );
+            m_settings.setValue( "id" , m_syncPlaylists.at( i ).id_ );
+            m_settings.setValue( "sync" , m_syncPlaylists.at( i ).sync_ );
+        }
+        m_settings.endArray();
     }
 }
+
 
 
 /**
@@ -760,6 +782,10 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
     sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this);
     qDebug() << "Created playlist!";
 
+    AddTracksData addData;
+    addData.pl.playlist_ = playlist;
+    addData.pos = 0;
+
     if( playlist != NULL && sp_playlist_is_loaded( playlist ) ){
 
         foreach( QVariant track, data.value( "tracklist").toList() )
@@ -769,7 +795,8 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
             album = track.toMap().value( "album" ).toString();
 
             QString query = QString(artist + " " + title + " " + album);
-            sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, playlist );
+            sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, &addData );
+            addData.pos++;
         }
 
     }
@@ -781,6 +808,54 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
 
 }
 
+/**
+  Create a playlist with, or without data
+  which appends to spotify container
+
+    QVariantMap data;
+    data[ "playlistname" ] = "ewplaylist";
+    data[ "trackcount" ] = 1;
+    QVariantList trackList;
+    QVariantMap track;
+    track[ "artist" ] = "Madonna";
+    track[ "track" ] = "Like a virgin";
+    trackList << track;
+    data[ "tracklist" ] = trackList;
+
+    addNewPlaylist( data );
+  **/
+void
+SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl )
+{
+
+    qDebug() << "Adding tracks to playlist " << pl.name_;
+    QString artist, title, album;
+
+    AddTracksData addData;
+    addData.pl = pl;
+    addData.pos = pos;
+
+    if( pl.playlist_ != NULL && sp_playlist_is_loaded( pl.playlist_ ) )
+    {
+        foreach( QVariant track, data.value( "tracklist").toList() )
+        {
+            artist = track.toMap().value( "artist" ).toString();
+            title = track.toMap().value( "track" ).toString();
+            album = track.toMap().value( "album" ).toString();
+
+            QString query = QString(artist + " " + title + " " + album);
+            sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, &addData );
+            addData.pos++;
+        }
+
+    }
+    else
+    {
+        qDebug() << "Failed to add tracks to playlist!";
+        return;
+    }
+
+}
 void
 SpotifyPlaylists::allPlaylistsLoaded()
 {
@@ -1001,7 +1076,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         if( m_syncPlaylists.contains( syncThis ) )
         {
             qDebug() << "Adding syncing for  playlist " << playlist.id_;
-            setSyncPlaylist( playlist.id_ );
+            setSyncPlaylist( playlist.id_, true );
         }
 
         // Want to test sync? Add all playlists to syncing

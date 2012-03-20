@@ -132,11 +132,11 @@ void SpotifyResolver::setup()
     // When signal is emitted, you are logged in
     m_session = new SpotifySession(config);
     connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
+    connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
 
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
     connect( m_session, SIGNAL(notifyStarredUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifyStarredUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
-
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -217,6 +217,17 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 
 }
 
+void
+SpotifyResolver::testLoginSucceeded( bool success, const QString& msg )
+{
+    QVariantMap m;
+    m[ "qid" ] = m_checkLoginQid;
+    m[ "success" ] = success;
+    m[ "message" ] = msg;
+
+    m_checkLoginQid.clear();
+    sendMessage( m );
+}
 
 void
 SpotifyResolver::notifyAllPlaylistsLoaded()
@@ -314,6 +325,17 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         saveSettings();
 
     }
+    if( m.value( "_msgtype" ) == "checkLogin" )
+    {
+        const QString username = m[ "username" ].toString();
+        const QString pw = m[ "password" ].toString();
+
+        m_checkLoginQid = m[ "qid" ].toString();
+
+        // Test with the new credentials, and re-log in with previous ones if we were logged in
+        m_session->testLogin( username, pw );
+
+    }
     else if ( m.value( "_msgtype" ) == "getCredentials" )
     {
         // For migrating to tomahawk accounts
@@ -400,6 +422,39 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         settingsFile.close();
         QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
     }
+}
+
+void
+SpotifyResolver::getPlaylist( const QString plid, bool sync )
+{
+
+    qDebug() << Q_FUNC_INFO;
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
+    if( playlist.isLoaded )
+    {
+        if( sync )
+            m_session->Playlists()->setSyncPlaylist( plid, sync );
+
+        // Send the asked playlist, even if its not sync == true
+        notifySyncUpdate( playlist );
+    }else
+        qDebug() << "Requested playlist isnt loaded!";
+
+}
+
+void
+SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos )
+{
+
+    qDebug() << Q_FUNC_INFO;
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev.toInt() );
+    if( !playlist.id_.isEmpty() )
+    {
+        m_session->Playlists()->addTracksToSpotifyPlaylist( tracks, pos, playlist );
+
+    }else
+        qDebug() << "Failed to add tracks! for revId" << oldRev.toInt();
+
 }
 
 void SpotifyResolver::sendMessage(const QVariant& v)
