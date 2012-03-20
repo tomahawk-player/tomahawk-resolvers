@@ -1,6 +1,6 @@
 /*
     Copyright (c) 2011 Leo Franchi <leo@kdab.com>
-
+    Copyright (c) 2011 Hugo Lindström <hugolm84@gmail.com>
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
     files (the "Software"), to deal in the Software without
@@ -82,6 +82,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     delete []tracks;
 
 }
+
 
 void
 SpotifySearch::searchComplete( sp_search *result, void *userdata )

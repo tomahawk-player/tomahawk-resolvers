@@ -137,7 +137,6 @@ void SpotifyResolver::setup()
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
     connect( m_session, SIGNAL(notifyStarredUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifyStarredUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
-
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -219,36 +218,15 @@ void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
 }
 
 void
-SpotifyResolver::getPlaylist( const QString plid, bool sync )
+SpotifyResolver::testLoginSucceeded( bool success, const QString& msg )
 {
+    QVariantMap m;
+    m[ "qid" ] = m_checkLoginQid;
+    m[ "success" ] = success;
+    m[ "message" ] = msg;
 
-    qDebug() << Q_FUNC_INFO;
-    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
-    if( playlist.isLoaded )
-    {
-        if( sync )
-            m_session->Playlists()->setSyncPlaylist( plid, sync );
-
-        // Send the asked playlist, even if its not sync == true
-        notifySyncUpdate( playlist );
-    }else
-        qDebug() << "Requested playlist isnt loaded!";
-
-}
-
-void
-SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos )
-{
-
-    qDebug() << Q_FUNC_INFO;
-    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev.toInt() );
-    if( !playlist.id_.isEmpty() )
-    {
-        m_session->Playlists()->addTracksToSpotifyPlaylist( tracks, pos, playlist );
-
-    }else
-        qDebug() << "Failed to add tracks! for revId" << oldRev.toInt();
-
+    m_checkLoginQid.clear();
+    sendMessage( m );
 }
 
 void
@@ -259,7 +237,6 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     QVariantMap msg;
     msg[ "_msgtype" ] = "allPlaylists";
     QVariantList playlists;
-
     foreach ( const SpotifyPlaylists::LoadedPlaylist& pl, m_session->Playlists()->getPlaylists() )
     {
         QVariantMap plObj;
@@ -268,6 +245,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         plObj[ "revid" ] = pl.revisions.last().revId;
         plObj[ "sync" ] = pl.sync_;
 
+        playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
     sendMessage( msg );
@@ -311,19 +289,6 @@ void SpotifyResolver::notifyLoggedIn()
         sp_session_preferred_bitrate( m_session->Session(), m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
     }
 }
-
-void
-SpotifyResolver::testLoginSucceeded( bool success, const QString& msg )
-{
-    QVariantMap m;
-    m[ "qid" ] = m_checkLoginQid;
-    m[ "success" ] = success;
-    m[ "message" ] = msg;
-
-    m_checkLoginQid.clear();
-    sendMessage( m );
-}
-
 
 
 void SpotifyResolver::sendSettingsMessage()
@@ -457,6 +422,39 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         settingsFile.close();
         QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
     }
+}
+
+void
+SpotifyResolver::getPlaylist( const QString plid, bool sync )
+{
+
+    qDebug() << Q_FUNC_INFO;
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
+    if( playlist.isLoaded )
+    {
+        if( sync )
+            m_session->Playlists()->setSyncPlaylist( plid, sync );
+
+        // Send the asked playlist, even if its not sync == true
+        notifySyncUpdate( playlist );
+    }else
+        qDebug() << "Requested playlist isnt loaded!";
+
+}
+
+void
+SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos )
+{
+
+    qDebug() << Q_FUNC_INFO;
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev.toInt() );
+    if( !playlist.id_.isEmpty() )
+    {
+        m_session->Playlists()->addTracksToSpotifyPlaylist( tracks, pos, playlist );
+
+    }else
+        qDebug() << "Failed to add tracks! for revId" << oldRev.toInt();
+
 }
 
 void SpotifyResolver::sendMessage(const QVariant& v)

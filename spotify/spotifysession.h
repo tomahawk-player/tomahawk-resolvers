@@ -71,7 +71,6 @@ public:
     SpotifyPlayback* Playback() { return m_SpotifyPlayback; }
     bool isPlaylistContainerLoaded() const { return m_pcLoaded; }
     bool isLoggedIn(){ return m_loggedIn;}
-
     // Spotify session callbacks.
     static void SP_CALLCONV loggedIn(sp_session *session, sp_error error);
     static void SP_CALLCONV loggedOut(sp_session *session)
@@ -101,7 +100,6 @@ public:
 
      void login();
      void testLogin(const QString& username, const QString& pw);
-
      QString m_username;
      QString m_password;
      QString qid;
@@ -112,7 +110,6 @@ signals:
     void notifyLoggedInSignal();
     void notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
     void notifyStarredUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
-
     void testLoginSucceeded( bool, const QString& msg );
 public slots:
      void get( SpotifyPlaylists::LoadedPlaylist playlist);
