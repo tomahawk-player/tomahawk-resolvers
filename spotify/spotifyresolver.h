@@ -96,6 +96,8 @@ private slots:
     void notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist );
 
     void notifyAllPlaylistsLoaded();
+
+    void testLoginSucceeded( bool, const QString& msg );
 private:
     void sendSettingsMessage();
     void loadSettings();
@@ -126,6 +128,7 @@ private:
 
     QString m_username;
     QString m_pw;
+    QString m_checkLoginQid;
 
     bool m_highQuality;
     bool m_loggedIn;

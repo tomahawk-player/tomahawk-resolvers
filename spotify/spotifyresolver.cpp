@@ -132,6 +132,7 @@ void SpotifyResolver::setup()
     // When signal is emitted, you are logged in
     m_session = new SpotifySession(config);
     connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
+    connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
 
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
@@ -311,6 +312,19 @@ void SpotifyResolver::notifyLoggedIn()
     }
 }
 
+void
+SpotifyResolver::testLoginSucceeded( bool success, const QString& msg )
+{
+    QVariantMap m;
+    m[ "qid" ] = m_checkLoginQid;
+    m[ "success" ] = success;
+    m[ "message" ] = msg;
+
+    m_checkLoginQid.clear();
+    sendMessage( m );
+}
+
+
 
 void SpotifyResolver::sendSettingsMessage()
 {
@@ -344,6 +358,17 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         login();
         saveSettings();
+
+    }
+    if( m.value( "_msgtype" ) == "checkLogin" )
+    {
+        const QString username = m[ "username" ].toString();
+        const QString pw = m[ "password" ].toString();
+
+        m_checkLoginQid = m[ "qid" ].toString();
+
+        // Test with the new credentials, and re-log in with previous ones if we were logged in
+        m_session->testLogin( username, pw );
 
     }
     else if ( m.value( "_msgtype" ) == "getCredentials" )

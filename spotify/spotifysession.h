@@ -100,9 +100,12 @@ public:
     }
 
      void login();
+     void testLogin(const QString& username, const QString& pw);
+
      QString m_username;
      QString m_password;
      QString qid;
+     bool m_testLogin, m_loggedInBeforeTest;
 
 signals:
     void notifyMainThreadSignal();
@@ -110,6 +113,7 @@ signals:
     void notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
     void notifyStarredUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
 
+    void testLoginSucceeded( bool, const QString& msg );
 public slots:
      void get( SpotifyPlaylists::LoadedPlaylist playlist);
 

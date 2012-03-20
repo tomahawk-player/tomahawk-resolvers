@@ -34,6 +34,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    , m_pcLoaded( false )
    , m_username( "" )
    , m_password ( "" )
+   , m_testLogin( false )
 {
 
     // Set applicationName
@@ -102,7 +103,20 @@ SpotifySession::~SpotifySession(){
 
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
-       SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+
+    if (_session->m_testLogin)
+    {
+        _session->m_testLogin = false;
+        emit _session->testLoginSucceeded( error == SP_ERROR_OK, QString::fromAscii( sp_error_message( error ) ) );
+
+        if (_session->m_loggedInBeforeTest)
+        {
+            _session->m_loggedInBeforeTest = false;
+            // We were logged in and then did a test login, re-log in with our old credentials.
+            _session->login();
+        }
+    }
     if (error == SP_ERROR_OK) {
         qDebug() << "Logged in successfully!!";
 
@@ -172,6 +186,17 @@ void SpotifySession::login()
     else
         qDebug() << "No username or password provided!";
 }
+
+
+void SpotifySession::testLogin(const QString& username, const QString& pw)
+{
+    qDebug() << "Testing login with username:" << username;
+    m_testLogin = true;
+    m_loggedInBeforeTest = true;
+    sp_session_logout(m_session);
+    sp_session_login(m_session, username.toLatin1(), pw.toLatin1(), false);
+}
+
 
 void SpotifySession::sendNotifyLoggedInSignal()
 {

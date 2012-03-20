@@ -672,7 +672,7 @@ void SpotifyPlaylists::setPosition( sp_playlist *playlist, int oPos, int nPost )
 {
     LoadedPlaylist pl;
     pl.playlist_ = playlist;
-    
+
     int index = m_playlists.indexOf( pl );
 
     if( index != -1)
