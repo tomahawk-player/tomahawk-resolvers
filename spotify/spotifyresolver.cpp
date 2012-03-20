@@ -51,7 +51,7 @@
 #include <stdio.h>
 #include <fstream>
 #include "audiohttpserver.h"
-
+#include "callbacks.h"
 #ifdef WIN32
 #include <shlobj.h>
 #endif
@@ -103,6 +103,15 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
 SpotifyResolver::~SpotifyResolver()
 {
     qDebug() << "exiting...";
+
+    for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) ; ++i )
+    {
+        sp_playlist* playlist = sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), i );
+        qDebug() << "Remvoing callbacks on " << sp_playlist_name( playlist );
+        sp_playlist_remove_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
+        sp_playlist_release( playlist );
+
+    }
     delete m_session;
     delete m_stdinWatcher;
     m_stdinThread.exit();
@@ -242,12 +251,17 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         QVariantMap plObj;
         plObj[ "name" ] = pl.name_;
         plObj[ "id" ] = pl.id_;
+        if( pl.revisions.isEmpty() )
+        {
+            qDebug() << "Revisions was empty";
+            continue;
+        }
         plObj[ "revid" ] = pl.revisions.last().revId;
         plObj[ "sync" ] = pl.sync_;
-
         playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
+    qDebug() << "ALL" << playlists;
     sendMessage( msg );
 }
 

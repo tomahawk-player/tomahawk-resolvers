@@ -94,10 +94,11 @@ SpotifySession::getInstance()
 SpotifySession::~SpotifySession(){
 
     qDebug() << "Destroy session";
-    sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
-    sp_session_logout( m_session );
     delete m_SpotifyPlaylists;
     delete m_SpotifyPlayback;
+    sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
+    sp_session_logout( m_session );
+
 
 }
 

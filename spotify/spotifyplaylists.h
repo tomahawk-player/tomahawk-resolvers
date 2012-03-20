@@ -141,14 +141,14 @@ signals:
 private:
 
    void readSettings();
-   void updateRevision( LoadedPlaylist *pl );
-   void updateRevision( LoadedPlaylist *pl, int qualifier );
+   void updateRevision( LoadedPlaylist &pl );
+   void updateRevision( LoadedPlaylist &pl, int qualifier );
    QList<Sync> m_syncPlaylists;
    QSettings m_settings;
    int m_currentPlaylistCount;
    int m_realCount;
    bool m_allLoaded;
-
+   bool m_isLoading;
 
 };
 

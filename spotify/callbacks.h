@@ -110,7 +110,7 @@ static sp_playlist_callbacks syncPlaylistCallbacks = {
         NULL,
         NULL,
 };
-    
+
 
 }
 

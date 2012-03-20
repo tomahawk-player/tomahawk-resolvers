@@ -99,6 +99,7 @@ public:
     }
 
      void login();
+     void logout();
      void testLogin(const QString& username, const QString& pw);
      QString m_username;
      QString m_password;
