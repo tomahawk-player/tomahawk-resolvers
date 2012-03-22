@@ -23,13 +23,11 @@
 
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
-   , m_currentPlaylistCount( 0 )
-   , m_realCount( 0 )
+   , m_waitingToLoad( 0 )
    , m_allLoaded( false )
    , m_isLoading( false )
 {
     qDebug() << "Starting playlists in thread id" << thread()->currentThreadId();
-    connect( this, SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( allPlaylistsLoaded() ), Qt::QueuedConnection );
     /**
       Metatypes for invokeMethod
       **/
@@ -119,7 +117,12 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
     {
 //         qDebug() << "Invoking addPlaylist from thread id" << _playlists->thread()->currentThreadId();
 //         if( QThread::currentThread() !=_playlists->thread() )
-        QMetaObject::invokeMethod( _playlists, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl) );
+        // if it was just loaded and we don't have it yet, add it
+        LoadedPlaylist playlist;
+        playlist.playlist_ = pl;
+        const int index = _playlists->m_playlists.indexOf( playlist );
+        if ( index == -1 )
+            QMetaObject::invokeMethod( _playlists, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl) );
     }
 }
 
@@ -137,7 +140,7 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
     qDebug() << "Sync state changed";
     if ( !sp_playlist_is_loaded( pl ) )
     {
-      qDebug() << "Playlist isn't loaded yet, waiting";
+//       qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }
     // Send playlist with syncflags when loaded
@@ -175,6 +178,7 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
 
+    qDebug() << Q_FUNC_INFO << "CALLING PLAYLIST CONTAINER LOADED SLOT@@@@" << pc;
     QMetaObject::invokeMethod( _session->Playlists(), "loadContainerSlot", Qt::QueuedConnection, Q_ARG(sp_playlistcontainer*, pc) );
 
 }
@@ -196,7 +200,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
         qDebug() << "Trying to load " << numPls << "playlists from this container!";
 
         m_isLoading = true;
-        m_realCount = 0;
+        m_waitingToLoad = 0;
 
         for ( int i = 0 ; i < numPls; ++i )
         {
@@ -215,14 +219,18 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
               **/
             if( type == SP_PLAYLIST_TYPE_PLAYLIST )
             {
-                m_realCount++;
-                sp_playlist_add_callbacks( sp_playlistcontainer_playlist( pc, i ), &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
-                if(sp_playlist_is_loaded( sp_playlistcontainer_playlist( pc, i ) ) )
-                    addPlaylist(sp_playlistcontainer_playlist( pc, i ));
+                sp_playlist* pl = sp_playlistcontainer_playlist( pc, i );
+                sp_playlist_add_callbacks( pl, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
 
+                qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
+                if ( sp_playlist_is_loaded( pl ) )
+                    addPlaylist( pl );
+                else
+                    m_waitingToLoad++;
             }
         }
 
+        checkForPlaylistsLoaded();
         // Add starredTracks, should be an option
 
         SpotifySession::getInstance()->setPlaylistContainer( pc );
@@ -428,7 +436,7 @@ SpotifyPlaylists::removeTracks(sp_playlist* pl, int *tracks, int num_tracks)
         }
         // We need to update the revision with current timestamp
         int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
-        qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
+//         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
         updateRevision( m_playlists[index], timestamp );
     }
 
@@ -616,8 +624,8 @@ SpotifyPlaylists::removePlaylist( sp_playlist *playlist )
 void
 SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
 {
-    qDebug() << "In Progress" << sp_playlist_name(pl);
-    qDebug() << "In Progress in thread id" << thread()->currentThreadId();
+    qDebug() << "In Progress" << sp_playlist_name(pl) << sp_playlist_is_loaded(pl);
+//     qDebug() << "In Progress in thread id" << thread()->currentThreadId();
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
@@ -758,29 +766,6 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data, const int pos, L
     }
 
 }
-void
-SpotifyPlaylists::allPlaylistsLoaded()
-{
-    /*QVariantMap data;
-    data[ "playlistname" ] = "test";
-    data[ "spotifyId" ] = "uri";
-    data[ "trackcount" ] = 1;
-    QVariantList trackList;
-    QVariantMap track;
-    track[ "artist" ] = "Madonna";
-    track[ "track" ] = "Like a virgin";
-    trackList << track;
-    data[ "tracklist" ] = trackList;
-
-    removeFromSpotifyPlaylist( data );
-    */
-
-
-    m_allLoaded = true;
-    // Not really necessary but we can do some checks later on, if all is truly added.
-    // QMetaObject::invokeMethod( this, "loadContainerSlot", Qt::QueuedConnection, Q_ARG(sp_playlistcontainer*, SpotifySession::getInstance()->PlaylistContainer() ) );
-    qDebug() << "All playlists added";
-}
 
 /**
   Remove tracks from spotify playlist with data
@@ -881,7 +866,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
         if( timestamp < tmpTimestamp )
             timestamp = tmpTimestamp;
 
-        qDebug() << "Revision timestamp" << tmpTimestamp << "current highest timestamp" << timestamp;
+//         qDebug() << "Revision timestamp" << tmpTimestamp << "current highest timestamp" << timestamp;
     }
 
     /**
@@ -897,7 +882,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
     }
     else if( timestamp > pl.newRev )
     {
-        qDebug() << Q_FUNC_INFO <<  "Setting new revision " << timestamp <<  "Old rev: " << pl.oldRev;
+//         qDebug() << Q_FUNC_INFO <<  "Setting new revision " << timestamp <<  "Old rev: " << pl.oldRev;
         // Hash later with appropriate hash algorithm.
         pl.oldRev = pl.newRev;
         pl.newRev = timestamp;
@@ -914,10 +899,10 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
 void
 SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
 {
-    qDebug() << Q_FUNC_INFO << "Qualifier " << qualifier << "rev " << pl.oldRev;
+//     qDebug() << Q_FUNC_INFO << "Qualifier " << qualifier << "rev " << pl.oldRev;
     if( qualifier > pl.newRev)
     {
-        qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl.oldRev;
+//         qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl.oldRev;
 
         RevisionChanges oldRev;
         oldRev.revId = pl.oldRev;
@@ -958,6 +943,29 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
     }
 }
 
+void
+SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
+{
+    m_waitingToLoad--;
+    addPlaylist(pl);
+    qDebug() << Q_FUNC_INFO << "Got playlist loaded that we were waiting for, now we have:" << m_waitingToLoad << "left";
+
+    checkForPlaylistsLoaded();
+}
+
+
+void
+SpotifyPlaylists::checkForPlaylistsLoaded()
+{
+    if(m_waitingToLoad == 0)
+    {
+        qDebug() << "========== GOT ALL PLAYLISTS LOADED, EMITTING SIGNAL!";
+        m_isLoading = false;
+        m_allLoaded = true;
+        emit notifyContainerLoadedSignal();
+    }
+}
+
 
 /**
  addPlaylist( sp_playlist *)
@@ -968,7 +976,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
 void
 SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 {
-    qDebug() << "addPlaylist from thread id" << thread()->currentThreadId();
+//     qDebug() << "addPlaylist from thread id" << thread()->currentThreadId();
     if( !pl){
         qDebug() << Q_FUNC_INFO << "Pl was null";
         return;
@@ -979,130 +987,16 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         return;
     }
 
-    qDebug() << "Playlist has " << sp_playlist_num_tracks( pl ) << " number of tracks";
-
-    if( m_currentPlaylistCount >= 0)
-    {
-
-        qDebug() << "Loaded playlist " << m_currentPlaylistCount << " but has " << (m_realCount-m_currentPlaylistCount) << "left";
-
-        LoadedPlaylist playlist;
-        playlist.playlist_ = pl;
-        playlist.name_ = sp_playlist_name(pl);
-
-        playlist.starContainer_ = false;
-        playlist.sync_ = false;
-        playlist.isLoaded = false;
-
-        int tmpRev(0);
-
-        // Get the spotify id for the playlist
-        char linkStr[256];
-        sp_link *pl_link = sp_link_create_from_playlist( pl );
-        if( pl_link ){
-
-            sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
-            sp_link_release( pl_link );
-            playlist.id_ = linkStr;
-        }
-        else
-        {
-
-            ///    Due to reasons in the playlist backend design and the Spotify URI scheme you need to
-            ///    wait for the playlist to be loaded before you can successfully construct an URI.
-            ///    If sp_link_create_from_playlist() returns NULL, try again after teh playlist_state_changed callback has fired
-           ///    @author Spotify dev
-
-            ///    Will be added at next state change
-
-            qDebug() << "Failed to get URI! Aborting...";
-            return;
-        }
-
-        /*if(m_playlists.contains( playlist ) )
-        {
-            qDebug() << "List allready contains the playlist";
-            return;
-        }*/
-
-        if( playlist.id_.contains( "0000000000000000000000" ) )
-        {
-            playlist.name_ =  "Starred Tracks";
-            playlist.starContainer_ = true;
-        }
-
-        for ( int i=0 ; i< sp_playlist_num_tracks( playlist.playlist_ ); ++i )
-        {
-
-            sp_track* track = sp_playlist_track( pl, i );
-            sp_track_add_ref( track );
-            // Set revision on initation
-            int timestamp = sp_playlist_track_create_time( pl, i);
-            qDebug() << "Timestamp " << timestamp;
-            if( tmpRev < timestamp)
-                tmpRev = timestamp;
-
-            playlist.tracks_.push_back( track );
-        }
-
-        qDebug() << "Updateing revision with " << tmpRev;
-        // Revision, initially -1
-        playlist.oldRev = -1;
-        playlist.newRev = -1;
-
-        updateRevision( playlist, tmpRev );
-
-        qDebug() << "RevId" << playlist.newRev;
-
-        // Playlist is loaded and ready
-        playlist.isLoaded = true;
-
-        if(m_playlists.contains( playlist ) )
-        {
-            int index = m_playlists.indexOf( playlist );
-            if( index != -1 )
-                    m_playlists.replace(index, playlist);
-        }
-        else
-            m_playlists.append( playlist );
+//     qDebug() << "Playlist has " << sp_playlist_num_tracks( pl ) << " number of tracks";
 
 
-         /// Initially, when reading QSettings for syncPlaylists
-         /// we cant set the callbacks directly, as they are not loaded yet.
-         /// This will add sync callbacks for the loaded playlists,
-
-        Sync syncThis;
-        syncThis.id_ = playlist.id_;
-        if( m_syncPlaylists.contains( syncThis ) )
-        {
-            qDebug() << "Adding syncing for  playlist " << playlist.id_;
-            setSyncPlaylist( playlist.id_, true );
-        }
-
-        m_currentPlaylistCount++;
-    }
-
-    /// Loaded playlist done
-    /// @note: sometimes, doesnt load all. need to connect to QTimer
-    if( m_currentPlaylistCount == m_realCount )
-    {
-        qDebug() << "========== GOT ALL PLAYLISTS LOADED< EMITTING SIGNAL!";
-       emit notifyContainerLoadedSignal();
-    }
-    /*
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
-
-    int index = m_playlists.indexOf( playlist );
-    if( index != -1 )
-        return;
-
-    qDebug() << "Adding" << sp_playlist_name(pl);
+    playlist.name_ = sp_playlist_name(pl);
 
     playlist.starContainer_ = false;
     playlist.sync_ = false;
     playlist.isLoaded = false;
-
 
     int tmpRev(0);
 
@@ -1121,7 +1015,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         ///    Due to reasons in the playlist backend design and the Spotify URI scheme you need to
         ///    wait for the playlist to be loaded before you can successfully construct an URI.
         ///    If sp_link_create_from_playlist() returns NULL, try again after teh playlist_state_changed callback has fired
-       ///    @author Spotify dev
+        ///    @author Spotify dev
 
         ///    Will be added at next state change
 
@@ -1129,11 +1023,11 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         return;
     }
 
-    playlist.name_ = sp_playlist_name(pl);
-
-
-      /// Starred playlist folder will get a 0 hash as linkstr
-      /// Use that to set the id
+    /*if(m_playlists.contains( playlist ) )
+    {
+        qDebug() << "List allready contains the playlist";
+        return;
+    }*/
 
     if( playlist.id_.contains( "0000000000000000000000" ) )
     {
@@ -1141,69 +1035,53 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         playlist.starContainer_ = true;
     }
 
-    for ( int i=0 ; i< sp_playlist_num_tracks( pl ); ++i )
+    for ( int i=0 ; i< sp_playlist_num_tracks( playlist.playlist_ ); ++i )
     {
+
         sp_track* track = sp_playlist_track( pl, i );
         sp_track_add_ref( track );
-
         // Set revision on initation
         int timestamp = sp_playlist_track_create_time( pl, i);
+//             qDebug() << "Timestamp " << timestamp;
         if( tmpRev < timestamp)
             tmpRev = timestamp;
 
         playlist.tracks_.push_back( track );
     }
 
-    qDebug() << "Updateing revision with " << tmpRev;
+//         qDebug() << "Updateing revision with " << tmpRev;
     // Revision, initially -1
-    playlist.oldRev = tmpRev;
-    playlist.newRev = tmpRev;
-    updateRevision( &playlist, tmpRev );
+    playlist.oldRev = -1;
+    playlist.newRev = -1;
+
+    updateRevision( playlist, tmpRev );
+
+//         qDebug() << "RevId" << playlist.newRev;
 
     // Playlist is loaded and ready
     playlist.isLoaded = true;
 
-    // If the list contains the playlist, update it
-    // else, append it
-
-    if( SpotifySession::getInstance()->PlaylistContainer() &&
-        m_currentPlaylistCount <= m_realCount )
+    if(m_playlists.contains( playlist ) )
     {
-
-        qDebug() << "Loaded playlist " << m_currentPlaylistCount << " but has " << (m_realCount-m_currentPlaylistCount) << "left";
-        if(m_playlists.contains( playlist ) )
-        {
-            int index = m_playlists.indexOf( playlist );
-            if( index != -1 )
-                    m_playlists.replace(index, playlist);
-        }
-        else
-            m_playlists.append( playlist );
+        int index = m_playlists.indexOf( playlist );
+        if( index != -1 )
+                m_playlists.replace(index, playlist);
+    }
+    else
+        m_playlists.append( playlist );
 
 
-         /// Initially, when reading QSettings for syncPlaylists
-         /// we cant set the callbacks directly, as they are not loaded yet.
-         /// This will add sync callbacks for the loaded playlists,
+        /// Initially, when reading QSettings for syncPlaylists
+        /// we cant set the callbacks directly, as they are not loaded yet.
+        /// This will add sync callbacks for the loaded playlists,
 
-        Sync syncThis;
-        syncThis.id_ = playlist.id_;
-        if( m_syncPlaylists.contains( syncThis ) )
-        {
-            qDebug() << "Adding syncing for  playlist " << playlist.id_;
-            setSyncPlaylist( playlist.id_, true );
-        }
-
-        // Want to test sync? Add all playlists to syncing
-        //setSyncPlaylist( playlist.id_ );
-        m_currentPlaylistCount++;
-
-        /// Loaded playlist done
-        /// @note: sometimes, doesnt load all. need to connect to QTimer
-        if( m_currentPlaylistCount == m_realCount )
-           emit notifyContainerLoadedSignal();
-
-    }*/
-
+    Sync syncThis;
+    syncThis.id_ = playlist.id_;
+    if( m_syncPlaylists.contains( syncThis ) )
+    {
+        qDebug() << "Adding syncing for  playlist " << playlist.id_;
+        setSyncPlaylist( playlist.id_, true );
+    }
 }
 
 /**

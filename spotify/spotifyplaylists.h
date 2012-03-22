@@ -34,7 +34,7 @@ public:
     void removePlaylist( sp_playlist *playlist );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id, bool sync );
-    void unsetAllLoaded(){ m_allLoaded = false; m_realCount = 0; m_currentPlaylistCount = 0; }
+    void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad = 0; }
 
     struct RevisionChanges{
 
@@ -128,25 +128,28 @@ public slots:
     void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);
     void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
     void loadContainerSlot(sp_playlistcontainer* pc);
-    void addPlaylist( sp_playlist *);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void addStarredTracksToContainer();
-    void allPlaylistsLoaded();
+
+    void playlistLoadedSlot(sp_playlist* pl);
 signals:
 
    void send( SpotifyPlaylists::LoadedPlaylist );
    void sendPl( SpotifyPlaylists::LoadedPlaylist );
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
-private:
 
+private:
    void readSettings();
    void updateRevision( LoadedPlaylist &pl );
    void updateRevision( LoadedPlaylist &pl, int qualifier );
+
+   void addPlaylist( sp_playlist *);
+   void checkForPlaylistsLoaded();
+
    QList<Sync> m_syncPlaylists;
    QSettings m_settings;
-   int m_currentPlaylistCount;
-   int m_realCount;
+   int m_waitingToLoad;
    bool m_allLoaded;
    bool m_isLoading;
 
