@@ -215,8 +215,11 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
               **/
             if( type == SP_PLAYLIST_TYPE_PLAYLIST )
             {
-                sp_playlist_add_callbacks( sp_playlistcontainer_playlist( pc, i ), &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
                 m_realCount++;
+                sp_playlist_add_callbacks( sp_playlistcontainer_playlist( pc, i ), &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
+                if(sp_playlist_is_loaded( sp_playlistcontainer_playlist( pc, i ) ) )
+                    addPlaylist(sp_playlistcontainer_playlist( pc, i ));
+
             }
         }
 
@@ -1081,7 +1084,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 
     /// Loaded playlist done
     /// @note: sometimes, doesnt load all. need to connect to QTimer
-    if( m_currentPlaylistCount == m_realCount-1 )
+    if( m_currentPlaylistCount == m_realCount )
     {
         qDebug() << "========== GOT ALL PLAYLISTS LOADED< EMITTING SIGNAL!";
        emit notifyContainerLoadedSignal();
