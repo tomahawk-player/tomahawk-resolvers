@@ -208,9 +208,27 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 
     resp[ "tracks" ] = tracks;
 
-//     QJson::Serializer s;
-//     QByteArray msg = s.serialize( resp );
-//     qDebug() << "SENDING PLAYLIST JSON:" << msg;
+    QJson::Serializer s;
+    QByteArray msg = s.serialize( resp );
+    qDebug() << "SENDING PLAYLIST JSON:" << msg;
+
+    sendMessage( resp );
+}
+
+
+void
+SpotifyResolver::sendAddTracksResult( const QString& spotifyId, bool result )
+{
+    QVariantMap resp;
+    SpotifyPlaylists::LoadedPlaylist pl = m_session->Playlists()->getPlaylist( spotifyId );
+
+    if ( m_playlistToQid.contains( pl.id_ ) )
+        resp[ "qid" ] = m_playlistToQid.take( pl.id_ );
+
+    resp[ "_msgtype" ] = QString();
+    resp[ "success" ] = result;
+
+    resp[ "latestrev" ] = pl.revisions.last().revId;
 
     sendMessage( resp );
 }
@@ -252,10 +270,6 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     }
     msg[ "playlists" ] = playlists;
 //     qDebug() << "ALL" << playlists;
-
-    QJson::Serializer s;
-    QByteArray m = s.serialize( msg );
-    qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
 
     sendMessage( msg );
 }
@@ -453,6 +467,50 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         m_session->Playlists()->setSyncPlaylist( plid, false );
     }
+    else if ( m.value( "_msgtype" ) == "removeTracksFromPlaylist" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const uint oldRev = m.value( "oldrev" ).toUInt();
+
+        const QString qid = m.value( "qid" ).toString();
+
+        if ( plid.isEmpty() )
+        {
+            qWarning() << "no playlist to remove tracks from! Asked to remove from:" << plid;
+            return;
+        }
+
+        bool success = m_session->Playlists()->removeFromSpotifyPlaylist( m );
+        const int newRev = m_session->Playlists()->getPlaylist( plid ).revisions.last().revId;
+
+
+        QVariantMap msg;
+        msg[ "_msgtype" ] = "";
+        msg[ "qid" ] = qid; // ESSENTIAL
+        msg[ "success" ] = success;
+        msg[ "newrev" ] = newRev;
+        sendMessage( msg );
+    }
+    else if ( m.value( "_msgtype" ) == "addTracksToPlaylist" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const uint oldRev = m.value( "oldrev" ).toUInt();
+        const int startPos = m.value( "startPosition" ).toInt();
+
+        const QString qid = m.value( "qid" ).toString();
+        if ( !qid.isEmpty() )
+            m_playlistToQid[ plid ] = qid;
+
+        if ( plid.isEmpty() )
+        {
+            qWarning() << "no playlist to add tracks to! Asked to remove from:" << plid;
+            return;
+        }
+
+        m_session->Playlists()->addTracksToSpotifyPlaylist( m );
+
+        // callback is async
+    }
 }
 
 
@@ -464,7 +522,6 @@ SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, 
     SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev.toInt() );
     if( !playlist.id_.isEmpty() )
     {
-        m_session->Playlists()->addTracksToSpotifyPlaylist( tracks, pos, playlist );
 
     }else
         qDebug() << "Failed to add tracks! for revId" << oldRev.toInt();

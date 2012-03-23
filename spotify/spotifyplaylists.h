@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QObject>
+#include <QStringList>
 
 
 class SpotifyPlaylists : public QObject
@@ -69,6 +70,10 @@ public:
     struct AddTracksData{
 
         LoadedPlaylist pl;
+        QVector< sp_track* > finaltracks;
+        QStringList origTrackNameList;
+
+        int waitingFor;
         int pos;
 
     };
@@ -86,10 +91,12 @@ public:
     void sendPlaylistByRevision( int rev );
 
 
-    void addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl );
     LoadedPlaylist getPlaylistByRevision( int rev );
     void addNewPlaylist( QVariantMap data );
-    void removeFromSpotifyPlaylist( QVariantMap data );
+
+    // Takes a msg from JSON that conforms to the API
+    void addTracksToSpotifyPlaylist( QVariantMap data );
+    bool removeFromSpotifyPlaylist( QVariantMap data );
 
 
     // Spotify playlist container callbacks.
@@ -106,9 +113,9 @@ public:
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata)
     {
-        qDebug() << "Metadata updated";
-        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->addPlaylist( pl );
+        qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl );
+//         SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+//         _playlists->addPlaylist( pl );
     }
 
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
@@ -156,7 +163,6 @@ private:
    int m_waitingToLoad;
    bool m_allLoaded;
    bool m_isLoading;
-
 };
 
 

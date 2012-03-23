@@ -43,44 +43,58 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     }
 
     // Need to pass a ** to add_tracks
-    sp_track **tracks = static_cast<sp_track **>(malloc(sizeof(sp_track*)));
-
-    if( sp_search_num_tracks( result ) > 0 )
+    if( sp_search_num_tracks( result ) < 1 )
     {
-        int num = qMin( sp_search_num_tracks( result ), 1 );
-        for( int i = 0; i < num; i++ )
-        {
-            sp_track *const tr = sp_search_track( result, i );
-            if( !tr || !sp_track_is_loaded( tr ) ) {
-                qDebug() << "Got still loading track, skipping";
-                continue;
-            }
+        qWarning() << "Got no search result for track we tried to add! Ignoring it...";
+        data->waitingFor--;
+        return;
+    }
 
-            qDebug() << "Adding track to playlist" << sp_track_name( tr );
-            *(tracks++) = tr;
+    int cur = 0;
+    while( cur < sp_search_num_albums(result) )
+    {
+        // Find a loaded track to add to the list
+        sp_track *const tr = sp_search_track( result, cur );
 
-            sp_error err = sp_playlist_add_tracks(data->pl.playlist_, tracks, 1, data->pos, SpotifySession::getInstance()->Session());
-
-            switch(err) {
-                case SP_ERROR_OK:
-                    qDebug() << "Added tracks to pos" << data->pos;
-                    break;
-                case SP_ERROR_INVALID_INDATA:
-                    qDebug() << "Invalid position";
-                    break;
-
-                case SP_ERROR_PERMISSION_DENIED:
-                    qDebug() << "Access denied";
-                    break;
-                default:
-                    qDebug() << "Other error (should not happen)";
-                    break;
-                }
+        if( !tr || !sp_track_is_loaded( tr ) ) {
+            qDebug() << "Got still loading track, skipping";
+            continue;
         }
 
+        qDebug() << "Adding track to playlist" << sp_track_name( tr );
+        data->finaltracks.append( tr );
+        data->waitingFor--;
+        break;
     }
-    delete []tracks;
 
+    if ( data->waitingFor == 0 )
+    {
+        // Got all the real tracks, now add
+        qDebug() << "All added tracks were searched for, now inserting in playlist!";
+
+        sp_error err = sp_playlist_add_tracks(data->pl.playlist_, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());
+
+        switch(err) {
+            case SP_ERROR_OK:
+                qDebug() << "Added tracks to pos" << data->pos;
+                break;
+            case SP_ERROR_INVALID_INDATA:
+                qDebug() << "Invalid position";
+                break;
+
+            case SP_ERROR_PERMISSION_DENIED:
+                qDebug() << "Access denied";
+                break;
+            default:
+                qDebug() << "Other error (should not happen)";
+                break;
+        }
+
+        sApp->sendAddTracksResult( data->pl.id_, err == SP_ERROR_OK );
+
+        // Only free once
+        delete data;
+    }
 }
 
 

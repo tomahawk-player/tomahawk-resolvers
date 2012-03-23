@@ -71,9 +71,8 @@ void
 SpotifyPlaylists::writeSettings()
 {
     // Rewrite settings
+    m_settings.remove( "syncPlaylists" );
     m_settings.beginWriteArray("syncPlaylists");
-    // Clear settings?
-    // settings.clear();
     for ( int i = 0; i < m_syncPlaylists.size(); ++i )
     {
         m_settings.setArrayIndex( i );
@@ -579,7 +578,7 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
 {
     LoadedPlaylist pl;
     pl.id_ = id;
-    qDebug() << "Setting sync for " << id;
+    qDebug() << "Setting sync for " << id << "to:" << sync;
     int index = m_playlists.indexOf( pl );
     if( index != -1 )
     {
@@ -605,7 +604,7 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
         // The playlist is in syncmode, but user wants to remove it
         else if( syncIndex != -1 && !sync )
         {
-            m_syncPlaylists.removeAt( index );
+            m_syncPlaylists.removeAt( syncIndex );
             m_playlists[ index ].sync_ = false;
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
@@ -770,29 +769,29 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
     sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this);
     qDebug() << "Created playlist!";
 
-    AddTracksData addData;
-    addData.pl.playlist_ = playlist;
-    addData.pos = 0;
+//     AddTracksData addData;
+//     addData.pl.playlist_ = playlist;
+//     addData.pos = 0;
+//
+//     if( playlist != NULL && sp_playlist_is_loaded( playlist ) ){
+//
+//         foreach( QVariant track, data.value( "tracklist").toList() )
+//         {
+//             artist = track.toMap().value( "artist" ).toString();
+//             title = track.toMap().value( "track" ).toString();
+//             album = track.toMap().value( "album" ).toString();
+//
+//             QString query = QString(artist + " " + title + " " + album);
+//             sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, &addData );
+//             addData.pos++;
+//         }
 
-    if( playlist != NULL && sp_playlist_is_loaded( playlist ) ){
-
-        foreach( QVariant track, data.value( "tracklist").toList() )
-        {
-            artist = track.toMap().value( "artist" ).toString();
-            title = track.toMap().value( "track" ).toString();
-            album = track.toMap().value( "album" ).toString();
-
-            QString query = QString(artist + " " + title + " " + album);
-            sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, &addData );
-            addData.pos++;
-        }
-
-    }
-    else
-    {
-        qDebug() << "Failed to create new playlist!";
-        return;
-    }
+//     }
+//     else
+//     {
+//         qDebug() << "Failed to create new playlist!";
+//         return;
+//     }
 
 }
 
@@ -813,36 +812,53 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
     addNewPlaylist( data );
   **/
 void
-SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl )
+SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
 {
+    qDebug() << "Adding tracks to playlist with id " << data.value( "playlistid");
 
-    qDebug() << "Adding tracks to playlist " << pl.name_;
-    QString artist, title, album;
+    QString playlistId = data.value( "playlistid").toString();
+    LoadedPlaylist loader;
+    loader.id_ = data.value("playlistid").toString();
+    const int index = m_playlists.indexOf( loader );
 
-    AddTracksData addData;
-    addData.pl = pl;
-    addData.pos = pos;
-
-    if( pl.playlist_ != NULL && sp_playlist_is_loaded( pl.playlist_ ) )
+    if ( index == -1 )
     {
-        foreach( QVariant track, data.value( "tracklist").toList() )
-        {
-            artist = track.toMap().value( "artist" ).toString();
-            title = track.toMap().value( "track" ).toString();
-            album = track.toMap().value( "album" ).toString();
-
-            QString query = QString(artist + " " + title + " " + album);
-            sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, &addData );
-            addData.pos++;
-        }
-
-    }
-    else
-    {
-        qDebug() << "Failed to add tracks to playlist!";
+        qWarning() << "Asked to add tracks to a spotify playlist that doesn't exist!" << playlistId;
         return;
     }
 
+    sp_playlist* pl = m_playlists[index].playlist_;
+
+    if ( !pl || !sp_playlist_is_loaded( pl ) )
+    {
+        qWarning() << "Asked to add tracks to a spotify playlist that is null or is not loaded!" << pl << ( (pl != 0 ) ? (sp_playlist_is_loaded( pl ) ? "Loaded" : "Unloaded") : QString()) ;
+        return;
+    }
+
+    const QVariantList tracks = data.value( "tracks").toList();
+
+
+    qDebug() << "Adding tracks to playlist " << sp_playlist_name( pl );
+
+
+    AddTracksData* addData = new AddTracksData;
+    addData->pl = m_playlists.at( index );
+    addData->pos = data.value( "startPosition" ).toInt();
+    addData->waitingFor = 0;
+
+    foreach( QVariant track, data.value( "tracklist").toList() )
+    {
+        const QString artist = track.toMap().value( "artist" ).toString();
+        const QString title = track.toMap().value( "track" ).toString();
+        const QString album = track.toMap().value( "album" ).toString();
+
+        QString query = QString(artist + " " + title + " " + album);
+        sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, addData );
+        addData->waitingFor++;
+
+        // to help us choose the right order
+        addData->origTrackNameList << title;
+    }
 }
 
 /**
@@ -863,67 +879,98 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data, const int pos, L
   **/
 
 
-void
+bool
 SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
 
-    qDebug() << "Removing tracks from playlist with name " << data.value( "playlistname");
-    QString artist, title, album, playlistname;
+    qDebug() << "Removing tracks from playlist with id " << data.value( "playlistid");
 
-    playlistname = data.value( "playlistname").toString();
-    LoadedPlaylist pl;
-    pl.id_ = data.value("spotifyId").toString();
-    int index = m_playlists.indexOf( pl );
+    QString playlistId = data.value( "playlistid").toString();
+    LoadedPlaylist loader;
+    loader.id_ = data.value("playlistid").toString();
+    int index = m_playlists.indexOf( loader );
 
-    if( index != -1 ){
+    if ( index == -1 )
+    {
+        qWarning() << "Asked to remove tracks from a spotify playlist that doesn't exist!" << playlistId;
+        return false;
+    }
 
-        qDebug() << "Found playlist to remove from!";
+    sp_playlist* pl = m_playlists[index].playlist_;
 
-        int count(0);
+    if ( !pl || !sp_playlist_is_loaded( pl ) )
+    {
+        qWarning() << "Asked to remove tracks from a spotify playlist that is null or is not loaded!" << pl << ( (pl != 0 ) ? (sp_playlist_is_loaded( pl ) ? "Loaded" : "Unloaded") : QString()) ;
+        return false;
+    }
 
-        if( m_playlists[index].playlist_ != NULL && sp_playlist_is_loaded( m_playlists[index].playlist_ ) ){
 
-            /**
-              @todo: Fix dynamic alloclation for pos!
-              **/
-            int *pos = new int[10];
+    const QVariantList tracks = data.value( "tracks").toList();
 
-            foreach( QVariant track, data.value( "tracklist").toList() )
+    QVector<int> positions;
+    positions.reserve( tracks.size() );
+
+    foreach( QVariant track, tracks )
+    {
+        const QString id = track.toMap().value( "id" ).toString();
+        const QString artist = track.toMap().value( "artist" ).toString();
+        const QString title = track.toMap().value( "track" ).toString();
+        //album = track.toMap().value( "album" ).toString();
+
+        qDebug() << "trying to remove " << artist  << title << id;
+        // case sensitive atm
+        // if we have an ID, do a safe lookup and check for that. otherwrise, match metadata
+        if ( !id.isEmpty() )
+        {
+            for(int i = 0; i < sp_playlist_num_tracks(pl); i++)
             {
-                artist = track.toMap().value( "artist" ).toString();
-                title = track.toMap().value( "track" ).toString();
-                //album = track.toMap().value( "album" ).toString();
-                qDebug() << "trying to remove " << artist  << title;
-                // case sensitive atm
-                for(int i = 0; i < sp_playlist_num_tracks( m_playlists[index].playlist_); i++)
+                char trackId[356];
+                sp_track *track = sp_playlist_track( m_playlists[index].playlist_, i);
+                sp_link* l = sp_link_create_from_track( track, 0 );
+                sp_link_as_string(l, trackId, sizeof(trackId));
+
+                if( id == QString::fromAscii(trackId) )
                 {
-                    sp_track *track = sp_playlist_track( m_playlists[index].playlist_, i);
-                    if( title.toLower() == QString::fromUtf8( sp_track_name( track ) ).toLower() &&
-                        artist.toLower() == QString::fromUtf8( sp_artist_name( sp_track_artist( track, 0 ) ) ).toLower() )
-                    {
-                        qDebug() << "Found track at pos" << i << " removing";
-                        pos[0] = i;
-                        count++;
-                    }
-
+                    qDebug() << "Found track at pos" << i << " removing";
+                    positions.append( i );
                 }
+
+                sp_link_release( l );
+
             }
-
-            for(int j = 0; j < count; j++)
-                qDebug() << "Found tracks to remove at " << pos[j];
-
-            // Doesnt seem to work atm
-             sp_playlist_remove_tracks( m_playlists[index].playlist_, pos, count);
-             delete []pos;
-
         }
         else
         {
-            qDebug() << "Failed to remove from playlist!";
-            return;
+            // No id in track, so do fuzzy matching.
+            for(int i = 0; i < sp_playlist_num_tracks(pl); i++)
+            {
+                char id[356];
+                sp_track *track = sp_playlist_track( m_playlists[index].playlist_, i);
+
+                qDebug() << "Comparing track for removal:";
+                qDebug() << title.toLower() << QString::fromUtf8( sp_track_name( track ) ).toLower();
+                qDebug() << artist.toLower() << QString::fromUtf8( sp_artist_name( sp_track_artist( track, 0 ) ) ).toLower();
+
+                if( title.toLower() == QString::fromUtf8( sp_track_name( track ) ).toLower() &&
+                    artist.toLower() == QString::fromUtf8( sp_artist_name( sp_track_artist( track, 0 ) ) ).toLower() )
+                {
+                    qDebug() << "Found track match at pos" << i << " removing";
+                    positions.append( i );
+                }
+
+            }
         }
-    }else
-        qDebug() << "Cant find playlist";
-    return;
+    }
+
+    qDebug() << "Was asked to remove" << tracks.size() << "tracks, found" << positions.size() << "matching";
+    if ( !positions.isEmpty() )
+    {
+        qDebug() << "Removing found:" << positions.size() << "tracks from playlist!";
+        sp_error ret = sp_playlist_remove_tracks( pl, positions.constData(), positions.size());
+
+        return (tracks.size() == positions.size()) && (ret == SP_ERROR_OK);
+    }
+
+    return tracks.size() == positions.size();
 
 }
 

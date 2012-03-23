@@ -83,6 +83,8 @@ public:
     SpotifySession* session() const { return m_session; }
 
     void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
+
+    void sendAddTracksResult( const QString& spotifyId, bool result );
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
@@ -97,6 +99,7 @@ private slots:
 
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
 private:
+
     void sendSettingsMessage();
     void loadSettings();
     void saveSettings() const;
