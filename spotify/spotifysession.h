@@ -109,11 +109,10 @@ public:
 signals:
     void notifyMainThreadSignal();
     void notifyLoggedInSignal();
-    void notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
-    void notifyStarredUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
+    void notifySyncUpdateSignal( const SpotifyPlaylists::LoadedPlaylist& playlist );
     void testLoginSucceeded( bool, const QString& msg );
 public slots:
-     void get( SpotifyPlaylists::LoadedPlaylist playlist);
+     void get( const SpotifyPlaylists::LoadedPlaylist& playlist);
 
 private slots:
     void notifyMainThread();

@@ -32,8 +32,8 @@ SpotifySession* SpotifySession::s_instance = 0;
 SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    : QObject( parent )
    , m_pcLoaded( false )
-   , m_username( "" )
-   , m_password ( "" )
+   , m_username( QString() )
+   , m_password ( QString() )
    , m_testLogin( false )
 {
 
@@ -225,20 +225,13 @@ void SpotifySession::sendNotifyLoggedInSignal()
 
 
 void
-SpotifySession::get( SpotifyPlaylists::LoadedPlaylist playlist)
+SpotifySession::get( const SpotifyPlaylists::LoadedPlaylist& playlist)
 {
     if( playlist.isLoaded && playlist.sync_ )
     {
         qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
         emit notifySyncUpdateSignal( playlist );
     }
-
-    else if( playlist.isLoaded && playlist.starContainer_ )
-    {
-        qDebug() << "Received starred: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
-        emit notifyStarredUpdateSignal( playlist );
-    }
-
 }
 
 void SpotifySession::sendNotifyThreadSignal()

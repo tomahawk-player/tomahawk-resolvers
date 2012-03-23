@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2011 Leo Franchi <leo@kdab.com>
+    Copyright (c) 2011-2012 Leo Franchi <lfranchi@kde.org>
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -144,8 +144,7 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
 
     // Signals
-    connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifySyncUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
-    connect( m_session, SIGNAL(notifyStarredUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( notifyStarredUpdate(SpotifyPlaylists::LoadedPlaylist) ) );
+    connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -156,9 +155,9 @@ void SpotifyResolver::setup()
 
 }
 
-void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
+void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
-    qDebug() << "Got playlist to update";
+    qDebug() << "Sending playlist to client:" << pl.name_;
 
     if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
     {
@@ -167,64 +166,55 @@ void SpotifyResolver::notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist pl )
     }
 
     QVariantMap resp;
-    resp[ "qid" ] = pl.id_;
-    resp[ "identifier" ] = pl.name_;
+
+    if ( m_playlistToQid.contains( pl.id_ ) )
+        resp[ "qid" ] = m_playlistToQid.take( pl.id_ );
+
+    resp[ "id" ] = pl.id_;
+    resp[ "name" ] = pl.name_;
+    resp[ "revid" ] = pl.revisions.last().revId;
+    resp[ "sync" ] = pl.sync_;
     resp[ "_msgtype" ] = "playlist";
 
-    QVariantList results;
+    QVariantList tracks;
 
     foreach( sp_track *tr, pl.tracks_ )
     {
-        if ( !tr || sp_track_is_loaded( tr ) )
+        if ( !tr || !sp_track_is_loaded( tr ) )
         {
             qDebug() << "IGNORING not loaded track!";
             continue;
         }
 
         QVariantMap track;
-        track[ "track" ] = "Test Track Name"; //QString::fromUtf8( sp_track_name( tr ) );
-        track[ "artist" ] = "Test Artist"; // QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
-        results << track;
+        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+
+        sp_artist* artist = sp_track_artist( tr, 0 );
+        if ( sp_artist_is_loaded( artist ) )
+            track[ "artist" ] = QString::fromUtf8( sp_artist_name( artist ) );
+
+        sp_album* album = sp_track_album( tr );
+        if ( sp_album_is_loaded( album ) )
+            track[ "album" ] = QString::fromUtf8( sp_album_name( album ) );
+
+        sp_link* l = sp_link_create_from_track( tr, 0 );
+        char urlStr[256];
+        sp_link_as_string( l, urlStr, sizeof(urlStr) );
+        track[ "id" ] = QString::fromAscii( urlStr );
+        sp_link_release( l );
+
+        tracks << track;
     }
 
-    resp[ "playlist" ] = results;
+    resp[ "tracks" ] = tracks;
+
+//     QJson::Serializer s;
+//     QByteArray msg = s.serialize( resp );
+//     qDebug() << "SENDING PLAYLIST JSON:" << msg;
+
     sendMessage( resp );
 }
 
-void SpotifyResolver::notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist pl )
-{
-    qDebug() << "Got starred playlist to update";
-
-    if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
-    {
-        qDebug() << "NULL or not loaded playlist in callbacK!";
-        return;
-    }
-
-    QVariantMap resp;
-    resp[ "qid" ] = pl.id_;
-    resp[ "identifier" ] = pl.name_;
-    resp[ "_msgtype" ] = "playlist";
-
-    QVariantList results;
-
-    foreach( sp_track *tr, pl.tracks_ )
-    {
-        if ( !tr || sp_track_is_loaded( tr ) )
-        {
-            qDebug() << "IGNORING not loaded track in starred!";
-            continue;
-        }
-        QVariantMap track;
-        track[ "track" ] = "Test Track Name"; //QString::fromUtf8( sp_track_name( tr ) );
-        track[ "artist" ] = "Test Artist"; // QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
-        results << track;
-    }
-
-    resp[ "playlist" ] = results;
-    sendMessage( resp );
-
-}
 
 void
 SpotifyResolver::testLoginSucceeded( bool success, const QString& msg )
@@ -261,7 +251,12 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
-    qDebug() << "ALL" << playlists;
+//     qDebug() << "ALL" << playlists;
+
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
+
     sendMessage( msg );
 }
 
@@ -436,25 +431,30 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         settingsFile.close();
         QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
     }
-}
-
-void
-SpotifyResolver::getPlaylist( const QString plid, bool sync )
-{
-
-    qDebug() << Q_FUNC_INFO;
-    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
-    if( playlist.isLoaded )
+    else if( m.value( "_msgtype" ) == "getPlaylist" )
     {
-        if( sync )
-            m_session->Playlists()->setSyncPlaylist( plid, sync );
+        // Asking for playlist and potentially to sync with it. Load it if we have to, and send it over
+        const QString plid = m.value( "playlistid" ).toString();
+        const bool sync = m.value( "sync" ).toBool();
 
-        // Send the asked playlist, even if its not sync == true
-        notifySyncUpdate( playlist );
-    }else
-        qDebug() << "Requested playlist isnt loaded!";
+        const QString qid = m.value( "qid" ).toString();
+        if ( !qid.isEmpty() )
+            m_playlistToQid[ plid ] = qid;
 
+        qDebug() << Q_FUNC_INFO << "Got request for playlist with sync:" << plid << sync;
+
+        m_session->Playlists()->sendPlaylist( plid, sync );
+        SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
+    }
+    else if ( m.value( "_msgtype" ) == "removeFromSyncList" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+//         const QString qid = m.value( "qid" ).toString();
+
+        m_session->Playlists()->setSyncPlaylist( plid, false );
+    }
 }
+
 
 void
 SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos )

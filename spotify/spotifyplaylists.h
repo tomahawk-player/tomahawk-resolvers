@@ -1,6 +1,7 @@
 /**  This file is part of QT SpotifyWebApi - <hugolm84@gmail.com> ===
  *
  *   Copyright 2011-2012,Hugo Lindström <hugolm84@gmail.com>
+ *   Copyright      2012,Leo Franchi    <lfranchi@kde.org>
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +31,6 @@ public:
     explicit SpotifyPlaylists( QObject *parent = 0);
     virtual ~SpotifyPlaylists();
 
-    void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
-    void removePlaylist( sp_playlist *playlist );
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id, bool sync );
     void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad = 0; }
@@ -73,20 +72,21 @@ public:
         int pos;
 
     };
-    void doSend( LoadedPlaylist playlist)
-    {
-        qDebug() << "Sending " << sp_playlist_name( playlist.playlist_ );
-        emit( send( playlist ) );
-    }
+
+    void doSend( const LoadedPlaylist& playlist);
 
     LoadedPlaylist getPlaylist( const QString id );
     LoadedPlaylist getLoadedPlaylist( sp_playlist *&playlist );
     QList<LoadedPlaylist> getPlaylists() const { return m_playlists; }
-    QList<LoadedPlaylist> m_playlists;
+
     QList<Sync> getSyncPlaylists() const { return m_syncPlaylists; }
 
-    void addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl );
+    // Send the desired playlist to the client, and turn on syncing
+    void sendPlaylist( const QString& playlistId, bool startSyncing );
     void sendPlaylistByRevision( int rev );
+
+
+    void addTracksToSpotifyPlaylist( QVariantMap data, const int pos, LoadedPlaylist pl );
     LoadedPlaylist getPlaylistByRevision( int rev );
     void addNewPlaylist( QVariantMap data );
     void removeFromSpotifyPlaylist( QVariantMap data );
@@ -130,23 +130,27 @@ public slots:
     void loadContainerSlot(sp_playlistcontainer* pc);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void addStarredTracksToContainer();
+    void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
+    void removePlaylist( sp_playlist *playlist );
 
     void playlistLoadedSlot(sp_playlist* pl);
 signals:
 
-   void send( SpotifyPlaylists::LoadedPlaylist );
-   void sendPl( SpotifyPlaylists::LoadedPlaylist );
+   void send( const SpotifyPlaylists::LoadedPlaylist& );
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
 
 private:
    void readSettings();
+   void writeSettings();
+
    void updateRevision( LoadedPlaylist &pl );
    void updateRevision( LoadedPlaylist &pl, int qualifier );
 
    void addPlaylist( sp_playlist *);
    void checkForPlaylistsLoaded();
 
+   QList<LoadedPlaylist> m_playlists;
    QList<Sync> m_syncPlaylists;
    QSettings m_settings;
    int m_waitingToLoad;
