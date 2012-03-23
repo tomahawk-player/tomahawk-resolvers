@@ -846,7 +846,7 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
     addData->pos = data.value( "startPosition" ).toInt();
     addData->waitingFor = 0;
 
-    foreach( QVariant track, data.value( "tracklist").toList() )
+    foreach( QVariant track, data.value( "tracks").toList() )
     {
         const QString artist = track.toMap().value( "artist" ).toString();
         const QString title = track.toMap().value( "track" ).toString();

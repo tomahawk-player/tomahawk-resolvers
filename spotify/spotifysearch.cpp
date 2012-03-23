@@ -51,13 +51,15 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     }
 
     int cur = 0;
-    while( cur < sp_search_num_albums(result) )
+    int max = sp_search_num_tracks(result);
+    while( cur < max )
     {
         // Find a loaded track to add to the list
         sp_track *const tr = sp_search_track( result, cur );
 
         if( !tr || !sp_track_is_loaded( tr ) ) {
             qDebug() << "Got still loading track, skipping";
+            cur++;
             continue;
         }
 

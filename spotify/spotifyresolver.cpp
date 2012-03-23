@@ -503,7 +503,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         if ( plid.isEmpty() )
         {
-            qWarning() << "no playlist to add tracks to! Asked to remove from:" << plid;
+            qWarning() << "no playlist to add tracks to! Asked to add to:" << plid;
             return;
         }
 
