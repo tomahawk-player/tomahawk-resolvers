@@ -923,6 +923,10 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
         {
             for(int i = 0; i < sp_playlist_num_tracks(pl); i++)
             {
+                // If we have duplicates of the track to remove, don't try to remove the same thing twice.
+                if ( positions.contains( i ) )
+                    continue;
+
                 char trackId[356];
                 sp_track *track = sp_playlist_track( m_playlists[index].playlist_, i);
                 sp_link* l = sp_link_create_from_track( track, 0 );
@@ -932,6 +936,9 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
                 {
                     qDebug() << "Found track at pos" << i << " removing";
                     positions.append( i );
+
+                    sp_link_release( l );
+                    break;
                 }
 
                 sp_link_release( l );
@@ -943,7 +950,10 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
             // No id in track, so do fuzzy matching.
             for(int i = 0; i < sp_playlist_num_tracks(pl); i++)
             {
-                char id[356];
+                // If we have duplicates of the track to remove, don't try to remove the same thing twice.
+                if ( positions.contains( i ) )
+                    continue;
+
                 sp_track *track = sp_playlist_track( m_playlists[index].playlist_, i);
 
                 qDebug() << "Comparing track for removal:";
@@ -955,10 +965,21 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
                 {
                     qDebug() << "Found track match at pos" << i << " removing";
                     positions.append( i );
+
+                    break;
                 }
 
             }
         }
+    }
+
+    const QSet<int> uniq = positions.toList().toSet();
+    if ( uniq.size() != positions.size() )
+    {
+        qWarning() << "ERROR! Found a list of positions to remove with duplicates!! This is illegal, a bug in our search algorithm! Making unique and passing along to spotify...";
+        positions.clear();
+        foreach( int pos, uniq )
+            positions.append( pos );
     }
 
     qDebug() << "Was asked to remove" << tracks.size() << "tracks, found" << positions.size() << "matching";
