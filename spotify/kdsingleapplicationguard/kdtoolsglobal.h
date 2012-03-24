@@ -40,8 +40,8 @@
 # define KDAB_IMPLEMENT_SAFE_BOOL_OPERATOR( func ) operator unspecified_bool_type() const { return func; }
 # define KDAB_USING_SAFE_BOOL_OPERATOR( Class ) operator unspecified_bool_type() const;
 #else
-# define KDAB_IMPLEMENT_SAFE_BOOL_OPERATOR( func )                      \
-    private: struct __safe_bool_dummy__ { void nonnull() {} };          \
+#define KDAB_IMPLEMENT_SAFE_BOOL_OPERATOR( func )                      \
+    protected: struct __safe_bool_dummy__ { void nonnull() {} };          \
         typedef void ( __safe_bool_dummy__::*unspecified_bool_type )(); \
     public:                                                             \
         operator unspecified_bool_type() const {                        \
