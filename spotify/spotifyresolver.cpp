@@ -145,6 +145,11 @@ void SpotifyResolver::setup()
 
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
+
+    connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,int)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,int)));
+    connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QList<int>,int)), this, SLOT(sendTracksMoved(sp_playlist*,QList<int>,int)));
+    connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QList<int>)), this, SLOT(sendTracksRemoved(sp_playlist*,QList<int>)));
+
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -186,33 +191,83 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
             continue;
         }
 
-        QVariantMap track;
-        track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
-
-        sp_artist* artist = sp_track_artist( tr, 0 );
-        if ( sp_artist_is_loaded( artist ) )
-            track[ "artist" ] = QString::fromUtf8( sp_artist_name( artist ) );
-
-        sp_album* album = sp_track_album( tr );
-        if ( sp_album_is_loaded( album ) )
-            track[ "album" ] = QString::fromUtf8( sp_album_name( album ) );
-
-        sp_link* l = sp_link_create_from_track( tr, 0 );
-        char urlStr[256];
-        sp_link_as_string( l, urlStr, sizeof(urlStr) );
-        track[ "id" ] = QString::fromAscii( urlStr );
-        sp_link_release( l );
-
-        tracks << track;
+        tracks << spTrackToVariant( tr );
     }
 
     resp[ "tracks" ] = tracks;
 
-    QJson::Serializer s;
-    QByteArray msg = s.serialize( resp );
-    qDebug() << "SENDING PLAYLIST JSON:" << msg;
+//     QJson::Serializer s;
+//     QByteArray msg = s.serialize( resp );
+//     qDebug() << "SENDING PLAYLIST JSON:" << msg;
 
     sendMessage( resp );
+}
+
+void
+SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, int pos )
+{
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "tracksAdded";
+
+    SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
+
+    int oldrev = -1;
+    if ( lpl.revisions.size() >= 2 )
+        oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
+
+    msg[ "playlistid" ] = lpl.id_;
+    msg[ "oldrev" ] = oldrev;
+    msg[ "revid" ] = lpl.revisions.last().revId;
+    msg[ "startPosition" ] = pos;
+
+    QVariantList outgoingTracks;
+    foreach( sp_track* track, tracks )
+    {
+        if ( !track || !sp_track_is_loaded( track ) )
+        {
+            qDebug() << "IGNORING not loaded track!";
+            continue;
+        }
+
+        outgoingTracks << spTrackToVariant( track );
+    }
+
+    msg[ "tracks" ] = outgoingTracks;
+
+    sendMessage( msg );
+}
+
+
+void
+SpotifyResolver::sendTracksMoved( sp_playlist* pl, QList< int > tracks, int pos )
+{
+    // TODO
+}
+
+
+void
+SpotifyResolver::sendTracksRemoved( sp_playlist* pl, QList< int > tracks )
+{
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "tracksRemoved";
+
+    SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
+
+    int oldrev = -1;
+    if ( lpl.revisions.size() >= 2 )
+        oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
+
+    msg[ "playlistid" ] = lpl.id_;
+    msg[ "oldrev" ] = oldrev;
+    msg[ "revid" ] = lpl.revisions.last().revId;
+
+    QVariantList trackPos;
+    foreach( int track, tracks )
+        trackPos << track;
+
+    msg[ "trackPositions" ] = trackPos;
+
+    sendMessage( msg );
 }
 
 
@@ -654,6 +709,29 @@ void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
 {
    return m_trackLinkMap.contains( linkStr ) || m_cachedTrackLinkMap.contains( linkStr );
+}
+
+QVariantMap
+SpotifyResolver::spTrackToVariant( sp_track* tr )
+{
+    QVariantMap track;
+    track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+
+    sp_artist* artist = sp_track_artist( tr, 0 );
+    if ( sp_artist_is_loaded( artist ) )
+        track[ "artist" ] = QString::fromUtf8( sp_artist_name( artist ) );
+
+    sp_album* album = sp_track_album( tr );
+    if ( sp_album_is_loaded( album ) )
+        track[ "album" ] = QString::fromUtf8( sp_album_name( album ) );
+
+    sp_link* l = sp_link_create_from_track( tr, 0 );
+    char urlStr[256];
+    sp_link_as_string( l, urlStr, sizeof(urlStr) );
+    track[ "id" ] = QString::fromAscii( urlStr );
+    sp_link_release( l );
+
+    return track;
 }
 
 /// misc stuff

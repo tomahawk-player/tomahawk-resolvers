@@ -37,6 +37,8 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     qRegisterMetaType< QVariantMap >("QVariantMap");
     qRegisterMetaType< sp_playlistcontainer* >("sp_playlist_continer*");
     qRegisterMetaType< SpotifyPlaylists::LoadedPlaylist >("SpotifyPlaylists::LoadedPlaylist");
+    qRegisterMetaType< QList<sp_track* > >("QList<sp_track*>");
+    qRegisterMetaType< QList<int> >("QList<int>");
 
     readSettings();
 }
@@ -375,7 +377,16 @@ SpotifyPlaylists::tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num
     qDebug() << "Tracks Added";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 
-    QMetaObject::invokeMethod( _playlists, "addTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl), Q_ARG(sp_track * const *, tracks), Q_ARG(int, num_tracks), Q_ARG(int, position) );
+    // We want to make sure it lives on to the queued slot
+    QList<sp_track*> trackList;
+    for( int i = 0; i < num_tracks; i++ )
+    {
+        sp_track* track = tracks[i];
+        sp_track_add_ref( track );
+        trackList << track;
+    }
+
+    QMetaObject::invokeMethod( _playlists, "addTracksFromSpotify", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl), Q_ARG(QList<sp_track*>, trackList), Q_ARG(int, position) );
 }
 
 
@@ -385,29 +396,36 @@ SpotifyPlaylists::tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num
    This is called from callback to add tracks to this playlist container
 **/
 void
-SpotifyPlaylists::addTracks(sp_playlist* pl, sp_track *const*tracks, int num_tracks, int pos)
+SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos)
 {
-    qDebug() << "Adding tracks to" << sp_playlist_name(pl);
+    qDebug() << "Adding tracks to" << sp_playlist_name(pl) << "from spotify notification";
 
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
     const int index = m_playlists.indexOf( playlist );
-    if( index != -1 ) {
 
-        for ( int i=0 ; i< num_tracks; ++i )
-        {
-            qDebug() << "Pos" << pos;
-            sp_track* track = *(tracks++);
-            qDebug() << "Adding track " << i << sp_track_name( track );
-            sp_track_add_ref( track );
-            m_playlists[index].tracks_.insert(pos, track );
-            pos++;
-        }
-        //qDebug() << "Playlist changed, updateing revision";
-        updateRevision( m_playlists[index] );
+    if( index == -1 ) {
+        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
 
+        return;
     }
 
+    int runningPos = pos;
+    foreach( sp_track* track, tracks )
+    {
+        qDebug() << "Pos" << runningPos;
+        qDebug() << "Adding track " << sp_track_name( track );
+        sp_track_add_ref( track );
+        m_playlists[index].tracks_.insert(runningPos, track );
+        runningPos++;
+
+        // This undoes the sp_track_add_ref in the addTracks callback
+        sp_track_release( track );
+    }
+    //qDebug() << "Playlist changed, updateing revision";
+    updateRevision( m_playlists[index] );
+
+    emit sendTracksAdded(pl, tracks, pos);
 }
 
 
@@ -491,7 +509,7 @@ SpotifyPlaylists::sendPlaylistByRevision( int revision )
   changed in Spotify
 **/
 void
-SpotifyPlaylists::removeTracks(sp_playlist* pl, int *tracks, int num_tracks)
+SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 {
 
     qDebug() << "Removing tracks in thread id" << thread()->currentThreadId();
@@ -499,23 +517,26 @@ SpotifyPlaylists::removeTracks(sp_playlist* pl, int *tracks, int num_tracks)
     playlist.playlist_ = pl;
 
     const int index = m_playlists.indexOf( playlist );
-    if( index != -1 ){
 
-        if( num_tracks == m_playlists[index].tracks_.count() )
-            m_playlists[index].tracks_.clear();
+    if( index == -1 ) {
+        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
 
-        for ( int i=0 ; i< num_tracks; ++i )
-        {
-            int pos = *(tracks)++;
-            qDebug() << "Removing track at" << pos;
-            m_playlists[index].tracks_.removeAt( pos );
-        }
-        // We need to update the revision with current timestamp
-        int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
-//         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
-        updateRevision( m_playlists[index], timestamp );
+        return;
     }
 
+    foreach( int pos, tracks )
+    {
+        qDebug() << "Removing track at" << pos;
+        sp_track* removed = m_playlists[index].tracks_.takeAt( pos );
+        sp_track_release( removed );
+    }
+
+    // We need to update the revision with current timestamp
+    int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
+//         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
+    updateRevision( m_playlists[index], timestamp );
+
+    emit removeTracksFromSpotify(pl, tracks);
 }
 
 /**
@@ -524,7 +545,7 @@ SpotifyPlaylists::removeTracks(sp_playlist* pl, int *tracks, int num_tracks)
 **/
 
 void
-SpotifyPlaylists::moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position)
+SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_position)
 {
 
     qDebug() << "Moving tracks in thread id" << thread()->currentThreadId();
@@ -532,22 +553,37 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int n
     playlist.playlist_ = pl;
 
     const int index = m_playlists.indexOf( playlist );
-    if( index != -1 && sp_playlist_is_loaded( m_playlists[index].playlist_ ) )
-    {
-        for(int i = 0; i < num_tracks-1; i++)
-        {
-            qDebug() << "Moving track nr" << i << "at pos " << *(tracks++) << " to pos" << new_position;
-            m_playlists[index].tracks_.move(tracks[i], new_position++);
-        }
+    if( index == -1 ) {
+        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
 
-        qDebug() << "Tracks moved";
-        // We need to update the revision with current timestamp
-        int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
-        qDebug() << "Updateing revision with move track timestamp " << timestamp;
-
-        updateRevision( m_playlists[index], timestamp );
-
+        return;
     }
+
+    sp_track* beforeinsert = m_playlists[index].tracks_.at( new_position );
+    QList<sp_track*> toInsert;
+    foreach( int fromPos, tracks )
+    {
+        toInsert << m_playlists[index].tracks_[fromPos];
+    }
+    foreach( sp_track* removing, toInsert )
+        m_playlists[index].tracks_.removeAll( removing );
+
+
+    const int insertingPos = m_playlists[index].tracks_.indexOf( beforeinsert );
+    for( int i = toInsert.size() - 1; i >= 0; i-- )
+    {
+//         qDebug() << "Moving track at pos " << fromPos << " to pos" << new_position;
+        m_playlists[index].tracks_.insert(insertingPos, toInsert[i]);
+    }
+
+    qDebug() << "Tracks moved";
+    // We need to update the revision with current timestamp
+    int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
+    qDebug() << "Updateing revision with move track timestamp " << timestamp;
+
+    updateRevision( m_playlists[index], timestamp );
+
+    emit moveTracks(pl, tracks, new_position);
 }
 
 
@@ -629,14 +665,12 @@ void SpotifyPlaylists::tracksRemoved(sp_playlist *playlist, const int *tracks, i
     qDebug() << "Tracks removed";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 
-    int *tracksList = new int[num_tracks];
+    QList<int> removedTrackIndices;
     for (int i = 0; i < num_tracks; i++)
-        tracksList[i] = tracks[i];
+        removedTrackIndices << tracks[i];
 
     qDebug() << "Invoking remove from thread id" << _playlists->thread()->currentThreadId();
-    QMetaObject::invokeMethod( _playlists, "removeTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(int*, tracksList), Q_ARG(int, num_tracks) );
-
-    delete []tracksList;
+    QMetaObject::invokeMethod( _playlists, "removeTracksFromSpotify", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(QList<int>, removedTrackIndices));
 }
 
 /**
@@ -648,13 +682,12 @@ void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int
     qDebug() << "Tracks moved";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 
-    int *tracksList = new int[num_tracks];
+    QList<int> movedTrackIndices;
     for (int i = 0; i < num_tracks; i++)
-        tracksList[i] = tracks[i];
+        movedTrackIndices << tracks[i];
 
-    QMetaObject::invokeMethod( _playlists, "moveTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(int*, tracksList), Q_ARG(int, num_tracks), Q_ARG(int, new_position) );
+    QMetaObject::invokeMethod( _playlists, "moveTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(QList<int>, movedTrackIndices), Q_ARG(int, new_position) );
 
-    delete []tracksList;
 }
 
 
@@ -703,27 +736,27 @@ void
 SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
 {
 //     qDebug() << "In Progress in thread id" << thread()->currentThreadId();
-    LoadedPlaylist playlist;
-    playlist.playlist_ = pl;
-
-    const int index = m_playlists.indexOf( playlist );
-
-    if( index != -1 ){
-        qDebug() << "Playlist progress is" << (done ? "done" : "still loading..." ) << index << "(" << sp_playlist_name(pl) << ")";
-        m_playlists[ index ].isLoaded = done;
-        if( done && m_playlists[index].sync_)
-        {
-            // Sometimes, the api will send the playlist twice, dont do this
-            // if its allready been sent.
-
-            if( m_playlists[ index ].sentRev != m_playlists[ index ].newRev ){
-                m_playlists[ index ].sentRev = m_playlists[ index ].newRev;
-//                foreach( RevisionChanges changes, m_playlists[index].revisions)
-//                    qDebug() << "Revision id " << changes.revId;
-                doSend( m_playlists[ index ] );
-            }
-        }
-    }
+//     LoadedPlaylist playlist;
+//     playlist.playlist_ = pl;
+//
+//     const int index = m_playlists.indexOf( playlist );
+//
+//     if( index != -1 ){
+//         qDebug() << "Playlist progress is" << (done ? "done" : "still loading..." ) << index << "(" << sp_playlist_name(pl) << ")";
+//         m_playlists[ index ].isLoaded = done;
+//         if( done && m_playlists[index].sync_)
+//         {
+//             // Sometimes, the api will send the playlist twice, dont do this
+//             // if its allready been sent.
+//
+//             if( m_playlists[ index ].sentRev != m_playlists[ index ].newRev ){
+//                 m_playlists[ index ].sentRev = m_playlists[ index ].newRev;
+// //                foreach( RevisionChanges changes, m_playlists[index].revisions)
+// //                    qDebug() << "Revision id " << changes.revId;
+//                 doSend( m_playlists[ index ] );
+//             }
+//         }
+//     }
 
 
 }

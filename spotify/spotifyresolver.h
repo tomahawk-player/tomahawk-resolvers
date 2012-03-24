@@ -85,6 +85,7 @@ public:
     void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
 
     void sendAddTracksResult( const QString& spotifyId, bool result );
+
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
@@ -98,7 +99,12 @@ private slots:
     void testLoginSucceeded( bool, const QString& msg );
 
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
+
+    void sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, int pos );
+    void sendTracksRemoved( sp_playlist* pl, QList<int> tracks );
+    void sendTracksMoved( sp_playlist* pl, QList<int> tracks, int pos );
 private:
+    QVariantMap spTrackToVariant( sp_track* track );
 
     void sendSettingsMessage();
     void loadSettings();

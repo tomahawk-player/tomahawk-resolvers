@@ -132,12 +132,12 @@ public:
 public slots:
 
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
-    void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);
-    void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
+    void moveTracks(sp_playlist* pl, QList<int> tracks, int new_position);
+    void removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks);
     void loadContainerSlot(sp_playlistcontainer* pc);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void addStarredTracksToContainer();
-    void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
+    void addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos);
     void removePlaylist( sp_playlist *playlist );
 
     void playlistLoadedSlot(sp_playlist* pl);
@@ -146,6 +146,10 @@ signals:
    void send( const SpotifyPlaylists::LoadedPlaylist& );
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
+
+   void sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, int pos );
+   void sendTracksRemoved( sp_playlist* pl, QList<int> tracks );
+   void sendTracksMoved( sp_playlist* pl, QList<int> tracks, int pos );
 
 private:
    void readSettings();
@@ -170,4 +174,6 @@ private:
 Q_DECLARE_METATYPE( sp_playlistcontainer* );
 Q_DECLARE_METATYPE( sp_playlist* );
 Q_DECLARE_METATYPE( const int* );
+Q_DECLARE_METATYPE( QList< sp_track* > );
+Q_DECLARE_METATYPE( QList< int > );
 #endif // SPOTIFYPLAYLISTS_H
