@@ -81,6 +81,7 @@ public:
 
     int port() const { return m_port; }
     SpotifySession* session() const { return m_session; }
+    bool highQuality() const { return m_highQuality; }
 
     void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
 

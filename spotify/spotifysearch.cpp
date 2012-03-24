@@ -139,7 +139,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( data->resolver->port() ).arg( uid );
             track[ "duration" ] = duration;
             track[ "score" ] = .95; // TODO
-            track[ "bitrate" ] = 192; // TODO
+            track[ "bitrate" ] = data->resolver->highQuality() ? 320 : 160; // TODO
 
             // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
             quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
