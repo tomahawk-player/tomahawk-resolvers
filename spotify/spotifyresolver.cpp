@@ -103,15 +103,6 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
 SpotifyResolver::~SpotifyResolver()
 {
     qDebug() << "exiting...";
-
-    for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) ; ++i )
-    {
-        sp_playlist* playlist = sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), i );
-        qDebug() << "Remvoing callbacks on " << sp_playlist_name( playlist );
-        sp_playlist_remove_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
-        sp_playlist_release( playlist );
-
-    }
     delete m_session;
     delete m_stdinWatcher;
     m_stdinThread.exit();
@@ -162,7 +153,7 @@ void SpotifyResolver::setup()
 
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
-    qDebug() << "Sending playlist to client:" << pl.name_;
+    qDebug() << "Sending playlist to client:" << pl.name_ << "with number of tracks:" << pl.tracks_.size();
 
     if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
     {
@@ -196,9 +187,9 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 
     resp[ "tracks" ] = tracks;
 
-//     QJson::Serializer s;
-//     QByteArray msg = s.serialize( resp );
-//     qDebug() << "SENDING PLAYLIST JSON:" << msg;
+     QJson::Serializer s;
+     QByteArray msg = s.serialize( resp );
+     qDebug() << "SENDING PLAYLIST JSON:" << msg;
 
     sendMessage( resp );
 }
@@ -403,7 +394,11 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         saveSettings();
 
     }
-    if( m.value( "_msgtype" ) == "checkLogin" )
+    else if ( m.value( "_msgtype" ) == "quit" )
+    {
+        quit();
+    }
+    else if( m.value( "_msgtype" ) == "checkLogin" )
     {
         const QString username = m[ "username" ].toString();
         const QString pw = m[ "password" ].toString();

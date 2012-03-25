@@ -113,7 +113,7 @@ public:
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata)
     {
-        qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl );
+        qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl ) << sp_playlist_num_tracks(pl);
 //         SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 //         _playlists->addPlaylist( pl );
     }
@@ -151,6 +151,9 @@ signals:
    void sendTracksRemoved( sp_playlist* pl, QList<int> tracks );
    void sendTracksMoved( sp_playlist* pl, QList<int> tracks, int pos );
 
+private slots:
+   void addPlaylist( sp_playlist *);
+
 private:
    void readSettings();
    void writeSettings();
@@ -158,7 +161,6 @@ private:
    void updateRevision( LoadedPlaylist &pl );
    void updateRevision( LoadedPlaylist &pl, int qualifier );
 
-   void addPlaylist( sp_playlist *);
    void checkForPlaylistsLoaded();
 
    QList<LoadedPlaylist> m_playlists;

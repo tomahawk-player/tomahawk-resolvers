@@ -98,6 +98,7 @@ SpotifySession::~SpotifySession(){
     delete m_SpotifyPlayback;
     sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
     sp_session_logout( m_session );
+    sp_session_release( m_session );
 
 
 }
@@ -147,9 +148,28 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 
     }*/
 
-     sp_playlistcontainer_add_callbacks(
+    qDebug() << "Logged in with number of playlists in playlistcontainer:" << sp_playlistcontainer_is_loaded(sp_session_playlistcontainer(session)) << sp_playlistcontainer_num_playlists(sp_session_playlistcontainer(session));
+    sp_playlistcontainer* container = sp_session_playlistcontainer(session);
+
+    // If it's loaded and has playlists, hook up the callbacks
+    if (sp_playlistcontainer_is_loaded(container))
+    {
+        for( int i = 0; i < sp_playlistcontainer_num_playlists(container); i++)
+        {
+            sp_playlist_type type = sp_playlistcontainer_playlist_type(container, i);
+            if( type != SP_PLAYLIST_TYPE_PLAYLIST )
+                continue;
+
+            sp_playlist* pl = sp_playlistcontainer_playlist(container, i);
+            qDebug() << "adding callback to:" << sp_playlist_is_loaded(pl) << sp_playlist_name(pl) << "num tracks:" << sp_playlist_num_tracks(pl);
+            sp_playlist_add_callbacks( pl, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
+        }
+    }
+
+    sp_playlistcontainer_add_callbacks(
             sp_session_playlistcontainer(session),
             &SpotifyCallbacks::containerCallbacks, _session);
+
 
     emit _session->notifyLoggedInSignal();
 
@@ -244,7 +264,7 @@ void SpotifySession::sendNotifyThreadSignal()
 
 void SpotifySession::notifyMainThread()
 {
-    int timeout(0);
+    int timeout = 0;
     do {
         sp_session_process_events( m_session, &timeout );
     } while( !timeout );
