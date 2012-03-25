@@ -70,6 +70,9 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
         m_config.callbacks = &SpotifyCallbacks::callbacks;
         m_config.tracefile = config.tracefile;
         m_config.device_id = config.device_id;
+        m_config.compress_playlists = false;
+        m_config.dont_save_metadata_for_playlists = false;
+        m_config.initially_unload_playlists = false;
 
     }
 

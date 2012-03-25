@@ -412,7 +412,7 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
-    int runningPos = pos;
+    int runningPos = pos - 1; // We start one before, since spotify reports the end index, not index of item to insert after
     foreach( sp_track* track, tracks )
     {
         qDebug() << "Pos" << runningPos;
@@ -528,8 +528,19 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 
     foreach( int pos, tracks )
     {
-        qDebug() << "Removing track at" << pos;
-        sp_track* removed = m_playlists[index].tracks_.takeAt( pos );
+        int realIdx = pos;
+        if ( pos == m_playlists[index].tracks_.size() )
+            realIdx--;
+
+        if ( realIdx < 0 || realIdx >= m_playlists[index].tracks_.size() )
+        {
+            qWarning() << "Tried to remove tracks at index:" << realIdx << "(originally" << pos << ") from tracks list that is out of bounds!! We have size:" << m_playlists[index].tracks_.size();
+            continue;
+        }
+
+        qDebug() << "Removing track at" << realIdx;
+        sp_track* removed = m_playlists[index].tracks_.takeAt( realIdx );
+        qDebug() << "removing:" << sp_track_name(removed) << sp_track_artist(removed, 0);
         sp_track_release( removed );
     }
 
@@ -538,7 +549,7 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 //         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
     updateRevision( m_playlists[index], timestamp );
 
-    emit removeTracksFromSpotify(pl, tracks);
+    emit sendTracksRemoved(pl, tracks);
 }
 
 /**
@@ -585,7 +596,7 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
 
     updateRevision( m_playlists[index], timestamp );
 
-    emit moveTracks(pl, tracks, new_position);
+    emit sendTracksMoved(pl, tracks, new_position);
 }
 
 
@@ -1094,25 +1105,25 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
 
         int revIndex = pl.revisions.indexOf( oldRev );
 
-        if( revision.revId != -1 )
-        {
-
-            for(int i = 0; i < sp_playlist_num_tracks( pl.playlist_ )-1; i++)
-            {
-                foreach( sp_track* track, pl.revisions[ revIndex ].changedTracks )
-                {
-                    if( sp_track_name( track ) != sp_track_name(sp_playlist_track(pl.playlist_, i) ) )
-                    {
-                        if(!revision.changedTracks.contains( track )){
-                            qDebug() << "changed track" << sp_track_name(sp_playlist_track(pl.playlist_, i));
-                            revision.changedTracks.insert(i, track);
-                        }
-
-                    }
-                }
-            }
-        }else
-            revision.changedTracks = pl.tracks_;
+//         if( revision.revId != -1 )
+//         {
+//
+//             for(int i = 0; i < sp_playlist_num_tracks( pl.playlist_ )-1; i++)
+//             {
+//                 foreach( sp_track* track, pl.revisions[ revIndex ].changedTracks )
+//                 {
+//                     if( sp_track_name( track ) != sp_track_name(sp_playlist_track(pl.playlist_, i) ) )
+//                     {
+//                         if(!revision.changedTracks.contains( track )){
+//                             qDebug() << "changed track" << sp_track_name(sp_playlist_track(pl.playlist_, i));
+//                             revision.changedTracks.in sert(i, track);
+//                         }
+//
+//                     }
+//                 }
+//             }
+//         }else
+//             revision.changedTracks = pl.tracks_;
 
 
         ///   @todo:Hash later with appropriate hash algorithm.
