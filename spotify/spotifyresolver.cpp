@@ -125,7 +125,7 @@ void SpotifyResolver::setup()
     config.settings_location = configPath;
     config.application_key = m_apiKey;
     config.application_key_size = m_apiKey.size();
-    config.user_agent = "tomahawkresolver";
+    config.user_agent = "Tomahawk Player";
     config.tracefile = tracePath.toUtf8();
     config.device_id = "tomahawkspotify";
 
