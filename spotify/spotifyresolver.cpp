@@ -137,9 +137,9 @@ void SpotifyResolver::setup()
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
 
-    connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,int)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,int)));
-    connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QList<int>,int)), this, SLOT(sendTracksMoved(sp_playlist*,QList<int>,int)));
-    connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QList<int>)), this, SLOT(sendTracksRemoved(sp_playlist*,QList<int>)));
+    connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)));
+    connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QList<int>,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QList<int>,QString)));
+    connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QStringList)), this, SLOT(sendTracksRemoved(sp_playlist*,QStringList)));
 
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
@@ -195,7 +195,7 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 }
 
 void
-SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, int pos )
+SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, const QString& positionId )
 {
     QVariantMap msg;
     msg[ "_msgtype" ] = "tracksAdded";
@@ -209,7 +209,7 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, in
     msg[ "playlistid" ] = lpl.id_;
     msg[ "oldrev" ] = oldrev;
     msg[ "revid" ] = lpl.revisions.last().revId;
-    msg[ "startPosition" ] = pos;
+    msg[ "startPosition" ] = positionId;
 
     QVariantList outgoingTracks;
     foreach( sp_track* track, tracks )
@@ -230,14 +230,14 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, in
 
 
 void
-SpotifyResolver::sendTracksMoved( sp_playlist* pl, QList< int > tracks, int pos )
+SpotifyResolver::sendTracksMoved( sp_playlist* pl, QList< int > tracks, const QString& positionId )
 {
     // TODO
 }
 
 
 void
-SpotifyResolver::sendTracksRemoved( sp_playlist* pl, QList< int > tracks )
+SpotifyResolver::sendTracksRemoved( sp_playlist* pl, QStringList tracks )
 {
     QVariantMap msg;
     msg[ "_msgtype" ] = "tracksRemoved";
@@ -251,12 +251,11 @@ SpotifyResolver::sendTracksRemoved( sp_playlist* pl, QList< int > tracks )
     msg[ "playlistid" ] = lpl.id_;
     msg[ "oldrev" ] = oldrev;
     msg[ "revid" ] = lpl.revisions.last().revId;
+    msg[ "trackPositions" ] = tracks;
 
-    QVariantList trackPos;
-    foreach( int track, tracks )
-        trackPos << track;
-
-    msg[ "trackPositions" ] = trackPos;
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING TRACKS REMOVED JSON:" << m;
 
     sendMessage( msg );
 }

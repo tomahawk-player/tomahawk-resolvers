@@ -412,6 +412,13 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
+    // find the spotify track of the song before the newly inserted one
+    char trackStr[256];
+    sp_link* link = sp_link_create_from_track( sp_playlist_track( pl, pos - 1 ), 0 );
+    sp_link_as_string( link, trackStr, sizeof( trackStr ) );
+    const QString trackPosition = QString::fromUtf8( trackStr );
+    sp_link_release( link );
+
     int runningPos = pos - 1; // We start one before, since spotify reports the end index, not index of item to insert after
     foreach( sp_track* track, tracks )
     {
@@ -424,10 +431,11 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         // This undoes the sp_track_add_ref in the addTracks callback
         sp_track_release( track );
     }
+
     //qDebug() << "Playlist changed, updateing revision";
     updateRevision( m_playlists[index] );
 
-    emit sendTracksAdded(pl, tracks, pos);
+    emit sendTracksAdded(pl, tracks, trackPosition);
 }
 
 
@@ -526,6 +534,7 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
         return;
     }
 
+    QStringList trackIds;
     foreach( int pos, tracks )
     {
         int realIdx = pos;
@@ -540,6 +549,8 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 
         qDebug() << "Removing track at" << realIdx;
         sp_track* removed = m_playlists[index].tracks_.takeAt( realIdx );
+        trackIds << trackId( removed );
+
         qDebug() << "removing:" << sp_track_name(removed) << sp_track_artist(removed, 0);
         sp_track_release( removed );
     }
@@ -549,7 +560,7 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 //         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
     updateRevision( m_playlists[index], timestamp );
 
-    emit sendTracksRemoved(pl, tracks);
+    emit sendTracksRemoved(pl, trackIds);
 }
 
 /**
@@ -572,11 +583,17 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
         return;
     }
 
-    sp_track* beforeinsert = m_playlists[index].tracks_.at( new_position );
+    sp_track* beforeinsert = m_playlists[index].tracks_.at( new_position - 1 );
+
+    // find the spotify track of the song before the newly inserted one
+    const QString trackPosition = trackId( beforeinsert );
+
     QList<sp_track*> toInsert;
+    QStringList moveIds;
     foreach( int fromPos, tracks )
     {
         toInsert << m_playlists[index].tracks_[fromPos];
+        moveIds << trackId( m_playlists[index].tracks_[fromPos] );
     }
     foreach( sp_track* removing, toInsert )
         m_playlists[index].tracks_.removeAll( removing );
@@ -596,8 +613,23 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
 
     updateRevision( m_playlists[index], timestamp );
 
-    emit sendTracksMoved(pl, tracks, new_position);
+    emit sendTracksMoved(pl, moveIds, trackPosition);
 }
+
+QString
+SpotifyPlaylists::trackId( sp_track* track )
+{
+    QString trackIdStr;
+
+    char trackId[256];
+    sp_link* link = sp_link_create_from_track( track, 0 );
+    sp_link_as_string( link, trackId, sizeof( trackId ) );
+    trackIdStr = QString::fromUtf8( trackId );
+    sp_link_release( link );
+
+    return trackIdStr;
+}
+
 
 
 
@@ -884,13 +916,42 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
 
     const QVariantList tracks = data.value( "tracks").toList();
 
-
     qDebug() << "Adding tracks to playlist " << sp_playlist_name( pl );
+    int position = -1;
 
+    const QString trackId = data.value( "startPosition" ).toString();
+    if ( !trackId.isEmpty() )
+    {
+        sp_link* link = sp_link_create_from_string( trackId.toUtf8().constData() );
+        if ( sp_link_type( link ) == SP_LINKTYPE_TRACK )
+        {
+            sp_track* targetTrack = sp_link_as_track( link );
+            for ( int i = 0; i < m_playlists[ index ].tracks_.size(); i++ )
+            {
+                const sp_track* track = m_playlists[ index ].tracks_[ i ];
+                if ( track == targetTrack )
+                {
+                    qDebug() << "Found track in playlist with associated id to use as insertion point:" << trackId << sp_track_name( targetTrack ) << sp_track_artist( targetTrack, 0 ) << "at:" << i << "out of:" << m_playlists[ index ].tracks_.size() << "tracks";
+                    position = i;
+                }
+            }
+        }
+        sp_link_release( link );
+    }
+    position++; // Spotify wants the position to be the newly inserted pos, not the 0-based index of the track *to* insert
+
+    if ( position == -1 )
+    {
+        // We didn't find the position in the playlist, or there was none, so append
+        position = m_playlists[ index ].tracks_.size();
+    }
+
+
+    qDebug() << "Adding tracks to spotify playlist at position:" << position;
 
     AddTracksData* addData = new AddTracksData;
     addData->pl = m_playlists.at( index );
-    addData->pos = data.value( "startPosition" ).toInt();
+    addData->pos = position;
     addData->waitingFor = 0;
 
     foreach( QVariant track, data.value( "tracks").toList() )
@@ -979,7 +1040,7 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
                     continue;
 
                 char trackId[356];
-                sp_track *track = sp_playlist_track( m_playlists[index].playlist_, i);
+                sp_track *track = m_playlists[index].tracks_[ i ];
                 sp_link* l = sp_link_create_from_track( track, 0 );
                 sp_link_as_string(l, trackId, sizeof(trackId));
 
@@ -1039,7 +1100,16 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
         qDebug() << "Removing found:" << positions.size() << "tracks from playlist!";
         sp_error ret = sp_playlist_remove_tracks( pl, positions.constData(), positions.size());
 
-        return (tracks.size() == positions.size()) && (ret == SP_ERROR_OK);
+        if ( ret == SP_ERROR_OK )
+        {
+            // Clean up our track list too
+            for ( int i = positions.size() - 1; i >= 0; --i )
+                m_playlists[ index ].tracks_.removeAt( i );
+
+            return tracks.size() == positions.size();
+        } else
+            return false;
+
     }
 
     return tracks.size() == positions.size();

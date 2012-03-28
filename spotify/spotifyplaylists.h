@@ -147,9 +147,9 @@ signals:
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
 
-   void sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, int pos );
-   void sendTracksRemoved( sp_playlist* pl, QList<int> tracks );
-   void sendTracksMoved( sp_playlist* pl, QList<int> tracks, int pos );
+   void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& trackPosition );
+   void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
+   void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
 
 private slots:
    void addPlaylist( sp_playlist *);
@@ -162,6 +162,8 @@ private:
    void updateRevision( LoadedPlaylist &pl, int qualifier );
 
    void checkForPlaylistsLoaded();
+
+   QString trackId( sp_track* track );
 
    QList<LoadedPlaylist> m_playlists;
    QList<Sync> m_syncPlaylists;
