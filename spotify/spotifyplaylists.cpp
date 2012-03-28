@@ -900,7 +900,11 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
         const QString album = track.toMap().value( "album" ).toString();
 
         QString query = QString(artist + " " + title + " " + album);
+#if SPOTIFY_API_VERSION >= 11
+        sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::addSearchedTrack, addData );
+#else
         sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, addData );
+#endif
         addData->waitingFor++;
 
         // to help us choose the right order

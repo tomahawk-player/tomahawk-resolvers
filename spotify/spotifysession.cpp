@@ -220,7 +220,11 @@ void SpotifySession::testLogin(const QString& username, const QString& pw)
     m_testLogin = true;
     m_loggedInBeforeTest = true;
     sp_session_logout(m_session);
+#if SPOTIFY_API_VERSION >= 11
+    sp_session_login(m_session, username.toLatin1(), pw.toLatin1(), false, NULL);
+#else
     sp_session_login(m_session, username.toLatin1(), pw.toLatin1(), false);
+#endif
 }
 
 void SpotifySession::setCredentials(QString username, QString password)
@@ -235,7 +239,11 @@ void SpotifySession::login()
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
         qDebug() << "Logging in with username:" << m_username;
+#if SPOTIFY_API_VERSION >= 11
+        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
+#else
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false);
+#endif
     }
     else
         qDebug() << "No username or password provided!";

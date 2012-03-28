@@ -620,7 +620,11 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
         query = fullText;
         data->fulltext = true;
     }
+#if SPOTIFY_API_VERSION >= 11
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
+#else
     sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+#endif
 }
 
 void
