@@ -87,17 +87,11 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
     buildBaseUrl : function(subsonic_view)
     {
-        var subsonic_api = this.subsonic_api;
-        if (subsonic_view === "/rest/search.view")
-        {
-            subsonic_api = "1.4.0"; // please see comment on resolve
-        }
-        else
-        {
-            subsonic_api = this.subsonic_api;
-        }
-        var base_url = this.subsonic_url + subsonic_view + "?u=" + this.user + "&p=" + this.password + "&v=" + subsonic_api + "&c=tomahawk";
-        return base_url;
+        return this.subsonic_url + subsonic_view +
+                "?u=" + this.user +
+                "&p=" + this.password +
+                "&v=" + this.subsonic_api +
+                "&c=tomahawk";
     },
 
     parseSongFromAttributes : function(song_attributes)

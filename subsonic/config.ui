@@ -96,7 +96,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="subsonic_url_edit"/>
+        <widget class="QLineEdit" name="subsonic_url_edit">
+         <property name="toolTip">
+          <string>Example: http://your_subsonic_server.com</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QComboBox" name="api_version_combo">
