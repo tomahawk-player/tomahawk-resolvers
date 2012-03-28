@@ -149,14 +149,15 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
     }
     else
     {
-//         qDebug() << "Invoking addPlaylist from thread id" << _playlists->thread()->currentThreadId();
-
         // if it was just loaded and we don't have it yet, add it
         LoadedPlaylist playlist;
         playlist.playlist_ = pl;
         const int index = _playlists->m_playlists.indexOf( playlist );
         if ( index == -1 )
+        {
+            qDebug() << Q_FUNC_INFO << "Invoking addPlaylist from stateChanged callback";
             QMetaObject::invokeMethod( _playlists, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl) );
+        }
     }
 }
 
@@ -267,7 +268,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
                 sp_playlist* pl = sp_playlistcontainer_playlist( pc, i );
                 //sp_playlist_add_callbacks( pl, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
 
-                qDebug() << "Adding plfaylist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
+                qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
                 if ( sp_playlist_is_loaded( pl ) )
                     addPlaylist( pl );
                 else
@@ -412,14 +413,16 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
+    int startPos = pos == 0 ? 0 : pos - 1;
+
     // find the spotify track of the song before the newly inserted one
     char trackStr[256];
-    sp_link* link = sp_link_create_from_track( sp_playlist_track( pl, pos - 1 ), 0 );
+    sp_link* link = sp_link_create_from_track( sp_playlist_track( pl, startPos ), 0 );
     sp_link_as_string( link, trackStr, sizeof( trackStr ) );
     const QString trackPosition = QString::fromUtf8( trackStr );
     sp_link_release( link );
 
-    int runningPos = pos - 1; // We start one before, since spotify reports the end index, not index of item to insert after
+    int runningPos = startPos; // We start one before, since spotify reports the end index, not index of item to insert after
     foreach( sp_track* track, tracks )
     {
         qDebug() << "Pos" << runningPos;
@@ -680,6 +683,8 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
 
             m_playlists[ index ].sync_ = true;
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
+            qDebug() << "ADDING SYNC CALLBACKS FOR PLAYLIST:" << sp_playlist_name( m_playlists[ index ].playlist_ );
+
             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
         }
         // The playlist is in syncmode, but user wants to remove it
@@ -707,14 +712,13 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
   **/
 void SpotifyPlaylists::tracksRemoved(sp_playlist *playlist, const int *tracks, int num_tracks, void *userdata)
 {
-    qDebug() << "Tracks removed";
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 
     QList<int> removedTrackIndices;
     for (int i = 0; i < num_tracks; i++)
         removedTrackIndices << tracks[i];
 
-    qDebug() << "Invoking remove from thread id" << _playlists->thread()->currentThreadId();
+    qDebug() << "Tracks removed callback for playlist:" << sp_playlist_name( playlist ) << "and indices removed:" << removedTrackIndices << ", now calling member func";
     QMetaObject::invokeMethod( _playlists, "removeTracksFromSpotify", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(QList<int>, removedTrackIndices));
 }
 
@@ -1214,8 +1218,8 @@ void
 SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
 {
     m_waitingToLoad--;
-    addPlaylist(pl);
     qDebug() << Q_FUNC_INFO << "Got playlist loaded that we were waiting for, now we have:" << m_waitingToLoad << "left";
+    addPlaylist(pl);
 
     checkForPlaylistsLoaded();
 }
@@ -1256,16 +1260,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 
 //     qDebug() << "Playlist has " << sp_playlist_num_tracks( pl ) << " number of tracks";
 
-
     LoadedPlaylist playlist;
-    playlist.playlist_ = pl;
-    playlist.name_ = sp_playlist_name(pl);
-
-    playlist.starContainer_ = false;
-    playlist.sync_ = false;
-    playlist.isLoaded = false;
-
-    int tmpRev(0);
 
     // Get the spotify id for the playlist
     char linkStr[256];
@@ -1290,6 +1285,20 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         qDebug() << "Failed to get URI! Aborting...";
         return;
     }
+
+    // if it's already loaded, ignore it!
+    if ( m_playlists.indexOf( playlist ) >= 0 && m_playlists[ m_playlists.indexOf( playlist ) ].isLoaded )
+        return;
+
+    playlist.playlist_ = pl;
+    playlist.name_ = sp_playlist_name(pl);
+
+    playlist.starContainer_ = false;
+    playlist.sync_ = false;
+    playlist.isLoaded = false;
+
+    int tmpRev(0);
+
 
     /*if(m_playlists.contains( playlist ) )
     {

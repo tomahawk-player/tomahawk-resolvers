@@ -251,7 +251,12 @@ SpotifyResolver::sendTracksRemoved( sp_playlist* pl, QStringList tracks )
     msg[ "playlistid" ] = lpl.id_;
     msg[ "oldrev" ] = oldrev;
     msg[ "revid" ] = lpl.revisions.last().revId;
-    msg[ "trackPositions" ] = tracks;
+
+    QVariantList v; // ARGGG i hate qjson. QStringList encodes [ "a" ]  as "a" instead of [ "a" ].
+    foreach( const QString& str, tracks )
+        v << str;
+
+    msg[ "trackPositions" ] = v;
 
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
