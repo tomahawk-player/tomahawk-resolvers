@@ -52,22 +52,7 @@ void SpotifyHTTPServer::index( QxtWebRequestEvent* event )
     return;
 }
 
-void SpotifyHTTPServer::sync( QxtWebRequestEvent* event, QString id )
-{
-    QByteArray response;
-    QVariantList data;
-    SpotifySession::getInstance()->Playlists()->setSyncPlaylist( id );
 
-    //response.append( QxtJSON::stringify( data ) );
-
-    QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, response );
-    wpe->status = 202;
-    wpe->statusMessage = "OK";
-    wpe->contentType = JSON;
-    postEvent( wpe );
-
-    return;
-}
 
 void SpotifyHTTPServer::play( QxtWebRequestEvent* event, QString id )
 {

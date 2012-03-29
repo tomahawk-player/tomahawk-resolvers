@@ -1,6 +1,7 @@
 /**  This file is part of QT SpotifyWebApi - <hugolm84@gmail.com> ===
  *
  *   Copyright 2011-2012,Hugo Lindström <hugolm84@gmail.com>
+ *   Copyright      2012,Leo Franchi    <lfranchi@kde.org>
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -21,6 +22,7 @@
 #include <QDebug>
 #include <QSettings>
 #include <QObject>
+#include <QStringList>
 
 
 class SpotifyPlaylists : public QObject
@@ -29,14 +31,10 @@ class SpotifyPlaylists : public QObject
 public:
     explicit SpotifyPlaylists( QObject *parent = 0);
     virtual ~SpotifyPlaylists();
-    //void addPlaylist( sp_playlist *);
-    void addTracks(sp_playlist* pl, sp_track * const *tracks, int num_tracks, int pos);
-    //void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
-    void removePlaylist( sp_playlist *playlist );
-    //void moveTracks(sp_playlist* pl, const int *tracks, int num_tracks, int new_position);
-    //void setPlaylistInProgress( sp_playlist *pl, bool done );
+
     void setPosition( sp_playlist *pl, int oPos, int nPos );
-    void setSyncPlaylist( const QString id );
+    void setSyncPlaylist( const QString id, bool sync );
+    void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad = 0; }
 
     struct RevisionChanges{
 
@@ -69,18 +67,36 @@ public:
          bool sync_;
      };
 
+    struct AddTracksData{
 
-    void doSend( LoadedPlaylist playlist)
-    {
-        qDebug() << "Sending " << sp_playlist_name( playlist.playlist_ );
-        emit( send( playlist ) );
-    }
+        LoadedPlaylist pl;
+        QVector< sp_track* > finaltracks;
+        QStringList origTrackNameList;
+
+        int waitingFor;
+        int pos;
+
+    };
+
+    void doSend( const LoadedPlaylist& playlist);
 
     LoadedPlaylist getPlaylist( const QString id );
     LoadedPlaylist getLoadedPlaylist( sp_playlist *&playlist );
     QList<LoadedPlaylist> getPlaylists() const { return m_playlists; }
-    QList<LoadedPlaylist> m_playlists;
+
     QList<Sync> getSyncPlaylists() const { return m_syncPlaylists; }
+
+    // Send the desired playlist to the client, and turn on syncing
+    void sendPlaylist( const QString& playlistId, bool startSyncing );
+    void sendPlaylistByRevision( int rev );
+
+
+    LoadedPlaylist getPlaylistByRevision( int rev );
+    void addNewPlaylist( QVariantMap data );
+
+    // Takes a msg from JSON that conforms to the API
+    void addTracksToSpotifyPlaylist( QVariantMap data );
+    bool removeFromSpotifyPlaylist( QVariantMap data );
 
 
     // Spotify playlist container callbacks.
@@ -97,9 +113,9 @@ public:
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata)
     {
-        qDebug() << "Metadata updated";
-        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->addPlaylist( pl );
+        qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl ) << sp_playlist_num_tracks(pl);
+//         SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+//         _playlists->addPlaylist( pl );
     }
 
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
@@ -111,35 +127,48 @@ public:
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
-    void sendPlaylistByRevision( int rev );
-    LoadedPlaylist getPlaylistByRevision( int rev );
-    void addNewPlaylist( QVariantMap data );
-    void removeFromSpotifyPlaylist( QVariantMap data );
+
+
 public slots:
+
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
-    void moveTracks(sp_playlist* pl, int *tracks, int num_tracks, int new_position);
-    void removeTracks(sp_playlist* pl, int *tracks, int num_tracks);
+    void moveTracks(sp_playlist* pl, QList<int> tracks, int new_position);
+    void removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks);
     void loadContainerSlot(sp_playlistcontainer* pc);
-    void addPlaylist( sp_playlist *);
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void addStarredTracksToContainer();
-    void allPlaylistsLoaded();
+    void addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos);
+    void removePlaylist( sp_playlist *playlist );
+
+    void playlistLoadedSlot(sp_playlist* pl);
 signals:
-   void send( SpotifyPlaylists::LoadedPlaylist );
-   void sendPl( SpotifyPlaylists::LoadedPlaylist );
+
+   void send( const SpotifyPlaylists::LoadedPlaylist& );
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
+
+   void sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, int pos );
+   void sendTracksRemoved( sp_playlist* pl, QList<int> tracks );
+   void sendTracksMoved( sp_playlist* pl, QList<int> tracks, int pos );
+
+private slots:
+   void addPlaylist( sp_playlist *);
+
 private:
    void readSettings();
-   void updateRevision( LoadedPlaylist *pl );
-   void updateRevision( LoadedPlaylist *pl, int qualifier );
+   void writeSettings();
+
+   void updateRevision( LoadedPlaylist &pl );
+   void updateRevision( LoadedPlaylist &pl, int qualifier );
+
+   void checkForPlaylistsLoaded();
+
+   QList<LoadedPlaylist> m_playlists;
    QList<Sync> m_syncPlaylists;
    QSettings m_settings;
-   int m_currentPlaylistCount;
-   int m_realCount;
+   int m_waitingToLoad;
    bool m_allLoaded;
-
-
+   bool m_isLoading;
 };
 
 
@@ -147,4 +176,6 @@ private:
 Q_DECLARE_METATYPE( sp_playlistcontainer* );
 Q_DECLARE_METATYPE( sp_playlist* );
 Q_DECLARE_METATYPE( const int* );
+Q_DECLARE_METATYPE( QList< sp_track* > );
+Q_DECLARE_METATYPE( QList< int > );
 #endif // SPOTIFYPLAYLISTS_H

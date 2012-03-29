@@ -41,7 +41,6 @@ public slots:
     void index(QxtWebRequestEvent* event);
     void playlist(QxtWebRequestEvent* event, QString id);
     void playlists(QxtWebRequestEvent* event);
-    void sync(QxtWebRequestEvent* event, QString id);
     void play(QxtWebRequestEvent* event, QString id);
 private slots:
     void checkForLoaded();
