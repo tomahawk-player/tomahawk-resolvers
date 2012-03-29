@@ -135,6 +135,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             qDebug() << "Try nr." << data->searchCount << " Searched for" << QString::fromUtf8(sp_search_query(	result ) ) << "Did you mean?"<< didYouMean;
             //int distance = QString::compare(QString::fromUtf8(sp_search_query(	result ) ), QString::fromUtf8(sp_search_did_you_mean(	result ) ), Qt::CaseInsensitive);
             //qDebug() << "Distance for query is " << distance;//if( distance < 4)
+
             #if SPOTIFY_API_VERSION >= 11
                 sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
             #else
