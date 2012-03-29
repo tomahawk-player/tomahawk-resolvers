@@ -27,25 +27,19 @@
 #include "spotifysession.h"
 #include "main.h"
 #include "spotifyresolver.h"
-//#include "appkey.h"
+#include "spotifysearch.h"
+#include "appkey.h"
+#include "qxtwebslotservice.h"
+#include "spotifyhttpserver.h"
+#include <QxtWebPageEvent>
+
+class QxtHttpSessionManager;
+class SpotifyHTTPServer;
+class QSocketNotifer;
+
 int main(int argc, char *argv[])
 {
 
-    /** Example **/
-    /*
-      See main.h
-    */
-
-    SpotifyResolver app( argc, argv );
-    // To force dtors
-    //SpotifyCallbacks::CleanExit cleanExit;
-    KDSingleApplicationGuard guard( &app, KDSingleApplicationGuard::NoPolicy );
-    QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
-
-    app.setup();
-    return app.exec();
-
-    /*
     QCoreApplication a(argc, argv);
 
     //  Sometimes location causes errors, so if your not able
@@ -62,10 +56,26 @@ int main(int argc, char *argv[])
 
 
     SpotifySession *Spotify = new SpotifySession(config);
-    Spotify->setCredentials( "", "");
+    Spotify->setCredentials( "username", "password");
     Spotify->login();
 
-   return a.exec();*/
 
-    /** END EXAMPLE **/
+
+    QxtHttpServerConnector connector;
+    QxtHttpSessionManager hsession;
+    SpotifyHTTPServer* handler;
+
+
+    hsession.setPort( 55050 );
+    hsession.setListenInterface( QHostAddress::LocalHost );
+    hsession.setConnector( &connector );
+
+    handler = new SpotifyHTTPServer( &hsession, hsession.port() );
+    hsession.setStaticContentService( handler );
+
+    qDebug() << "Starting HTTPd on" << hsession.listenInterface().toString() << hsession.port();
+    hsession.start();
+
+    return a.exec();
+
 }
