@@ -101,9 +101,9 @@ private slots:
 
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
 
-    void sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, const QString& positionId );
-    void sendTracksRemoved( sp_playlist* pl, QStringList tracks );
-    void sendTracksMoved( sp_playlist* pl, QList<int> tracks, const QString& positionId );
+    void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );
+    void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
+    void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
 private:
     QVariantMap spTrackToVariant( sp_track* track );
 

@@ -15,6 +15,7 @@
  */
 
 #include "spotifyplaylists.h"
+
 #include "spotifysearch.h"
 #include "callbacks.h"
 #include <QObject>
@@ -24,11 +25,10 @@
 
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
-   , m_waitingToLoad( 0 )
+   , m_checkPlaylistsTimer( new QTimer( this ) )
    , m_allLoaded( false )
    , m_isLoading( false )
 {
-    qDebug() << "Starting playlists in thread id" << thread()->currentThreadId();
     /**
       Metatypes for invokeMethod
       **/
@@ -39,6 +39,10 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     qRegisterMetaType< SpotifyPlaylists::LoadedPlaylist >("SpotifyPlaylists::LoadedPlaylist");
     qRegisterMetaType< QList<sp_track* > >("QList<sp_track*>");
     qRegisterMetaType< QList<int> >("QList<int>");
+
+    m_checkPlaylistsTimer->setInterval( 2000 );
+    m_checkPlaylistsTimer->setSingleShot( true );
+    connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
 
     readSettings();
 }
@@ -139,7 +143,7 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
 {
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 
-    qDebug() << Q_FUNC_INFO << "PLAYLIST_STATE_CHANGED for *non* synced playlist" << sp_playlist_name(pl) << "is loaded" << sp_playlist_is_loaded(pl) << sp_playlist_num_tracks(pl) << "tracks";
+    //qDebug() << Q_FUNC_INFO << "PLAYLIST_STATE_CHANGED for *non* synced playlist" << sp_playlist_name(pl) << "is loaded" << sp_playlist_is_loaded(pl) << sp_playlist_num_tracks(pl) << "tracks";
     // If the playlist isn't loaded yet we have to wait
 
     if ( !sp_playlist_is_loaded( pl ) )
@@ -155,7 +159,7 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
         const int index = _playlists->m_playlists.indexOf( playlist );
         if ( index == -1 )
         {
-            qDebug() << Q_FUNC_INFO << "Invoking addPlaylist from stateChanged callback";
+            qDebug() << Q_FUNC_INFO << "Invoking addPlaylist from stateChanged callback as playlist is not in our list!";
             QMetaObject::invokeMethod( _playlists, "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl) );
         }
     }
@@ -246,7 +250,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
         qDebug() << "Trying to load " << numPls << "playlists from this container!";
 
         m_isLoading = true;
-        m_waitingToLoad = 0;
+        m_waitingToLoad.clear();
 
         for ( int i = 0 ; i < numPls; ++i )
         {
@@ -272,7 +276,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
                 if ( sp_playlist_is_loaded( pl ) )
                     addPlaylist( pl );
                 else
-                    m_waitingToLoad++;
+                    m_waitingToLoad << pl;
             }
         }
 
@@ -286,6 +290,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
         qWarning() << "loadContainerSlot called twice! SOMETHING IS WRONG!!";
     }
 
+    m_checkPlaylistsTimer->start();
 }
 
 void
@@ -784,7 +789,7 @@ SpotifyPlaylists::removePlaylist( sp_playlist *playlist )
 void
 SpotifyPlaylists::setPlaylistInProgress( sp_playlist *pl, bool done )
 {
-    qDebug()<< Q_FUNC_INFO << "got PLAYLIST_IN_PROGRESS with playlist and done?: " << sp_playlist_name(pl) << done << "playlist is loaded?" << sp_playlist_is_loaded(pl);
+//    qDebug()<< Q_FUNC_INFO << "got PLAYLIST_IN_PROGRESS with playlist and done?: " << sp_playlist_name(pl) << done << "playlist is loaded?" << sp_playlist_is_loaded(pl);
 //     qDebug() << "In Progress in thread id" << thread()->currentThreadId();
 //     LoadedPlaylist playlist;
 //     playlist.playlist_ = pl;
@@ -1217,7 +1222,6 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
 void
 SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
 {
-    m_waitingToLoad--;
     qDebug() << Q_FUNC_INFO << "Got playlist loaded that we were waiting for, now we have:" << m_waitingToLoad << "left";
     addPlaylist(pl);
 
@@ -1228,7 +1232,7 @@ SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
 void
 SpotifyPlaylists::checkForPlaylistsLoaded()
 {
-    if(m_waitingToLoad == 0)
+    if(m_waitingToLoad.isEmpty())
     {
         qDebug() << "========== GOT ALL PLAYLISTS LOADED, EMITTING SIGNAL!";
         m_isLoading = false;
@@ -1259,6 +1263,8 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     }
 
 //     qDebug() << "Playlist has " << sp_playlist_num_tracks( pl ) << " number of tracks";
+
+    m_waitingToLoad.removeAll( pl );
 
     LoadedPlaylist playlist;
 
@@ -1361,6 +1367,33 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         qDebug() << "Adding syncing for  playlist " << playlist.id_;
         setSyncPlaylist( playlist.id_, true );
     }
+}
+
+void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
+{
+    if ( m_waitingToLoad.isEmpty() )
+        return;
+
+    bool workToDo = false;
+    QList< sp_playlist* > toCheck = m_waitingToLoad; // addPlaylist will modify m_waitingToLoad
+    for ( int i = 0; i < toCheck.size(); i++ )
+    {
+        if ( sp_playlist_is_loaded( toCheck[ i ] ) )
+        {
+            qDebug() << "Delayed find of playlist that is actually loaded... adding";
+            addPlaylist( toCheck[ i ] );
+        } else {
+            workToDo = true;
+        }
+    }
+
+    if ( workToDo )
+    {
+        qDebug() << "Checked for all playlists loaded, but not all are yet! Refiring timer";
+        m_checkPlaylistsTimer->start();
+    }
+
+    checkForPlaylistsLoaded();
 }
 
 /**

@@ -16,6 +16,7 @@
 
 #ifndef SPOTIFYPLAYLISTS_H
 #define SPOTIFYPLAYLISTS_H
+
 #include <libspotify/api.h>
 #include <QList>
 #include <QString>
@@ -24,6 +25,7 @@
 #include <QObject>
 #include <QStringList>
 
+class QTimer;
 
 class SpotifyPlaylists : public QObject
 {
@@ -34,7 +36,7 @@ public:
 
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id, bool sync );
-    void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad = 0; }
+    void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad.clear(); }
 
     struct RevisionChanges{
 
@@ -113,9 +115,7 @@ public:
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata)
     {
-        qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl ) << sp_playlist_num_tracks(pl);
-//         SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-//         _playlists->addPlaylist( pl );
+    //    qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl ) << sp_playlist_num_tracks(pl);
     }
 
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
@@ -153,6 +153,7 @@ signals:
 
 private slots:
    void addPlaylist( sp_playlist *);
+   void ensurePlaylistsLoadedTimerFired();
 
 private:
    void readSettings();
@@ -168,7 +169,10 @@ private:
    QList<LoadedPlaylist> m_playlists;
    QList<Sync> m_syncPlaylists;
    QSettings m_settings;
-   int m_waitingToLoad;
+
+   QTimer* m_checkPlaylistsTimer;
+   QList< sp_playlist* > m_waitingToLoad;
+
    bool m_allLoaded;
    bool m_isLoading;
 };

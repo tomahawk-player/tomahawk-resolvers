@@ -138,7 +138,7 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
 
     connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)));
-    connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QList<int>,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QList<int>,QString)));
+    connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QStringList,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QStringList,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QStringList)), this, SLOT(sendTracksRemoved(sp_playlist*,QStringList)));
 
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
@@ -195,7 +195,7 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 }
 
 void
-SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, const QString& positionId )
+SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId )
 {
     QVariantMap msg;
     msg[ "_msgtype" ] = "tracksAdded";
@@ -230,14 +230,14 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, QList< sp_track* > tracks, co
 
 
 void
-SpotifyResolver::sendTracksMoved( sp_playlist* pl, QList< int > tracks, const QString& positionId )
+SpotifyResolver::sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId )
 {
     // TODO
 }
 
 
 void
-SpotifyResolver::sendTracksRemoved( sp_playlist* pl, QStringList tracks )
+SpotifyResolver::sendTracksRemoved( sp_playlist* pl, const QStringList& tracks )
 {
     QVariantMap msg;
     msg[ "_msgtype" ] = "tracksRemoved";
