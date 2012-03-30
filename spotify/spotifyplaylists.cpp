@@ -17,15 +17,29 @@
 #include "spotifyplaylists.h"
 
 #include "spotifysearch.h"
+#include "spotifyresolver.h"
 #include "callbacks.h"
+#include "PlaylistClosure.h"
+
 #include <QObject>
 #include <QThread>
 #include <QDateTime>
 #include <QTimer>
 
+void printPlaylistTracks( const QList<sp_track* > tracks )
+{
+    for ( int i = 0; i < tracks.size(); i++ )
+    {
+        qDebug() << i << ":" << sp_track_name( tracks[i] ) << sp_artist_name( sp_track_artist( tracks[i], 0 ) ) << sp_album_name( sp_track_album( tracks[i] ) );
+    }
+
+}
+
+
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
    , m_checkPlaylistsTimer( new QTimer( this ) )
+   , m_periodicTimer( new QTimer( this ) )
    , m_allLoaded( false )
    , m_isLoading( false )
 {
@@ -43,6 +57,10 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_checkPlaylistsTimer->setInterval( 2000 );
     m_checkPlaylistsTimer->setSingleShot( true );
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
+
+    m_periodicTimer->setInterval( 5000 );
+    connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
+    m_periodicTimer->start();
 
     readSettings();
 }
@@ -191,6 +209,45 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
 
 //    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 //    _playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
+}
+
+void
+SpotifyPlaylists::playlistMetadataUpdated( sp_playlist *pl, void *userdata )
+{
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    _playlists->checkForPlaylistCallbacks( pl, userdata );
+}
+
+void
+SpotifyPlaylists::checkForPlaylistCallbacks( sp_playlist *pl, void *userdata )
+{
+    // If we care about this state changed b/c we have a callback registered, fire it
+    const LoadedPlaylist lp = getLoadedPlaylist( pl );
+    foreach ( PlaylistClosure* callback, m_stateChangedCallbacks )
+    {
+        if ( callback->conditionSatisfied(pl, lp.tracks_) )
+        {
+            qDebug() << "Callback condition satisfied, all systems go!";
+            // Callback is ready to fire, cap'n!
+            callback->invoke();
+            m_stateChangedCallbacks.removeAll( callback );
+            delete callback;
+        }
+    }
+}
+
+
+void
+SpotifyPlaylists::checkWaitingForLoads()
+{
+    if ( m_stateChangedCallbacks.isEmpty() )
+        return;
+
+    qDebug() << "Periodic check for tracks waiting to load....";
+    foreach ( const LoadedPlaylist& pl, m_playlists )
+    {
+        checkForPlaylistCallbacks( pl.playlist_, this );
+    }
 }
 
 /**
@@ -401,7 +458,12 @@ SpotifyPlaylists::tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num
     QMetaObject::invokeMethod( _playlists, "addTracksFromSpotify", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl), Q_ARG(QList<sp_track*>, trackList), Q_ARG(int, position) );
 }
 
-
+void
+SpotifyPlaylists::addStateChangedCallback( PlaylistClosure *closure )
+{
+    qDebug() << "Adding state ch anged callback! Oh yeah....";
+    m_stateChangedCallbacks << closure;
+}
 
 /**
    addTracks(sp_playlist*, sp_tracks * const *tracks, int num_tracks)
@@ -422,16 +484,38 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
-    int startPos = pos == 0 ? 0 : pos - 1;
-
     // find the spotify track of the song before the newly inserted one
+    const int beforePos = (pos == 0 ? 0 : pos - 1);
     char trackStr[256];
-    sp_link* link = sp_link_create_from_track( sp_playlist_track( pl, startPos ), 0 );
+    sp_track* t = sp_playlist_track( pl, beforePos );
+    if ( !t || !sp_track_is_loaded( t ) )
+    {
+        qWarning() << "NOTE! Got tracks inserted after a track that is not loaded or null! " << beforePos << t << (t ? sp_track_is_loaded( t ) : false);
+        auto callback = [pl, beforePos](sp_playlist* playlist, QList<sp_track*> playlistTracks) {
+            if ( pl == playlist )
+            {
+                sp_track* t = sp_playlist_track( pl, beforePos );
+                qWarning() << "Closure check for if playlist position is loaded:" << beforePos << t << (t ? sp_track_is_loaded( t ) : false);
+                if ( t && sp_track_is_loaded( t ) )
+                    return true;
+
+                return false;
+            }
+            return false;
+        };
+
+        qDebug() << "Adding state changed callback";
+        addStateChangedCallback( NewPlaylistClosure( callback, this, SLOT( addTracksFromSpotify(sp_playlist*, QList<sp_track*>, int ) ), C_ARG(sp_playlist*, pl), C_ARG(QList<sp_track*>, tracks), C_ARG(int, pos)) );
+
+        return;
+    }
+
+    sp_link* link = sp_link_create_from_track( t, 0 );
     sp_link_as_string( link, trackStr, sizeof( trackStr ) );
     const QString trackPosition = QString::fromUtf8( trackStr );
     sp_link_release( link );
 
-    int runningPos = startPos; // We start one before, since spotify reports the end index, not index of item to insert after
+    int runningPos = pos; // We start one before, since spotify reports the end index, not index of item to insert after
     foreach( sp_track* track, tracks )
     {
         qDebug() << "Pos" << runningPos;
