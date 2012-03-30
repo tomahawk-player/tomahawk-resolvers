@@ -18,6 +18,7 @@
 #define SPOTIFYPLAYLISTS_H
 
 #include <libspotify/api.h>
+
 #include <QList>
 #include <QString>
 #include <QDebug>

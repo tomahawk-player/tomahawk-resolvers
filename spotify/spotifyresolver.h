@@ -87,6 +87,9 @@ public:
 
     void sendAddTracksResult( const QString& spotifyId, bool result );
 
+    bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
+    void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
+
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
@@ -143,6 +146,7 @@ private:
 
     bool m_highQuality;
     bool m_loggedIn;
+    bool m_ignoreNextUpdate;
 
 };
 

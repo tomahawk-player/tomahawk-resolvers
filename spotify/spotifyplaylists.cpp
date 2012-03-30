@@ -182,6 +182,10 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
 //       qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }
+
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    _playlists->checkForPlaylistCallbacks( pl, userdata );
+
     // Send playlist with syncflags when loaded
     // @note: disabled atm
 
@@ -438,10 +442,20 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
 
         // This undoes the sp_track_add_ref in the addTracks callback
         sp_track_release( track );
+        qDebug() << "Sanity check:" << sp_track_is_loaded( track );
     }
 
+    runningPos++; // We found the track to insert after, so increase for new index
     //qDebug() << "Playlist changed, updateing revision";
     updateRevision( m_playlists[index] );
+
+    if ( sApp->ignoreNextUpdate() )
+    {
+        qDebug() << "Ignoring spotify track added notification since it came from our own track insertion!";
+        sApp->setIgnoreNextUpdate( false );
+        return;
+    }
+
 
     emit sendTracksAdded(pl, tracks, trackPosition);
 }
@@ -529,7 +543,6 @@ SpotifyPlaylists::sendPlaylistByRevision( int revision )
 void
 SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 {
-
     qDebug() << "Removing tracks in thread id" << thread()->currentThreadId();
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
@@ -543,6 +556,7 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
     }
 
     QStringList trackIds;
+    QList< sp_track* > toRemove;
     foreach( int pos, tracks )
     {
         int realIdx = pos;
@@ -556,11 +570,17 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
         }
 
         qDebug() << "Removing track at" << realIdx;
-        sp_track* removed = m_playlists[index].tracks_.takeAt( realIdx );
-        trackIds << trackId( removed );
+        sp_track* track = m_playlists[index].tracks_.at( realIdx );
+        trackIds << trackId( track );
+        toRemove << track;
+    }
 
-        qDebug() << "removing:" << sp_track_name(removed) << sp_track_artist(removed, 0);
-        sp_track_release( removed );
+    foreach ( sp_track* remove, toRemove )
+    {
+        const int got = m_playlists[ index ].tracks_.removeAll( remove );
+
+        qDebug() << "removing:" << sp_track_name(remove) << sp_artist_name(sp_track_artist(remove, 0)) << "and actually removed:" << got;
+        sp_track_release( remove );
     }
 
     // We need to update the revision with current timestamp
@@ -568,6 +588,12 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 //         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
     updateRevision( m_playlists[index], timestamp );
 
+    if ( sApp->ignoreNextUpdate() )
+    {
+        qDebug() << "Ignoring spotify track removed notification since it came from our own track removal!";
+        sApp->setIgnoreNextUpdate( false );
+        return;
+    }
     emit sendTracksRemoved(pl, trackIds);
 }
 
@@ -730,7 +756,8 @@ void SpotifyPlaylists::tracksRemoved(sp_playlist *playlist, const int *tracks, i
 /**
   tracksMoved
   **/
-void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int num_tracks, int new_position, void *userdata)
+void
+SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int num_tracks, int new_position, void *userdata)
 {
 
     qDebug() << "Tracks moved";
@@ -743,7 +770,6 @@ void SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int
     QMetaObject::invokeMethod( _playlists, "moveTracks", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(QList<int>, movedTrackIndices), Q_ARG(int, new_position) );
 
 }
-
 
 
 /**
@@ -1042,7 +1068,7 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
         // if we have an ID, do a safe lookup and check for that. otherwrise, match metadata
         if ( !id.isEmpty() )
         {
-            for(int i = 0; i < sp_playlist_num_tracks(pl); i++)
+            for(int i = 0; i < m_playlists[index].tracks_.size(); i++)
             {
                 // If we have duplicates of the track to remove, don't try to remove the same thing twice.
                 if ( positions.contains( i ) )
@@ -1107,17 +1133,11 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
     if ( !positions.isEmpty() )
     {
         qDebug() << "Removing found:" << positions.size() << "tracks from playlist!";
+
+        sApp->setIgnoreNextUpdate( true );
         sp_error ret = sp_playlist_remove_tracks( pl, positions.constData(), positions.size());
 
-        if ( ret == SP_ERROR_OK )
-        {
-            // Clean up our track list too
-            for ( int i = positions.size() - 1; i >= 0; --i )
-                m_playlists[ index ].tracks_.removeAt( i );
-
-            return tracks.size() == positions.size();
-        } else
-            return false;
+        return ret == SP_ERROR_OK && tracks.size() == positions.size();
 
     }
 

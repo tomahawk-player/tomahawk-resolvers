@@ -91,6 +91,7 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     , m_loggedIn( false )
     , m_apiKey( QByteArray::fromBase64( spotifyApiKey ) )
     , m_highQuality( true )
+    , m_ignoreNextUpdate( false )
 {
     setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
@@ -224,6 +225,10 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tra
     }
 
     msg[ "tracks" ] = outgoingTracks;
+
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING ADDED TRACKS JSON:" << m;
 
     sendMessage( msg );
 }

@@ -27,6 +27,7 @@
 #include "spotifysession.h"
 #include "spotifyresolver.h"
 #include "spotifyplaylists.h"
+
 #include <QDebug>
 class SpotifyPlaylists;
 
@@ -74,6 +75,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         // Got all the real tracks, now add
         qDebug() << "All added tracks were searched for, now inserting in playlist!";
 
+        sApp->setIgnoreNextUpdate( true );
         sp_error err = sp_playlist_add_tracks(data->pl.playlist_, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());
 
         switch(err) {
