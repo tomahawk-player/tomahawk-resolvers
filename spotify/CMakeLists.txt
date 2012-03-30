@@ -7,6 +7,8 @@ find_package(Qt4 REQUIRED)
 find_package(QJSON REQUIRED)
 find_package(libspotify REQUIRED)
 
+find_package(Boost)
+
 add_subdirectory(qxtweb-standalone)
 
 include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ ${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
