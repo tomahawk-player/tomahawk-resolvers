@@ -6,9 +6,6 @@ SET( CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/cmake/" )
 find_package(Qt4 REQUIRED)
 find_package(QJSON REQUIRED)
 find_package(libspotify REQUIRED)
-find_package(Boost)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fpermissive")
 
 add_subdirectory(qxtweb-standalone)
 
@@ -20,7 +17,6 @@ set(tomahawkspotify_SRCS
     kdsingleapplicationguard/kdsharedmemorylocker.cpp
     kdsingleapplicationguard/kdtoolsglobal.cpp
     kdsingleapplicationguard/kdlockedsharedmemorypointer.cpp
-    PlaylistClosure.cpp
     spotifyloghandler.cpp
     spotifyplayback.cpp
     spotifysearch.cpp
@@ -41,7 +37,6 @@ set( tomahawkspotify_NOMOC_HDRS
 
 set( tomahawkspotify_HDRS
     kdsingleapplicationguard/kdsingleapplicationguard.h
-    PlaylistClosure.h
     spotifyloghandler.h
     spotifyplayback.h
     spotifysearch.h
