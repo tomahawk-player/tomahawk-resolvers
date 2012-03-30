@@ -769,7 +769,11 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
             album = track.toMap().value( "album" ).toString();
 
             QString query = QString(artist + " " + title + " " + album);
+#if SPOTIFY_API_VERSION >= 11
+            sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::addSearchedTrack, playlist );
+#else
             sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, playlist );
+#endif
         }
 
     }
