@@ -342,6 +342,10 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     msg[ "playlists" ] = playlists;
 //     qDebug() << "ALL" << playlists;
 
+//     QJson::Serializer s;
+//     QByteArray m = s.serialize( msg );
+//     qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
+
     sendMessage( msg );
 }
 

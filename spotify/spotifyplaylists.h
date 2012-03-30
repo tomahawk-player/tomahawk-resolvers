@@ -28,6 +28,8 @@
 
 class QTimer;
 
+class PlaylistClosure;
+
 class SpotifyPlaylists : public QObject
 {
     Q_OBJECT
@@ -113,10 +115,7 @@ public:
     // Spotify playlist callbacks - when loading a playlist
     static void SP_CALLCONV stateChanged(sp_playlist* pl, void* userdata);
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
-    static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata)
-    {
-    //    qDebug() << "Metadata updated for playlist:" << sp_playlist_name( pl ) << sp_playlist_num_tracks(pl);
-    }
+    static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata);
 
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
     static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata)
@@ -129,7 +128,14 @@ public:
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
+
     void waitForLoad( sp_playlist *playlist );
+
+    /**
+     * If you need to re-call some function when a certain track in a playlist has become loaded, pass it to the PlaylistClosure and add it to the list.
+     * Each closure will get tested (condition() in the closure, see header) for each playlist that has state changes.
+     */
+    void addStateChangedCallback( PlaylistClosure* closure );
 
 public slots:
 
@@ -142,6 +148,8 @@ public slots:
     void addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos);
     void removePlaylist( sp_playlist *playlist );
     void playlistLoadedSlot(sp_playlist* pl);
+
+    void addPlaylist( sp_playlist *);
 signals:
 
    void send( const SpotifyPlaylists::LoadedPlaylist& );
@@ -153,8 +161,9 @@ signals:
    void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
 
 private slots:
-   void addPlaylist( sp_playlist *);
+
    void ensurePlaylistsLoadedTimerFired();
+   void checkWaitingForLoads();
 
 private:
    void readSettings();
@@ -164,6 +173,7 @@ private:
    void updateRevision( LoadedPlaylist &pl, int qualifier, QStringList removedTracks = QStringList() );
    void playlistNameChange( sp_playlist * pl );
    void checkForPlaylistsLoaded();
+   void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
 
    QString trackId( sp_track* track );
 
@@ -172,7 +182,9 @@ private:
    QSettings m_settings;
 
    QTimer* m_checkPlaylistsTimer;
+   QTimer* m_periodicTimer;
    QList< sp_playlist* > m_waitingToLoad;
+   QList< PlaylistClosure* > m_stateChangedCallbacks;
 
    bool m_allLoaded;
    bool m_isLoading;

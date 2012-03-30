@@ -1,6 +1,7 @@
 /* === This file is part of Tomahawk Player - <http://tomahawk-player.org> ===
  *
- *   Copyright 2010-2012, Leo Franchi <lfranchi@kde.org>
+ *   Copyright 2011, David Sansome <me@davidsansome.com>
+ *   Copyright 2012, Leo Franchi <lfranchi@kde.org>
  *
  *   Inspired by Clementine's Closure class
  *
@@ -27,6 +28,8 @@
 #include <QList>
 #include <QMetaMethod>
 
+#include <tr1/functional>
+
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 
@@ -37,7 +40,7 @@
  * 3) You need to re-do your operation whenever it has been loaded
  */
 
-typedef std::function<bool (sp_playlist*, QList<sp_track*>)> PlaylistChecker;
+typedef std::tr1::function<bool ()> LoadedCondition;
 
 class ClosureArgumentWrapper {
 public:
@@ -52,7 +55,7 @@ public:
     explicit ClosureArgument(const T& data) : data_(data) {}
 
     virtual QGenericArgument arg() const {
-        return Q_ARG(T, data_);
+            return QArgument<T>(QMetaType::typeName(qMetaTypeId<T>()), data_);
     }
 
 private:
@@ -63,7 +66,7 @@ private:
 class PlaylistClosure : boost::noncopyable
 {
 public:
-    PlaylistClosure(PlaylistChecker condition, // lambda like [](sp_playlist*, const QList<sp_track*>&) bool {}
+    PlaylistClosure(LoadedCondition condition,
             QObject* receiver, const char* slot,
             const ClosureArgumentWrapper* val0 = 0,
             const ClosureArgumentWrapper* val1 = 0,
@@ -71,14 +74,14 @@ public:
 
     virtual ~PlaylistClosure() {}
 
-    bool conditionSatisfied( sp_playlist* playlist, const QList< sp_track* >& tracks ) const;
-    
+    bool conditionSatisfied() const;
+
     void invoke();
 
 private:
     QObject* receiver_;
     QMetaMethod slot_;
-    PlaylistChecker condition_;
+    LoadedCondition condition_;
 
     boost::scoped_ptr<const ClosureArgumentWrapper> val0_;
     boost::scoped_ptr<const ClosureArgumentWrapper> val1_;
@@ -86,11 +89,11 @@ private:
 };
 
 
-#define C_ARG(type, data) new ClosureArgument<type>(data)
+#define C_ARG(type, data) new ClosureArgument< type >(data)
 
 
 template <typename T>
-PlaylistClosure* NewPlaylistClosure(PlaylistChecker checker,
+PlaylistClosure* NewPlaylistClosure(LoadedCondition checker,
                                              QObject* receiver,
                                              const char* slot,
                                              const T& val0) {
@@ -101,7 +104,7 @@ PlaylistClosure* NewPlaylistClosure(PlaylistChecker checker,
 
 template <typename T0, typename T1>
 PlaylistClosure* NewPlaylistClosure(
-        PlaylistChecker checker,
+        LoadedCondition checker,
         QObject* receiver,
         const char* slot,
         const T0& val0,
@@ -113,7 +116,7 @@ PlaylistClosure* NewPlaylistClosure(
 
 template <typename T0, typename T1, typename T2>
 PlaylistClosure* NewPlaylistClosure(
-        PlaylistChecker checker,
+        LoadedCondition checker,
         QObject* receiver,
         const char* slot,
         const T0& val0,

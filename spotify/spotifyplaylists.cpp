@@ -17,13 +17,16 @@
 #include "spotifyplaylists.h"
 
 #include "spotifysearch.h"
+#include "spotifyresolver.h"
 #include "callbacks.h"
 #include "spotifyresolver.h"
+#include "PlaylistClosure.h"
 
 #include <QObject>
 #include <QThread>
 #include <QDateTime>
 #include <QTimer>
+#include <boost/bind.hpp>
 
 void printPlaylistTracks( const QList<sp_track* > tracks )
 {
@@ -38,9 +41,25 @@ void printPlaylistTracks( const QList<sp_track* > tracks )
 
 }
 
+
+// Use this with boost::bind and bind the first arg
+bool checkTracksAreLoaded(QList<sp_track*> waitingForLoaded)
+{
+    bool found = !waitingForLoaded.isEmpty();
+    foreach ( sp_track* t, waitingForLoaded )
+    {
+        if ( t && sp_track_is_loaded( t ) )
+            qDebug() << "Found now-loaded track we were waiting for:" << sp_track_name(t) << sp_artist_name(sp_track_artist(t,0));
+        else
+            found = false;
+    }
+    return found;
+}
+
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
    , m_checkPlaylistsTimer( new QTimer( this ) )
+   , m_periodicTimer( new QTimer( this ) )
    , m_allLoaded( false )
    , m_isLoading( false )
 {
@@ -58,6 +77,10 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_checkPlaylistsTimer->setInterval( 2000 );
     m_checkPlaylistsTimer->setSingleShot( true );
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
+
+    m_periodicTimer->setInterval( 5000 );
+    connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
+    m_periodicTimer->start();
 
     readSettings();
 }
@@ -79,7 +102,7 @@ SpotifyPlaylists::readSettings()
          m_settings.setArrayIndex( i );
          Sync sync;
          sync.id_ = m_settings.value( "id" ).toString();
-         qDebug() << sync.id_;
+         qDebug() << Q_FUNC_INFO << "Loading playlist to sync:" << sync.id_;
          sync.sync_ = m_settings.value( "sync" ).toBool();
          m_syncPlaylists.append( sync );
     }
@@ -205,6 +228,45 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
 //    _playlists->doSend( _playlists->getLoadedPlaylist( pl ) ); //_playlists->doSend();
 }
 
+void
+SpotifyPlaylists::playlistMetadataUpdated( sp_playlist *pl, void *userdata )
+{
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    _playlists->checkForPlaylistCallbacks( pl, userdata );
+}
+
+void
+SpotifyPlaylists::checkForPlaylistCallbacks( sp_playlist *, void * )
+{
+    // If we care about this state changed b/c we have a callback registered, fire it
+//     const LoadedPlaylist lp = getLoadedPlaylist( pl );
+    foreach ( PlaylistClosure* callback, m_stateChangedCallbacks )
+    {
+        if ( callback->conditionSatisfied() )
+        {
+            qDebug() << "Callback condition satisfied, all systems go!";
+            // Callback is ready to fire, cap'n!
+            callback->invoke();
+            m_stateChangedCallbacks.removeAll( callback );
+            delete callback;
+        }
+    }
+}
+
+
+void
+SpotifyPlaylists::checkWaitingForLoads()
+{
+    if ( m_stateChangedCallbacks.isEmpty() )
+        return;
+
+    qDebug() << "Periodic check for tracks waiting to load....";
+    foreach ( const LoadedPlaylist& pl, m_playlists )
+    {
+        checkForPlaylistCallbacks( pl.playlist_, this );
+    }
+}
+
 /**
  getLoadedPLaylist( sp_playlist )
    Gets a specific playlist from the list with id (uri)
@@ -285,7 +347,6 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
             if( type == SP_PLAYLIST_TYPE_PLAYLIST )
             {
                 sp_playlist* pl = sp_playlistcontainer_playlist( pc, i );
-                //sp_playlist_add_callbacks( pl, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
 
                 qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
                 if ( sp_playlist_is_loaded( pl ) )
@@ -450,7 +511,12 @@ SpotifyPlaylists::tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num
     QMetaObject::invokeMethod( _playlists, "addTracksFromSpotify", Qt::QueuedConnection, Q_ARG(sp_playlist*, pl), Q_ARG(QList<sp_track*>, trackList), Q_ARG(int, position) );
 }
 
-
+void
+SpotifyPlaylists::addStateChangedCallback( PlaylistClosure *closure )
+{
+    qDebug() << "Adding state ch anged callback! Oh yeah....";
+    m_stateChangedCallbacks << closure;
+}
 
 /**
    addTracks(sp_playlist*, sp_tracks * const *tracks, int num_tracks)
@@ -470,18 +536,53 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
-    int startPos = pos == 0 ? 0 : pos - 1;
-
     // find the spotify track of the song before the newly inserted one
+    const int beforePos = (pos == 0 ? 0 : pos - 1);
     char trackStr[256];
-
-    sp_track *tr = sp_playlist_track( pl, startPos );
-    if( !tr )
+    sp_track* t = sp_playlist_track( pl, beforePos );
+    if ( !t || !sp_track_is_loaded( t ) )
     {
-        qWarning() << "ERROR failed to create track at pos " << startPos;
+        qWarning() << "NOTE! Got tracks inserted after a track that is not loaded or null! " << beforePos << t << (t ? sp_track_is_loaded( t ) : false);
+        if ( !t )
+        {
+            qWarning() << "TODO can't handle null tracks in playlist... how did this happen?";
+            return;
+        }
+        else
+        {
+            qDebug() << "Adding state changed callback";
+            QList<sp_track*> waitingFor;
+            waitingFor << t;
+            addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( addTracksFromSpotify(sp_playlist*, QList<sp_track*>, int ) ), pl,  tracks, pos) );
+        }
+
         return;
     }
-    sp_link* link = sp_link_create_from_track( tr, 0 );
+
+    // check all tracks are loaded, if not, wait for them
+    QList<sp_track*> waitingFor;
+    foreach ( sp_track* t, tracks )
+    {
+        if ( !t )
+        {
+            qDebug() << "got NULL track in addTracksFromSpotify, can't handle. ignoring this track!";
+            continue;
+        }
+        else if ( !sp_track_is_loaded(t) )
+        {
+            qDebug() << Q_FUNC_INFO << "Got not loaded sp_track, waiting!";
+            waitingFor << t;
+        }
+    }
+
+    if ( !waitingFor.isEmpty() )
+    {
+        // Wait!
+        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( addTracksFromSpotify(sp_playlist*, QList<sp_track*>, int ) ), pl,  tracks, pos) );
+        return;
+    }
+
+    sp_link* link = sp_link_create_from_track( t, 0 );
     sp_link_as_string( link, trackStr, sizeof( trackStr ) );
     const QString trackPosition = QString::fromUtf8( trackStr );
     sp_link_release( link );
@@ -761,7 +862,7 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
         if( sync )
         {
             // We might be setting an (already synced previously) playlist to sync
-            // during the initial load. in that case loadSettinsg() loaded it in m_syncPlaylists
+            // during the initial load. in that case loadSettings() loaded it in m_syncPlaylists
             // but we just now loaded the real playlist from spotify, so sync it up
             if ( !m_syncPlaylists.contains( syncThis ) )
                 m_syncPlaylists.append( syncThis );

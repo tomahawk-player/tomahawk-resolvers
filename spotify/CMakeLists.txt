@@ -19,6 +19,7 @@ set(tomahawkspotify_SRCS
     kdsingleapplicationguard/kdsharedmemorylocker.cpp
     kdsingleapplicationguard/kdtoolsglobal.cpp
     kdsingleapplicationguard/kdlockedsharedmemorypointer.cpp
+    PlaylistClosure.cpp
     spotifyloghandler.cpp
     spotifyplayback.cpp
     spotifysearch.cpp
@@ -39,6 +40,7 @@ set( tomahawkspotify_NOMOC_HDRS
 
 set( tomahawkspotify_HDRS
     kdsingleapplicationguard/kdsingleapplicationguard.h
+    PlaylistClosure.h
     spotifyloghandler.h
     spotifyplayback.h
     spotifysearch.h

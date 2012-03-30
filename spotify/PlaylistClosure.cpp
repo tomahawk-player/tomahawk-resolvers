@@ -20,8 +20,9 @@
 
 #include "PlaylistClosure.h"
 
+#include <QDebug>
 
-PlaylistClosure::PlaylistClosure(PlaylistChecker condition,
+PlaylistClosure::PlaylistClosure(LoadedCondition condition,
                  QObject* receiver,
                  const char* slot,
                  const ClosureArgumentWrapper* val0,
@@ -32,7 +33,7 @@ PlaylistClosure::PlaylistClosure(PlaylistChecker condition,
       , val0_(val0)
       , val1_(val1)
       , val2_(val2)
-      
+
 {
   const QMetaObject* meta_receiver = receiver->metaObject();
 
@@ -43,14 +44,17 @@ PlaylistClosure::PlaylistClosure(PlaylistChecker condition,
 }
 
 bool
-PlaylistClosure::conditionSatisfied(sp_playlist *playlist, const QList< sp_track* >& tracks ) const
+PlaylistClosure::conditionSatisfied() const
 {
-    return condition_(playlist, tracks);
+    return condition_();
 }
 
-void 
+void
 PlaylistClosure::invoke()
 {
+//     qDebug() << val0_->arg().name() << val0_->arg().data();
+//     qDebug() << val1_->arg().name() << val1_->arg().data();
+//     qDebug() << val2_->arg().name() << val2_->arg().data();
     slot_.invoke(receiver_,
         val0_ ? val0_->arg() : QGenericArgument(),
         val1_ ? val1_->arg() : QGenericArgument(),
