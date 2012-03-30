@@ -21,6 +21,10 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 name: "subsonic_api",
                 widget: "api_version_combo",
                 property: "currentText"
+            }, {
+                name: "max_songs",
+                widget: "max_songs_edit",
+                property: "text"
             }],
             images: [{
                 "subsonic.png" : Tomahawk.readBase64("subsonic.png")
@@ -35,7 +39,8 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         if (this.user !== userConfig.user ||
             this.password !== userConfig.password ||
             this.subsonic_url !== userConfig.subsonice_url ||
-            this.subsonic_api !== userConfig.subsonic_api)
+            this.subsonic_api !== userConfig.subsonic_api ||
+            this.max_songs !== userConfig.max_songs)
         {    
             this.init();
         }
@@ -74,6 +79,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         this.password = enc_password;
         this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
         this.subsonic_api = userConfig.subsonic_api;
+        this.max_songs = userConfig.max_songs;
     },
     
     getXmlAttribute: function(attrib_name, attributes) {
@@ -121,15 +127,17 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     {
         var results = [];
         var that = this; // needed so we can reference this from within the lambda
-        
+
+
         // Important to recognize this async request is doing a get and the user / password is passed in the search url
         // TODO: should most likely just use the xhr object and doing basic authentication.
         Tomahawk.asyncRequest(search_url, function(xhr) {
             var dom_parser = new DOMParser();
             xmlDoc = dom_parser.parseFromString(xhr.responseText, "text/xml");
-            Tomahawk.log(xhr.responseText);
+            //Tomahawk.log(xhr.responseText);
             
             var search_results = xmlDoc.getElementsByTagName(song_xml_tag);
+            Tomahawk.log(search_results.length + " results returned.")
             for (var count = 0; count < Math.min(search_results.length, limit); count++)
             {
                 results.push(that.parseSongFromAttributes(search_results[count].attributes));
@@ -157,8 +165,8 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     
     search: function( qid, searchString )
     {
-        var search_url = this.buildBaseUrl("/rest/search2.view") + "&query=" + encodeURIComponent(searchString);
-        this.executeSearchQuery(qid, search_url, "song", 20);
+        var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=" + encodeURIComponent(searchString);
+        this.executeSearchQuery(qid, search_url, "song", this.max_songs);
     }
 });
 
