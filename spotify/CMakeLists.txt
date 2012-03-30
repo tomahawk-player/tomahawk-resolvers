@@ -8,7 +8,11 @@ find_package(QJSON REQUIRED)
 find_package(libspotify REQUIRED)
 find_package(Boost)
 
+if(APPLE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x  -stdlib=libc++ -Wc++11-narrowing" )
+else()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fpermissive")
+endif()
 
 add_subdirectory(qxtweb-standalone)
 
