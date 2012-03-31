@@ -251,9 +251,8 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
     qDebug() << Q_FUNC_INFO;
     if( !m_allLoaded && !m_isLoading )
     {
-        qDebug() << "Loading starred tracks playlist";
-        addStarredTracksToContainer();
 
+        qDebug() << "wait has " << m_waitingToLoad.count();
         qDebug() << "Container load from thread id" << thread()->currentThreadId();
         int numPls = sp_playlistcontainer_num_playlists( pc );
 
@@ -296,8 +295,11 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
             }
         }
 
+        /// Add starredTracks, should be an option
+        /// @note we need to wait for the starred list aswell
+        addStarredTracksToContainer();
+
         checkForPlaylistsLoaded();
-        // Add starredTracks, should be an option
 
         SpotifySession::getInstance()->setPlaylistContainer( pc );
 
@@ -309,27 +311,28 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
     m_checkPlaylistsTimer->start();
 }
 
+/**
+  addStarredTracksContainer()
+  This creates the starred tracks playlist, and will automatically add it to the synclist
+  The starredTracks container is not a playlist and has no name. But it has a special uri
+**/
 void
 SpotifyPlaylists::addStarredTracksToContainer()
 {
-    /**
-      This creates the starred tracks playlist, and will automatically add it to the synclist
-    **/
+
     sp_playlist* starredTracks = sp_session_starred_create( SpotifySession::getInstance()->Session() );
-    sp_playlist_add_callbacks( starredTracks, &SpotifyCallbacks::syncPlaylistCallbacks, this );
+    qDebug() << "Created starred playlist:" << starredTracks;
 
-    QString name = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
+    if ( sp_playlist_is_loaded( starredTracks ) )
+    {
+        qDebug() << "Starred tracks loaded!";
+        addPlaylist( starredTracks );
 
-    // The starredTracks container is not a playlist, but it has a special uri
-    QString starredId = "spotify:user:" + name + ":playlist:0000000000000000000000";
-
-    qDebug() << "Created starred playlist:" << starredTracks << sp_playlist_name( starredTracks );
-    addPlaylist(starredTracks);
-
-    // Set it to syncSettings
-    setSyncPlaylist( starredId, true );
-
-    emit notifyStarredTracksLoadedSignal();
+    }else
+    {
+        qDebug() << "Starred not loaded, adding to wait";
+        m_waitingToLoad << starredTracks;
+    }
 
 
 }
@@ -346,14 +349,13 @@ SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* 
     // If the playlist isn't loaded yet we have to wait
     if ( !sp_playlist_is_loaded( playlist ) )
     {
-      qDebug() << "Playlist isn't loaded yet, waiting";
+      //qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }
 
-   qDebug() << Q_FUNC_INFO << "IN PLAYLISTADDED CALLBACK for this playlist:" << sp_playlist_name( playlist );
-   SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-
-   QMetaObject::invokeMethod( _session->Playlists(), "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
+   // qDebug() << Q_FUNC_INFO << "IN PLAYLISTADDED CALLBACK for this playlist:" << sp_playlist_name( playlist ) << " Has Pending changes?" << sp_playlist_has_pending_changes( playlist );
+   //SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
+   //QMetaObject::invokeMethod( _session->Playlists(), "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
 
 }
 /**
@@ -424,13 +426,18 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
 {
     qDebug() << "Adding tracks to" << sp_playlist_name(pl) << "from spotify notification";
 
+    /*
+    while( !sp_playlist_is_loaded( pl ) )
+    {
+        qDebug() << "Not loaded yet!";
+    }
+    */
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
     const int index = m_playlists.indexOf( playlist );
 
     if( index == -1 ) {
-        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
-
+        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << ( QString::fromUtf8(sp_playlist_name( pl )).isEmpty() ? "empty name " : sp_playlist_name( pl ) );
         return;
     }
 
@@ -736,6 +743,7 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
             m_syncPlaylists.removeAt( syncIndex );
             m_playlists[ index ].sync_ = false;
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
+            qDebug() << "ADding playlistcallback";
             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
         }
 
@@ -1256,7 +1264,6 @@ SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
 {
     qDebug() << Q_FUNC_INFO << "Got playlist loaded that we were waiting for, now we have:" << m_waitingToLoad << "left";
     addPlaylist(pl);
-
     checkForPlaylistsLoaded();
 }
 
@@ -1344,7 +1351,10 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         return;
     }*/
 
-    if( playlist.id_.contains( "0000000000000000000000" ) )
+
+    // Precaution, to prevent mixing up the starred tracks container and user playlistnameings.
+    QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
+    if( playlist.id_.contains( username + ":starred" ) )
     {
         qDebug() << "Marking starred track playlist" << pl;
         playlist.name_ =  "Starred Tracks";
@@ -1399,6 +1409,10 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         qDebug() << "Adding syncing for  playlist " << playlist.id_;
         setSyncPlaylist( playlist.id_, true );
     }
+
+    // emit starred playlist is loaded
+    if( playlist.starContainer_ )
+        emit notifyStarredTracksLoadedSignal();
 }
 
 void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
@@ -1412,7 +1426,17 @@ void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
     {
         if ( sp_playlist_is_loaded( toCheck[ i ] ) )
         {
-            qDebug() << "Delayed find of playlist that is actually loaded... adding";
+            char linkStr[256];
+            sp_link *pl_link = sp_link_create_from_playlist( toCheck[i] );
+            if( pl_link ){
+
+                sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
+                sp_link_release( pl_link );
+
+
+            }
+
+            qDebug() << "Delayed find of playlist that is actually loaded... adding" << linkStr;
             addPlaylist( toCheck[ i ] );
         } else {
             workToDo = true;
