@@ -48,26 +48,27 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     {
         qWarning() << "Got no search result for track we tried to add! Ignoring it...";
         data->waitingFor--;
-        return;
     }
-
-    int cur = 0;
-    int max = sp_search_num_tracks(result);
-    while( cur < max )
+    else
     {
-        // Find a loaded track to add to the list
-        sp_track *const tr = sp_search_track( result, cur );
+        int cur = 0;
+        int max = sp_search_num_tracks(result);
+        while( cur < max )
+        {
+            // Find a loaded track to add to the list
+            sp_track *const tr = sp_search_track( result, cur );
 
-        if( !tr || !sp_track_is_loaded( tr ) ) {
-            qDebug() << "Got still loading track, skipping";
-            cur++;
-            continue;
+            if( !tr || !sp_track_is_loaded( tr ) ) {
+                qDebug() << "Got still loading track, skipping";
+                cur++;
+                continue;
+            }
+
+            qDebug() << "Adding track to playlist" << sp_track_name( tr );
+            data->finaltracks.append( tr );
+            data->waitingFor--;
+            break;
         }
-
-        qDebug() << "Adding track to playlist" << sp_track_name( tr );
-        data->finaltracks.append( tr );
-        data->waitingFor--;
-        break;
     }
 
     if ( data->waitingFor == 0 )
