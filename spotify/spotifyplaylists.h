@@ -176,7 +176,6 @@ private:
    QTimer* m_checkPlaylistsTimer;
    QList< sp_playlist* > m_waitingToLoad;
 
-   bool m_starredLoaded;
    bool m_allLoaded;
    bool m_isLoading;
 };
