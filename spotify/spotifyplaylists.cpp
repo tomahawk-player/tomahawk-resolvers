@@ -349,13 +349,13 @@ SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* 
     // If the playlist isn't loaded yet we have to wait
     if ( !sp_playlist_is_loaded( playlist ) )
     {
-      //qDebug() << "Playlist isn't loaded yet, waiting";
+      qDebug() << "Playlist isn't loaded yet, waiting";
       return;
     }
 
-   // qDebug() << Q_FUNC_INFO << "IN PLAYLISTADDED CALLBACK for this playlist:" << sp_playlist_name( playlist ) << " Has Pending changes?" << sp_playlist_has_pending_changes( playlist );
-   //SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-   //QMetaObject::invokeMethod( _session->Playlists(), "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
+    qDebug() << Q_FUNC_INFO << "IN PLAYLISTADDED CALLBACK for this playlist:" << sp_playlist_name( playlist ) << " Has Pending changes?" << sp_playlist_has_pending_changes( playlist );
+    SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
+    QMetaObject::invokeMethod( _session->Playlists(), "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
 
 }
 /**
@@ -426,12 +426,6 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
 {
     qDebug() << "Adding tracks to" << sp_playlist_name(pl) << "from spotify notification";
 
-    /*
-    while( !sp_playlist_is_loaded( pl ) )
-    {
-        qDebug() << "Not loaded yet!";
-    }
-    */
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
     const int index = m_playlists.indexOf( playlist );
@@ -743,7 +737,6 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
             m_syncPlaylists.removeAt( syncIndex );
             m_playlists[ index ].sync_ = false;
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
-            qDebug() << "ADding playlistcallback";
             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
         }
 
@@ -1426,17 +1419,7 @@ void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
     {
         if ( sp_playlist_is_loaded( toCheck[ i ] ) )
         {
-            char linkStr[256];
-            sp_link *pl_link = sp_link_create_from_playlist( toCheck[i] );
-            if( pl_link ){
-
-                sp_link_as_string( pl_link, linkStr, sizeof(linkStr));
-                sp_link_release( pl_link );
-
-
-            }
-
-            qDebug() << "Delayed find of playlist that is actually loaded... adding" << linkStr;
+            qDebug() << "Delayed find of playlist that is actually loaded... adding";
             addPlaylist( toCheck[ i ] );
         } else {
             workToDo = true;
