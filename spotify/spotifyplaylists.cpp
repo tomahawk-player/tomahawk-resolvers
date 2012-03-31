@@ -25,6 +25,19 @@
 #include <QDateTime>
 #include <QTimer>
 
+void printPlaylistTracks( const QList<sp_track* > tracks )
+{
+    for ( int i = 0; i < tracks.size(); i++ )
+    {
+        char id[256];
+        sp_link* l = sp_link_create_from_track( tracks[i], 0 );
+        if ( l )
+            sp_link_as_string( l, id, sizeof( id ) );
+        qDebug() << i << ":" << id << sp_track_name( tracks[i] ) << sp_artist_name( sp_track_artist( tracks[i], 0 ) ) << sp_album_name( sp_track_album( tracks[i] ) );
+    }
+
+}
+
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
    , m_checkPlaylistsTimer( new QTimer( this ) )
