@@ -82,7 +82,7 @@ static sp_playlist_callbacks playlistCallbacks = {
         NULL, //&SpotifyPlaylists::tracks_added,
         NULL, //&SpotifyPlaylists::tracks_removed,
         NULL, //&SpotifyPlaylists::tracks_moved,
-        NULL,//&SpotifyPlaylists::playlist_renamed,
+        &SpotifyPlaylists::playlistRenamed,
         &SpotifyPlaylists::stateChanged,
         &SpotifyPlaylists::playlistUpdateInProgress,
         &SpotifyPlaylists::playlistMetadataUpdated,

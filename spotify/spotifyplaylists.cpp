@@ -311,6 +311,26 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
     m_checkPlaylistsTimer->start();
 }
 
+void
+SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
+{
+
+    LoadedPlaylist playlist;
+    playlist.playlist_ = pl;
+    const int index = m_playlists.indexOf( playlist );
+
+    if( index == -1 ) {
+        qWarning() << "Renamed a playlist we don't know about? WTF!" << ( QString::fromUtf8(sp_playlist_name( pl )).isEmpty() ? "empty name " : sp_playlist_name( pl ) );
+        return;
+    }
+
+    qDebug() << "Renamning " << m_playlists[index].name_ << " to " << sp_playlist_name( pl );
+    m_playlists[index].name_ = sp_playlist_name( pl );
+    /// @todo: maybe emit other signal, updateMetaData?
+    emit notifyContainerLoadedSignal();
+
+}
+
 /**
   addStarredTracksContainer()
   This creates the starred tracks playlist, and will automatically add it to the synclist
@@ -1403,6 +1423,8 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         setSyncPlaylist( playlist.id_, true );
     }
 
+    // We need to add the callbacks for normal playlist, to keep listening on changes.
+    sp_playlist_add_callbacks( playlist.playlist_, &SpotifyCallbacks::playlistCallbacks, this);
     // emit starred playlist is loaded
     if( playlist.starContainer_ )
         emit notifyStarredTracksLoadedSignal();

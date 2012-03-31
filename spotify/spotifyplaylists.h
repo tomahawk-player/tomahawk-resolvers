@@ -124,7 +124,9 @@ public:
     {
         Q_UNUSED( pl );
         Q_UNUSED( userdata );
-        qDebug() << "Playlist renamned";
+        qDebug() << "Playlist renamned to " << sp_playlist_name( pl );
+        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+        _playlists->playlistNameChange( pl );
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
@@ -162,7 +164,7 @@ private:
 
    void updateRevision( LoadedPlaylist &pl );
    void updateRevision( LoadedPlaylist &pl, int qualifier );
-
+   void playlistNameChange( sp_playlist * pl );
    void checkForPlaylistsLoaded();
 
    QString trackId( sp_track* track );
