@@ -43,6 +43,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    , m_checkPlaylistsTimer( new QTimer( this ) )
    , m_allLoaded( false )
    , m_isLoading( false )
+   , m_starredLoaded( false )
 {
     /**
       Metatypes for invokeMethod
@@ -231,8 +232,9 @@ void SpotifyPlaylists::doSend( const SpotifyPlaylists::LoadedPlaylist& playlist 
 
 /**
   Callback
-    State changed
-    Called from libspotify when state changed on playlist
+    containerLoaded
+    Called from libspotify when state changed on container, either on initial load
+    OR when playlists is added/removed
 **/
 
 void
@@ -240,7 +242,6 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 {
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-
     QMetaObject::invokeMethod( _session->Playlists(), "loadContainerSlot", Qt::QueuedConnection, Q_ARG(sp_playlistcontainer*, pc) );
 
 }
@@ -249,7 +250,7 @@ void
 SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
     qDebug() << Q_FUNC_INFO;
-    if( !m_allLoaded && !m_isLoading )
+    if( !m_isLoading )
     {
 
         qDebug() << "wait has " << m_waitingToLoad.count();
@@ -285,26 +286,44 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
             if( type == SP_PLAYLIST_TYPE_PLAYLIST )
             {
                 sp_playlist* pl = sp_playlistcontainer_playlist( pc, i );
-                //sp_playlist_add_callbacks( pl, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
 
-                qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
-                if ( sp_playlist_is_loaded( pl ) )
-                    addPlaylist( pl );
-                else
-                    m_waitingToLoad << pl;
+                if( !m_allLoaded ){
+                    qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
+                    if ( sp_playlist_is_loaded( pl ) )
+                        addPlaylist( pl );
+                    else
+                        m_waitingToLoad << pl;
+                }else
+                {
+                    LoadedPlaylist playlist;
+                    playlist.playlist_ = pl;
+                    const int index = m_playlists.indexOf( playlist );
+
+                    if( index == -1 ) {
+                        qDebug() << "Adding NEW playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
+                        if ( sp_playlist_is_loaded( pl ) )
+                            addPlaylist( pl );
+                        else
+                            m_waitingToLoad << pl;
+                    }else
+                        continue;
+                }
             }
         }
 
         /// Add starredTracks, should be an option
         /// @note we need to wait for the starred list aswell
-        addStarredTracksToContainer();
+        if( !m_starredLoaded )
+            addStarredTracksToContainer();
 
         checkForPlaylistsLoaded();
-
         SpotifySession::getInstance()->setPlaylistContainer( pc );
 
     }else
     {
+        // Its not that bad, containerSlot will be called multiple times durina a session
+        // everytime something is changed to the container, like add/remove of items.
+
         qWarning() << "loadContainerSlot called twice! SOMETHING IS WRONG!!";
     }
 
@@ -369,7 +388,7 @@ SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* 
     // If the playlist isn't loaded yet we have to wait
     if ( !sp_playlist_is_loaded( playlist ) )
     {
-      qDebug() << "Playlist isn't loaded yet, waiting";
+      qDebug() << Q_FUNC_INFO << "Playlist isn't loaded yet, waiting";
       return;
     }
 
@@ -1426,8 +1445,10 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     // We need to add the callbacks for normal playlist, to keep listening on changes.
     sp_playlist_add_callbacks( playlist.playlist_, &SpotifyCallbacks::playlistCallbacks, this);
     // emit starred playlist is loaded
-    if( playlist.starContainer_ )
+    if( playlist.starContainer_ ){
+        m_starredLoaded = true;
         emit notifyStarredTracksLoadedSignal();
+    }
 }
 
 void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
