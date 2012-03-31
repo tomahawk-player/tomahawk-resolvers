@@ -443,7 +443,7 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
     const QString trackPosition = QString::fromUtf8( trackStr );
     sp_link_release( link );
 
-    int runningPos = startPos; // We start one before, since spotify reports the end index, not index of item to insert after
+    int runningPos = pos; // We start one before, since spotify reports the end index, not index of item to insert after
     foreach( sp_track* track, tracks )
     {
         qDebug() << "Pos" << runningPos;
