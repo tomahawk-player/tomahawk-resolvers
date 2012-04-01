@@ -131,6 +131,7 @@ public:
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
 
+    void waitForLoad( sp_playlist *playlist );
 
 public slots:
 
@@ -142,7 +143,6 @@ public slots:
     void addStarredTracksToContainer();
     void addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos);
     void removePlaylist( sp_playlist *playlist );
-
     void playlistLoadedSlot(sp_playlist* pl);
 signals:
 

@@ -305,6 +305,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
     }else
     {
+        /// @note: currently also a bug in libspotifyV11
         qWarning() << "loadContainerSlot called twice! SOMETHING IS WRONG!!";
     }
 
@@ -358,24 +359,38 @@ SpotifyPlaylists::addStarredTracksToContainer()
 }
 
 /**
+  waitForLoad ( sp_playlist * )
+  convient way to wait for a playlist
+  **/
+void
+SpotifyPlaylists::waitForLoad( sp_playlist *playlist )
+{
+    if ( sp_playlist_is_loaded( playlist ) )
+    {
+        qDebug() << "WaitForLoaded is loaded";
+        addPlaylist( playlist );
+
+    }else
+    {
+        qDebug() << "WaitForLoaded not loaded, adding to wait";
+        m_waitingToLoad << playlist;
+    }
+    checkForPlaylistsLoaded();
+}
+
+/**
   Callback
     PlaylistAdded
     Called from libspotify when a new playlist is added
+    @note, the new playlist doesnt have ANY callbacks at this state
 **/
 
 void
 SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist, int position, void* userdata )
 {
-    // If the playlist isn't loaded yet we have to wait
-    if ( !sp_playlist_is_loaded( playlist ) )
-    {
-      qDebug() << "Playlist isn't loaded yet, waiting";
-      return;
-    }
-
-    qDebug() << Q_FUNC_INFO << "IN PLAYLISTADDED CALLBACK for this playlist:" << sp_playlist_name( playlist ) << " Has Pending changes?" << sp_playlist_has_pending_changes( playlist );
+    qDebug() << Q_FUNC_INFO << "================ IN PLAYLISTADDED CALLBACK";
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-    QMetaObject::invokeMethod( _session->Playlists(), "addPlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
+    _session->Playlists()->waitForLoad( playlist );
 
 }
 /**
