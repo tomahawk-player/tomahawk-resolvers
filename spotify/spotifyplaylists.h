@@ -74,7 +74,7 @@ public:
 
         LoadedPlaylist pl;
         QVector< sp_track* > finaltracks;
-        QStringList origTrackNameList;
+        QVector< sp_search* > searchOrder;
 
         int waitingFor;
         int pos;

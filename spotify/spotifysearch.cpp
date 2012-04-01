@@ -43,7 +43,6 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         return;
     }
 
-    // Need to pass a ** to add_tracks
     if( sp_search_num_tracks( result ) < 1 )
     {
         qWarning() << "Got no search result for track we tried to add! Ignoring it...";
@@ -58,14 +57,16 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
             // Find a loaded track to add to the list
             sp_track *const tr = sp_search_track( result, cur );
 
+            qDebug() << "Got search result:" << result << sp_track_name( tr ) << sp_artist_name( sp_track_artist( tr, 0 ) );
             if( !tr || !sp_track_is_loaded( tr ) ) {
                 qDebug() << "Got still loading track, skipping";
                 cur++;
                 continue;
             }
 
-            qDebug() << "Adding track to playlist" << sp_track_name( tr );
-            data->finaltracks.append( tr );
+            const int pos = data->searchOrder.indexOf( result );
+            qDebug() << "Adding track to playlist" << sp_track_name( tr ) << "at index:" << pos;
+            data->finaltracks[ pos ] = tr;
             data->waitingFor--;
             break;
         }
@@ -75,6 +76,17 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     {
         // Got all the real tracks, now add
         qDebug() << "All added tracks were searched for, now inserting in playlist!";
+        // Our vector may have "holes" in it, for any tracks that we couldn't find
+        int count = 0;
+        for ( QVector< sp_track* >::iterator iter = data->finaltracks.begin(); iter != data->finaltracks.end(); ++iter )
+        {
+            if ( !*iter )
+            {
+                qDebug() << "Removing not-found track from results, position:" << count;
+                iter = data->finaltracks.erase( iter );
+            }
+            count++;
+        }
 
         sApp->setIgnoreNextUpdate( true );
         sp_error err = sp_playlist_add_tracks(data->pl.playlist_, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());

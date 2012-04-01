@@ -1022,22 +1022,28 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
     addData->pos = position;
     addData->waitingFor = 0;
 
-    foreach( QVariant track, data.value( "tracks").toList() )
+    addData->finaltracks.resize( tracks.size() );
+    addData->searchOrder.resize( tracks.size() );
+
+    for ( int i = 0; i < tracks.size(); i++ )
     {
+        const QVariant& track = tracks[ i ];
+
         const QString artist = track.toMap().value( "artist" ).toString();
         const QString title = track.toMap().value( "track" ).toString();
         const QString album = track.toMap().value( "album" ).toString();
 
         QString query = QString(artist + " " + title + " " + album);
 #if SPOTIFY_API_VERSION >= 11
-        sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::addSearchedTrack, addData );
+        sp_search* s = sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::addSearchedTrack, addData );
 #else
-        sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, addData );
+        sp_search* s = sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, addData );
 #endif
+        qDebug() << "Got sp_search object for track:" << s << query;
         addData->waitingFor++;
 
-        // to help us choose the right order
-        addData->origTrackNameList << title;
+        // to help us choose the right order since we can get the results in any order
+        addData->searchOrder[ i ] = s;
     }
 }
 
