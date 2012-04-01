@@ -1118,7 +1118,7 @@ SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
                 sp_link* l = sp_link_create_from_track( track, 0 );
                 sp_link_as_string(l, trackId, sizeof(trackId));
 
-                if( id == QString::fromAscii(trackId) )
+                if( id == QString::fromUtf8(trackId) )
                 {
                     qDebug() << "Found track at pos" << i << " removing";
                     positions.append( i );

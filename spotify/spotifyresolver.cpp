@@ -272,7 +272,7 @@ SpotifyResolver::sendTracksRemoved( sp_playlist* pl, const QStringList& tracks )
 
 
 void
-SpotifyResolver::sendAddTracksResult( const QString& spotifyId, bool result )
+SpotifyResolver::sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result )
 {
     QVariantMap resp;
     SpotifyPlaylists::LoadedPlaylist pl = m_session->Playlists()->getPlaylist( spotifyId );
@@ -284,6 +284,22 @@ SpotifyResolver::sendAddTracksResult( const QString& spotifyId, bool result )
     resp[ "success" ] = result;
 
     resp[ "latestrev" ] = pl.revisions.last().revId;
+
+    QVariantList ins;
+    foreach ( int i, tracksInserted )
+        ins << i;
+    resp[ "trackPosInserted" ] = ins;
+
+    QVariantList ids;
+    foreach ( QString id, insertedIds )
+        ids << id;
+
+    resp[ "trackIdInserted" ] = ids;
+
+    QJson::Serializer s;
+
+    QByteArray m = s.serialize( resp );
+    qDebug() << "SENDING ADD TRACKS RESULT JSON:" << m;
 
     sendMessage( resp );
 }
@@ -736,7 +752,7 @@ SpotifyResolver::spTrackToVariant( sp_track* tr )
     sp_link* l = sp_link_create_from_track( tr, 0 );
     char urlStr[256];
     sp_link_as_string( l, urlStr, sizeof(urlStr) );
-    track[ "id" ] = QString::fromAscii( urlStr );
+    track[ "id" ] = QString::fromUtf8( urlStr );
     sp_link_release( l );
 
     return track;

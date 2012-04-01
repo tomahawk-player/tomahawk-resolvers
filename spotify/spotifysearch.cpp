@@ -78,6 +78,22 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         qDebug() << "All added tracks were searched for, now inserting in playlist!";
         // Our vector may have "holes" in it, for any tracks that we couldn't find
         int count = 0;
+        QList<int> tracksInserted;
+        QList<QString> insertedIds;
+        for ( int i = 0; i < data->finaltracks.size(); i++ )
+        {
+            if ( data->finaltracks[ i ] )
+            {
+                tracksInserted << i;
+
+                sp_link* l = sp_link_create_from_track( data->finaltracks[i], 0 );
+                char urlStr[256];
+                sp_link_as_string( l, urlStr, sizeof(urlStr) );
+                insertedIds << QString::fromUtf8( urlStr );
+                sp_link_release( l );
+            }
+        }
+
         for ( QVector< sp_track* >::iterator iter = data->finaltracks.begin(); iter != data->finaltracks.end(); ++iter )
         {
             if ( !*iter )
@@ -107,7 +123,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
                 break;
         }
 
-        sApp->sendAddTracksResult( data->pl.id_, err == SP_ERROR_OK );
+        sApp->sendAddTracksResult( data->pl.id_, tracksInserted, insertedIds, err == SP_ERROR_OK );
 
         // Only free once
         delete data;

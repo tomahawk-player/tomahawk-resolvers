@@ -85,7 +85,7 @@ public:
 
     void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
 
-    void sendAddTracksResult( const QString& spotifyId, bool result );
+    void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
 
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
     void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
