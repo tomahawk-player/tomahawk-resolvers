@@ -40,10 +40,8 @@ public:
     void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad.clear(); }
 
     struct RevisionChanges{
-
         int revId;
-        QList<sp_track*> changedTracks;
-
+        QList<sp_track*> revTracks;
     };
 
     struct LoadedPlaylist{

@@ -474,7 +474,14 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
 
     // find the spotify track of the song before the newly inserted one
     char trackStr[256];
-    sp_link* link = sp_link_create_from_track( sp_playlist_track( pl, startPos ), 0 );
+
+    sp_track *tr = sp_playlist_track( pl, startPos );
+    if( !tr )
+    {
+        qWarning() << "ERROR failed to create track at pos " << startPos;
+        return;
+    }
+    sp_link* link = sp_link_create_from_track( tr, 0 );
     sp_link_as_string( link, trackStr, sizeof( trackStr ) );
     const QString trackPosition = QString::fromUtf8( trackStr );
     sp_link_release( link );
@@ -1228,14 +1235,17 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
     if( timestamp == 0 )
     {
         qDebug() << "Revision playlist was cleared from contents!";
-        pl.newRev = QDateTime::currentMSecsSinceEpoch() / 1000;
+        //pl.newRev = QDateTime::currentMSecsSinceEpoch() / 1000;
+        updateRevision( pl, QDateTime::currentMSecsSinceEpoch() / 1000);
     }
     else if( timestamp > pl.newRev )
     {
-//         qDebug() << Q_FUNC_INFO <<  "Setting new revision " << timestamp <<  "Old rev: " << pl.oldRev;
+//         qDebug() << Q_FUNC_INFO <<  "Setting new revision " << timestamp <<  "Old rev: " << pl.newRev;
         // Hash later with appropriate hash algorithm.
-        pl.oldRev = pl.newRev;
-        pl.newRev = timestamp;
+
+        updateRevision( pl, timestamp );
+       // pl.oldRev = pl.newRev;
+       // pl.newRev = timestamp;
 
     }
 
@@ -1249,48 +1259,56 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
 void
 SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
 {
-//     qDebug() << Q_FUNC_INFO << "Qualifier " << qualifier << "rev " << pl.oldRev;
-    if( qualifier > pl.newRev)
+    int plIndex = m_playlists.indexOf( pl );
+    if( plIndex == -1 )
     {
-//         qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl.oldRev;
+        qDebug() << "Trying to update revision for playlist we dont know about, WTF!";
+        return;
+    }
 
-        RevisionChanges oldRev;
-        oldRev.revId = pl.oldRev;
+    /// @note: New revision wont handle removed tracks. Only new tracks.
+    /// So, if the tracks isnt in oldRev, its appended to newRev.
+    /// LoadedPlaylist.tracks_ will contain all current tracks.
+    if( qualifier > pl.newRev )
+    {
+        qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl.oldRev;
 
-        RevisionChanges revision;
-        revision.revId = pl.newRev;
+        RevisionChanges oldRevision;
+        RevisionChanges newRevision;
 
-        int revIndex = pl.revisions.indexOf( oldRev );
+        if( !pl.revisions.isEmpty() )
+        {
+            oldRevision = pl.revisions.last();
 
-//         if( revision.revId != -1 )
-//         {
-//
-//             for(int i = 0; i < sp_playlist_num_tracks( pl.playlist_ )-1; i++)
-//             {
-//                 foreach( sp_track* track, pl.revisions[ revIndex ].changedTracks )
-//                 {
-//                     if( sp_track_name( track ) != sp_track_name(sp_playlist_track(pl.playlist_, i) ) )
-//                     {
-//                         if(!revision.changedTracks.contains( track )){
-//                             qDebug() << "changed track" << sp_track_name(sp_playlist_track(pl.playlist_, i));
-//                             revision.changedTracks.in sert(i, track);
-//                         }
-//
-//                     }
-//                 }
-//             }
-//         }else
-//             revision.changedTracks = pl.tracks_;
+            foreach( sp_track *newRevTrack, pl.tracks_ )
+            {
+               if( !oldRevision.revTracks.contains( newRevTrack ) )
+               {
+ //                   qDebug() << "NewRev track:" << sp_track_name( newRevTrack );
+                    newRevision.revTracks.append( newRevTrack );
+               }
 
+            }
+
+        }else
+        {
+            qDebug() << "============ No old rev! Appending all";
+            newRevision.revTracks = pl.tracks_;
+        }
 
         ///   @todo:Hash later with appropriate hash algorithm.
         ///   @note: we try and keep all the revision, these should be cached
         ///          for next start
 
-        pl.revisions.append( revision );
         pl.oldRev = pl.newRev;
         pl.newRev = qualifier;
+        newRevision.revId = pl.newRev;
+        pl.revisions.append( newRevision );
+        m_playlists[ plIndex ] = pl;
+
+        qDebug() << "===== DONE Setting new revision " << pl.newRev <<  "Old rev: " << pl.oldRev << "revCount" << pl.revisions.last().revTracks.count();
     }
+
 }
 
 void
@@ -1410,15 +1428,6 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
         playlist.tracks_.push_back( track );
     }
 
-//         qDebug() << "Updateing revision with " << tmpRev;
-    // Revision, initially -1
-    playlist.oldRev = -1;
-    playlist.newRev = -1;
-
-    updateRevision( playlist, tmpRev );
-
-//         qDebug() << "RevId" << playlist.newRev;
-
     // Playlist is loaded and ready
     playlist.isLoaded = true;
 
@@ -1449,6 +1458,16 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     // emit starred playlist is loaded
     if( playlist.starContainer_ )
         emit notifyStarredTracksLoadedSignal();
+
+    if( playlist.id_ == "spotify:user:kabenlin:playlist:75kds0JnlAzEWz0yJOnS5k")
+        setSyncPlaylist( playlist.id_, true);
+
+    /// Finaly, update revisions
+    // Revision, initially -1
+    playlist.oldRev = -1;
+    playlist.newRev = -1;
+
+    updateRevision( playlist, tmpRev );
 }
 
 void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
