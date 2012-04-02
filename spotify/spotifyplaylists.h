@@ -41,7 +41,8 @@ public:
 
     struct RevisionChanges{
         int revId;
-        QList<sp_track*> revTracks;
+        QList<QString> revTrackIDs;
+        QList<QString> revRemovedTrackIDs;
     };
 
     struct LoadedPlaylist{
@@ -128,7 +129,6 @@ public:
     }
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
-
     void waitForLoad( sp_playlist *playlist );
 
 public slots:
@@ -161,7 +161,7 @@ private:
    void writeSettings();
 
    void updateRevision( LoadedPlaylist &pl );
-   void updateRevision( LoadedPlaylist &pl, int qualifier );
+   void updateRevision( LoadedPlaylist &pl, int qualifier, QStringList removedTracks = QStringList() );
    void playlistNameChange( sp_playlist * pl );
    void checkForPlaylistsLoaded();
 

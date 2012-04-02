@@ -633,7 +633,6 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
     foreach ( sp_track* remove, toRemove )
     {
         const int got = m_playlists[ index ].tracks_.removeAll( remove );
-
         qDebug() << "removing:" << sp_track_name(remove) << sp_artist_name(sp_track_artist(remove, 0)) << "and actually removed:" << got;
         sp_track_release( remove );
     }
@@ -641,7 +640,7 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
     // We need to update the revision with current timestamp
     int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
 //         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
-    updateRevision( m_playlists[index], timestamp );
+    updateRevision( m_playlists[index], timestamp, trackIds );
 
     if ( sApp->ignoreNextUpdate() )
     {
@@ -1247,7 +1246,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
   Will update the revision with a hashed qualifier
 **/
 void
-SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
+SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier, QStringList removedTracks )
 {
     int plIndex = m_playlists.indexOf( pl );
     if( plIndex == -1 )
@@ -1269,21 +1268,31 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
         if( !pl.revisions.isEmpty() )
         {
             oldRevision = pl.revisions.last();
-
+            QString trackid;
             foreach( sp_track *newRevTrack, pl.tracks_ )
             {
-               if( !oldRevision.revTracks.contains( newRevTrack ) )
+               trackid = trackId( newRevTrack );
+
+               if( !oldRevision.revTrackIDs.contains( trackid ) )
                {
- //                   qDebug() << "NewRev track:" << sp_track_name( newRevTrack );
-                    newRevision.revTracks.append( newRevTrack );
+                   newRevision.revTrackIDs.append( trackid );
                }
 
+            }
+            if( !removedTracks.isEmpty() )
+            {
+                foreach( QString trackId, removedTracks )
+                {
+                    if( !oldRevision.revRemovedTrackIDs.contains( trackId ) )
+                        newRevision.revRemovedTrackIDs.append( trackId );
+                }
             }
 
         }else
         {
             qDebug() << "============ No old rev! Appending all";
-            newRevision.revTracks = pl.tracks_;
+            foreach( sp_track *newRevTrack, pl.tracks_ )
+               newRevision.revTrackIDs.append( trackId( newRevTrack ) );
         }
 
         ///   @todo:Hash later with appropriate hash algorithm.
@@ -1295,11 +1304,11 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier )
         newRevision.revId = pl.newRev;
         pl.revisions.append( newRevision );
         m_playlists[ plIndex ] = pl;
-
-        qDebug() << "===== DONE Setting new revision " << pl.newRev <<  "Old rev: " << pl.oldRev << "revCount" << pl.revisions.last().revTracks.count();
+        qDebug() << "===== DONE Setting new revision " << pl.newRev <<  "Old rev: " << pl.oldRev << "revCount" << pl.revisions.last().revTrackIDs.count() << "removedCount: " << pl.revisions.last().revRemovedTrackIDs.count();
     }
 
 }
+
 
 void
 SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
