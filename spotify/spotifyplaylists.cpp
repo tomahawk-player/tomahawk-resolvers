@@ -1222,8 +1222,6 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
 
         if( timestamp < tmpTimestamp )
             timestamp = tmpTimestamp;
-
-//         qDebug() << "Revision timestamp" << tmpTimestamp << "current highest timestamp" << timestamp;
     }
 
     /**
@@ -1235,21 +1233,13 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
     if( timestamp == 0 )
     {
         qDebug() << "Revision playlist was cleared from contents!";
-        //pl.newRev = QDateTime::currentMSecsSinceEpoch() / 1000;
         updateRevision( pl, QDateTime::currentMSecsSinceEpoch() / 1000);
     }
     else if( timestamp > pl.newRev )
     {
-//         qDebug() << Q_FUNC_INFO <<  "Setting new revision " << timestamp <<  "Old rev: " << pl.newRev;
         // Hash later with appropriate hash algorithm.
-
         updateRevision( pl, timestamp );
-       // pl.oldRev = pl.newRev;
-       // pl.newRev = timestamp;
-
     }
-
-
 }
 
 /**
@@ -1458,9 +1448,6 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     // emit starred playlist is loaded
     if( playlist.starContainer_ )
         emit notifyStarredTracksLoadedSignal();
-
-    if( playlist.id_ == "spotify:user:kabenlin:playlist:75kds0JnlAzEWz0yJOnS5k")
-        setSyncPlaylist( playlist.id_, true);
 
     /// Finaly, update revisions
     // Revision, initially -1
