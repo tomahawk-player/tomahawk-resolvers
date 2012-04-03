@@ -1449,6 +1449,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
     if( m_syncPlaylists.contains( syncThis ) )
     {
         qDebug() << "Adding syncing for  playlist " << playlist.id_;
+        playlist.sync_ = true;
         setSyncPlaylist( playlist.id_, true );
     }
 
