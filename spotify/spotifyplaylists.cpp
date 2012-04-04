@@ -41,9 +41,7 @@ void printPlaylistTracks( const QList<sp_track* > tracks )
 
 }
 
-
-// Use this with boost::bind and bind the first arg
-bool checkTracksAreLoaded(QList<sp_track*> waitingForLoaded)
+bool checkTracksAreLoaded(QList< sp_track* > waitingForLoaded)
 {
     bool found = !waitingForLoaded.isEmpty();
     foreach ( sp_track* t, waitingForLoaded )
@@ -550,7 +548,7 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         }
         else
         {
-            qDebug() << "Adding state changed callback";
+            qDebug() << "Adding state changed callback for addPlaylist, track not loaded yet";
             QList<sp_track*> waitingFor;
             waitingFor << t;
             addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( addTracksFromSpotify(sp_playlist*, QList<sp_track*>, int ) ), pl,  tracks, pos) );
@@ -1063,6 +1061,14 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
 //     }
 
 }
+
+
+void
+SpotifyPlaylists::addSearchedTrack( sp_search* result, void* userdata )
+{
+    SpotifySearch::addSearchedTrack( result, userdata );
+}
+
 
 /**
   Create a playlist with, or without data

@@ -27,8 +27,10 @@
 #include "spotifysession.h"
 #include "spotifyresolver.h"
 #include "spotifyplaylists.h"
+#include "PlaylistClosure.h"
 
 #include <QDebug>
+#include <boost/bind.hpp>
 class SpotifyPlaylists;
 
 void
@@ -58,10 +60,18 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
             sp_track *const tr = sp_search_track( result, cur );
 
             qDebug() << "Got search result:" << result << sp_track_name( tr ) << sp_artist_name( sp_track_artist( tr, 0 ) );
-            if( !tr || !sp_track_is_loaded( tr ) ) {
-                qDebug() << "Got still loading track, skipping";
+            if( !tr ) {
+                qDebug() << "Got an invalid search result, skipping";
+
                 cur++;
                 continue;
+            }
+            else if ( !sp_track_is_loaded( tr ) )
+            {
+                qDebug() << "Track in search results was not loaded!! Enqueueing to state changed callback!";
+                QList< sp_track * > waitingForLoad = QList< sp_track* >() << tr;
+                sApp->session()->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind( checkTracksAreLoaded, waitingForLoad ), sApp->session()->Playlists(), SLOT( addSearchedTrack( sp_search*, void* ) ), result, userdata ) );
+                return;
             }
 
             const int pos = data->searchOrder.indexOf( result );

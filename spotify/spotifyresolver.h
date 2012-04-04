@@ -151,6 +151,7 @@ private:
 };
 
 Q_DECLARE_METATYPE( CacheEntry )
-
+Q_DECLARE_METATYPE( sp_search* )
+Q_DECLARE_METATYPE( void* )
 #endif // tomahawkspotify_H
 

@@ -150,6 +150,9 @@ public slots:
     void playlistLoadedSlot(sp_playlist* pl);
 
     void addPlaylist( sp_playlist *);
+
+    // slot that calls our SpotifySearch::addSearchedTrack callback
+    void addSearchedTrack( sp_search*, void * );
 signals:
 
    void send( const SpotifyPlaylists::LoadedPlaylist& );
@@ -191,10 +194,13 @@ private:
 };
 
 
+// Use this with boost::bind and bind the first arg
+bool checkTracksAreLoaded(QList<sp_track*> waitingForLoaded);
 
 Q_DECLARE_METATYPE( sp_playlistcontainer* );
 Q_DECLARE_METATYPE( sp_playlist* );
 Q_DECLARE_METATYPE( const int* );
 Q_DECLARE_METATYPE( QList< sp_track* > );
 Q_DECLARE_METATYPE( QList< int > );
+
 #endif // SPOTIFYPLAYLISTS_H
