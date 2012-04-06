@@ -141,7 +141,7 @@ void SpotifyResolver::setup()
     connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QStringList,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QStringList,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QStringList)), this, SLOT(sendTracksRemoved(sp_playlist*,QStringList)));
-
+    connect( m_session->Playlists(), SIGNAL(notifyNameChange(SpotifyPlaylists::LoadedPlaylist)), this, SLOT( sendPlaylistNameChanged(SpotifyPlaylists::LoadedPlaylist) ));
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -191,6 +191,34 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
      QJson::Serializer s;
      QByteArray msg = s.serialize( resp );
      qDebug() << "SENDING PLAYLIST JSON:" << msg;
+
+    sendMessage( resp );
+}
+
+void SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist &pl )
+{
+    qDebug() << "Sending playlist namechange to client:" << pl.name_;
+
+    if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
+    {
+        qDebug() << "NULL or not loaded playlist in callbacK!";
+        return;
+    }
+
+    QVariantMap resp;
+
+    if ( m_playlistToQid.contains( pl.id_ ) )
+        resp[ "qid" ] = m_playlistToQid.take( pl.id_ );
+
+    resp[ "id" ] = pl.id_;
+    resp[ "name" ] = pl.name_;
+    resp[ "revid" ] = pl.revisions.last().revId;
+    resp[ "sync" ] = pl.sync_;
+    resp[ "_msgtype" ] = "playlistRenamed";
+
+    QJson::Serializer s;
+    QByteArray msg = s.serialize( resp );
+    qDebug() << "SENDING PLAYLIST JSON:" << msg;
 
     sendMessage( resp );
 }

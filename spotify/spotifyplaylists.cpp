@@ -300,7 +300,6 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 {
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-
     QMetaObject::invokeMethod( _session->Playlists(), "loadContainerSlot", Qt::QueuedConnection, Q_ARG(sp_playlistcontainer*, pc) );
 
 }
@@ -311,8 +310,6 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
     qDebug() << Q_FUNC_INFO;
     if( !m_allLoaded && !m_isLoading )
     {
-
-        qDebug() << "wait has " << m_waitingToLoad.count();
         qDebug() << "Container load from thread id" << thread()->currentThreadId();
         int numPls = sp_playlistcontainer_num_playlists( pc );
 
@@ -357,7 +354,6 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
         /// Add starredTracks, should be an option
         /// @note we need to wait for the starred list aswell
         addStarredTracksToContainer();
-
         checkForPlaylistsLoaded();
 
         SpotifySession::getInstance()->setPlaylistContainer( pc );
@@ -387,7 +383,11 @@ SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
     qDebug() << "Renamning " << m_playlists[index].name_ << " to " << sp_playlist_name( pl );
     m_playlists[index].name_ = sp_playlist_name( pl );
     /// @todo: maybe emit other signal, updateMetaData?
+    /// @note: sends both container loaded to update playlist list in tomahwak
+    /// and namechanged to update synced playlistname in tomahawk as well
     emit notifyContainerLoadedSignal();
+    const SpotifyPlaylists::LoadedPlaylist send = m_playlists[index];
+    emit notifyNameChange( send );
 
 }
 
@@ -419,7 +419,7 @@ SpotifyPlaylists::addStarredTracksToContainer()
 
 /**
   waitForLoad ( sp_playlist * )
-  convient way to wait for a playlist
+  convenient way to wait for a playlist
   **/
 void
 SpotifyPlaylists::waitForLoad( sp_playlist *playlist )
@@ -463,7 +463,6 @@ SpotifyPlaylists::playlistMovedCallback( sp_playlistcontainer* pc, sp_playlist* 
 
     qDebug() << "Playlist Moved";
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-
     QMetaObject::invokeMethod( _session->Playlists(), "setPosition", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist), Q_ARG(int, position), Q_ARG(int, new_position) );
 }
 /**

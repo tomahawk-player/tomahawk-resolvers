@@ -37,13 +37,6 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    , m_testLogin( false )
 {
 
-    // Set applicationName
-    // @note: this is needed for setting syncflags and keep them on shutdown.
-    // sure it can be combined with the resolver better
-    /*QCoreApplication::setOrganizationName("org.SpotifyApi");
-    QCoreApplication::setOrganizationDomain("spotifyapi-git");
-    QCoreApplication::setApplicationName("SpotifyApi");*/
-
     // Instance
     s_instance = this;
 

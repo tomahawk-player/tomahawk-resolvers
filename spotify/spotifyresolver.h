@@ -103,7 +103,7 @@ private slots:
     void testLoginSucceeded( bool, const QString& msg );
 
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
-
+    void sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist& );
     void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );
     void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
