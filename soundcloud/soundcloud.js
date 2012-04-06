@@ -80,10 +80,14 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 				for (i = 0; i < resp.length; i++) {
 					// Need some more validation here
 					// This doesnt help it seems, or it just throws the error anyhow, and skips?
-					if(resp[i] === undefined){
+					if (resp[i] === undefined){
 						continue;
 					}
-		
+
+					if (!resp[i].streamable){ // Check for streamable tracks only
+						continue;
+					}
+
 					// Check whether the artist and title (if set) are in the returned title, discard otherwise
 					// But also, the artist could be the username
 					if (resp[i].title !== undefined && resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 && resp[i].user.username.toLowerCase().indexOf( artist.toLowerCase() ) === -1){
