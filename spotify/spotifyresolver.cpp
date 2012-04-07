@@ -441,6 +441,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
     QVariantMap m = msg.toMap();
 
+
     if( m.value( "_msgtype" ) == "saveSettings" )
     {
         m_username = m[ "username" ].toString();
@@ -617,6 +618,33 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         m_session->Playlists()->addTracksToSpotifyPlaylist( m );
 
         // callback is async
+    }
+    else if( m.value( "_msgtype" ) == "playlistRenamed")
+    {
+        // Important oldrev
+        if( !m.value( "oldrev" ).isValid() )
+        {
+            qWarning() << "No revision id for namechange!";
+            return;
+        }
+        const QString plid = m.value( "playlistid" ).toString();
+        const QString newTitle = m.value( "newTitle" ).toString();
+        const QString oldTitle = m.value( "oldTitle" ).toString();
+
+        if ( plid.isEmpty() )
+        {
+            qWarning() << "no playlist to add tracks to! Asked to add to:" << plid;
+            return;
+        }
+
+        if( newTitle.isEmpty() || oldTitle.isEmpty() )
+        {
+            qWarning() << "Cant rename playlist with empty name!";
+            return;
+        }
+
+        m_session->Playlists()->renamePlaylist( m );
+
     }
 }
 

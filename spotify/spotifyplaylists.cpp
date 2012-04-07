@@ -227,6 +227,14 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
 }
 
 void
+SpotifyPlaylists::playlistRenamed(sp_playlist *pl, void *userdata)
+{
+    qDebug() << "Playlist renamned to " << sp_playlist_name( pl );
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    _playlists->playlistNameChange( pl );
+}
+
+void
 SpotifyPlaylists::playlistMetadataUpdated( sp_playlist *pl, void *userdata )
 {
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
@@ -1061,6 +1069,22 @@ SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
 
 }
 
+
+void
+SpotifyPlaylists::renamePlaylist( QVariantMap data )
+{
+
+
+    LoadedPlaylist playlist = getPlaylist( data.value( "playlistid" ).toString() );
+    if( !playlist.id_.isEmpty() && playlist.isLoaded )
+    {
+        const QString newTitle = data.value( "newTitle").toString();
+        qDebug() << "Renameing playlist with name " << playlist.name_ << " to " << newTitle;
+        sp_playlist_rename( playlist.playlist_, newTitle.toLatin1() );
+
+    }
+
+}
 
 void
 SpotifyPlaylists::addSearchedTrack( sp_search* result, void* userdata )

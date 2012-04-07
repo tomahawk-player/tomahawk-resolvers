@@ -96,12 +96,13 @@ public:
 
 
     LoadedPlaylist getPlaylistByRevision( int rev );
-    void addNewPlaylist( QVariantMap data );
+
 
     // Takes a msg from JSON that conforms to the API
     void addTracksToSpotifyPlaylist( QVariantMap data );
     bool removeFromSpotifyPlaylist( QVariantMap data );
-
+    void renamePlaylist( QVariantMap data );
+    void addNewPlaylist( QVariantMap data );
 
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );
@@ -118,14 +119,7 @@ public:
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata);
 
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
-    static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata)
-    {
-        Q_UNUSED( pl );
-        Q_UNUSED( userdata );
-        qDebug() << "Playlist renamned to " << sp_playlist_name( pl );
-        SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
-        _playlists->playlistNameChange( pl );
-    }
+    static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata);
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
     static void SP_CALLCONV tracksRemoved(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata);
 
