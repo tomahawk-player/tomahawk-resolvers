@@ -109,7 +109,17 @@
                 <widget class="QLineEdit" name="subsonic_url_edit" />
               </item>
               <item>
-                <widget class="QLineEdit" name="max_songs_edit" />
+                <widget class="QSpinBox" name="max_songs_edit">
+                  <property name="value">
+                    <number>20</number>
+                  </property>
+                  <property name="minimum">
+                    <number>1</number>
+                  </property>
+                  <property name="maximum">
+                    <number>500</number>
+                  </property>
+                </widget>
               </item>
               <item>
                 <widget class="QComboBox" name="api_version_combo">

@@ -134,7 +134,6 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.asyncRequest(search_url, function(xhr) {
             var dom_parser = new DOMParser();
             xmlDoc = dom_parser.parseFromString(xhr.responseText, "text/xml");
-            //Tomahawk.log(xhr.responseText);
             
             var search_results = xmlDoc.getElementsByTagName(song_xml_tag);
             Tomahawk.log(search_results.length + " results returned.")
