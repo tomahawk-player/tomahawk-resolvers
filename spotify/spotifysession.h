@@ -119,6 +119,7 @@ private slots:
 
 private:
 
+    void clearOldUserdata();
     static SpotifySession* s_instance;
     QThread m_playlistThread;
     SpotifyPlaylists *m_SpotifyPlaylists;
@@ -126,7 +127,7 @@ private:
     sp_session_config m_config;
     sp_session *m_session;
     bool m_loggedIn;
-
+    QString m_oldUsername;
     sp_playlistcontainer *m_container;
     bool m_pcLoaded;
 

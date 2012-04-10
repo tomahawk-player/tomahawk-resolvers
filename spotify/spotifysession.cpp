@@ -34,6 +34,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    , m_pcLoaded( false )
    , m_username( QString() )
    , m_password ( QString() )
+   , m_oldUsername( QString() )
    , m_testLogin( false )
 {
 
@@ -124,26 +125,6 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 
     qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
-    /// Clear old list
-    /// @todo: if sp_username != oldUsername!
-    /*if( _session->Playlists()->getPlaylists().size() != 0){
-
-        for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) ; ++i )
-        {
-            sp_playlist* playlist = sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), i );
-            qDebug() << "Remvoing callbacks on " << sp_playlist_name( playlist );
-            sp_playlist_remove_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
-            if( i < _session->Playlists()->getPlaylists().size() )
-            {
-                sp_playlist_release( _session->Playlists()->getPlaylists()[i].playlist_ );
-            }
-
-        }
-        _session->Playlists()->unsetAllLoaded();
-        _session->Playlists()->getPlaylists().clear();
-
-    }*/
-
     sp_playlistcontainer_add_callbacks(
             sp_session_playlistcontainer(session),
             &SpotifyCallbacks::containerCallbacks, _session);
@@ -188,6 +169,13 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
     }
 
 }
+void SpotifySession::clearOldUserdata()
+{
+   qDebug() << Q_FUNC_INFO << "==== CLEARING OLD DATA start haz "<<  m_SpotifyPlaylists->getPlaylists().count();
+   delete m_SpotifyPlaylists;
+   m_SpotifyPlaylists = new SpotifyPlaylists;
+   qDebug() << Q_FUNC_INFO << "==== CLEARING OLD DATA end haz got" << m_SpotifyPlaylists->getPlaylists().count();
+}
 
 void SpotifySession::testLogin(const QString& username, const QString& pw)
 {
@@ -211,8 +199,17 @@ void SpotifySession::setCredentials(QString username, QString password)
 void SpotifySession::login()
 {
     qDebug() << Q_FUNC_INFO;
+
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
+        if( m_oldUsername.isEmpty() )
+            m_oldUsername = m_username;
+        else if( m_username != m_oldUsername )
+        {
+            qDebug() << "===== CHANGED USERNAME!";
+            m_oldUsername = m_username;
+            clearOldUserdata();
+        }
         qDebug() << "Logging in with username:" << m_username;
 #if SPOTIFY_API_VERSION >= 11
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);

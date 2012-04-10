@@ -92,17 +92,21 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
 void
 SpotifyPlaylists::readSettings()
 {
-
+    QString user = m_settings.value( "username" ).toString();
     int size = m_settings.beginReadArray( "syncPlaylists" );
 
     for ( int i = 0; i < size; ++i )
     {
          m_settings.setArrayIndex( i );
          Sync sync;
-         sync.id_ = m_settings.value( "id" ).toString();
-         qDebug() << Q_FUNC_INFO << "Loading playlist to sync:" << sync.id_;
-         sync.sync_ = m_settings.value( "sync" ).toBool();
-         m_syncPlaylists.append( sync );
+         if( !m_settings.value( "user" ).toString().isEmpty() && m_settings.value( "user" ).toString() == user )
+         {
+             sync.id_ = m_settings.value( "id" ).toString();
+             qDebug() << Q_FUNC_INFO << "Loading playlist to sync:" << sync.id_ << "from user " << m_settings.value( "user" ).toString();
+             sync.sync_ = m_settings.value( "sync" ).toBool();
+             m_syncPlaylists.append( sync );
+         }
+
     }
 
     m_settings.endArray();
@@ -113,11 +117,14 @@ void
 SpotifyPlaylists::writeSettings()
 {
     // Rewrite settings
+    QString user = m_settings.value( "username" ).toString();
     m_settings.remove( "syncPlaylists" );
     m_settings.beginWriteArray("syncPlaylists");
+    qDebug() << " === HELLO " << user;
     for ( int i = 0; i < m_syncPlaylists.size(); ++i )
     {
         m_settings.setArrayIndex( i );
+        m_settings.setValue( "user" , user);
         m_settings.setValue( "id" , m_syncPlaylists.at( i ).id_ );
         m_settings.setValue( "sync" , m_syncPlaylists.at( i ).sync_ );
     }
@@ -1414,6 +1421,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier, QStringList
         newRevision.revId = pl.newRev;
         pl.revisions.append( newRevision );
         m_playlists[ plIndex ] = pl;
+
         qDebug() << "===== DONE Setting new revision " << pl.newRev <<  "Old rev: " << pl.oldRev << "revCount" << pl.revisions.last().revTrackIDs.count() << "removedCount: " << pl.revisions.last().revRemovedTrackIDs.count();
     }
 
