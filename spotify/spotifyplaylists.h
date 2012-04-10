@@ -73,7 +73,8 @@ public:
 
     struct AddTracksData{
 
-        LoadedPlaylist pl;
+        QString plid;
+        sp_playlist* playlist;
         QVector< sp_track* > finaltracks;
         QVector< sp_search* > searchOrder;
 
@@ -99,10 +100,10 @@ public:
 
 
     // Takes a msg from JSON that conforms to the API
-    void addTracksToSpotifyPlaylist( QVariantMap data );
-    bool removeFromSpotifyPlaylist( QVariantMap data );
-    void renamePlaylist( QVariantMap data );
-    void addNewPlaylist( QVariantMap data );
+    void addTracksToSpotifyPlaylist( const QVariantMap& data );
+    bool removeFromSpotifyPlaylist( const QVariantMap& data );
+    void renamePlaylist( const QVariantMap& data );
+    void addNewPlaylist( const QVariantMap& data );
 
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );
@@ -171,6 +172,7 @@ private:
    void playlistNameChange( sp_playlist * pl );
    void checkForPlaylistsLoaded();
    void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
+   void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
 
    QString trackId( sp_track* track );
 

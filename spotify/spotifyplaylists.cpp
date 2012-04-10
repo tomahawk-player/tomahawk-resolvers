@@ -67,7 +67,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     qRegisterMetaType< sp_playlist* >("sp_playlist*");
     qRegisterMetaType< int* >("int*");
     qRegisterMetaType< QVariantMap >("QVariantMap");
-    qRegisterMetaType< sp_playlistcontainer* >("sp_playlist_continer*");
+    qRegisterMetaType< sp_playlistcontainer* >("sp_playlistcontainer*");
     qRegisterMetaType< SpotifyPlaylists::LoadedPlaylist >("SpotifyPlaylists::LoadedPlaylist");
     qRegisterMetaType< QList<sp_track* > >("QList<sp_track*>");
     qRegisterMetaType< QList<int> >("QList<int>");
@@ -1016,62 +1016,36 @@ SpotifyPlaylists::playlistUpdateInProgress(sp_playlist *pl, bool done, void *use
 
 }
 
-/**
-  Create a playlist with, or without data
-  which appends to spotify container
 
-    QVariantMap data;
-    data[ "playlistname" ] = "ewplaylist";
-    data[ "trackcount" ] = 1;
-    QVariantList trackList;
-    QVariantMap track;
-    track[ "artist" ] = "Madonna";
-    track[ "track" ] = "Like a virgin";
-    trackList << track;
-    data[ "tracklist" ] = trackList;
-
-    addNewPlaylist( data );
-  **/
 void
-SpotifyPlaylists::addNewPlaylist( QVariantMap data ){
+SpotifyPlaylists::addNewPlaylist( const QVariantMap& data )
+{
+    const QString title = data.value( "title" ).toString();
+    const bool sync = data.value( "sync" ).toBool();
 
-    qDebug() << "Creating playlist with name " << data.value( "playlistname");
-    QString artist, title, album, playlistname;
+    qDebug() << "Creating playlist with name " << title;
 
-    playlistname = data.value( "playlistname").toString();
-    sp_playlist *playlist = sp_playlistcontainer_add_new_playlist(SpotifySession::getInstance()->PlaylistContainer(), playlistname.toLocal8Bit());
-    sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this);
-    qDebug() << "Created playlist!";
+    sp_playlist *playlist = sp_playlistcontainer_add_new_playlist( SpotifySession::getInstance()->PlaylistContainer(), title.toUtf8() );
+    sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this );
 
-//     AddTracksData addData;
-//     addData.pl.playlist_ = playlist;
-//     addData.pos = 0;
-//
-//     if( playlist != NULL && sp_playlist_is_loaded( playlist ) ){
-//
-//         foreach( QVariant track, data.value( "tracklist").toList() )
-//         {
-//             artist = track.toMap().value( "artist" ).toString();
-//             title = track.toMap().value( "track" ).toString();
-//             album = track.toMap().value( "album" ).toString();
-//
-//             QString query = QString(artist + " " + title + " " + album);
-//             sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 1, 0, 0, 0, 0, &SpotifySearch::addSearchedTrack, &addData );
-//             addData.pos++;
-//         }
+    qDebug() << "Created playlist! Adding tracks to it if needed...";
+    const QVariantList tracks = data.value( "tracks" ).toList();
 
-//     }
-//     else
-//     {
-//         qDebug() << "Failed to create new playlist!";
-//         return;
-//     }
+    if ( tracks.isEmpty() )
+    {
+        // No work to do :)
+//         sApp->sendAddTracksResult();
+    }
+    else
+    {
+//         doAddTracksToSpotifyPlaylist( tracks, playlist, 0 );
+    }
 
 }
 
 
 void
-SpotifyPlaylists::renamePlaylist( QVariantMap data )
+SpotifyPlaylists::renamePlaylist( const QVariantMap& data )
 {
 
 
@@ -1110,13 +1084,13 @@ SpotifyPlaylists::addSearchedTrack( sp_search* result, void* userdata )
     addNewPlaylist( data );
   **/
 void
-SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
+SpotifyPlaylists::addTracksToSpotifyPlaylist( const QVariantMap& data )
 {
     qDebug() << "Adding tracks to playlist with id " << data.value( "playlistid");
 
-    QString playlistId = data.value( "playlistid").toString();
+    const QString playlistId = data.value( "playlistid").toString();
     LoadedPlaylist loader;
-    loader.id_ = data.value("playlistid").toString();
+    loader.id_ = playlistId;
     const int index = m_playlists.indexOf( loader );
 
     if ( index == -1 )
@@ -1134,8 +1108,6 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
     }
 
     const QVariantList tracks = data.value( "tracks").toList();
-
-    qDebug() << "Adding tracks to playlist " << sp_playlist_name( pl );
     int position = -1;
 
     const QString trackId = data.value( "startPosition" ).toString();
@@ -1158,19 +1130,26 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
         sp_link_release( link );
     }
     position++; // Spotify wants the position to be the newly inserted pos, not the 0-based index of the track *to* insert
-
     if ( position == -1 )
     {
         // We didn't find the position in the playlist, or there was none, so append
         position = m_playlists[ index ].tracks_.size();
     }
 
+    doAddTracksToSpotifyPlaylist( tracks, pl, playlistId, position );
+}
 
-    qDebug() << "Adding tracks to spotify playlist at position:" << position;
+void
+SpotifyPlaylists::doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* pl, const QString& playlistId, int startPosition )
+{
+
+    qDebug() << "Adding tracks to playlist " << sp_playlist_name( pl );
+    qDebug() << "Adding tracks to spotify playlist at position:" << startPosition;
 
     AddTracksData* addData = new AddTracksData;
-    addData->pl = m_playlists.at( index );
-    addData->pos = position;
+    addData->plid = playlistId;
+    addData->playlist = pl;
+    addData->pos = startPosition;
     addData->waitingFor = 0;
 
     addData->finaltracks.resize( tracks.size() );
@@ -1198,6 +1177,7 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
     }
 }
 
+
 /**
   Remove tracks from spotify playlist with data
 
@@ -1217,7 +1197,7 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( QVariantMap data )
 
 
 bool
-SpotifyPlaylists::removeFromSpotifyPlaylist( QVariantMap data ){
+SpotifyPlaylists::removeFromSpotifyPlaylist( const QVariantMap& data ){
 
     qDebug() << "Removing tracks from playlist with id " << data.value( "playlistid");
 

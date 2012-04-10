@@ -644,7 +644,10 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         }
 
         m_session->Playlists()->renamePlaylist( m );
-
+    }
+    else if ( m.value( "_msgtype" ) == "createPlaylist" )
+    {
+        m_session->Playlists()->addNewPlaylist( m );
     }
 }
 

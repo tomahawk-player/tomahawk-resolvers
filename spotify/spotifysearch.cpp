@@ -39,11 +39,11 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     qDebug() << Q_FUNC_INFO;
     SpotifyPlaylists::AddTracksData *data = reinterpret_cast<SpotifyPlaylists::AddTracksData*>(userdata);
 
-    if(!sp_playlist_is_loaded( data->pl.playlist_ ) )
-    {
-        qDebug() << "Search Playlist is not loaded";
-        return;
-    }
+//     if(!sp_playlist_is_loaded( data->pl.playlist_ ) )
+//     {
+//         qDebug() << "Search Playlist is not loaded";
+//         return;
+//     }
 
     if( sp_search_num_tracks( result ) < 1 )
     {
@@ -115,7 +115,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         }
 
         sApp->setIgnoreNextUpdate( true );
-        sp_error err = sp_playlist_add_tracks(data->pl.playlist_, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());
+        sp_error err = sp_playlist_add_tracks(data->playlist, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());
 
         switch(err) {
             case SP_ERROR_OK:
@@ -133,7 +133,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
                 break;
         }
 
-        sApp->sendAddTracksResult( data->pl.id_, tracksInserted, insertedIds, err == SP_ERROR_OK );
+        sApp->sendAddTracksResult( data->plid, tracksInserted, insertedIds, err == SP_ERROR_OK );
 
         // Only free once
         delete data;
