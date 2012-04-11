@@ -39,7 +39,7 @@ public:
 
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id, bool sync );
-    void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad.clear(); }
+    void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad.clear(); clear(); }
 
     struct RevisionChanges{
         int revId;
@@ -173,7 +173,7 @@ private:
    void checkForPlaylistsLoaded();
    void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
    void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
-
+   void clear();
    QString trackId( sp_track* track );
 
    QList<LoadedPlaylist> m_playlists;

@@ -119,8 +119,7 @@ SpotifyPlaylists::writeSettings()
     // Rewrite settings
     QString user = m_settings.value( "username" ).toString();
     m_settings.remove( "syncPlaylists" );
-    m_settings.beginWriteArray("syncPlaylists");
-    qDebug() << " === HELLO " << user;
+    m_settings.beginWriteArray("syncPlaylists");;
     for ( int i = 0; i < m_syncPlaylists.size(); ++i )
     {
         m_settings.setArrayIndex( i );
@@ -132,17 +131,10 @@ SpotifyPlaylists::writeSettings()
 }
 
 
-/**
-  Destructor
-    This destructor is important.
-    It removes callbacks and frees playlists and its tracks
-**/
-
-SpotifyPlaylists::~SpotifyPlaylists()
+void SpotifyPlaylists::clear()
 {
-
-    writeSettings();
     qDebug() << "Destroying playlists";
+    writeSettings();
     for ( int i = 0; i < m_playlists.size(); i++ )
     {
         Sync s;
@@ -156,23 +148,28 @@ SpotifyPlaylists::~SpotifyPlaylists()
 
         sp_playlist_release( m_playlists[ i ].playlist_ );
     }
- /*   for ( int i = 0 ; i < sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ) ; ++i )
-    {
-        sp_playlist* playlist = sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), i );
- //       qDebug() << "Remvoing callbacks on " << sp_playlist_name( playlist );
-        sp_playlist_remove_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, SpotifySession::getInstance()->Playlists() );
-        if( i < m_playlists.size() )
-        {
-            sp_playlist_release( m_playlists[i].playlist_ );
-            foreach( sp_track *track, m_playlists[i].tracks_ )
-            {
-    //            qDebug() << "Releasing track" << sp_track_name( track );
-                sp_track_release( track );
-            }
-        }
+    m_playlists.clear();
+    m_syncPlaylists.clear();
+    m_stateChangedCallbacks.clear();
 
-    }
-*/
+    sp_playlistcontainer_remove_callbacks(
+            SpotifySession::getInstance()->PlaylistContainer(),
+            &SpotifyCallbacks::containerCallbacks, SpotifySession::getInstance()->Session() );
+    sp_playlistcontainer_release(SpotifySession::getInstance()->PlaylistContainer() );
+
+}
+
+/**
+  Destructor
+    This destructor is important.
+    It removes callbacks and frees playlists and its tracks
+**/
+
+SpotifyPlaylists::~SpotifyPlaylists()
+{
+
+    clear();
+
 }
 
 /**

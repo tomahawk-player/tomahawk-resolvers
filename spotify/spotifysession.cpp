@@ -172,8 +172,7 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 void SpotifySession::clearOldUserdata()
 {
    qDebug() << Q_FUNC_INFO << "==== CLEARING OLD DATA start haz "<<  m_SpotifyPlaylists->getPlaylists().count();
-   delete m_SpotifyPlaylists;
-   m_SpotifyPlaylists = new SpotifyPlaylists;
+   m_SpotifyPlaylists->unsetAllLoaded();
    qDebug() << Q_FUNC_INFO << "==== CLEARING OLD DATA end haz got" << m_SpotifyPlaylists->getPlaylists().count();
 }
 
