@@ -83,8 +83,6 @@ public:
     SpotifySession* session() const { return m_session; }
     bool highQuality() const { return m_highQuality; }
 
-    void addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos );
-
     void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
 
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }

@@ -1599,7 +1599,11 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync )
 
     // Precaution, to prevent mixing up the starred tracks container and user playlistnameings.
     QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
+#if SPOTIFY_API_VERSION >= 11
     if( playlist.id_.contains( username + ":starred" ) )
+#else
+    if( playlist.id_.contains( "spotify:user:" + username + ":playlist:0000000000000000000000" ) )
+#endif
     {
         qDebug() << "Marking starred track playlist" << pl;
         playlist.name_ =  "Starred Tracks";

@@ -722,21 +722,6 @@ SpotifyResolver::registerQidForPlaylist( const QString& qid, const QString& play
 
 }
 
-
-void
-SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, QVariantMap tracks, const int pos )
-{
-
-    qDebug() << Q_FUNC_INFO;
-    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev );
-    if( !playlist.id_.isEmpty() )
-    {
-
-    }else
-        qDebug() << "Failed to add tracks! for revId" << oldRev.toInt();
-
-}
-
 void SpotifyResolver::sendMessage(const QVariant& v)
 {
     QJson::Serializer s;
