@@ -1,135 +1,154 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>400</width>
-    <height>300</height>
-   </rect>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>400</width>
-    <height>300</height>
-   </size>
-  </property>
-  <property name="windowTitle">
-   <string>Form</string>
-  </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
-   <item>
-    <widget class="QLabel" name="subsonic_label">
-     <property name="pixmap">
-      <pixmap>subsonic.png</pixmap>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
+  <class>Form</class>
+  <widget class="QWidget" name="Form">
+    <property name="geometry">
+      <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>400</width>
+        <height>300</height>
+      </rect>
+    </property>
+    <property name="minimumSize">
       <size>
-       <width>20</width>
-       <height>40</height>
+        <width>400</width>
+        <height>300</height>
       </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>User:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Password:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Server:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>API Version:</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QLineEdit" name="user_edit"/>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="password_edit">
-         <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="subsonic_url_edit">
-         <property name="toolTip">
-          <string>Example: http://your_subsonic_server.com</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="api_version_combo">
-         <property name="editable">
-          <bool>false</bool>
-         </property>
-         <item>
-          <property name="text">
-           <string>1.5.0</string>
+    </property>
+    <property name="windowTitle">
+      <string>Form</string>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+        <widget class="QLabel" name="subsonic_label">
+          <property name="pixmap">
+            <pixmap>subsonic.png</pixmap>
           </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>1.6.0</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>1.7.0</string>
-          </property>
-         </item>
         </widget>
-       </item>
-      </layout>
-     </item>
+      </item>
+      <item>
+        <spacer name="verticalSpacer">
+          <property name="orientation">
+            <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+            <size>
+              <width>20</width>
+              <height>40</height>
+            </size>
+          </property>
+        </spacer>
+      </item>
+      <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+            <layout class="QVBoxLayout" name="verticalLayout">
+              <item>
+                <widget class="QLabel" name="label">
+                  <property name="text">
+                    <string>User:</string>
+                  </property>
+                  <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QLabel" name="label_2">
+                  <property name="text">
+                    <string>Password:</string>
+                  </property>
+                  <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QLabel" name="label_3">
+                  <property name="text">
+                    <string>Server:</string>
+                  </property>
+                  <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QLabel" name="label_4">
+                  <property name="text">
+                    <string>Max Songs:</string>
+                  </property>
+                  <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QLabel" name="label_5">
+                  <property name="text">
+                    <string>API Version:</string>
+                  </property>
+                </widget>
+              </item>
+            </layout>
+          </item>
+          <item>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+              <item>
+                <widget class="QLineEdit" name="user_edit" />
+              </item>
+              <item>
+                <widget class="QLineEdit" name="password_edit">
+                  <property name="echoMode">
+                    <enum>QLineEdit::Password</enum>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QLineEdit" name="subsonic_url_edit" />
+              </item>
+              <item>
+                <widget class="QSpinBox" name="max_songs_spinbox">
+                  <property name="value">
+                    <number>20</number>
+                  </property>
+                  <property name="minimum">
+                    <number>1</number>
+                  </property>
+                  <property name="maximum">
+                    <number>500</number>
+                  </property>
+                </widget>
+              </item>
+              <item>
+                <widget class="QComboBox" name="api_version_combo">
+                  <property name="editable">
+                    <bool>false</bool>
+                  </property>
+                  <item>
+                    <property name="text">
+                      <string>1.5.0</string>
+                    </property>
+                  </item>
+                  <item>
+                    <property name="text">
+                      <string>1.6.0</string>
+                    </property>
+                  </item>
+                  <item>
+                    <property name="text">
+                      <string>1.7.0</string>
+                    </property>
+                  </item>
+                </widget>
+              </item>
+            </layout>
+          </item>
+        </layout>
+      </item>
     </layout>
-   </item>
-  </layout>
- </widget>
- <resources/>
- <connections/>
+  </widget>
+  <resources />
+  <connections />
 </ui>
