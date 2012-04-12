@@ -14,17 +14,9 @@
  *   all copies or substantial portions of the Software.
  */
 
-
-//#include "spotifyresolver.h"
 #include "callbacks.h"
-//#include "spotifyresolver.h"
 #include "PlaylistClosure.h"
 #include "spotifyresolver.h"
-//#include <QObject>
-//#include <QThread>
-//#include <QDateTime>
-//#include <QTimer>
-//#include <boost/bind.hpp>
 
 void printPlaylistTracks( const QList<sp_track* > tracks )
 {
