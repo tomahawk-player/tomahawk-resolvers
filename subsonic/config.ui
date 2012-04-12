@@ -109,7 +109,7 @@
                 <widget class="QLineEdit" name="subsonic_url_edit" />
               </item>
               <item>
-                <widget class="QSpinBox" name="max_songs_edit">
+                <widget class="QSpinBox" name="max_songs_spinbox">
                   <property name="value">
                     <number>20</number>
                   </property>

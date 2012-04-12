@@ -23,8 +23,8 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 property: "currentText"
             }, {
                 name: "max_songs",
-                widget: "max_songs_edit",
-                property: "text"
+                widget: "max_songs_spinbox",
+                property: "value"
             }],
             images: [{
                 "subsonic.png" : Tomahawk.readBase64("subsonic.png")
