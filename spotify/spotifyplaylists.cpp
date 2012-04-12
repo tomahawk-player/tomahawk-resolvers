@@ -17,6 +17,7 @@
 #include "callbacks.h"
 #include "PlaylistClosure.h"
 #include "spotifyresolver.h"
+#include <QCryptographicHash>
 
 void printPlaylistTracks( const QList<sp_track* > tracks )
 {
@@ -547,7 +548,7 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
     const int index = m_playlists.indexOf( playlist );
 
     if( index == -1 ) {
-        SpotifySession::getInstance()->doSendErrorMsg( "Tried to add tracks to a non-existing Spotify playlist.", false );
+
         qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << ( QString::fromUtf8(sp_playlist_name( pl )).isEmpty() ? "empty name " : sp_playlist_name( pl ) );
         return;
     }
@@ -637,7 +638,7 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
   return empty LoadedPlaylist if non found.
 **/
 SpotifyPlaylists::LoadedPlaylist
-SpotifyPlaylists::getPlaylistByRevision( int revision )
+SpotifyPlaylists::getPlaylistByRevision( QString revision )
 {
     RevisionChanges rev;
     rev.revId = revision;
@@ -645,8 +646,9 @@ SpotifyPlaylists::getPlaylistByRevision( int revision )
     LoadedPlaylist playlist;
     foreach( LoadedPlaylist pl, m_playlists)
     {
-        if( pl.revisions.contains( rev ) )
+        if( pl.revisions.contains( rev ) ){
             return pl;
+        }
     }
     return playlist;
 
@@ -721,9 +723,7 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 
     if( index == -1 ) {
 
-        SpotifySession::getInstance()->doSendErrorMsg( "Tried to remove tracks to a non-existing Spotify playlist.", false );
         qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
-
         return;
     }
 
@@ -784,9 +784,7 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     const int index = m_playlists.indexOf( playlist );
     if( index == -1 ) {
 
-        SpotifySession::getInstance()->doSendErrorMsg( "Tried to move tracks to a non-existing Spotify playlist.", false );
         qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
-
         return;
     }
 
@@ -905,7 +903,6 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
     }
     else
     {
-        SpotifySession::getInstance()->doSendErrorMsg( "Tried to add syncing to a non-existing Spotify playlist.", false );
         qWarning() << "Tried to set sync to " << sync << "for a playlist that doesn't exist!";
     }
 }
@@ -1187,6 +1184,7 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( const QVariantMap& data )
 
     if ( !pl || !sp_playlist_is_loaded( pl ) )
     {
+        SpotifySession::getInstance()->doSendErrorMsg( "Failed to add tracks to Spotify", false );
         qWarning() << "Asked to add tracks to a spotify playlist that is null or is not loaded!" << pl << ( (pl != 0 ) ? (sp_playlist_is_loaded( pl ) ? "Loaded" : "Unloaded") : QString()) ;
         return;
     }
@@ -1428,7 +1426,7 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
         qDebug() << "Revision playlist was cleared from contents!";
         updateRevision( pl, QDateTime::currentMSecsSinceEpoch() / 1000);
     }
-    else if( timestamp > pl.newRev )
+    else if( timestamp > pl.newTimestamp )
     {
         // Hash later with appropriate hash algorithm.
         updateRevision( pl, timestamp );
@@ -1452,16 +1450,17 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier, QStringList
     /// @note: New revision wont handle removed tracks. Only new tracks.
     /// So, if the tracks isnt in oldRev, its appended to newRev.
     /// LoadedPlaylist.tracks_ will contain all current tracks.
-    if( qualifier > pl.newRev )
+    if( qualifier > pl.newTimestamp )
     {
-        qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << pl.oldRev;
 
         RevisionChanges oldRevision;
         RevisionChanges newRevision;
 
         if( !pl.revisions.isEmpty() )
         {
+
             oldRevision = pl.revisions.last();
+            qDebug() << "Setting new revision " << qualifier <<  "Old rev: " << oldRevision.revId;
             QString trackid;
             foreach( sp_track *newRevTrack, pl.tracks_ )
             {
@@ -1493,13 +1492,13 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier, QStringList
         ///   @note: we try and keep all the revision, these should be cached
         ///          for next start
 
-        pl.oldRev = pl.newRev;
-        pl.newRev = qualifier;
-        newRevision.revId = pl.newRev;
+        pl.oldTimestamp = pl.newTimestamp;
+        pl.newTimestamp = qualifier;
+        newRevision.revId = QString(QCryptographicHash::hash( QString( pl.name_ + QString::number( qualifier ) ).toUtf8(),QCryptographicHash::Md5).toHex() );
         pl.revisions.append( newRevision );
         m_playlists[ plIndex ] = pl;
 
-        qDebug() << "===== DONE Setting new revision " << pl.newRev <<  "Old rev: " << pl.oldRev << "revCount" << pl.revisions.last().revTrackIDs.count() << "removedCount: " << pl.revisions.last().revRemovedTrackIDs.count();
+        qDebug() << "===== DONE Setting new revision " << pl.revisions.last().revId <<  "Old rev: " << oldRevision.revId << "revCount" << pl.revisions.last().revTrackIDs.count() << "removedCount: " << pl.revisions.last().revRemovedTrackIDs.count();
     }
 
 }
@@ -1656,8 +1655,8 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync )
 
     /// Finaly, update revisions
     // Revision, initially -1
-    playlist.oldRev = -1;
-    playlist.newRev = -1;
+    playlist.oldTimestamp = -1;
+    playlist.newTimestamp = -1;
 
     updateRevision( playlist, tmpRev );
 }

@@ -47,7 +47,8 @@ public:
     void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad.clear(); clear(); }
 
     struct RevisionChanges{
-        int revId;
+        // Md5 hash of pl_name and timestamp
+        QString revId;
         QList<QString> revTrackIDs;
         QList<QString> revRemovedTrackIDs;
     };
@@ -56,13 +57,9 @@ public:
       bool starContainer_;
       bool sync_;
       bool isLoaded;
-      /**
-        Revision
-        @todo: hash string
-        **/
-      int newRev;
-      int oldRev;
-      int sentRev;
+      // Revision timestamp
+      int newTimestamp;
+      int oldTimestamp;
 
       QString name_;
       QString id_;
@@ -98,7 +95,7 @@ public:
     // Send the desired playlist to the client, and turn on syncing
     void sendPlaylist( const QString& playlistId, bool startSyncing );
     void sendPlaylistByRevision( int rev );
-    LoadedPlaylist getPlaylistByRevision( int rev );
+    LoadedPlaylist getPlaylistByRevision( QString rev );
 
     // Takes a msg from JSON that conforms to the API
     void addTracksToSpotifyPlaylist( const QVariantMap& data );

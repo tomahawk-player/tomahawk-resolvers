@@ -287,7 +287,7 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tra
 
     SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
 
-    int oldrev = -1;
+    QString oldrev("");
     if ( lpl.revisions.size() >= 2 )
         oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
 
@@ -333,7 +333,7 @@ SpotifyResolver::sendTracksRemoved( sp_playlist* pl, const QStringList& tracks )
 
     SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
 
-    int oldrev = -1;
+    QString oldrev("");
     if ( lpl.revisions.size() >= 2 )
         oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
 
@@ -645,7 +645,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         }
 
         bool success = m_session->Playlists()->removeFromSpotifyPlaylist( m );
-        const int newRev = m_session->Playlists()->getPlaylist( plid ).revisions.last().revId;
+        const QString newRev = m_session->Playlists()->getPlaylist( plid ).revisions.last().revId;
 
 
         QVariantMap msg;
@@ -728,7 +728,7 @@ SpotifyResolver::addTracksToPlaylist( const QString plid, const QString oldRev, 
 {
 
     qDebug() << Q_FUNC_INFO;
-    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev.toInt() );
+    SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylistByRevision( oldRev );
     if( !playlist.id_.isEmpty() )
     {
 
