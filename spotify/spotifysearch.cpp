@@ -36,18 +36,14 @@ class SpotifyPlaylists;
 void
 SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 {
-    qDebug() << Q_FUNC_INFO;
     SpotifyPlaylists::AddTracksData *data = reinterpret_cast<SpotifyPlaylists::AddTracksData*>(userdata);
-
-//     if(!sp_playlist_is_loaded( data->pl.playlist_ ) )
-//     {
-//         qDebug() << "Search Playlist is not loaded";
-//         return;
-//     }
 
     if( sp_search_num_tracks( result ) < 1 )
     {
-        qWarning() << "Got no search result for track we tried to add! Ignoring it...";
+        const int pos = data->searchOrder.indexOf( result );
+        qWarning() << "Got no search result for track we tried to add! Ignoring it... index is:" << pos;
+        data->finaltracks[ pos ] = 0;
+
         data->waitingFor--;
     }
     else
@@ -59,7 +55,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
             // Find a loaded track to add to the list
             sp_track *const tr = sp_search_track( result, cur );
 
-            qDebug() << "Got search result:" << result << sp_track_name( tr ) << sp_artist_name( sp_track_artist( tr, 0 ) );
+//             qDebug() << "Got search result:" << result << sp_track_name( tr ) << sp_artist_name( sp_track_artist( tr, 0 ) );
             if( !tr ) {
                 qDebug() << "Got an invalid search result, skipping";
 
@@ -86,8 +82,6 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     {
         // Got all the real tracks, now add
         qDebug() << "All added tracks were searched for, now inserting in playlist!";
-        // Our vector may have "holes" in it, for any tracks that we couldn't find
-        int count = 0;
         QList<int> tracksInserted;
         QList<QString> insertedIds;
         for ( int i = 0; i < data->finaltracks.size(); i++ )
@@ -104,13 +98,16 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
             }
         }
 
-        for ( QVector< sp_track* >::iterator iter = data->finaltracks.begin(); iter != data->finaltracks.end(); ++iter )
+        // Our vector may have "holes" in it, for any tracks that we couldn't find
+        int count = 0;
+        for ( QVector< sp_track* >::iterator iter = data->finaltracks.begin(); iter != data->finaltracks.end(); )
         {
             if ( !*iter )
             {
                 qDebug() << "Removing not-found track from results, position:" << count;
                 iter = data->finaltracks.erase( iter );
-            }
+            } else
+                ++iter;
             count++;
         }
 

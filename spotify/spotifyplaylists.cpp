@@ -612,15 +612,13 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
     int runningPos = pos; // We start one before, since spotify reports the end index, not index of item to insert after
     foreach( sp_track* track, tracks )
     {
-        qDebug() << "Pos" << runningPos;
-        qDebug() << "Adding track " << sp_track_name( track );
+        qDebug() << "Adding track " << sp_track_name( track ) << "at pos:" << runningPos;
         sp_track_add_ref( track );
         m_playlists[index].tracks_.insert(runningPos, track );
         runningPos++;
 
         // This undoes the sp_track_add_ref in the addTracks callback
         sp_track_release( track );
-        qDebug() << "Sanity check:" << sp_track_is_loaded( track );
     }
 
     runningPos++; // We found the track to insert after, so increase for new index
