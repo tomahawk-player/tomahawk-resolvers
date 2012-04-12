@@ -175,7 +175,6 @@ private:
    void playlistNameChange( sp_playlist * pl );
    void checkForPlaylistsLoaded();
    void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
-   void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
    void clear();
 
 
