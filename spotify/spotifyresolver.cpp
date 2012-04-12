@@ -648,6 +648,13 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         m_session->Playlists()->addNewPlaylist( m );
     }
+    else if ( m.value( "_msgtype" ) == "deletePlaylist" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        sp_playlist* pl = m_session->Playlists()->getPlaylist( plid ).playlist_;
+        if ( pl )
+            m_session->Playlists()->doRemovePlaylist( pl );
+    }
 }
 
 

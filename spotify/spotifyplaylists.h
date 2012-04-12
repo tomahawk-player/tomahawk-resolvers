@@ -141,10 +141,11 @@ public slots:
     void setPlaylistInProgress( sp_playlist *pl, bool done );
     void addStarredTracksToContainer();
     void addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos);
-    void removePlaylist( sp_playlist *playlist );
+    void removePlaylistNotification( sp_playlist *playlist );
     void playlistLoadedSlot(sp_playlist* pl);
 
     void addPlaylist( sp_playlist *, bool forceSync = false );
+    void doRemovePlaylist( sp_playlist* playlist );
 
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );

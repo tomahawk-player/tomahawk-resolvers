@@ -504,7 +504,7 @@ SpotifyPlaylists::playlistRemovedCallback( sp_playlistcontainer* pc, sp_playlist
     qDebug() << "Playlist removed";
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
-    QMetaObject::invokeMethod( _session->Playlists(), "removePlaylist", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
+    QMetaObject::invokeMethod( _session->Playlists(), "removePlaylistNotification", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
 
     _session->setPlaylistContainer( pc );
 }
@@ -851,6 +851,7 @@ SpotifyPlaylists::LoadedPlaylist
 SpotifyPlaylists::getPlaylist( const QString id )
 {
     LoadedPlaylist pl;
+    pl.playlist_ = 0;
     pl.id_ = id;
     int index = m_playlists.indexOf( pl );
     if( index != -1)
@@ -965,12 +966,9 @@ void SpotifyPlaylists::setPosition( sp_playlist *playlist, int oPos, int nPost )
 
 }
 
-/**
- setPosition( sp_playlist *, int, int )
-   Updates the position of the playlist, if moved
-**/
+
 void
-SpotifyPlaylists::removePlaylist( sp_playlist *playlist )
+SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
 {
     LoadedPlaylist pl;
     pl.playlist_ = playlist;
@@ -978,8 +976,46 @@ SpotifyPlaylists::removePlaylist( sp_playlist *playlist )
     int index = m_playlists.indexOf( pl );
 
     if( index != -1)
+    {
+        Sync s;
+        s.id_ = m_playlists[ index ].id_;
+        m_syncPlaylists.removeAll( s );
+
         m_playlists.removeAt( index );
 
+    }
+
+    writeSettings();
+    emit notifyContainerLoadedSignal();
+}
+
+
+void
+SpotifyPlaylists::doRemovePlaylist( sp_playlist *playlist )
+{
+    LoadedPlaylist pl;
+    pl.playlist_ = playlist;
+
+    int index = m_playlists.indexOf( pl );
+    int pcIndex = index;
+
+    if ( sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), index ) != playlist )
+    {
+        qWarning() << "Was asked to delete a playlist that we have in a different index from the playlist container! Trying to find the real one";
+        for( int i = 0; i < sp_playlistcontainer_num_playlists( SpotifySession::getInstance()->PlaylistContainer() ); i++ )
+        {
+            if ( sp_playlistcontainer_playlist( SpotifySession::getInstance()->PlaylistContainer(), i ) == playlist )
+            {
+                pcIndex = i;
+                break;
+            }
+        }
+    }
+
+    if ( pcIndex > -1 )
+        sp_playlistcontainer_remove_playlist( SpotifySession::getInstance()->PlaylistContainer(), pcIndex );
+    else
+        qWarning() << "Failed to find playlist to delete in the playlistcontainer....";
 }
 
 /**
