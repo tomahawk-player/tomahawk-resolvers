@@ -155,7 +155,7 @@ void SpotifyResolver::setup()
 void SpotifyResolver::errorMsgReceived(sp_error error)
 {
     QString errMsg;
-
+    bool debugMsg( false );
     switch (error) {
         case SP_ERROR_BAD_API_VERSION:
         case SP_ERROR_API_INITIALIZATION_FAILED:
@@ -167,6 +167,7 @@ void SpotifyResolver::errorMsgReceived(sp_error error)
         case SP_ERROR_INDEX_OUT_OF_RANGE:
         case SP_ERROR_OTHER_TRANSIENT:
         case SP_ERROR_IS_LOADING:
+            debugMsg = true;
             errMsg = QString("An internal error happened with error code (%1).\n\nPlease, report this bug." ).arg(error);
             break;
         case SP_ERROR_BAD_USERNAME_OR_PASSWORD:
@@ -179,12 +180,14 @@ void SpotifyResolver::errorMsgReceived(sp_error error)
             errMsg =  "Cannot connect to server";
             break;
         case SP_ERROR_OTHER_PERMANENT:
+            debugMsg = true;
             errMsg =  "A permanent error occured";
             break;
         case SP_ERROR_USER_NEEDS_PREMIUM:
             errMsg = "You need to be a Premium User in order to login";
             break;
         default:
+            debugMsg = true;
             errMsg =  QString::fromUtf8( sp_error_message( error ) );
             break;
     }
@@ -192,6 +195,7 @@ void SpotifyResolver::errorMsgReceived(sp_error error)
     QVariantMap resp;
     resp[ "_msgtype" ] = "spotifyError";
     resp[ "msg" ] = errMsg;
+    resp[ "isDebugMsg" ] = debugMsg;
     QJson::Serializer s;
     QByteArray msg = s.serialize( resp );
     qDebug() << "SENDING ERROR JSON:" << msg;
