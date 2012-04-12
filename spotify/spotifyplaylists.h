@@ -144,7 +144,7 @@ public slots:
     void removePlaylist( sp_playlist *playlist );
     void playlistLoadedSlot(sp_playlist* pl);
 
-    void addPlaylist( sp_playlist *);
+    void addPlaylist( sp_playlist *, bool forceSync = false );
 
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
@@ -163,6 +163,9 @@ private slots:
    void ensurePlaylistsLoadedTimerFired();
    void checkWaitingForLoads();
 
+   void doAddNewPlaylist( sp_playlist* pl, const QVariantList& tracks, bool sync, const QString& qid );
+   void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
+
 private:
    void readSettings();
    void writeSettings();
@@ -174,6 +177,8 @@ private:
    void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
    void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
    void clear();
+
+
    QString trackId( sp_track* track );
 
    QList<LoadedPlaylist> m_playlists;
@@ -184,6 +189,8 @@ private:
    QTimer* m_periodicTimer;
    QList< sp_playlist* > m_waitingToLoad;
    QList< PlaylistClosure* > m_stateChangedCallbacks;
+
+   QSet<QString> m_playlistNameCreationToIgnore;
 
    bool m_allLoaded;
    bool m_isLoading;

@@ -54,6 +54,11 @@ bool checkTracksAreLoaded(QList< sp_track* > waitingForLoaded)
     return found;
 }
 
+bool checkPlaylistIsLoaded(sp_playlist* pl )
+{
+    return pl && sp_playlist_is_loaded( pl );
+}
+
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
    , m_checkPlaylistsTimer( new QTimer( this ) )
@@ -461,6 +466,14 @@ SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* 
 {
     qDebug() << Q_FUNC_INFO << "================ IN PLAYLISTADDED CALLBACK";
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
+
+    const QString name = QString::fromUtf8( sp_playlist_name( playlist ) );
+    if ( _session->Playlists()->m_playlistNameCreationToIgnore.contains( name ) )
+    {
+        _session->Playlists()->m_playlistNameCreationToIgnore.remove( name );
+        return;
+    }
+
     _session->Playlists()->waitForLoad( playlist );
 
 }
@@ -1026,25 +1039,59 @@ SpotifyPlaylists::addNewPlaylist( const QVariantMap& data )
 {
     const QString title = data.value( "title" ).toString();
     const bool sync = data.value( "sync" ).toBool();
+    const QString qid = data.value( "qid" ).toString();
 
     qDebug() << "Creating playlist with name " << title;
 
-    sp_playlist *playlist = sp_playlistcontainer_add_new_playlist( SpotifySession::getInstance()->PlaylistContainer(), title.toUtf8() );
-    sp_playlist_add_callbacks( playlist, &SpotifyCallbacks::playlistCallbacks, this );
+    if ( title.trimmed().isEmpty() )
+    {
+        qDebug() << "Got empty or whitespace title... not allowed as a playlist name! ignoring.";
+        return;
+    }
+
+    m_playlistNameCreationToIgnore.insert( title );
+    sp_playlist* playlist = sp_playlistcontainer_add_new_playlist( SpotifySession::getInstance()->PlaylistContainer(), title.toUtf8() );
 
     qDebug() << "Created playlist! Adding tracks to it if needed...";
     const QVariantList tracks = data.value( "tracks" ).toList();
 
+    doAddNewPlaylist( playlist, tracks, sync, qid );
+}
+
+
+void
+SpotifyPlaylists::doAddNewPlaylist( sp_playlist* playlist, const QVariantList& tracks, bool sync, const QString& qid )
+{
+
+    if ( !sp_playlist_is_loaded( playlist ) )
+    {
+        qDebug() << "Waiting for playlist to be loaded that we just create...";
+        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( doAddNewPlaylist(sp_playlist*, const QVariantList&, const QString& ) ), playlist, tracks, qid) );
+
+        return;
+    }
+
+    addPlaylist( playlist, sync );
+    LoadedPlaylist pl = m_playlists.last();
+    if ( pl.playlist_ != playlist )
+    {
+        qWarning() << "Failed to add playlist to internal representation! Aborting...";
+        return;
+    }
+
+    sApp->registerQidForPlaylist( qid, pl.id_ );
     if ( tracks.isEmpty() )
     {
         // No work to do :)
-//         sApp->sendAddTracksResult();
+        sApp->sendAddTracksResult( pl.id_, QList<int>(), QList< QString >(), true );
     }
     else
     {
-//         doAddTracksToSpotifyPlaylist( tracks, playlist, 0 );
+        doAddTracksToSpotifyPlaylist( tracks, playlist, pl.id_, 0 );
     }
 
+    // resend list of playlists
+    emit notifyContainerLoadedSignal();
 }
 
 
@@ -1454,7 +1501,7 @@ SpotifyPlaylists::checkForPlaylistsLoaded()
    thus updateing the list-eg. if any track is moved, it will rearange the order.
 **/
 void
-SpotifyPlaylists::addPlaylist( sp_playlist *pl )
+SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync )
 {
 //     qDebug() << "addPlaylist from thread id" << thread()->currentThreadId();
     if( !pl){
@@ -1561,7 +1608,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl )
 
     Sync syncThis;
     syncThis.id_ = playlist.id_;
-    if( m_syncPlaylists.contains( syncThis ) )
+    if( m_syncPlaylists.contains( syncThis ) || forceSync )
     {
         qDebug() << "Adding syncing for  playlist " << playlist.id_;
         playlist.sync_ = true;

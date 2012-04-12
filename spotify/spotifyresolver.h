@@ -90,6 +90,8 @@ public:
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
     void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
 
+    void registerQidForPlaylist( const QString& qid, const QString& playlist );
+
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
 

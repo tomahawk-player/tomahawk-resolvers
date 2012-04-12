@@ -312,6 +312,7 @@ SpotifyResolver::sendAddTracksResult( const QString& spotifyId, QList<int> track
     resp[ "success" ] = result;
 
     resp[ "latestrev" ] = pl.revisions.last().revId;
+    resp[ "playlistid" ] = spotifyId;
 
     QVariantList ins;
     foreach ( int i, tracksInserted )
@@ -370,9 +371,9 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     msg[ "playlists" ] = playlists;
 //     qDebug() << "ALL" << playlists;
 
-//     QJson::Serializer s;
-//     QByteArray m = s.serialize( msg );
-//     qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
 
     sendMessage( msg );
 }
@@ -560,8 +561,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         const bool sync = m.value( "sync" ).toBool();
 
         const QString qid = m.value( "qid" ).toString();
-        if ( !qid.isEmpty() )
-            m_playlistToQid[ plid ] = qid;
+        registerQidForPlaylist( qid, plid );
 
         qDebug() << Q_FUNC_INFO << "Got request for playlist with sync:" << plid << sync;
 
@@ -606,8 +606,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         const int startPos = m.value( "startPosition" ).toInt();
 
         const QString qid = m.value( "qid" ).toString();
-        if ( !qid.isEmpty() )
-            m_playlistToQid[ plid ] = qid;
+        registerQidForPlaylist( qid, plid );
 
         if ( plid.isEmpty() )
         {
@@ -649,6 +648,15 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         m_session->Playlists()->addNewPlaylist( m );
     }
+}
+
+
+void
+SpotifyResolver::registerQidForPlaylist( const QString& qid, const QString& playlist )
+{
+    if ( !qid.isEmpty() )
+        m_playlistToQid[ playlist ] = qid;
+
 }
 
 
