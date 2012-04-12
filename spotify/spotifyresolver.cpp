@@ -135,6 +135,7 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
     connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
+    connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
 
@@ -191,16 +192,21 @@ void SpotifyResolver::errorMsgReceived(sp_error error)
             errMsg =  QString::fromUtf8( sp_error_message( error ) );
             break;
     }
+    errorMsgReceived( errMsg, debugMsg );
+}
 
+void SpotifyResolver::errorMsgReceived( const QString &errMsg, bool isDebug )
+{
     QVariantMap resp;
     resp[ "_msgtype" ] = "spotifyError";
     resp[ "msg" ] = errMsg;
-    resp[ "isDebugMsg" ] = debugMsg;
+    resp[ "isDebugMsg" ] = isDebug;
     QJson::Serializer s;
     QByteArray msg = s.serialize( resp );
     qDebug() << "SENDING ERROR JSON:" << msg;
     sendMessage( resp );
 }
+
 
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {

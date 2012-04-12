@@ -91,12 +91,16 @@ public:
     static void SP_CALLCONV notifyMainThread(sp_session *session);
     static void SP_CALLCONV logMessage(sp_session *session, const char *data);
 
+    // Error
+    void doSendErrorMsg( const QString &msg, bool isDebug){ emit sendErrorMsg( msg, isDebug); }
+
 signals:
     void notifyMainThreadSignal();
     void notifyLoggedInSignal();
     void notifySyncUpdateSignal( const SpotifyPlaylists::LoadedPlaylist& playlist );
     void testLoginSucceeded( bool, const QString& msg );
     void sendErrorMsg( sp_error );
+    void sendErrorMsg( const QString &msg, bool isDebug );
 
 public slots:
     void playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist);

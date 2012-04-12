@@ -547,6 +547,7 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
     const int index = m_playlists.indexOf( playlist );
 
     if( index == -1 ) {
+        SpotifySession::getInstance()->doSendErrorMsg( "Tried to add tracks to a non-existing Spotify playlist.", false );
         qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << ( QString::fromUtf8(sp_playlist_name( pl )).isEmpty() ? "empty name " : sp_playlist_name( pl ) );
         return;
     }
@@ -719,6 +720,8 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
     const int index = m_playlists.indexOf( playlist );
 
     if( index == -1 ) {
+
+        SpotifySession::getInstance()->doSendErrorMsg( "Tried to remove tracks to a non-existing Spotify playlist.", false );
         qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
 
         return;
@@ -780,6 +783,8 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
 
     const int index = m_playlists.indexOf( playlist );
     if( index == -1 ) {
+
+        SpotifySession::getInstance()->doSendErrorMsg( "Tried to move tracks to a non-existing Spotify playlist.", false );
         qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
 
         return;
@@ -900,6 +905,7 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
     }
     else
     {
+        SpotifySession::getInstance()->doSendErrorMsg( "Tried to add syncing to a non-existing Spotify playlist.", false );
         qWarning() << "Tried to set sync to " << sync << "for a playlist that doesn't exist!";
     }
 }

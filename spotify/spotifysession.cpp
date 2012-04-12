@@ -30,7 +30,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     // Instance
     s_instance = this;
     // Friends
-    m_SpotifyPlaylists = new SpotifyPlaylists;
+    m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
 
     m_SpotifyPlaylists->moveToThread( &m_playlistThread );
@@ -195,8 +195,9 @@ SpotifySession::playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playli
   **/
 void SpotifySession::loggedOut(sp_session *session)
 {
+    Q_UNUSED( session );
     qDebug() << "Logging out";
-    //sp_session_release( session );
+
 }
 void SpotifySession::connectionError(sp_session *session, sp_error error)
 {
