@@ -14,18 +14,7 @@
  */
 
 #include "spotifysession.h"
-//#include "spotifyhttpserver.h"
-#include "spotifyplaylists.h"
-#include "spotifyplayback.h"
-#include <QCoreApplication>
-#include <libspotify/api.h>
 #include "callbacks.h"
-#include "appkey.h"
-#include <QDebug>
-#include <QThread>
-#include <QTimer>
-#include <QString>
-#include <QThread>
 
 SpotifySession* SpotifySession::s_instance = 0;
 
@@ -40,18 +29,16 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
 
     // Instance
     s_instance = this;
-
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists;
-    connect( m_SpotifyPlaylists, SIGNAL(send(SpotifyPlaylists::LoadedPlaylist)), this, SLOT(get(SpotifyPlaylists::LoadedPlaylist)) );
+    connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
+
     m_SpotifyPlaylists->moveToThread( &m_playlistThread );
     m_playlistThread.start( QThread::LowPriority );
-
     m_SpotifyPlayback = new SpotifyPlayback;
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
-
 
     if(!config.application_key.isEmpty() || config.g_app_key != NULL) {
 
@@ -69,17 +56,13 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
         m_config.initially_unload_playlists = false;
 
     }
-
     m_config.userdata = this;
-
     sp_error err = sp_session_create( &m_config, &m_session );
 
     if ( SP_ERROR_OK != err )
     {
         qDebug() << "Failed to create spotify session: " << sp_error_message( err );
     }
-
-
 }
 
 SpotifySession*
@@ -94,8 +77,12 @@ SpotifySession::~SpotifySession(){
     delete m_SpotifyPlaylists;
     delete m_SpotifyPlayback;
     sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
-    sp_session_logout( m_session );
-    sp_session_release( m_session );
+    if( m_session != NULL )
+    {
+        qDebug() << "Destroying m_session";
+        sp_session_logout( m_session );
+        sp_session_release( m_session );
+    }
 
 
 }
@@ -105,7 +92,7 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
 
    if (_session->m_testLogin)
-    {
+   {
        _session->m_testLogin = false;
        emit _session->testLoginSucceeded( error == SP_ERROR_OK, QString::fromAscii( sp_error_message( error ) ) );
 
@@ -116,64 +103,30 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
            _session->login();
        }
     }
-
     if (error == SP_ERROR_OK) {
-    qDebug() << "Logged in successfully!!";
 
-    _session->setSession(session);
-    _session->setLoggedIn(true);
+        qDebug() << "Logged in successfully!!";
 
-    qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
+        _session->setSession(session);
+        _session->setLoggedIn(true);
 
-    sp_playlistcontainer_add_callbacks(
-            sp_session_playlistcontainer(session),
-            &SpotifyCallbacks::containerCallbacks, _session);
+        qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
+        sp_playlistcontainer_add_callbacks(
+                sp_session_playlistcontainer(session),
+                &SpotifyCallbacks::containerCallbacks, _session);
 
-    emit _session->notifyLoggedInSignal();
+        emit _session->notifyLoggedInSignal();
 
-    return;
+        return;
     }
-
-    switch (error) {
-        case SP_ERROR_BAD_API_VERSION:
-        case SP_ERROR_API_INITIALIZATION_FAILED:
-        case SP_ERROR_BAD_APPLICATION_KEY:
-        case SP_ERROR_CLIENT_TOO_OLD:
-        case SP_ERROR_BAD_USER_AGENT:
-        case SP_ERROR_MISSING_CALLBACK:
-        case SP_ERROR_INVALID_INDATA:
-        case SP_ERROR_INDEX_OUT_OF_RANGE:
-        case SP_ERROR_OTHER_TRANSIENT:
-        case SP_ERROR_IS_LOADING:
-            qDebug() << QString("An internal error happened with error code (%1).\n\nPlease, report this bug." ).arg(error);
-            break;
-        case SP_ERROR_BAD_USERNAME_OR_PASSWORD:
-            qDebug() << "Invalid username or password";
-            break;
-        case SP_ERROR_USER_BANNED:
-            qDebug() << "This user has been banned";
-            break;
-        case SP_ERROR_UNABLE_TO_CONTACT_SERVER:
-            qDebug() << "Cannot connect to server";
-            break;
-        case SP_ERROR_OTHER_PERMANENT:
-            qDebug() << "Something wrong happened.\n\nWhatever it is, it is permanent.";
-            break;
-        case SP_ERROR_USER_NEEDS_PREMIUM:
-            qDebug() << "You need to be a Premium User in order to login";
-            break;
-        default:
-            qDebug() << "Some other error... wtf?" << sp_error_message( error );
-            break;
-    }
-
+    qDebug() << Q_FUNC_INFO << "==== " << sp_error_message( error ) << " ====";
+    _session->sendErrorMsg( error );
 }
+
 void SpotifySession::clearOldUserdata()
 {
-   qDebug() << Q_FUNC_INFO << "==== CLEARING OLD DATA start haz "<<  m_SpotifyPlaylists->getPlaylists().count();
    m_SpotifyPlaylists->unsetAllLoaded();
-   qDebug() << Q_FUNC_INFO << "==== CLEARING OLD DATA end haz got" << m_SpotifyPlaylists->getPlaylists().count();
 }
 
 void SpotifySession::testLogin(const QString& username, const QString& pw)
@@ -205,10 +158,10 @@ void SpotifySession::login()
             m_oldUsername = m_username;
         else if( m_username != m_oldUsername )
         {
-            qDebug() << "===== CHANGED USERNAME!";
             m_oldUsername = m_username;
             clearOldUserdata();
         }
+
         qDebug() << "Logging in with username:" << m_username;
 #if SPOTIFY_API_VERSION >= 11
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
@@ -225,9 +178,10 @@ void SpotifySession::sendNotifyLoggedInSignal()
     emit notifyLoggedInSignal();
 }
 
-
+/// @slot playlistRecieved
+/// @note: will only emit if playlist is in syncstate
 void
-SpotifySession::get( const SpotifyPlaylists::LoadedPlaylist& playlist)
+SpotifySession::playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist)
 {
     if( playlist.isLoaded && playlist.sync_ )
     {
@@ -236,13 +190,36 @@ SpotifySession::get( const SpotifyPlaylists::LoadedPlaylist& playlist)
     }
 }
 
-void SpotifySession::sendNotifyThreadSignal()
+/**
+  CALLBACKS
+  **/
+void SpotifySession::loggedOut(sp_session *session)
 {
+    qDebug() << "Logging out";
+    //sp_session_release( session );
+}
+void SpotifySession::connectionError(sp_session *session, sp_error error)
+{
+    Q_UNUSED(session);
+    qDebug() << "Connection error: " << QString::fromUtf8(sp_error_message(error));
 
-    emit notifyMainThreadSignal();
+}
+void SpotifySession::notifyMainThread(sp_session *session)
+{
+    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+    _session->sendNotifyThreadSignal();
+}
+void SpotifySession::logMessage(sp_session *session, const char *data)
+{
+    Q_UNUSED(session);
+    qDebug() << "SpotifyLog: " << QString::fromUtf8(data);
 }
 
 
+void SpotifySession::sendNotifyThreadSignal()
+{
+    emit notifyMainThreadSignal();
+}
 
 void SpotifySession::notifyMainThread()
 {

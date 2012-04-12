@@ -25,9 +25,13 @@
 #include <QSettings>
 #include <QObject>
 #include <QStringList>
+#include <QDateTime>
+#include <QTimer>
+#include <boost/bind.hpp>
+#include "spotifyplaylists.h"
+#include "spotifysearch.h"
 
 class QTimer;
-
 class PlaylistClosure;
 
 class SpotifyPlaylists : public QObject
@@ -39,6 +43,7 @@ public:
 
     void setPosition( sp_playlist *pl, int oPos, int nPos );
     void setSyncPlaylist( const QString id, bool sync );
+    // This will unload all playlists, usefull when userswitch
     void unsetAllLoaded(){ m_allLoaded = false; m_waitingToLoad.clear(); clear(); }
 
     struct RevisionChanges{
@@ -69,7 +74,7 @@ public:
     struct Sync {
          QString id_;
          bool sync_;
-     };
+    };
 
     struct AddTracksData{
 
@@ -88,16 +93,12 @@ public:
     LoadedPlaylist getPlaylist( const QString id );
     LoadedPlaylist getLoadedPlaylist( sp_playlist *&playlist );
     QList<LoadedPlaylist> getPlaylists() const { return m_playlists; }
-
     QList<Sync> getSyncPlaylists() const { return m_syncPlaylists; }
 
     // Send the desired playlist to the client, and turn on syncing
     void sendPlaylist( const QString& playlistId, bool startSyncing );
     void sendPlaylistByRevision( int rev );
-
-
     LoadedPlaylist getPlaylistByRevision( int rev );
-
 
     // Takes a msg from JSON that conforms to the API
     void addTracksToSpotifyPlaylist( const QVariantMap& data );
@@ -150,8 +151,7 @@ public slots:
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
 signals:
-
-   void send( const SpotifyPlaylists::LoadedPlaylist& );
+   void sendLoadedPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
    void notifyContainerLoadedSignal();
    void notifyStarredTracksLoadedSignal();
    void notifyNameChange( const SpotifyPlaylists::LoadedPlaylist &playlist );

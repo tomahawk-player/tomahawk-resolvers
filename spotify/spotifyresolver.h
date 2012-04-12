@@ -103,7 +103,7 @@ private slots:
     void notifyLoggedIn();
     void notifyAllPlaylistsLoaded();
     void testLoginSucceeded( bool, const QString& msg );
-
+    void errorMsgReceived( sp_error );
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
     void sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist& );
     void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );

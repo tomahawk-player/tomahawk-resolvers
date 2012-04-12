@@ -14,19 +14,17 @@
  *   all copies or substantial portions of the Software.
  */
 
-#include "spotifyplaylists.h"
 
-#include "spotifysearch.h"
-#include "spotifyresolver.h"
+//#include "spotifyresolver.h"
 #include "callbacks.h"
-#include "spotifyresolver.h"
+//#include "spotifyresolver.h"
 #include "PlaylistClosure.h"
-
-#include <QObject>
-#include <QThread>
-#include <QDateTime>
-#include <QTimer>
-#include <boost/bind.hpp>
+#include "spotifyresolver.h"
+//#include <QObject>
+//#include <QThread>
+//#include <QDateTime>
+//#include <QTimer>
+//#include <boost/bind.hpp>
 
 void printPlaylistTracks( const QList<sp_track* > tracks )
 {
@@ -301,8 +299,11 @@ SpotifyPlaylists::getLoadedPlaylist( sp_playlist *&playlist )
 
 void SpotifyPlaylists::doSend( const SpotifyPlaylists::LoadedPlaylist& playlist )
 {
+    if( !sp_playlist_is_loaded( playlist.playlist_) )
+        return;
+
     qDebug() << "Sending " << sp_playlist_name( playlist.playlist_ ) << "playlist to client with:" << sp_playlist_num_tracks( playlist.playlist_ );
-    emit( send( playlist ) );
+    emit( sendLoadedPlaylist( playlist ) );
 }
 
 

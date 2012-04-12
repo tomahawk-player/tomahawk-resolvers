@@ -134,7 +134,7 @@ void SpotifyResolver::setup()
     m_session = new SpotifySession(config);
     connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
     connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
-
+    connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
 
@@ -150,6 +150,52 @@ void SpotifyResolver::setup()
     m_stdinWatcher->moveToThread( &m_stdinThread );
     m_stdinThread.start( QThread::LowPriority );
 
+}
+
+void SpotifyResolver::errorMsgReceived(sp_error error)
+{
+    QString errMsg;
+
+    switch (error) {
+        case SP_ERROR_BAD_API_VERSION:
+        case SP_ERROR_API_INITIALIZATION_FAILED:
+        case SP_ERROR_BAD_APPLICATION_KEY:
+        case SP_ERROR_CLIENT_TOO_OLD:
+        case SP_ERROR_BAD_USER_AGENT:
+        case SP_ERROR_MISSING_CALLBACK:
+        case SP_ERROR_INVALID_INDATA:
+        case SP_ERROR_INDEX_OUT_OF_RANGE:
+        case SP_ERROR_OTHER_TRANSIENT:
+        case SP_ERROR_IS_LOADING:
+            errMsg = QString("An internal error happened with error code (%1).\n\nPlease, report this bug." ).arg(error);
+            break;
+        case SP_ERROR_BAD_USERNAME_OR_PASSWORD:
+            errMsg =  "Invalid username or password";
+            break;
+        case SP_ERROR_USER_BANNED:
+            errMsg =  "This user has been banned";
+            break;
+        case SP_ERROR_UNABLE_TO_CONTACT_SERVER:
+            errMsg =  "Cannot connect to server";
+            break;
+        case SP_ERROR_OTHER_PERMANENT:
+            errMsg =  "A permanent error occured";
+            break;
+        case SP_ERROR_USER_NEEDS_PREMIUM:
+            errMsg = "You need to be a Premium User in order to login";
+            break;
+        default:
+            errMsg =  QString::fromUtf8( sp_error_message( error ) );
+            break;
+    }
+
+    QVariantMap resp;
+    resp[ "_msgtype" ] = "spotifyError";
+    resp[ "msg" ] = errMsg;
+    QJson::Serializer s;
+    QByteArray msg = s.serialize( resp );
+    qDebug() << "SENDING ERROR JSON:" << msg;
+    sendMessage( resp );
 }
 
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
