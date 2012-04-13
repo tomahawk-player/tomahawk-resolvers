@@ -106,7 +106,7 @@ public:
     void addNewPlaylist( const QVariantMap& data );
     void addSubscribedPlaylist( const QString &uri );
     void removeSubscribedPlaylist(const QString &uri );
-
+    void setCollaborative(const QString &playlistUri, bool collab );
     // Mixed
     sp_playlist *getPlaylistFromUri( const QString &uri );
 

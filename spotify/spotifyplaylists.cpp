@@ -358,6 +358,30 @@ void SpotifyPlaylists::removeSubscribedPlaylist(const QString &playlistUri )
 }
 
 /**
+  setCollaborative
+    sets collaborative state for playlist
+  **/
+void SpotifyPlaylists::setCollaborative(const QString &playlistUri, bool collab )
+{
+    qDebug() << Q_FUNC_INFO;
+    LoadedPlaylist lpl;
+    lpl.id_ = playlistUri;
+
+    if( !m_playlists.contains( lpl ) )
+        return;
+
+    int index;
+    index = m_playlists.indexOf( lpl );
+    if( index != -1 ){
+        // set_collaborative is void function, so check if the user can set the state on this uri
+        QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
+        if( lpl.isLoaded && lpl.name_.contains( username ) )
+            sp_playlist_set_collaborative(lpl.playlist_, collab );
+    }
+
+}
+
+/**
  getLoadedPLaylist( sp_playlist )
    Gets a specific playlist from the list with id (uri)
 **/
