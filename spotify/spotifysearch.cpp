@@ -46,7 +46,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         data->waitingFor--;
 
         // Send error
-        SpotifySession::getInstance()->doSendErrorMsg( QString("Can not add %1 to Spotify, not found in catalouge.").arg( QString::fromUtf8(sp_search_query( result ) ) ), false );
+        SpotifySession::getInstance()->doSendErrorMsg( QString("Can not add %1 to Spotify, not found in catalog.").arg( QString::fromUtf8(sp_search_query( result ) ) ), false );
     }
     else
     {
