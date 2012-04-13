@@ -378,7 +378,7 @@ void SpotifyPlaylists::setCollaborative(const QString &playlistUri, bool collab 
         if( lpl.isLoaded && lpl.name_.contains( username ) )
         {
             sp_playlist_set_collaborative(lpl.playlist_, collab );
-            m_playlists[ index ].isCollaborative = true;
+            m_playlists[ index ].isCollaborative = collab;
         }
     }
 
