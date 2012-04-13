@@ -318,8 +318,7 @@ void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
         {
             if( sp_playlist_is_collaborative( playlist ) )
             {
-                setSyncPlaylist( playlistUri, true );
-                addPlaylist( lpl );
+                addPlaylist( playlist, true, true );
             }
         }
         else
@@ -336,6 +335,7 @@ void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
 
 /**
   removeSubscribedPlaylist
+
   **/
 void SpotifyPlaylists::removeSubscribedPlaylist(const QString &playlistUri )
 {
@@ -350,7 +350,7 @@ void SpotifyPlaylists::removeSubscribedPlaylist(const QString &playlistUri )
     index = m_playlists.indexOf( lpl );
     if( index != -1 ){
 
-        if( m_playlists[ index ].isCollaborative )
+        if( m_playlists[ index ].isCollaborative || m_playlists[ index ].isSubscribed )
             setSyncPlaylist( playlistUri, false );
     }
 
@@ -1641,72 +1641,7 @@ SpotifyPlaylists::checkForPlaylistsLoaded()
     }
 }
 
-/**
- addSubscribedPlaylist( sp_playlist*)
- adds a LOADED subscribed pl
-**/
-void
-SpotifyPlaylists::addPlaylist( LoadedPlaylist pl )
-{
 
-    if( !pl.playlist_ ){
-        qDebug() << Q_FUNC_INFO << "Pl was null";
-        return;
-    }
-    if( !sp_playlist_is_loaded( pl.playlist_ ) ){
-        qDebug() << Q_FUNC_INFO << "Pl isnt loaded";
-        return;
-    }
-
-    m_waitingToLoad.removeAll( pl.playlist_ );
-
-    // if it's already loaded, ignore it!
-    if ( m_playlists.indexOf( pl ) >= 0 && m_playlists[ m_playlists.indexOf( pl ) ].isLoaded )
-        return;
-
-    pl.name_ = sp_playlist_name(pl.playlist_);
-    pl.isCollaborative = sp_playlist_is_collaborative( pl.playlist_ );
-    pl.isSubscribed = true;
-    pl.starContainer_ = false;
-    pl.sync_ = true;
-    pl.isLoaded = false;
-
-    int tmpRev(0);
-
-    qDebug() << "Adding " << sp_playlist_num_tracks( pl.playlist_ ) << "tracks to our LoadedPlaylist object for" << pl.name_;
-
-    for ( int i=0 ; i< sp_playlist_num_tracks( pl.playlist_ ); ++i )
-    {
-
-        sp_track* track = sp_playlist_track( pl.playlist_, i );
-        sp_track_add_ref( track );
-        // Set revision on initation
-        int timestamp = sp_playlist_track_create_time( pl.playlist_, i);
-        if( tmpRev < timestamp)
-            tmpRev = timestamp;
-
-        pl.tracks_.push_back( track );
-    }
-
-    // Playlist is loaded and ready
-    pl.isLoaded = true;
-
-    if(m_playlists.contains( pl ) )
-    {
-        int index = m_playlists.indexOf( pl );
-        if( index != -1 )
-                m_playlists.replace(index, pl );
-    }
-    else
-        m_playlists.append( pl );
-
-    /// Finaly, update revisions
-    // Revision, initially -1
-    pl.oldTimestamp = -1;
-    pl.newTimestamp = -1;
-
-    updateRevision( pl, tmpRev );
-}
 
 /**
  addPlaylist( sp_playlist *)
@@ -1715,7 +1650,7 @@ SpotifyPlaylists::addPlaylist( LoadedPlaylist pl )
    thus updateing the list-eg. if any track is moved, it will rearange the order.
 **/
 void
-SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync )
+SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribed )
 {
 //     qDebug() << "addPlaylist from thread id" << thread()->currentThreadId();
     if( !pl){
@@ -1765,7 +1700,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync )
     playlist.playlist_ = pl;
     playlist.name_ = sp_playlist_name(pl);
     playlist.isCollaborative = sp_playlist_is_collaborative( pl );
-    playlist.isSubscribed = false;
+    playlist.isSubscribed = isSubscribed;
     playlist.starContainer_ = false;
     playlist.sync_ = false;
     playlist.isLoaded = false;
