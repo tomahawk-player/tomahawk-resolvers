@@ -43,8 +43,10 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         const int pos = data->searchOrder.indexOf( result );
         qWarning() << "Got no search result for track we tried to add! Ignoring it... index is:" << pos;
         data->finaltracks[ pos ] = 0;
-
         data->waitingFor--;
+
+        // Send error
+        SpotifySession::getInstance()->doSendErrorMsg( QString("Can not add %1 to Spotify, not found in catalouge.").arg( QString::fromUtf8(sp_search_query( result ) ) ), false );
     }
     else
     {

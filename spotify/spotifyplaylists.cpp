@@ -1184,7 +1184,6 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( const QVariantMap& data )
 
     if ( !pl || !sp_playlist_is_loaded( pl ) )
     {
-        SpotifySession::getInstance()->doSendErrorMsg( "Failed to add tracks to Spotify", false );
         qWarning() << "Asked to add tracks to a spotify playlist that is null or is not loaded!" << pl << ( (pl != 0 ) ? (sp_playlist_is_loaded( pl ) ? "Loaded" : "Unloaded") : QString()) ;
         return;
     }
