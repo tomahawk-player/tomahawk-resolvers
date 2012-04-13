@@ -905,8 +905,6 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 void
 SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_position)
 {
-
-    qDebug() << "Moving tracks in thread id" << thread()->currentThreadId();
     LoadedPlaylist playlist;
     playlist.playlist_ = pl;
 
@@ -919,6 +917,8 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
 
     sp_track* beforeinsert = m_playlists[index].tracks_.at( new_position - 1 );
 
+    qDebug() << "Moving tracks in a synced spotify playlist, from indexes:" << tracks;
+    printPlaylistTracks( m_playlists[ index ].tracks_ );
     // find the spotify track of the song before the newly inserted one
     const QString trackPosition = trackId( beforeinsert );
 
@@ -933,7 +933,9 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
         m_playlists[index].tracks_.removeAll( removing );
 
 
-    const int insertingPos = m_playlists[index].tracks_.indexOf( beforeinsert );
+    int insertingPos = m_playlists[index].tracks_.indexOf( beforeinsert ) + 1;
+    insertingPos = qMin( insertingPos, m_playlists[ index ].tracks_.size() );
+
     for( int i = toInsert.size() - 1; i >= 0; i-- )
     {
 //         qDebug() << "Moving track at pos " << fromPos << " to pos" << new_position;
@@ -945,7 +947,17 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
     qDebug() << "Updateing revision with move track timestamp " << timestamp;
 
+    printPlaylistTracks( m_playlists[ index ].tracks_ );
+
     updateRevision( m_playlists[index], timestamp );
+
+
+    if ( sApp->ignoreNextUpdate() )
+    {
+        qDebug() << "Ignoring spotify track moved notification since it came from our own track moving!";
+        sApp->setIgnoreNextUpdate( false );
+        return;
+    }
 
     emit sendTracksMoved(pl, moveIds, trackPosition);
 }

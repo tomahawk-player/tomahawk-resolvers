@@ -300,7 +300,7 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tra
 
     SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
 
-    QString oldrev("");
+    QString oldrev;
     if ( lpl.revisions.size() >= 2 )
         oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
 
@@ -335,6 +335,31 @@ void
 SpotifyResolver::sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId )
 {
     // TODO
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "tracksMoved";
+
+    SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
+
+    QString oldrev;
+    if ( lpl.revisions.size() >= 2 )
+        oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
+
+    msg[ "playlistid" ] = lpl.id_;
+    msg[ "oldrev" ] = oldrev;
+    msg[ "revid" ] = lpl.revisions.last().revId;
+    msg[ "newStartPosition" ] = positionId;
+
+    QVariantList v; // ARGGG i hate qjson. QStringList encodes [ "a" ]  as "a" instead of [ "a" ].
+    foreach( const QString& str, tracks )
+        v << str;
+
+    msg[ "tracks" ] = v;
+
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING MOVED TRACKS JSON:" << m;
+
+    sendMessage( msg );
 }
 
 
