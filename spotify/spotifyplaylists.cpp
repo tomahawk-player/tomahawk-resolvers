@@ -458,7 +458,10 @@ SpotifyPlaylists::waitForLoad( sp_playlist *playlist )
 void
 SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist, int position, void* userdata )
 {
-    qDebug() << Q_FUNC_INFO << "================ IN PLAYLISTADDED CALLBACK";
+    QString pl;
+    if ( playlist )
+        pl = QString::fromUtf8( sp_playlist_name( playlist ) );
+    qDebug() << Q_FUNC_INFO << "================ IN PLAYLISTADDED CALLBACK for playlist:" << pl;
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
 
     const QString name = QString::fromUtf8( sp_playlist_name( playlist ) );
@@ -966,6 +969,13 @@ void SpotifyPlaylists::setPosition( sp_playlist *playlist, int oPos, int nPost )
 void
 SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
 {
+    if ( m_waitingToLoad.contains( playlist ) )
+    {
+        // short circuit---if we're waiting for it to load, just abort the wait
+        m_waitingToLoad.removeAll( playlist );
+        return;
+    }
+
     LoadedPlaylist pl;
     pl.playlist_ = playlist;
 
