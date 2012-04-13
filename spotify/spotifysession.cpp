@@ -160,6 +160,7 @@ void SpotifySession::login()
         {
             m_oldUsername = m_username;
             clearOldUserdata();
+            emit userChanged();
         }
 
         qDebug() << "Logging in with username:" << m_username;

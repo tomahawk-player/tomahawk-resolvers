@@ -133,6 +133,7 @@ void SpotifyResolver::setup()
     // When signal is emitted, you are logged in
     m_session = new SpotifySession(config);
     connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
+    connect( m_session, SIGNAL( userChanged() ), this, SLOT( userChangedReceived() ) );
     connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
     connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
@@ -207,6 +208,18 @@ void SpotifyResolver::errorMsgReceived( const QString &errMsg, bool isDebug )
     sendMessage( resp );
 }
 
+void SpotifyResolver::userChangedReceived()
+{
+
+    QVariantMap resp;
+    resp[ "_msgtype" ] = "userChanged";
+    resp[ "msg" ] = "Username changed! Removing synced playlists...";
+    QJson::Serializer s;
+    QByteArray msg = s.serialize( resp );
+    qDebug() << "SENDING USERCHANGED JSON:" << msg;
+    sendMessage( resp );
+
+}
 
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {

@@ -101,6 +101,7 @@ signals:
     void testLoginSucceeded( bool, const QString& msg );
     void sendErrorMsg( sp_error );
     void sendErrorMsg( const QString &msg, bool isDebug );
+    void userChanged();
 
 public slots:
     void playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist);

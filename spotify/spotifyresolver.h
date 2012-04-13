@@ -108,6 +108,7 @@ private slots:
     void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );
     void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
+    void userChangedReceived();
 private:
     QVariantMap spTrackToVariant( sp_track* track );
 
