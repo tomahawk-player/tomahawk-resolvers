@@ -292,6 +292,7 @@ sp_playlist * SpotifyPlaylists::getPlaylistFromUri(const QString &uri)
         return NULL;
     }
     sp_playlist *playlist = sp_playlist_create(SpotifySession::getInstance()->Session(), plink);
+    sp_link_release( plink );
     return playlist;
 
 }
