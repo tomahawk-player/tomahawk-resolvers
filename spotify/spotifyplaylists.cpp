@@ -376,7 +376,10 @@ void SpotifyPlaylists::setCollaborative(const QString &playlistUri, bool collab 
         // set_collaborative is void function, so check if the user can set the state on this uri
         QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
         if( lpl.isLoaded && lpl.name_.contains( username ) )
+        {
             sp_playlist_set_collaborative(lpl.playlist_, collab );
+            m_playlists[ index ].isCollaborative = true;
+        }
     }
 
 }
