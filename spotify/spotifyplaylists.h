@@ -55,6 +55,8 @@ public:
 
     struct LoadedPlaylist{
       bool starContainer_;
+      bool isSubscribed;
+      bool isCollaborative;
       bool sync_;
       bool isLoaded;
       // Revision timestamp
@@ -102,6 +104,11 @@ public:
     bool removeFromSpotifyPlaylist( const QVariantMap& data );
     void renamePlaylist( const QVariantMap& data );
     void addNewPlaylist( const QVariantMap& data );
+    void addSubscribedPlaylist( const QString &uri );
+    void removeSubscribedPlaylist(const QString &uri );
+
+    // Mixed
+    sp_playlist *getPlaylistFromUri( const QString &uri );
 
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );
@@ -141,7 +148,7 @@ public slots:
     void addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos);
     void removePlaylistNotification( sp_playlist *playlist );
     void playlistLoadedSlot(sp_playlist* pl);
-
+    void addPlaylist( LoadedPlaylist lpl );
     void addPlaylist( sp_playlist *, bool forceSync = false );
     void doRemovePlaylist( sp_playlist* playlist );
 
