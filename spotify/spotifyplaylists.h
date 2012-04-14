@@ -28,7 +28,6 @@
 #include <QDateTime>
 #include <QTimer>
 #include <boost/bind.hpp>
-#include "spotifyplaylists.h"
 #include "spotifysearch.h"
 
 class QTimer;
@@ -104,9 +103,13 @@ public:
     bool removeFromSpotifyPlaylist( const QVariantMap& data );
     void renamePlaylist( const QVariantMap& data );
     void addNewPlaylist( const QVariantMap& data );
+    sp_error moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId );
+
+
     void addSubscribedPlaylist( const QString &uri );
     void removeSubscribedPlaylist(const QString &uri );
     void setCollaborative(const QString &playlistUri, bool collab );
+
     // Mixed
     sp_playlist *getPlaylistFromUri( const QString &uri );
 
@@ -154,49 +157,50 @@ public slots:
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
 signals:
-   void sendLoadedPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
-   void notifyContainerLoadedSignal();
-   void notifyStarredTracksLoadedSignal();
-   void notifyNameChange( const SpotifyPlaylists::LoadedPlaylist &playlist );
-   void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& trackPosition );
-   void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
-   void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
+    void sendLoadedPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
+    void notifyContainerLoadedSignal();
+    void notifyStarredTracksLoadedSignal();
+    void notifyNameChange( const SpotifyPlaylists::LoadedPlaylist &playlist );
+    void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& trackPosition );
+    void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
+    void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
 
 private slots:
 
-   void ensurePlaylistsLoadedTimerFired();
-   void checkWaitingForLoads();
+    void ensurePlaylistsLoadedTimerFired();
+    void checkWaitingForLoads();
 
-   void doAddNewPlaylist( sp_playlist* pl, const QVariantList& tracks, bool sync, const QString& qid );
-   void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
+    void doAddNewPlaylist( sp_playlist* pl, const QVariantList& tracks, bool sync, const QString& qid );
+    void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
 
 private:
-   void readSettings();
-   void writeSettings();
+    void readSettings();
+    void writeSettings();
 
-   void updateRevision( LoadedPlaylist &pl );
-   void updateRevision( LoadedPlaylist &pl, int qualifier, QStringList removedTracks = QStringList() );
-   void playlistNameChange( sp_playlist * pl );
-   void checkForPlaylistsLoaded();
-   void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
-   void clear();
+    void updateRevision( LoadedPlaylist &pl );
+    void updateRevision( LoadedPlaylist &pl, int qualifier, QStringList removedTracks = QStringList() );
+    void playlistNameChange( sp_playlist * pl );
+    void checkForPlaylistsLoaded();
+    void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
+    void clear();
 
+    int findTrackPosition( const QList< sp_track* > tracks, const QString& trackId );
 
-   QString trackId( sp_track* track );
+    QString trackId( sp_track* track );
 
-   QList<LoadedPlaylist> m_playlists;
-   QList<Sync> m_syncPlaylists;
-   QSettings m_settings;
+    QList<LoadedPlaylist> m_playlists;
+    QList<Sync> m_syncPlaylists;
+    QSettings m_settings;
 
-   QTimer* m_checkPlaylistsTimer;
-   QTimer* m_periodicTimer;
-   QList< sp_playlist* > m_waitingToLoad;
-   QList< PlaylistClosure* > m_stateChangedCallbacks;
+    QTimer* m_checkPlaylistsTimer;
+    QTimer* m_periodicTimer;
+    QList< sp_playlist* > m_waitingToLoad;
+    QList< PlaylistClosure* > m_stateChangedCallbacks;
 
-   QSet<QString> m_playlistNameCreationToIgnore;
+    QSet<QString> m_playlistNameCreationToIgnore;
 
-   bool m_allLoaded;
-   bool m_isLoading;
+    bool m_allLoaded;
+    bool m_isLoading;
 };
 
 

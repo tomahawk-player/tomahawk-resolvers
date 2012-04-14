@@ -911,7 +911,7 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     const int index = m_playlists.indexOf( playlist );
     if( index == -1 ) {
 
-        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
+        qWarning() << "Got moved tracks for a playlist we don't know about? WTF!" << sp_playlist_name( pl );
         return;
     }
 
@@ -1284,6 +1284,57 @@ SpotifyPlaylists::doAddNewPlaylist( sp_playlist* playlist, const QVariantList& t
     emit notifyContainerLoadedSignal();
 }
 
+// Called from client when we are asked to do move
+sp_error
+SpotifyPlaylists::moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId )
+{
+    qDebug() << "MOVING tracks in playlist with id " << playlistId;
+    qDebug() << "Tracks to move:" << tracks;
+
+    LoadedPlaylist loader;
+    loader.id_ = playlistId;
+    const int index = m_playlists.indexOf( loader );
+
+    if ( index == -1 )
+    {
+        qWarning() << "Asked to move tracks in a spotify playlist that doesn't exist!" << playlistId;
+        return SP_ERROR_INVALID_INDATA;
+    }
+
+    sp_playlist* pl = m_playlists[index].playlist_;
+
+    if ( !pl || !sp_playlist_is_loaded( pl ) )
+    {
+        qWarning() << "Asked to move tracks in a spotify playlist that is null or is not loaded!" << pl << ( (pl != 0 ) ? (sp_playlist_is_loaded( pl ) ? "Loaded" : "Unloaded") : QString()) ;
+        return SP_ERROR_INVALID_INDATA;
+    }
+
+    QList< QString> trackIdsToMove;
+    foreach( const QVariant& track, tracks )
+    {
+        const QVariantMap trackMap = track.toMap();
+        if ( trackMap.contains( "id" ) )
+            trackIdsToMove << trackMap[ "id" ].toString();
+    }
+
+    QVector<int> moveIndexes;
+    int newStartPosition = -1;
+    for( int i = 0; i < m_playlists[ index ].tracks_.size(); i++ )
+    {
+        const QString trackid = trackId( m_playlists[ index ].tracks_[ i ] );
+        if ( trackIdsToMove.contains( trackid ) )
+            moveIndexes.append( i );
+        else if ( trackid == newStartPositionId )
+            newStartPosition = i;
+    }
+    newStartPosition++; // New target position, not position before;
+    newStartPosition = qBound( 0, newStartPosition, m_playlists[index].tracks_.size() ); // safety
+
+    sApp->setIgnoreNextUpdate( true );
+    sp_error ret = sp_playlist_reorder_tracks( m_playlists[ index ].playlist_, moveIndexes.constBegin(), moveIndexes.size(), newStartPosition );
+    return ret;
+}
+
 
 void
 SpotifyPlaylists::renamePlaylist( const QVariantMap& data )
@@ -1349,29 +1400,11 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( const QVariantMap& data )
     }
 
     const QVariantList tracks = data.value( "tracks").toList();
-    int position = -1;
-
     const QString trackId = data.value( "startPosition" ).toString();
-    if ( !trackId.isEmpty() )
-    {
-        sp_link* link = sp_link_create_from_string( trackId.toUtf8().constData() );
-        if ( sp_link_type( link ) == SP_LINKTYPE_TRACK )
-        {
-            sp_track* targetTrack = sp_link_as_track( link );
-            for ( int i = 0; i < m_playlists[ index ].tracks_.size(); i++ )
-            {
-                const sp_track* track = m_playlists[ index ].tracks_[ i ];
-                if ( track == targetTrack )
-                {
-                    qDebug() << "Found track in playlist with associated id to use as insertion point:" << trackId << sp_track_name( targetTrack ) << sp_track_artist( targetTrack, 0 ) << "at:" << i << "out of:" << m_playlists[ index ].tracks_.size() << "tracks";
-                    position = i;
-                }
-            }
-        }
-        sp_link_release( link );
-    }
+
+    int position = findTrackPosition( m_playlists[ index ].tracks_, trackId );
     position++; // Spotify wants the position to be the newly inserted pos, not the 0-based index of the track *to* insert
-    if ( position == -1 )
+    if ( position == 0 )
     {
         // We didn't find the position in the playlist, or there was none, so append
         position = m_playlists[ index ].tracks_.size();
@@ -1416,6 +1449,35 @@ SpotifyPlaylists::doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_p
         // to help us choose the right order since we can get the results in any order
         addData->searchOrder[ i ] = s;
     }
+}
+
+
+int
+SpotifyPlaylists::findTrackPosition( const QList< sp_track* > tracks, const QString& trackId )
+{
+    int position = -1;
+
+    if ( !trackId.isEmpty() )
+    {
+        sp_link* link = sp_link_create_from_string( trackId.toUtf8().constData() );
+        if ( sp_link_type( link ) == SP_LINKTYPE_TRACK )
+        {
+            sp_track* targetTrack = sp_link_as_track( link );
+            for ( int i = 0; i < tracks.size(); i++ )
+            {
+                const sp_track* track = tracks[ i ];
+                if ( track == targetTrack )
+                {
+                    qDebug() << "Found track in playlist with associated id to use as insertion point:" << trackId << sp_track_name( targetTrack ) << sp_track_artist( targetTrack, 0 ) << "at:" << i << "out of:" << tracks.size() << "tracks";
+                    position = i;
+                    break;
+                }
+            }
+        }
+        sp_link_release( link );
+    }
+
+    return position;
 }
 
 

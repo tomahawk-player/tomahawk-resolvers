@@ -696,8 +696,6 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     else if ( m.value( "_msgtype" ) == "addTracksToPlaylist" )
     {
         const QString plid = m.value( "playlistid" ).toString();
-        const uint oldRev = m.value( "oldrev" ).toUInt();
-        const int startPos = m.value( "startPosition" ).toInt();
 
         const QString qid = m.value( "qid" ).toString();
         registerQidForPlaylist( qid, plid );
@@ -711,6 +709,40 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         m_session->Playlists()->addTracksToSpotifyPlaylist( m );
 
         // callback is async
+    }
+    else if ( m.value( "_msgtype" ) == "moveTracksInPlaylist" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const uint oldRev = m.value( "oldrev" ).toUInt();
+        const QString startPos = m.value( "startPosition" ).toString();
+
+        const QString qid = m.value( "qid" ).toString();
+
+        if ( plid.isEmpty() )
+        {
+            qWarning() << "no playlist to move tracks in! Asked to move in:" << plid;
+            return;
+        }
+        const QVariantList tracks = m.value( "tracks" ).toList();
+
+        sp_error ret = m_session->Playlists()->moveTracksInSpotifyPlaylist( plid, tracks, startPos );
+
+        const QString newRev = m_session->Playlists()->getPlaylist( plid ).revisions.last().revId;
+        const bool success = (ret == SP_ERROR_OK);
+
+        QVariantMap resp;
+        resp[ "_msgtype" ] = "";
+        resp[ "qid" ] = qid;
+        resp[ "success" ] = success;
+        resp[ "playlistid" ] = plid;
+        resp[ "newrev" ] = newRev;
+
+
+        QJson::Serializer s;
+        QByteArray mm = s.serialize( resp );
+        qDebug() << "SENDING MOVED TRACKS RESPONSE JSON:" << mm;
+
+        sendMessage( resp );
     }
     else if( m.value( "_msgtype" ) == "playlistRenamed")
     {
