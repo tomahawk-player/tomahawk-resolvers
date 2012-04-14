@@ -1029,6 +1029,11 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
                 m_syncPlaylists.append( syncThis );
 
             m_playlists[ index ].sync_ = true;
+            // Playlist contents may have changed since we originally loaded it, so we refresh it now
+            m_playlists[ index ].tracks_.clear();
+            for( int i = 0; i < sp_playlist_num_tracks( m_playlists[ index ].playlist_ ); i++ )
+                m_playlists[ index ].tracks_ << sp_playlist_track( m_playlists[ index ].playlist_, i );
+
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
             qDebug() << "ADDING SYNC CALLBACKS FOR PLAYLIST:" << sp_playlist_name( m_playlists[ index ].playlist_ );
 
