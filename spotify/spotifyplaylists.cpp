@@ -915,10 +915,12 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
         return;
     }
 
-    sp_track* beforeinsert = m_playlists[index].tracks_.at( new_position - 1 );
+    sp_track* beforeinsert = 0;
+    if ( new_position > 0 && new_position <= m_playlists.size() )
+        beforeinsert = m_playlists[index].tracks_.at( new_position - 1 );
 
-    qDebug() << "Moving tracks in a synced spotify playlist, from indexes:" << tracks;
-    printPlaylistTracks( m_playlists[ index ].tracks_ );
+    qDebug() << "Moving tracks in a synced spotify playlist, from indexes:" << tracks << "to new position:" << new_position;
+
     // find the spotify track of the song before the newly inserted one
     const QString trackPosition = trackId( beforeinsert );
 
@@ -934,7 +936,7 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
 
 
     int insertingPos = m_playlists[index].tracks_.indexOf( beforeinsert ) + 1;
-    insertingPos = qMin( insertingPos, m_playlists[ index ].tracks_.size() );
+    insertingPos = qBound<>( 0, insertingPos, m_playlists[ index ].tracks_.size() );
 
     for( int i = toInsert.size() - 1; i >= 0; i-- )
     {
@@ -946,8 +948,6 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     // We need to update the revision with current timestamp
     int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
     qDebug() << "Updateing revision with move track timestamp " << timestamp;
-
-    printPlaylistTracks( m_playlists[ index ].tracks_ );
 
     updateRevision( m_playlists[index], timestamp );
 
@@ -965,6 +965,9 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
 QString
 SpotifyPlaylists::trackId( sp_track* track )
 {
+    if ( !track )
+        return QString();
+
     QString trackIdStr;
 
     char trackId[256];
