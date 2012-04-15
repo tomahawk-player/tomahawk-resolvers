@@ -68,6 +68,9 @@ public:
       QList<sp_track*> tracks_;
       QList<RevisionChanges> revisions;
 
+      LoadedPlaylist() : starContainer_( false ), isSubscribed( false ), isCollaborative( false ), sync_( false ), isLoaded( false )
+                       , newTimestamp( -1 ), oldTimestamp( -1 ), playlist_( 0 ) {}
+
     };
     struct Sync {
          QString id_;

@@ -22,9 +22,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    : QObject( parent )
    , m_pcLoaded( false )
    , m_sessionConfig( config )
-   , m_username( QString() )
-   , m_password ( QString() )
-   , m_oldUsername( QString() )
+   , m_loggedIn( false )
 {
 
     // Instance
