@@ -118,8 +118,6 @@ void SpotifySession::setCredentials( QString username, QString password )
 
 void SpotifySession::logout()
 {
-
-
     if ( m_loggedIn ) {
 
         m_SpotifyPlaylists->unsetAllLoaded();
@@ -145,10 +143,9 @@ void SpotifySession::logout()
 
 void SpotifySession::login()
 {
-    qDebug() << Q_FUNC_INFO << "SpotifySession asked to log in!";
+    qDebug() << Q_FUNC_INFO << "SpotifySession asked to log in! Clearing session first";
 
-    if( m_loggedIn)
-        logout();
+    logout();
 
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
