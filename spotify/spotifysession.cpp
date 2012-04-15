@@ -52,15 +52,7 @@ SpotifySession::~SpotifySession(){
     qDebug() << "Destroy session";
     delete m_SpotifyPlaylists;
     delete m_SpotifyPlayback;
-    sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
-    sp_playlistcontainer_release( m_container );
-    if( m_session != NULL )
-    {
-        qDebug() << "Destroying m_session";
-        sp_session_logout( m_session );
-        sp_session_release( m_session );
-    }
-
+    logout();
 
 }
 
@@ -128,30 +120,40 @@ void SpotifySession::logout()
 {
     m_SpotifyPlaylists->unsetAllLoaded();
 
+    if ( m_loggedIn ) {
+        sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
+        sp_playlistcontainer_release( m_container );
+    }
+
     sp_session_logout(m_session);
+    m_loggedIn = false;
+
+    /**
+      For some reason, the below is required on linux in order to make re-logging in work.
+      However, on mac clearing and restarting the session fails to work completely. WTF?!
+      */
+#ifndef Q_OS_MAC
     sp_session_release(m_session);
     m_session = 0;
 
     createSession();
+#endif
 }
 
 
 void SpotifySession::login()
 {
-    qDebug() << Q_FUNC_INFO;
+    qDebug() << Q_FUNC_INFO << "SpotifySession asked to log in!";
 
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
-        if( m_oldUsername.isEmpty() )
-            m_oldUsername = m_username;
-
-        else if( m_username != m_oldUsername && m_loggedIn )
+        logout();
+        if( m_username != m_oldUsername && m_loggedIn )
         {
-            m_oldUsername = m_username;
-
-            logout();
+            qDebug() << "We were previously logged in with a different user, so notify client of difference!";
             emit userChanged();
         }
+        m_oldUsername = m_username;
 
         qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
 #if SPOTIFY_API_VERSION >= 11

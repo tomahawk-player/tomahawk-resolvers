@@ -485,7 +485,7 @@ void SpotifyResolver::initSpotify()
 
 void SpotifyResolver::loginResponse( bool success , const QString& msg)
 {
-    qDebug() << "Succesfully logged in!";
+    qDebug() << Q_FUNC_INFO << "Notified of login response, sending to client:" << success << msg;
     m_loggedIn = true;
 
     QVariantMap resp;
