@@ -38,7 +38,7 @@ SpotifyPlayback::dataMutex()
 }
 
 void
-SpotifyPlayback::queueData( const AudioData& data )
+SpotifyPlayback::queueData( const QByteArray& data )
 {
     if( m_iodev.isNull() )
     {
@@ -46,7 +46,7 @@ SpotifyPlayback::queueData( const AudioData& data )
         return;
     }
 
-    m_iodev->writeData( (const char*)data.data, data.numFrames * 4 ); // 4 == channels * ( bits per sample / 8 ) == 2 * ( 16 / 8 ) == 2 * 2
+    m_iodev->write( data );
 }
 
 
@@ -114,18 +114,11 @@ SpotifyPlayback::musicDelivery(sp_session *session, const sp_audioformat *format
         return 0;
     }
 
-    const int numFrames = qMin(numFrames_, 8192);
-
     QMutex &m = _session->Playback()->dataMutex();
     m.lock();
-    AudioData d;
-    quint32 amount = numFrames * sizeof(int16_t) * format->channels;
-    d.data = qMalloc( amount );
-    memcpy( d.data, frames, amount );
-    d.numFrames = numFrames;
-    d.sampleRate = format->sample_rate;
-    _session->Playback()->queueData( d );
+    const QByteArray data( (const char*)frames, numFrames_ * 4 ); // 4 == channels * ( bits per sample / 8 ) == 2 * ( 16 / 8 ) == 2 * 2
+    _session->Playback()->queueData( data );
     m.unlock();
 
-    return numFrames;
+    return data.size();
 }

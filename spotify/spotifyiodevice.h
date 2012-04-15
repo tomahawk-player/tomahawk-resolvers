@@ -48,9 +48,8 @@ public:
 public slots:
     void disconnected();
 private:
-    QQueue< QPair< char* , qint64 > > m_audioData;
+    QByteArray m_audioData;
     QByteArray m_header;
-    qint64 m_curSum;
     mutable QMutex m_mutex;
 
     bool m_done;

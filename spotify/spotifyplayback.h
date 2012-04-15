@@ -25,13 +25,6 @@
 
 typedef QSharedPointer< SpotifyIODevice > spotifyiodev_ptr;
 
-struct AudioData {
-     void* data;
-     int numFrames;
-     int sampleRate;
- };
-
-
 class SpotifyPlayback : public QObject
 {
     Q_OBJECT
@@ -40,7 +33,7 @@ public:
 
     // Internal libspotify methods and data
     QMutex& dataMutex();
-    void queueData( const AudioData& data );
+    void queueData( const QByteArray& data );
     void startPlaying();
     void endTrack();
     bool trackIsOver();

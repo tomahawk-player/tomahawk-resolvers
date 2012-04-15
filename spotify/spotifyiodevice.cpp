@@ -28,7 +28,6 @@
 
 SpotifyIODevice::SpotifyIODevice( QObject* parent )
     : QIODevice( parent )
-    , m_curSum( 0 )
     , m_done( false )
 {
 }
@@ -85,20 +84,17 @@ qint64 SpotifyIODevice::readData( char* data, qint64 maxlen )
         m_header.clear();
     }
 
-    while( !m_audioData.isEmpty() && written < maxlen ) {
-        qint64 next = m_audioData.first().second;
-        if( written + next > maxlen )
-            return written;
+    if ( !m_audioData.isEmpty() )
+    {
+        const int toWrite = maxlen - written;
+        const int canWrite = qMin( toWrite, m_audioData.size() );
+        memcpy( data, m_audioData.data(), canWrite );
+        written += canWrite;
 
-        char* d = m_audioData.dequeue().first;
-        qMemCopy( data + written, d, next );
-        written += next;
-
-        m_curSum -= next;
-        free( d );
+        m_audioData = m_audioData.mid( canWrite );
     }
 
-    Q_ASSERT( m_curSum == 0 || written == maxlen );
+    Q_ASSERT( m_audioData.size() == 0 || written == maxlen );
 
     return written;
 }
@@ -107,31 +103,27 @@ qint64 SpotifyIODevice::writeData( const char* data, qint64 len )
 {
     if( m_done ) {
         // do nothing, just free the data
-        qFree( (char*)data );
+        free( (char*)data );
         return -1;
     }
+
     QMutexLocker l( &m_mutex );
-    m_audioData.enqueue( QPair< char*, qint64 >( (char*)data, len ) );
-    m_curSum += len;
+    m_audioData.append( data, len );
 
     emit readyRead();
 
-    return m_curSum;
+    return m_audioData.size();
 }
 
 qint64 SpotifyIODevice::bytesAvailable() const
 {
-    return m_header.size() + m_curSum;
+    return m_header.size() + m_audioData.size();
 }
 
 void SpotifyIODevice::disconnected()
 {
     m_done = true;
     qDebug() << "spotifyiodevice disconnected -.-";
-    m_curSum = 0;
-    while( !m_audioData.isEmpty() )
-        qFree( m_audioData.dequeue().first );
-
-
+    m_audioData.clear();
 }
 
