@@ -127,17 +127,15 @@ void SpotifySession::logout()
     }
 
     /**
-      For some reason, the below is required on linux in order to make re-logging in work.
-      However, on mac clearing and restarting the session fails to work completely. WTF?!
-      @note: this seems to actually do the right thing on OSx as well. Need to test Windows.
+     * Need to test Windows.
       @reproduce: login to spotify, this will make your playlist pop up in the gui. Now login with different
                   credentials, this should not give Connection Error but repopulate the GUI list.
+
+                  ALso try a failed login between two successful attempts
       */
-#ifndef Q_OS_WIN
     sp_session_release(m_session);
     m_session = 0;
     createSession();
-#endif
 }
 
 
