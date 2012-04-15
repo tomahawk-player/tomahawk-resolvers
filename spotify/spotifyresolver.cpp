@@ -132,9 +132,8 @@ void SpotifyResolver::setup()
 
     // When signal is emitted, you are logged in
     m_session = new SpotifySession(config);
-    connect( m_session, SIGNAL( notifyLoggedInSignal() ), this, SLOT( notifyLoggedIn() ) );
+    connect( m_session, SIGNAL( loginResponse( bool, QString ) ), this, SLOT( loginResponse( bool, QString ) ) );
     connect( m_session, SIGNAL( userChanged() ), this, SLOT( userChangedReceived() ) );
-    connect( m_session, SIGNAL( testLoginSucceeded( bool, QString ) ), this, SLOT( testLoginSucceeded( bool, QString ) ) );
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
     connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
     // Signals
@@ -151,7 +150,6 @@ void SpotifyResolver::setup()
     connect( m_stdinWatcher, SIGNAL( lineRead( QVariant ) ), this, SLOT( playdarMessage( QVariant ) ) );
     m_stdinWatcher->moveToThread( &m_stdinThread );
     m_stdinThread.start( QThread::LowPriority );
-
 }
 
 void SpotifyResolver::errorMsgReceived(sp_error error)
@@ -214,9 +212,6 @@ void SpotifyResolver::userChangedReceived()
     QVariantMap resp;
     resp[ "_msgtype" ] = "userChanged";
     resp[ "msg" ] = "Username changed! Removing synced playlists...";
-    QJson::Serializer s;
-    QByteArray msg = s.serialize( resp );
-    qDebug() << "SENDING USERCHANGED JSON:" << msg;
     sendMessage( resp );
 
 }
@@ -429,18 +424,6 @@ SpotifyResolver::sendAddTracksResult( const QString& spotifyId, QList<int> track
 
 
 void
-SpotifyResolver::testLoginSucceeded( bool success, const QString& msg )
-{
-    QVariantMap m;
-    m[ "qid" ] = m_checkLoginQid;
-    m[ "success" ] = success;
-    m[ "message" ] = msg;
-
-    m_checkLoginQid.clear();
-    sendMessage( m );
-}
-
-void
 SpotifyResolver::notifyAllPlaylistsLoaded()
 {
     qDebug() << Q_FUNC_INFO << "Sending all spotify playlists, found:" << m_session->Playlists()->getPlaylists().size();
@@ -500,15 +483,19 @@ void SpotifyResolver::initSpotify()
 //     search( "123", "coldplay", "the scientist" );
 }
 
-void SpotifyResolver::notifyLoggedIn()
+void SpotifyResolver::loginResponse( bool success , const QString& msg)
 {
     qDebug() << "Succesfully logged in!";
     m_loggedIn = true;
 
-    if( m_loggedIn ) {
-        sendSettingsMessage();
-        sp_session_preferred_bitrate( m_session->Session(), m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
-    }
+    QVariantMap resp;
+    resp[ "_msgtype" ] = "loginResponse";
+    resp[ "success" ] = success;
+    resp[ "message" ] = msg;
+    sendMessage( resp );
+
+    sendSettingsMessage();
+    sp_session_preferred_bitrate( m_session->Session(), m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
 }
 
 
@@ -537,7 +524,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     QVariantMap m = msg.toMap();
 
 
-    if( m.value( "_msgtype" ) == "saveSettings" )
+    if( m.value( "_msgtype" ) == "login" )
     {
         m_username = m[ "username" ].toString();
         m_pw = m[ "password" ].toString();
@@ -550,17 +537,6 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     else if ( m.value( "_msgtype" ) == "quit" )
     {
         quit();
-    }
-    else if( m.value( "_msgtype" ) == "checkLogin" )
-    {
-        const QString username = m[ "username" ].toString();
-        const QString pw = m[ "password" ].toString();
-
-        m_checkLoginQid = m[ "qid" ].toString();
-
-        // Test with the new credentials, and re-log in with previous ones if we were logged in
-        m_session->testLogin( username, pw );
-
     }
     else if ( m.value( "_msgtype" ) == "getCredentials" )
     {

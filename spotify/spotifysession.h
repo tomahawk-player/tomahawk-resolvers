@@ -69,8 +69,6 @@ public:
     void setCredentials(QString username, QString password);
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
     bool isLoggedIn(){ return m_loggedIn;}
-    void sendNotifyLoggedInSignal();
-    void testLogin(const QString& username, const QString& pw);
     void login();
     void logout();
 
@@ -96,9 +94,8 @@ public:
 
 signals:
     void notifyMainThreadSignal();
-    void notifyLoggedInSignal();
+    void loginResponse( bool success, const QString& response );
     void notifySyncUpdateSignal( const SpotifyPlaylists::LoadedPlaylist& playlist );
-    void testLoginSucceeded( bool, const QString& msg );
     void sendErrorMsg( sp_error );
     void sendErrorMsg( const QString &msg, bool isDebug );
     void userChanged();
@@ -110,17 +107,17 @@ private slots:
     void notifyMainThread();
 
 private:
-
+    void createSession();
     // When username changed, clear old users data
     void clearOldUserdata();
 
     // Mixed
     static SpotifySession* s_instance;
-    QThread m_playlistThread;
     SpotifyPlaylists *m_SpotifyPlaylists;
     SpotifyPlayback *m_SpotifyPlayback;
     sp_playlistcontainer *m_container;
     bool m_pcLoaded;
+    sessionConfig m_sessionConfig;
 
     // Session
     sp_session_config m_config;
@@ -132,7 +129,6 @@ private:
     QString m_username;
     QString m_password;
     QString qid;
-    bool m_testLogin, m_loggedInBeforeTest;
 
 
 };

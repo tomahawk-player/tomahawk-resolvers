@@ -98,9 +98,8 @@ private slots:
     void loadCache();
     void saveCache();
     void initSpotify();
-    void notifyLoggedIn();
+    void loginResponse( bool success, const QString& msg );
     void notifyAllPlaylistsLoaded();
-    void testLoginSucceeded( bool, const QString& msg );
     void errorMsgReceived( sp_error );
     void errorMsgReceived( const QString &msg, bool isDebug );
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
@@ -144,7 +143,6 @@ private:
 
     QString m_username;
     QString m_pw;
-    QString m_checkLoginQid;
 
     bool m_highQuality;
     bool m_loggedIn;

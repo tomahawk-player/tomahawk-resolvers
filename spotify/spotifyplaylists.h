@@ -140,6 +140,7 @@ public:
      */
     void addStateChangedCallback( PlaylistClosure* closure );
 
+    void clear();
 public slots:
 
    // void tracksMovedSlot(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
@@ -182,7 +183,6 @@ private:
     void playlistNameChange( sp_playlist * pl );
     void checkForPlaylistsLoaded();
     void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
-    void clear();
 
     int findTrackPosition( const QList< sp_track* > tracks, const QString& trackId );
 

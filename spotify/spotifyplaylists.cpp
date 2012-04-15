@@ -134,6 +134,9 @@ void SpotifyPlaylists::clear()
     writeSettings();
     for ( int i = 0; i < m_playlists.size(); i++ )
     {
+        foreach ( sp_track* track, m_playlists[ i ].tracks_ )
+            sp_track_release( track );
+
         Sync s;
         s.id_ = m_playlists[ i ].id_;
         const bool sync = m_syncPlaylists.contains( s );
@@ -148,12 +151,6 @@ void SpotifyPlaylists::clear()
     m_playlists.clear();
     m_syncPlaylists.clear();
     m_stateChangedCallbacks.clear();
-
-    sp_playlistcontainer_remove_callbacks(
-            SpotifySession::getInstance()->PlaylistContainer(),
-            &SpotifyCallbacks::containerCallbacks, SpotifySession::getInstance()->Session() );
-    sp_playlistcontainer_release(SpotifySession::getInstance()->PlaylistContainer() );
-
 }
 
 /**
@@ -480,8 +477,6 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
         addStarredTracksToContainer();
         checkForPlaylistsLoaded();
 
-        SpotifySession::getInstance()->setPlaylistContainer( pc );
-
     }else
     {
         /// @note: currently also a bug in libspotifyV11
@@ -625,8 +620,6 @@ SpotifyPlaylists::playlistRemovedCallback( sp_playlistcontainer* pc, sp_playlist
         QMetaObject::invokeMethod( _session->Playlists(), "removePlaylistNotification", Qt::QueuedConnection, Q_ARG(sp_playlist*, playlist) );
     else
         _session->Playlists()->removePlaylistNotification( playlist );
-
-    _session->setPlaylistContainer( pc );
 }
 
 /**
@@ -1815,15 +1808,9 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
     playlist.sync_ = false;
     playlist.isLoaded = false;
 
-    int tmpRev(0);
+    int tmpRev = 0;
 
-
-    /*if(m_playlists.contains( playlist ) )
-    {
-        qDebug() << "List allready contains the playlist";
-        return;
-    }*/
-
+    sp_playlist_add_ref( pl );
 
     // Precaution, to prevent mixing up the starred tracks container and user playlistnameings.
     QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );

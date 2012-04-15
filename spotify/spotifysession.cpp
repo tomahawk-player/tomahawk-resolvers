@@ -21,10 +21,10 @@ SpotifySession* SpotifySession::s_instance = 0;
 SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    : QObject( parent )
    , m_pcLoaded( false )
+   , m_sessionConfig( config )
    , m_username( QString() )
    , m_password ( QString() )
    , m_oldUsername( QString() )
-   , m_testLogin( false )
 {
 
     // Instance
@@ -33,36 +33,12 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
 
-    m_SpotifyPlaylists->moveToThread( &m_playlistThread );
-    m_playlistThread.start( QThread::LowPriority );
     m_SpotifyPlayback = new SpotifyPlayback;
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
 
-    if(!config.application_key.isEmpty() || config.g_app_key != NULL) {
-
-        m_config.api_version = SPOTIFY_API_VERSION;
-        m_config.cache_location = config.cache_location;
-        m_config.settings_location = config.settings_location;
-        m_config.application_key = ( config.application_key.isEmpty() ? config.g_app_key : config.application_key);
-        m_config.application_key_size = config.application_key_size;
-        m_config.user_agent = config.user_agent;
-        m_config.callbacks = &SpotifyCallbacks::callbacks;
-        m_config.tracefile = config.tracefile;
-        m_config.device_id = config.device_id;
-        m_config.compress_playlists = false;
-        m_config.dont_save_metadata_for_playlists = false;
-        m_config.initially_unload_playlists = false;
-
-    }
-    m_config.userdata = this;
-    sp_error err = sp_session_create( &m_config, &m_session );
-
-    if ( SP_ERROR_OK != err )
-    {
-        qDebug() << "Failed to create spotify session: " << sp_error_message( err );
-    }
+    createSession();
 }
 
 SpotifySession*
@@ -77,6 +53,7 @@ SpotifySession::~SpotifySession(){
     delete m_SpotifyPlaylists;
     delete m_SpotifyPlayback;
     sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
+    sp_playlistcontainer_release( m_container );
     if( m_session != NULL )
     {
         qDebug() << "Destroying m_session";
@@ -87,22 +64,39 @@ SpotifySession::~SpotifySession(){
 
 }
 
+
+void SpotifySession::createSession()
+{
+    m_config = sp_session_config();
+    if(!m_sessionConfig.application_key.isEmpty() || m_sessionConfig.g_app_key != NULL) {
+
+        m_config.api_version = SPOTIFY_API_VERSION;
+        m_config.cache_location = m_sessionConfig.cache_location;
+        m_config.settings_location = m_sessionConfig.settings_location;
+        m_config.application_key = ( m_sessionConfig.application_key.isEmpty() ? m_sessionConfig.g_app_key : m_sessionConfig.application_key);
+        m_config.application_key_size = m_sessionConfig.application_key_size;
+        m_config.user_agent = m_sessionConfig.user_agent;
+        m_config.callbacks = &SpotifyCallbacks::callbacks;
+        m_config.tracefile = m_sessionConfig.tracefile;
+        m_config.device_id = m_sessionConfig.device_id;
+        m_config.compress_playlists = false;
+        m_config.dont_save_metadata_for_playlists = false;
+        m_config.initially_unload_playlists = false;
+
+    }
+    m_config.userdata = this;
+    sp_error err = sp_session_create( &m_config, &m_session );
+
+    if ( SP_ERROR_OK != err )
+    {
+        qDebug() << "Failed to create spotify session: " << sp_error_message( err );
+    }
+}
+
+
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
-
-   if (_session->m_testLogin)
-   {
-       _session->m_testLogin = false;
-       emit _session->testLoginSucceeded( error == SP_ERROR_OK, QString::fromAscii( sp_error_message( error ) ) );
-
-       if (_session->m_loggedInBeforeTest)
-       {
-           _session->m_loggedInBeforeTest = false;
-           // We were logged in and then did a test login, re-log in with our old credentials.
-           _session->login();
-       }
-    }
     if (error == SP_ERROR_OK) {
 
         qDebug() << "Logged in successfully!!";
@@ -112,41 +106,35 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 
         qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
-        sp_playlistcontainer_add_callbacks(
-                sp_session_playlistcontainer(session),
-                &SpotifyCallbacks::containerCallbacks, _session);
-
-        emit _session->notifyLoggedInSignal();
-
-        return;
+        _session->setPlaylistContainer( sp_session_playlistcontainer(session) );
+        sp_playlistcontainer_add_ref( _session->PlaylistContainer() );
+        sp_playlistcontainer_add_callbacks(_session->PlaylistContainer(), &SpotifyCallbacks::containerCallbacks, _session);
     }
     qDebug() << Q_FUNC_INFO << "==== " << sp_error_message( error ) << " ====";
-    _session->sendErrorMsg( error );
+    const QString msg = QString::fromUtf8( sp_error_message( error ) );
+    emit _session->loginResponse( error == SP_ERROR_OK, msg );
 }
 
-void SpotifySession::clearOldUserdata()
-{
-   m_SpotifyPlaylists->unsetAllLoaded();
-}
 
-void SpotifySession::testLogin(const QString& username, const QString& pw)
+void SpotifySession::setCredentials( QString username, QString password )
 {
-    qDebug() << "Testing login with username:" << username;
-    m_testLogin = true;
-    m_loggedInBeforeTest = true;
-    sp_session_logout(m_session);
-#if SPOTIFY_API_VERSION >= 11
-    sp_session_login(m_session, username.toLatin1(), pw.toLatin1(), false, NULL);
-#else
-    sp_session_login(m_session, username.toLatin1(), pw.toLatin1(), false);
-#endif
-}
-
-void SpotifySession::setCredentials(QString username, QString password)
-{
+    m_oldUsername = m_username;
     m_username = username;
     m_password = password;
 }
+
+
+void SpotifySession::logout()
+{
+    m_SpotifyPlaylists->unsetAllLoaded();
+
+    sp_session_logout(m_session);
+    sp_session_release(m_session);
+    m_session = 0;
+
+    createSession();
+}
+
 
 void SpotifySession::login()
 {
@@ -156,14 +144,16 @@ void SpotifySession::login()
     {
         if( m_oldUsername.isEmpty() )
             m_oldUsername = m_username;
-        else if( m_username != m_oldUsername )
+
+        else if( m_username != m_oldUsername && m_loggedIn )
         {
             m_oldUsername = m_username;
-            clearOldUserdata();
+
+            logout();
             emit userChanged();
         }
 
-        qDebug() << "Logging in with username:" << m_username;
+        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
 #if SPOTIFY_API_VERSION >= 11
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
 #else
@@ -174,10 +164,6 @@ void SpotifySession::login()
         qDebug() << "No username or password provided!";
 }
 
-void SpotifySession::sendNotifyLoggedInSignal()
-{
-    emit notifyLoggedInSignal();
-}
 
 /// @slot playlistRecieved
 /// @note: will only emit if playlist is in syncstate
