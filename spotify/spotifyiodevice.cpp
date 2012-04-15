@@ -102,8 +102,7 @@ qint64 SpotifyIODevice::readData( char* data, qint64 maxlen )
 qint64 SpotifyIODevice::writeData( const char* data, qint64 len )
 {
     if( m_done ) {
-        // do nothing, just free the data
-        free( (char*)data );
+        // do nothing
         return -1;
     }
 
