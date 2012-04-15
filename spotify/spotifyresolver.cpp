@@ -492,6 +492,9 @@ void SpotifyResolver::loginResponse( bool success , const QString& msg)
     resp[ "_msgtype" ] = "loginResponse";
     resp[ "success" ] = success;
     resp[ "message" ] = msg;
+    resp[ "username" ] = m_username;
+    resp[ "password" ] = m_pw;
+    resp[ "highQuality" ] = m_highQuality;
     sendMessage( resp );
 
     sendSettingsMessage();
