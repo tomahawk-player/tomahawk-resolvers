@@ -1,6 +1,6 @@
 /*
     Copyright (c) 2011 Leo Franchi <leo@kdab.com>
-
+    Copyright (c) 2011 Hugo Lindström <hugolm84@gmail.com>
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
     files (the "Software"), to deal in the Software without
@@ -26,58 +26,119 @@
 #include "spotifysearch.h"
 #include "spotifysession.h"
 #include "spotifyresolver.h"
+#include "spotifyplaylists.h"
+#include "PlaylistClosure.h"
+
 #include <QDebug>
+#include <boost/bind.hpp>
+class SpotifyPlaylists;
 
 void
 SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 {
-    qDebug() << Q_FUNC_INFO;
-    sp_playlist *playlist = reinterpret_cast<sp_playlist*>(userdata);
-    if(!sp_playlist_is_loaded( playlist ) )
+    SpotifyPlaylists::AddTracksData *data = reinterpret_cast<SpotifyPlaylists::AddTracksData*>(userdata);
+
+    if( sp_search_num_tracks( result ) < 1 )
     {
-        qDebug() << "Search Playlist is not loaded";
-        return;
+        const int pos = data->searchOrder.indexOf( result );
+        qWarning() << "Got no search result for track we tried to add! Ignoring it... index is:" << pos;
+        data->finaltracks[ pos ] = 0;
+        data->waitingFor--;
+
+        // Send error
+        SpotifySession::getInstance()->doSendErrorMsg( QString("Can not add %1 to Spotify, not found in catalog.").arg( QString::fromUtf8(sp_search_query( result ) ) ), false );
     }
-
-    // Need to pass a ** to add_tracks
-    sp_track **tracks = static_cast<sp_track **>(malloc(sizeof(sp_track*)));
-
-    if( sp_search_num_tracks( result ) > 0 )
+    else
     {
-        int num = qMin( sp_search_num_tracks( result ), 1 );
-        for( int i = 0; i < num; i++ )
+        int cur = 0;
+        int max = sp_search_num_tracks(result);
+        while( cur < max )
         {
-            sp_track *const tr = sp_search_track( result, i );
-            if( !tr || !sp_track_is_loaded( tr ) ) {
-                qDebug() << "Got still loading track, skipping";
+            // Find a loaded track to add to the list
+            sp_track *const tr = sp_search_track( result, cur );
+
+//             qDebug() << "Got search result:" << result << sp_track_name( tr ) << sp_artist_name( sp_track_artist( tr, 0 ) );
+            if( !tr ) {
+                qDebug() << "Got an invalid search result, skipping";
+
+                cur++;
                 continue;
             }
+            else if ( !sp_track_is_loaded( tr ) )
+            {
+                qDebug() << "Track in search results was not loaded!! Enqueueing to state changed callback!";
+                QList< sp_track * > waitingForLoad = QList< sp_track* >() << tr;
+                sApp->session()->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind( checkTracksAreLoaded, waitingForLoad ), sApp->session()->Playlists(), SLOT( addSearchedTrack( sp_search*, void* ) ), result, userdata ) );
+                return;
+            }
 
-            qDebug() << "Adding track to playlist" << sp_track_name( tr );
-            *(tracks++) = tr;
-            sp_error err = sp_playlist_add_tracks(playlist, tracks, 1, sp_playlist_num_tracks( playlist ), SpotifySession::getInstance()->Session());
+            const int pos = data->searchOrder.indexOf( result );
+            qDebug() << "Adding track to playlist" << sp_track_name( tr ) << "at index:" << pos;
+            data->finaltracks[ pos ] = tr;
+            data->waitingFor--;
+            break;
+        }
+    }
 
-            switch(err) {
-                case SP_ERROR_OK:
-                    qDebug() << "Added tracks to pos" << sp_playlist_num_tracks( playlist )-1;
-                    break;
-                case SP_ERROR_INVALID_INDATA:
-                    qDebug() << "Invalid position";
-                    break;
+    if ( data->waitingFor == 0 )
+    {
+        // Got all the real tracks, now add
+        qDebug() << "All added tracks were searched for, now inserting in playlist!";
+        QList<int> tracksInserted;
+        QList<QString> insertedIds;
+        for ( int i = 0; i < data->finaltracks.size(); i++ )
+        {
+            if ( data->finaltracks[ i ] )
+            {
+                tracksInserted << i;
 
-                case SP_ERROR_PERMISSION_DENIED:
-                    qDebug() << "Access denied";
-                    break;
-                default:
-                    qDebug() << "Other error (should not happen)";
-                    break;
-                }
+                sp_link* l = sp_link_create_from_track( data->finaltracks[i], 0 );
+                char urlStr[256];
+                sp_link_as_string( l, urlStr, sizeof(urlStr) );
+                insertedIds << QString::fromUtf8( urlStr );
+                sp_link_release( l );
+            }
         }
 
-    }
-    delete []tracks;
+        // Our vector may have "holes" in it, for any tracks that we couldn't find
+        int count = 0;
+        for ( QVector< sp_track* >::iterator iter = data->finaltracks.begin(); iter != data->finaltracks.end(); )
+        {
+            if ( !*iter )
+            {
+                qDebug() << "Removing not-found track from results, position:" << count;
+                iter = data->finaltracks.erase( iter );
+            } else
+                ++iter;
+            count++;
+        }
 
+        sApp->setIgnoreNextUpdate( true );
+        sp_error err = sp_playlist_add_tracks(data->playlist, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());
+
+        switch(err) {
+            case SP_ERROR_OK:
+                qDebug() << "Added tracks to pos" << data->pos;
+                break;
+            case SP_ERROR_INVALID_INDATA:
+                qDebug() << "Invalid position";
+                break;
+
+            case SP_ERROR_PERMISSION_DENIED:
+                qDebug() << "Access denied";
+                break;
+            default:
+                qDebug() << "Other error (should not happen)";
+                break;
+        }
+
+        sApp->sendAddTracksResult( data->plid, tracksInserted, insertedIds, err == SP_ERROR_OK );
+
+        // Only free once
+        delete data;
+    }
 }
+
 
 void
 SpotifySearch::searchComplete( sp_search *result, void *userdata )
@@ -118,7 +179,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( data->resolver->port() ).arg( uid );
             track[ "duration" ] = duration;
             track[ "score" ] = .95; // TODO
-            track[ "bitrate" ] = 192; // TODO
+            track[ "bitrate" ] = data->resolver->highQuality() ? 320 : 160; // TODO
 
             // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
             quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
@@ -131,18 +192,26 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     }else
     {
         QString didYouMean = QString::fromUtf8(sp_search_did_you_mean(	result ) );
-        if(data->searchCount <= 1  ){
-            qDebug() << "Try nr." << data->searchCount << " Searched for" << QString::fromUtf8(sp_search_query(	result ) ) << "Did you mean?"<< didYouMean;
-            //int distance = QString::compare(QString::fromUtf8(sp_search_query(	result ) ), QString::fromUtf8(sp_search_did_you_mean(	result ) ), Qt::CaseInsensitive);
-            //qDebug() << "Distance for query is " << distance;//if( distance < 4)
-            #if SPOTIFY_API_VERSION >= 11
+        QString queryString = QString::fromUtf8(sp_search_query(	result ) );
+        if(data->searchCount <= 1 ){
+            if( didYouMean.isEmpty() )
+                qDebug() << "Tried DidYouMean, but no suggestions available for " << queryString;
+            else
+            {
+                qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
+                //int distance = QString::compare(queryString, didYouMean, Qt::CaseInsensitive);
+                //qDebug() << "Distance for query is " << distance;//if( distance < 4)
+#if SPOTIFY_API_VERSION >= 11
                 sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
-            #else
+#else
                 sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
-            #endif
+#endif
+            }
             data->searchCount++;
             return;
-        }
+        }else
+            qDebug() << "Tried to find suggestion to many times";
+
 
     }
 

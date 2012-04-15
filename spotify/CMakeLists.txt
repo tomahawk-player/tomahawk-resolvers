@@ -7,6 +7,8 @@ find_package(Qt4 REQUIRED)
 find_package(QJSON REQUIRED)
 find_package(libspotify REQUIRED)
 
+find_package(Boost)
+
 add_subdirectory(qxtweb-standalone)
 
 include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ ${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
@@ -17,7 +19,7 @@ set(tomahawkspotify_SRCS
     kdsingleapplicationguard/kdsharedmemorylocker.cpp
     kdsingleapplicationguard/kdtoolsglobal.cpp
     kdsingleapplicationguard/kdlockedsharedmemorypointer.cpp
-    spotifyhttpserver.cpp
+    PlaylistClosure.cpp
     spotifyloghandler.cpp
     spotifyplayback.cpp
     spotifysearch.cpp
@@ -38,7 +40,7 @@ set( tomahawkspotify_NOMOC_HDRS
 
 set( tomahawkspotify_HDRS
     kdsingleapplicationguard/kdsingleapplicationguard.h
-    spotifyhttpserver.h
+    PlaylistClosure.h
     spotifyloghandler.h
     spotifyplayback.h
     spotifysearch.h
@@ -52,7 +54,6 @@ set( tomahawkspotify_HDRS
 
 qt4_wrap_cpp( tomahawkspotify_MOC_HDRS ${tomahawkspotify_HDRS})
 
-qt4_add_resources( RC_SRCS "resources.qrc" )
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_MOC_HDRS} ${tomahawkspotify_NOMOC_HDRS} )
 target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
 

@@ -82,10 +82,10 @@ static sp_playlist_callbacks playlistCallbacks = {
         NULL, //&SpotifyPlaylists::tracks_added,
         NULL, //&SpotifyPlaylists::tracks_removed,
         NULL, //&SpotifyPlaylists::tracks_moved,
-        NULL,//&SpotifyPlaylists::playlist_renamed,
+        &SpotifyPlaylists::playlistRenamed,
         &SpotifyPlaylists::stateChanged,
         &SpotifyPlaylists::playlistUpdateInProgress,
-        NULL,//&SpotifyPlaylists::playlist_metadata_updated
+        &SpotifyPlaylists::playlistMetadataUpdated,
         NULL,
         NULL,
         NULL,
@@ -110,7 +110,7 @@ static sp_playlist_callbacks syncPlaylistCallbacks = {
         NULL,
         NULL,
 };
-    
+
 
 }
 

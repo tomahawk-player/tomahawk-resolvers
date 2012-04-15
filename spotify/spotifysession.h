@@ -18,14 +18,14 @@
 
 #include <QObject>
 #include <QCoreApplication>
-#include <libspotify/api.h>
 #include <QDebug>
+#include <QThread>
+#include <QTimer>
+#include <QString>
+#include <QThread>
+#include <libspotify/api.h>
 #include "spotifyplayback.h"
 #include "spotifyplaylists.h"
-//#include "spotifysearch.h"
-//#include "consolewatcher.h"
-#include <QThread>
-
 
 /**
     sessionConfig
@@ -57,77 +57,78 @@ public:
     explicit SpotifySession( sessionConfig config, QObject *parent = 0 );
     virtual ~SpotifySession();
     static SpotifySession* getInstance();
+
+    // Mainthread
+    void sendNotifyThreadSignal();
+
     // Session functions
     void setSession(sp_session* session){ m_session = session; }
-    void sendNotifyThreadSignal();
-    void sendNotifyLoggedInSignal();
+    sp_session* Session() const { return m_session; }
+
+    //  Login
+    void setCredentials(QString username, QString password);
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
+    bool isLoggedIn(){ return m_loggedIn;}
+    void login();
+    void logout();
+
+    // Playlists
     void setPlaylistContainer( sp_playlistcontainer *pc){ m_container = pc; }
     void setPlaylistContainerLoaded( bool loaded ){ m_pcLoaded = loaded; }
-    void setCredentials(QString username, QString password);
-    sp_session* Session() const { return m_session; }
+    bool isPlaylistContainerLoaded() const { return m_pcLoaded; }
     sp_playlistcontainer* PlaylistContainer() const { return m_container; }
     SpotifyPlaylists* Playlists() { return m_SpotifyPlaylists; }
+
+    // Playback
     SpotifyPlayback* Playback() { return m_SpotifyPlayback; }
-    bool isPlaylistContainerLoaded() const { return m_pcLoaded; }
-    bool isLoggedIn(){ return m_loggedIn;}
 
     // Spotify session callbacks.
     static void SP_CALLCONV loggedIn(sp_session *session, sp_error error);
-    static void SP_CALLCONV loggedOut(sp_session *session)
-    {
-        qDebug() << "Logging out";
-        Q_UNUSED(session);
-    }
-    static void SP_CALLCONV connectionError(sp_session *session, sp_error error)
-    {
-        Q_UNUSED(session);
-        qDebug() << "Connection error: " << sp_error_message(error);
+    static void SP_CALLCONV loggedOut(sp_session *session);
+    static void SP_CALLCONV connectionError(sp_session *session, sp_error error);
+    static void SP_CALLCONV notifyMainThread(sp_session *session);
+    static void SP_CALLCONV logMessage(sp_session *session, const char *data);
 
-    }
-    static void SP_CALLCONV notifyMainThread(sp_session *session)
-    {
-
-        Q_UNUSED(session);
-        SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
-        _session->sendNotifyThreadSignal();
-
-    }
-    static void SP_CALLCONV logMessage(sp_session *session, const char *data)
-    {
-        Q_UNUSED(session);
-        qDebug() << "SpotifyLog: " << data;
-    }
-
-     void login();
-     QString m_username;
-     QString m_password;
-     QString qid;
+    // Error
+    void doSendErrorMsg( const QString &msg, bool isDebug){ emit sendErrorMsg( msg, isDebug); }
 
 signals:
     void notifyMainThreadSignal();
-    void notifyLoggedInSignal();
-    void notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
-    void notifyStarredUpdateSignal( SpotifyPlaylists::LoadedPlaylist playlist );
+    void loginResponse( bool success, const QString& response );
+    void notifySyncUpdateSignal( const SpotifyPlaylists::LoadedPlaylist& playlist );
+    void sendErrorMsg( sp_error );
+    void sendErrorMsg( const QString &msg, bool isDebug );
+    void userChanged();
 
 public slots:
-     void get( SpotifyPlaylists::LoadedPlaylist playlist);
+    void playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist);
 
 private slots:
     void notifyMainThread();
 
 private:
+    void createSession();
+    // When username changed, clear old users data
+    void clearOldUserdata();
 
+    // Mixed
     static SpotifySession* s_instance;
-    QThread m_playlistThread;
     SpotifyPlaylists *m_SpotifyPlaylists;
     SpotifyPlayback *m_SpotifyPlayback;
+    sp_playlistcontainer *m_container;
+    bool m_pcLoaded;
+    sessionConfig m_sessionConfig;
+
+    // Session
     sp_session_config m_config;
     sp_session *m_session;
     bool m_loggedIn;
+    QString m_oldUsername;
 
-    sp_playlistcontainer *m_container;
-    bool m_pcLoaded;
+    // Login
+    QString m_username;
+    QString m_password;
+    QString qid;
 
 
 };

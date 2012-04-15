@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2011 Leo Franchi <leo@kdab.com>
+    Copyright (c) 2011-2012 Leo Franchi <lfranchi@kde.org>
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -81,6 +81,14 @@ public:
 
     int port() const { return m_port; }
     SpotifySession* session() const { return m_session; }
+    bool highQuality() const { return m_highQuality; }
+
+    void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
+
+    bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
+    void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
+
+    void registerQidForPlaylist( const QString& qid, const QString& playlist );
 
 public slots:
     void instanceStarted( KDSingleApplicationGuard::Instance );
@@ -90,12 +98,19 @@ private slots:
     void loadCache();
     void saveCache();
     void initSpotify();
-    void notifyLoggedIn();
-    void notifySyncUpdate( SpotifyPlaylists::LoadedPlaylist );
-    void notifyStarredUpdate( SpotifyPlaylists::LoadedPlaylist );
-
+    void loginResponse( bool success, const QString& msg );
+    void notifyAllPlaylistsLoaded();
+    void errorMsgReceived( sp_error );
+    void errorMsgReceived( const QString &msg, bool isDebug );
+    void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
+    void sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist& );
+    void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );
+    void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
+    void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
+    void userChangedReceived();
 private:
-    void sendConfWidget();
+    QVariantMap spTrackToVariant( sp_track* track );
+
     void sendSettingsMessage();
     void loadSettings();
     void saveSettings() const;
@@ -123,14 +138,20 @@ private:
     QByteArray m_apiKey;
     QByteArray m_configWidget;
 
+    // Callback QIDs
+    QHash< QString, QString > m_playlistToQid;
+
     QString m_username;
     QString m_pw;
 
     bool m_highQuality;
     bool m_loggedIn;
+    bool m_ignoreNextUpdate;
 
 };
 
 Q_DECLARE_METATYPE( CacheEntry )
-
+Q_DECLARE_METATYPE( sp_search* )
+Q_DECLARE_METATYPE( void* )
 #endif // tomahawkspotify_H
+
