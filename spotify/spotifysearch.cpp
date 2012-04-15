@@ -218,5 +218,6 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     resp[ "results" ] = results;
     sp_search_release( result );
     data->resolver->sendMessage( resp );
+    delete data;
 }
 
