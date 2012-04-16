@@ -396,6 +396,10 @@ SpotifyResolver::sendPlaylistDeleted( const QString& playlist )
     msg[ "_msgtype" ] = "playlistDeleted";
     msg[ "playlistid" ] = playlist;
 
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING PLAYLIST REMOVED JSON:" << m;
+
     sendMessage( msg );
 }
 

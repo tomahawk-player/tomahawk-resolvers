@@ -479,8 +479,6 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
     }else
     {
-        /// @note: currently also a bug in libspotifyV11
-        qWarning() << "loadContainerSlot called twice! SOMETHING IS WRONG!!";
     }
 
     m_checkPlaylistsTimer->start();
@@ -1126,6 +1124,7 @@ SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
 
     int index = m_playlists.indexOf( pl );
 
+    qDebug() << Q_FUNC_INFO << "Got playlist deleted:" << playlist;
     if( index != -1)
     {
         const QString plid = m_playlists[ index ].id_;
@@ -1134,8 +1133,11 @@ SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
 
         if ( m_syncPlaylists.contains( s ) )
         {
-            emit sendPlaylistDeleted( plid );
+            qDebug() << Q_FUNC_INFO << "And deleted playlist is synced, so sending to clients:" << plid;
             m_syncPlaylists.removeAll( s );
+
+            if ( !sApp->ignoreNextUpdate() )
+                emit sendPlaylistDeleted( plid );
         }
 
         m_playlists.removeAt( index );
@@ -1170,8 +1172,10 @@ SpotifyPlaylists::doRemovePlaylist( sp_playlist *playlist )
     }
 
     if ( pcIndex > -1 )
+    {
+        sApp->setIgnoreNextUpdate( true );
         sp_playlistcontainer_remove_playlist( SpotifySession::getInstance()->PlaylistContainer(), pcIndex );
-    else
+    } else
         qWarning() << "Failed to find playlist to delete in the playlistcontainer....";
 }
 
