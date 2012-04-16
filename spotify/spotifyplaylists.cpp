@@ -1135,10 +1135,10 @@ SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
         {
             qDebug() << Q_FUNC_INFO << "And deleted playlist is synced, so sending to clients:" << plid;
             m_syncPlaylists.removeAll( s );
-
-            if ( !sApp->ignoreNextUpdate() )
-                emit sendPlaylistDeleted( plid );
         }
+
+        if ( !sApp->ignoreNextUpdate() )
+            emit sendPlaylistDeleted( plid );
 
         m_playlists.removeAt( index );
 
