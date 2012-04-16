@@ -23,6 +23,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
    , m_pcLoaded( false )
    , m_sessionConfig( config )
    , m_loggedIn( false )
+   , m_relogin( false )
 {
 
     // Instance
@@ -58,6 +59,7 @@ SpotifySession::~SpotifySession(){
 void SpotifySession::createSession()
 {
     m_config = sp_session_config();
+
     if(!m_sessionConfig.application_key.isEmpty() || m_sessionConfig.g_app_key != NULL) {
 
         m_config.api_version = SPOTIFY_API_VERSION;
@@ -116,21 +118,12 @@ void SpotifySession::logout()
         sp_session_logout(m_session);
     }
 
-    /**
-     * Need to test Windows.
-      @reproduce: login to spotify, this will make your playlist pop up in the gui. Now login with different
-                  credentials, this should not give Connection Error but repopulate the GUI list.
-
-                  ALso try a failed login between two successful attempts
-      */
-    sp_session_release(m_session);
-    m_session = 0;
-    createSession();
 }
 
 
 void SpotifySession::login( const QString& username, const QString& password )
 {
+
     if ( m_loggedIn &&
          m_username == username &&
          m_password == password )
@@ -139,22 +132,29 @@ void SpotifySession::login( const QString& username, const QString& password )
         return;
     }
 
-    qDebug() << Q_FUNC_INFO << "SpotifySession asked to log in! Clearing session first";
-
-    logout();
-
     if( m_username != username && m_loggedIn )
     {
         qDebug() << "We were previously logged in with a different user, so notify client of difference!";
         emit userChanged();
     }
 
-
     m_username = username;
     m_password = password;
 
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
+        /// @note:  If current state is not logged out, logout this session
+        ///         and relogin in callback
+        /// @note2: We can be logged out, but the session is still connected to accesspoint
+        ///         Wait for that to.
+        if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
+        {
+            qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
+            m_relogin = true;
+            logout();
+            return;
+        }
+
         qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
 #if SPOTIFY_API_VERSION >= 11
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
@@ -187,6 +187,15 @@ void SpotifySession::loggedOut(sp_session *session)
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
     _session->setLoggedIn( false );
     qDebug() << "Logging out";
+
+    /// @note: This will login the user after previous user
+    ///        was properly logged out.
+    if(_session->m_relogin)
+    {
+        _session->m_relogin = false;
+        _session->login( _session->m_username, _session->m_password );
+    }
+
 
 }
 void SpotifySession::connectionError(sp_session *session, sp_error error)

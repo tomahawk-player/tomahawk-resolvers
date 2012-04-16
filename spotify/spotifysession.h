@@ -90,7 +90,7 @@ public:
 
     // Error
     void doSendErrorMsg( const QString &msg, bool isDebug){ emit sendErrorMsg( msg, isDebug); }
-
+    bool m_relogin;
 signals:
     void notifyMainThreadSignal();
     void loginResponse( bool success, const QString& response );
@@ -127,6 +127,7 @@ private:
     QString m_username;
     QString m_password;
     QString qid;
+
 
 
 };
