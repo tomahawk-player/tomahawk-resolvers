@@ -142,6 +142,7 @@ void SpotifyResolver::setup()
     connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QStringList,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QStringList,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QStringList)), this, SLOT(sendTracksRemoved(sp_playlist*,QStringList)));
+    connect( m_session->Playlists(), SIGNAL(sendPlaylistDeleted(QString)), this, SLOT(sendPlaylistDeleted(QString)));
     connect( m_session->Playlists(), SIGNAL(notifyNameChange(SpotifyPlaylists::LoadedPlaylist)), this, SLOT( sendPlaylistNameChanged(SpotifyPlaylists::LoadedPlaylist) ));
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
@@ -383,6 +384,17 @@ SpotifyResolver::sendTracksRemoved( sp_playlist* pl, const QStringList& tracks )
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
     qDebug() << "SENDING TRACKS REMOVED JSON:" << m;
+
+    sendMessage( msg );
+}
+
+
+void
+SpotifyResolver::sendPlaylistDeleted( const QString& playlist )
+{
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "playlistDeleted";
+    msg[ "playlistid" ] = playlist;
 
     sendMessage( msg );
 }

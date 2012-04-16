@@ -1128,9 +1128,15 @@ SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
 
     if( index != -1)
     {
+        const QString plid = m_playlists[ index ].id_;
         Sync s;
         s.id_ = m_playlists[ index ].id_;
-        m_syncPlaylists.removeAll( s );
+
+        if ( m_syncPlaylists.contains( s ) )
+        {
+            emit sendPlaylistDeleted( plid );
+            m_syncPlaylists.removeAll( s );
+        }
 
         m_playlists.removeAt( index );
 

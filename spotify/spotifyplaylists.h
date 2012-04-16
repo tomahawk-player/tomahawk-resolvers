@@ -168,6 +168,7 @@ signals:
     void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& trackPosition );
     void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
     void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
+    void sendPlaylistDeleted( const QString& playlistId );
 
 private slots:
 
