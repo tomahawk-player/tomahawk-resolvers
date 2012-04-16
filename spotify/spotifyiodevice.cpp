@@ -92,6 +92,7 @@ qint64 SpotifyIODevice::readData( char* data, qint64 maxlen )
         written += canWrite;
 
         m_audioData = m_audioData.mid( canWrite );
+        m_audioData.squeeze();
     }
 
     Q_ASSERT( m_audioData.size() == 0 || written == maxlen );
