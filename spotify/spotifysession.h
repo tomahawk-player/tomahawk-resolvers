@@ -66,10 +66,9 @@ public:
     sp_session* Session() const { return m_session; }
 
     //  Login
-    void setCredentials(QString username, QString password);
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
     bool isLoggedIn(){ return m_loggedIn;}
-    void login();
+    void login( const QString& username, const QString& password );
     void logout();
 
     // Playlists
@@ -123,7 +122,6 @@ private:
     sp_session_config m_config;
     sp_session *m_session;
     bool m_loggedIn;
-    QString m_oldUsername;
 
     // Login
     QString m_username;

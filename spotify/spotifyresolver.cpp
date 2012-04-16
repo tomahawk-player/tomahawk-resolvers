@@ -964,8 +964,7 @@ void SpotifyResolver::login()
 {
     if( !m_username.isEmpty() && !m_pw.isEmpty() ) { // log in
         qDebug() << "Logging in with username:" << m_username;
-        m_session->setCredentials( m_username, m_pw  );
-        m_session->login();
+        m_session->login( m_username, m_pw );
     }
 }
 

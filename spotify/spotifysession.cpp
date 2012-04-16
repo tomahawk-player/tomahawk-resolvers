@@ -106,14 +106,6 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 }
 
 
-void SpotifySession::setCredentials( QString username, QString password )
-{
-    m_oldUsername = m_username;
-    m_username = username;
-    m_password = password;
-}
-
-
 void SpotifySession::logout()
 {
     if ( m_loggedIn ) {
@@ -137,21 +129,32 @@ void SpotifySession::logout()
 }
 
 
-void SpotifySession::login()
+void SpotifySession::login( const QString& username, const QString& password )
 {
+    if ( m_loggedIn &&
+         m_username == username &&
+         m_password == password )
+    {
+        qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring";
+        return;
+    }
+
     qDebug() << Q_FUNC_INFO << "SpotifySession asked to log in! Clearing session first";
 
     logout();
 
+    if( m_username != username && m_loggedIn )
+    {
+        qDebug() << "We were previously logged in with a different user, so notify client of difference!";
+        emit userChanged();
+    }
+
+
+    m_username = username;
+    m_password = password;
+
     if( !m_username.isEmpty() && !m_password.isEmpty() )
     {
-        if( m_username != m_oldUsername && m_loggedIn )
-        {
-            qDebug() << "We were previously logged in with a different user, so notify client of difference!";
-            emit userChanged();
-        }
-        m_oldUsername = m_username;
-
         qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
 #if SPOTIFY_API_VERSION >= 11
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
