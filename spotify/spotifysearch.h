@@ -36,6 +36,7 @@ public:
     explicit SpotifySearch(QString query, QObject *parent = 0);
     static void SP_CALLCONV searchComplete( sp_search *result, void *userdata );
     static void SP_CALLCONV addSearchedTrack( sp_search *result, void *userdata );
+    static void SP_CALLCONV searchPlaylists( sp_search *result, void *userdata );
 signals:
     
 public slots:

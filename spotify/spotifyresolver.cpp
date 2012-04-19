@@ -139,12 +139,13 @@ void SpotifyResolver::setup()
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
 
+    connect( m_session->Playlists(), SIGNAL(notifyPlaylistSearchComplete( QList<SpotifyPlaylists::LoadedPlaylist>) ), this, SLOT(playlistSearchCompleted( QList<SpotifyPlaylists::LoadedPlaylist>) ) );
     connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QStringList,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QStringList,QString)));
     connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QStringList)), this, SLOT(sendTracksRemoved(sp_playlist*,QStringList)));
     connect( m_session->Playlists(), SIGNAL(sendPlaylistDeleted(QString)), this, SLOT(sendPlaylistDeleted(QString)));
     connect( m_session->Playlists(), SIGNAL(notifyNameChange(SpotifyPlaylists::LoadedPlaylist)), this, SLOT( sendPlaylistNameChanged(SpotifyPlaylists::LoadedPlaylist) ));
-    connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
+    connect( m_session->Playlists(), SIGNAL(notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
@@ -215,6 +216,32 @@ void SpotifyResolver::userChangedReceived()
     resp[ "msg" ] = "Username changed! Removing synced playlists...";
     sendMessage( resp );
 
+}
+
+/**
+  m_session->Playlists()->searchPlaylists( "Madonna");
+  **/
+void SpotifyResolver::playlistSearchCompleted(const QList<SpotifyPlaylists::LoadedPlaylist> &result)
+{
+    qDebug() << "==== SEARCH COMPLETED Sending playlist search result, found:" << result.size();
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "searchPlaylistsResult";
+    QVariantList playlists;
+
+    // Playlist isnt added, so no revisions yet.
+    foreach ( const SpotifyPlaylists::LoadedPlaylist& pl, result )
+    {
+        QVariantMap plObj;
+        plObj[ "name" ] = pl.name_ + " by " + pl.owner_;
+        plObj[ "id" ] = pl.id_;
+        playlists << plObj;
+    }
+
+    msg[ "playlists" ] = playlists;
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
+    sendMessage( msg );
 }
 
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
@@ -469,6 +496,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
 
     sendMessage( msg );
+
 }
 
 

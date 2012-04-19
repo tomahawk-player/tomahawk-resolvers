@@ -31,7 +31,6 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
-
     m_SpotifyPlayback = new SpotifyPlayback;
 
     // Connect to signals

@@ -56,6 +56,7 @@ public:
       bool starContainer_;
       bool isSubscribed;
       bool isCollaborative;
+      QString owner_;
       bool sync_;
       bool isLoaded;
       // Revision timestamp
@@ -69,7 +70,7 @@ public:
       QList<RevisionChanges> revisions;
 
       LoadedPlaylist() : starContainer_( false ), isSubscribed( false ), isCollaborative( false ), sync_( false ), isLoaded( false )
-                       , newTimestamp( -1 ), oldTimestamp( -1 ), playlist_( 0 ) {}
+                       , owner_(""), newTimestamp( -1 ), oldTimestamp( -1 ), playlist_( 0 ) {}
 
     };
     struct Sync {
@@ -113,6 +114,11 @@ public:
     void removeSubscribedPlaylist(const QString &uri );
     void setCollaborative(const QString &playlistUri, bool collab );
 
+    // We dont clear it totaly, eg. release pls here, just the contents
+    void clearOldPlaylistSearch() { m_searchedPlaylists.clear(); }
+    void appendPlaylistSearch( LoadedPlaylist searchedPl ) { m_searchedPlaylists.append( searchedPl ); }
+    void doNotifyPlaylistSearchComplete() { emit notifyPlaylistSearchComplete( m_searchedPlaylists ); }
+
     // Mixed
     sp_playlist *getPlaylistFromUri( const QString &uri );
 
@@ -142,7 +148,6 @@ public:
      * Each closure will get tested (condition() in the closure, see header) for each playlist that has state changes.
      */
     void addStateChangedCallback( PlaylistClosure* closure );
-
     void clear();
 public slots:
 
@@ -157,6 +162,7 @@ public slots:
     void playlistLoadedSlot(sp_playlist* pl);
     void addPlaylist( sp_playlist *, bool forceSync = false, bool isSubscribed = false );
     void doRemovePlaylist( sp_playlist* playlist );
+    void searchPlaylists( QString query );
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
 signals:
@@ -168,19 +174,19 @@ signals:
     void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
     void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
     void sendPlaylistDeleted( const QString& playlistId );
+    void notifyPlaylistSearchComplete( const QList<SpotifyPlaylists::LoadedPlaylist> &result);
 
 private slots:
 
     void ensurePlaylistsLoadedTimerFired();
     void checkWaitingForLoads();
-
     void doAddNewPlaylist( sp_playlist* pl, const QVariantList& tracks, bool sync, const QString& qid );
     void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
 
 private:
     void readSettings();
     void writeSettings();
-
+    void clearPlaylistSearch();
     void updateRevision( LoadedPlaylist &pl );
     void updateRevision( LoadedPlaylist &pl, int qualifier, QStringList removedTracks = QStringList() );
     void playlistNameChange( sp_playlist * pl );
@@ -192,6 +198,7 @@ private:
     QString trackId( sp_track* track );
 
     QList<LoadedPlaylist> m_playlists;
+    QList<LoadedPlaylist> m_searchedPlaylists;
     QList<Sync> m_syncPlaylists;
     QSettings m_settings;
 

@@ -33,6 +33,41 @@
 #include <boost/bind.hpp>
 class SpotifyPlaylists;
 
+
+void
+SpotifySearch::searchPlaylists( sp_search *result, void *userdata)
+{
+
+    SpotifyPlaylists *_playlists = reinterpret_cast<SpotifyPlaylists*>(userdata);
+    if( sp_search_num_playlists( result ) < 1 )
+    {
+        qWarning() << "No search results";
+        // Send error
+        //SpotifySession::getInstance()->doSendErrorMsg( QString("Can not find playlists with name %1, aborting.").arg( QString::fromUtf8(sp_search_query( result ) ) ), false );
+    }
+    else
+    {
+        int cur = 0;
+        int max = sp_search_num_playlists(result);
+
+        // We only want this searchResults, but on exit, we want to release them
+        _playlists->clearOldPlaylistSearch();
+
+        while( cur < max )
+        {
+
+            SpotifyPlaylists::LoadedPlaylist searchedPlaylist;
+            searchedPlaylist.playlist_ = _playlists->getPlaylistFromUri( sp_search_playlist_uri( result, cur ) );
+            searchedPlaylist.id_ = sp_search_playlist_uri( result, cur );
+            searchedPlaylist.owner_ = QString::fromUtf8(sp_user_canonical_name( sp_playlist_owner( searchedPlaylist.playlist_ ) ) );
+            searchedPlaylist.name_ = sp_search_playlist_name(result, cur++);
+            _playlists->appendPlaylistSearch( searchedPlaylist );
+        }
+        _playlists->doNotifyPlaylistSearchComplete();
+    }
+
+}
+
 void
 SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 {

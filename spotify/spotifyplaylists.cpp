@@ -72,7 +72,6 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_checkPlaylistsTimer->setInterval( 2000 );
     m_checkPlaylistsTimer->setSingleShot( true );
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
-
     m_periodicTimer->setInterval( 5000 );
     connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
     m_periodicTimer->start();
@@ -148,9 +147,29 @@ void SpotifyPlaylists::clear()
 
         sp_playlist_release( m_playlists[ i ].playlist_ );
     }
-    m_playlists.clear();
+    // Release searched pls
+    clearPlaylistSearch();
     m_syncPlaylists.clear();
     m_stateChangedCallbacks.clear();
+}
+
+/**
+ clearPlaylistSearch
+ we need to clear and release
+ **/
+void SpotifyPlaylists::clearPlaylistSearch()
+{
+    for ( int i = 0; i < m_searchedPlaylists.size(); i++ )
+    {
+        foreach ( sp_track* track, m_searchedPlaylists[ i ].tracks_ )
+        {
+            if( track != NULL )
+                sp_track_release( track );
+        }
+        if( m_searchedPlaylists[ i ].playlist_ != NULL )
+            sp_playlist_release( m_searchedPlaylists[ i ].playlist_ );
+    }
+    m_searchedPlaylists.clear();
 }
 
 /**
@@ -399,6 +418,21 @@ SpotifyPlaylists::getLoadedPlaylist( sp_playlist *&playlist )
         return m_playlists.at( index );
     return pl;
 }
+
+/**
+  playlistSearch
+  **/
+void SpotifyPlaylists::searchPlaylists( QString query )
+{
+
+#if SPOTIFY_API_VERSION >= 11
+    sp_search_create( SpotifySession::getInstance()->Session(), query.toUtf8().data(), 0, 0, 0, 0, 0, 0, 0, 20, SP_SEARCH_STANDARD, &SpotifySearch::searchPlaylists, this );
+#else
+    qDebug() << "Cant perform playlist searches, update libspotify";
+#endif
+
+}
+
 
 
 /**
