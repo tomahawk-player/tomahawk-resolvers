@@ -655,13 +655,11 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         qDebug() << Q_FUNC_INFO << "Got request for playlist with sync:" << plid << sync;
 
         m_session->Playlists()->sendPlaylist( plid, sync );
-        SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
+        //SpotifyPlaylists::LoadedPlaylist playlist = m_session->Playlists()->getPlaylist( plid );
     }
     else if ( m.value( "_msgtype" ) == "removeFromSyncList" )
     {
         const QString plid = m.value( "playlistid" ).toString();
-//         const QString qid = m.value( "qid" ).toString();
-
         m_session->Playlists()->setSyncPlaylist( plid, false );
     }
     else if ( m.value( "_msgtype" ) == "removeTracksFromPlaylist" )

@@ -157,7 +157,6 @@ public slots:
     void playlistLoadedSlot(sp_playlist* pl);
     void addPlaylist( sp_playlist *, bool forceSync = false, bool isSubscribed = false );
     void doRemovePlaylist( sp_playlist* playlist );
-
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
 signals:

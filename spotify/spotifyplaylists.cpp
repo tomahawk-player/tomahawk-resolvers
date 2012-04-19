@@ -1,4 +1,4 @@
-/**  This file is part of QT SpotifyWebApi - <hugolm84@gmail.com> ===
+    /**  This file is part of QT SpotifyWebApi - <hugolm84@gmail.com> ===
  *
  *   Copyright 2011-2012,Hugo Lindström <hugolm84@gmail.com>
  *   Copyright      2012,Leo Franchi    <lfranchi@kde.org>
@@ -177,7 +177,7 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
 {
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
 
-    //qDebug() << Q_FUNC_INFO << "PLAYLIST_STATE_CHANGED for *non* synced playlist" << sp_playlist_name(pl) << "is loaded" << sp_playlist_is_loaded(pl) << sp_playlist_num_tracks(pl) << "tracks";
+//    qDebug() << Q_FUNC_INFO << "PLAYLIST_STATE_CHANGED for *non* synced playlist" << sp_playlist_name(pl) << "is loaded" << sp_playlist_is_loaded(pl) << sp_playlist_num_tracks(pl) << "tracks";
     // If the playlist isn't loaded yet we have to wait
 
     if ( !sp_playlist_is_loaded( pl ) )
@@ -274,18 +274,23 @@ SpotifyPlaylists::checkWaitingForLoads()
     }
 }
 
+
+/**
+  getPlaylistFromUri
+  returns a playlist from qstring
+  **/
 sp_playlist * SpotifyPlaylists::getPlaylistFromUri(const QString &uri)
 {
 
     sp_link *plink = sp_link_create_from_string( uri.toLocal8Bit() );
-    if (!plink) {
+    if ( !plink ) {
         qDebug() << "Playlist link is not a spotify link";
         return NULL;
     }
 
-    if(sp_link_type(plink) != SP_LINKTYPE_PLAYLIST) {
+    if ( sp_link_type( plink ) != SP_LINKTYPE_PLAYLIST ) {
         qDebug() << "Playlist link is not a valid spotify link";
-        sp_link_release(plink);
+        sp_link_release( plink );
         return NULL;
     }
     sp_playlist *playlist = sp_playlist_create(SpotifySession::getInstance()->Session(), plink);
@@ -314,19 +319,17 @@ void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
     {
         if( sp_playlist_is_loaded( playlist ) )
         {
-            if( sp_playlist_is_collaborative( playlist ) )
-            {
-                addPlaylist( playlist, true, true );
-            }
+            /// @note we can subscribe on a non collaborative pl as well
+            addPlaylist( playlist, true, true );
+
         }
         else
         {
-            qDebug() << "Collaborative not loaded, adding to wait";
+            qDebug() << "Subscribed not loaded, adding to wait";
             m_waitingToLoad << playlist;
         }
 
-        checkForPlaylistsLoaded();
-
+       checkForPlaylistsLoaded();
     }
 }
 
@@ -348,7 +351,7 @@ void SpotifyPlaylists::removeSubscribedPlaylist(const QString &playlistUri )
     index = m_playlists.indexOf( lpl );
     if( index != -1 ){
 
-        if( m_playlists[ index ].isCollaborative || m_playlists[ index ].isSubscribed )
+        if( m_playlists[ index ].isSubscribed )
             setSyncPlaylist( playlistUri, false );
     }
 
@@ -398,6 +401,10 @@ SpotifyPlaylists::getLoadedPlaylist( sp_playlist *&playlist )
 }
 
 
+/**
+  signal doSend
+  will send a LoadedPlaylist
+  **/
 void SpotifyPlaylists::doSend( const SpotifyPlaylists::LoadedPlaylist& playlist )
 {
     if( !sp_playlist_is_loaded( playlist.playlist_) )
@@ -411,7 +418,7 @@ void SpotifyPlaylists::doSend( const SpotifyPlaylists::LoadedPlaylist& playlist 
 /**
   Callback
     State changed
-    Called from libspotify when state changed on playlist
+    Called from libspotify when a sp_playlistcontainer is loaded
 **/
 
 void
@@ -425,6 +432,11 @@ SpotifyPlaylists::playlistContainerLoadedCallback( sp_playlistcontainer* pc, voi
 
 }
 
+/**
+  loadedContainerSlot
+  this is invoked from callback when container is loaded
+  should be once per session/user
+  **/
 void
 SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
 
@@ -473,17 +485,19 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
         }
 
         /// Add starredTracks, should be an option
-        /// @note we need to wait for the starred list aswell
+        /// @note we need to wait for the starred list as well
         addStarredTracksToContainer();
         checkForPlaylistsLoaded();
 
-    }else
-    {
     }
 
     m_checkPlaylistsTimer->start();
 }
 
+/**
+  playlistNameChange
+  called from callback
+  **/
 void
 SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
 {
@@ -499,9 +513,8 @@ SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
 
     qDebug() << "Renamning " << m_playlists[index].name_ << " to " << sp_playlist_name( pl );
     m_playlists[index].name_ = sp_playlist_name( pl );
-    /// @todo: maybe emit other signal, updateMetaData?
-    /// @note: sends both container loaded to update playlist list in tomahwak
-    /// and namechanged to update synced playlistname in tomahawk as well
+
+    // container update, send signal, notify name change
     emit notifyContainerLoadedSignal();
     const SpotifyPlaylists::LoadedPlaylist send = m_playlists[index];
     emit notifyNameChange( send );
@@ -512,6 +525,7 @@ SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
   addStarredTracksContainer()
   This creates the starred tracks playlist, and will automatically add it to the synclist
   The starredTracks container is not a playlist and has no name. But it has a special uri
+  and that uri is changed in v11
 **/
 void
 SpotifyPlaylists::addStarredTracksToContainer()
@@ -581,10 +595,11 @@ SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* 
     _session->Playlists()->waitForLoad( playlist );
 
 }
+
 /**
   Callback
-    State changed
-    Called from libspotify when state changed on playlist
+    playlistMoveCallback
+    Called from libspotify when posistion changed on playlist
 **/
 
 void
@@ -597,10 +612,11 @@ SpotifyPlaylists::playlistMovedCallback( sp_playlistcontainer* pc, sp_playlist* 
     else
         _session->Playlists()->setPosition( playlist, position, new_position );
 }
+
 /**
   Callback
-    State changed
-    Called from libspotify when state changed on playlist
+    playlistRemovedCallback
+    Called from callback when playlist got removed
 **/
 
 void
@@ -611,6 +627,7 @@ SpotifyPlaylists::playlistRemovedCallback( sp_playlistcontainer* pc, sp_playlist
     QString name;
     if ( playlist )
         name = QString::fromUtf8( sp_playlist_name( playlist ) );
+
     qDebug() << "Playlist removed" << playlist << name;
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
@@ -622,8 +639,8 @@ SpotifyPlaylists::playlistRemovedCallback( sp_playlistcontainer* pc, sp_playlist
 
 /**
   Callback
-    State changed
-    Called from libspotify when state changed on playlist
+    tracksAdded
+    Called from libspotify when tracks where added
 **/
 
 void
@@ -647,16 +664,22 @@ SpotifyPlaylists::tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num
         _playlists->addTracksFromSpotify( pl, trackList, position );
 }
 
+
+/**
+  PlaylistClosure
+  adds callbacks
+  **/
+
 void
 SpotifyPlaylists::addStateChangedCallback( PlaylistClosure *closure )
 {
-    qDebug() << "Adding state ch anged callback! Oh yeah....";
+    qDebug() << "Adding state changed callback! Oh yeah....";
     m_stateChangedCallbacks << closure;
 }
 
 /**
-   addTracks(sp_playlist*, sp_tracks * const *tracks, int num_tracks)
-   This is called from callback to add tracks to this playlist container
+   addTracksFromSpotify
+   called from callback to add tracks from spotify
 **/
 void
 SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks, int pos)
@@ -669,7 +692,8 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
 
     if( index == -1 ) {
 
-        qWarning() << "Got added tracks for a playlist we don't know about? WTF!" << ( QString::fromUtf8(sp_playlist_name( pl )).isEmpty() ? "empty name " : sp_playlist_name( pl ) );
+        qWarning() << "Got added tracks for a playlist we don't know about? WTF!"
+                   << ( QString::fromUtf8(sp_playlist_name( pl )).isEmpty() ? "empty name " : sp_playlist_name( pl ) );
         return;
     }
 
@@ -677,9 +701,11 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
     const int beforePos = (pos == 0 ? 0 : pos - 1);
     char trackStr[256];
     sp_track* t = sp_playlist_track( pl, beforePos );
+
     if ( !t || !sp_track_is_loaded( t ) )
     {
-        qWarning() << "NOTE! Got tracks inserted after a track that is not loaded or null! " << beforePos << t << (t ? sp_track_is_loaded( t ) : false);
+        qWarning() << "NOTE! Got tracks inserted after a track that is not loaded or null! "
+                   << beforePos << t << (t ? sp_track_is_loaded( t ) : false);
         if ( !t )
         {
             qWarning() << "TODO can't handle null tracks in playlist... how did this happen?";
@@ -810,7 +836,7 @@ SpotifyPlaylists::sendPlaylist( const QString& playlistId, bool startSyncing )
   sendPlaylistByRevision
   Will send a playlist that contains revision
   **/
-void
+/*void
 SpotifyPlaylists::sendPlaylistByRevision( int revision )
 {
     RevisionChanges rev;
@@ -826,7 +852,8 @@ SpotifyPlaylists::sendPlaylistByRevision( int revision )
     }
 
 
-}
+}*/
+
 /**
   removeTracks(sp_playlist*, const int*tracks, int num_tracks)
   This is called from callback, removes tracks from this playlist when
@@ -857,7 +884,8 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
 
         if ( realIdx < 0 || realIdx >= m_playlists[index].tracks_.size() )
         {
-            qWarning() << "Tried to remove tracks at index:" << realIdx << "(originally" << pos << ") from tracks list that is out of bounds!! We have size:" << m_playlists[index].tracks_.size();
+            qWarning() << "Tried to remove tracks at index:" << realIdx << "(originally" << pos
+                       << ") from tracks list that is out of bounds!! We have size:" << m_playlists[index].tracks_.size();
             continue;
         }
 
@@ -870,13 +898,13 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
     foreach ( sp_track* remove, toRemove )
     {
         const int got = m_playlists[ index ].tracks_.removeAll( remove );
-        qDebug() << "removing:" << sp_track_name(remove) << sp_artist_name(sp_track_artist(remove, 0)) << "and actually removed:" << got;
+        qDebug() << "removing:" << sp_track_name(remove) << sp_artist_name(sp_track_artist(remove, 0))
+                 << "and actually removed:" << got;
         sp_track_release( remove );
     }
 
     // We need to update the revision with current timestamp
     int timestamp =  QDateTime::currentMSecsSinceEpoch() / 1000;
-//         qDebug() << "Updateing revision with removetrack timestamp " << timestamp;
     updateRevision( m_playlists[index], timestamp, trackIds );
 
     if ( sApp->ignoreNextUpdate() )
@@ -953,6 +981,10 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     emit sendTracksMoved(pl, moveIds, trackPosition);
 }
 
+/**
+  trackId
+  returns qstring
+  **/
 QString
 SpotifyPlaylists::trackId( sp_track* track )
 {
@@ -972,12 +1004,11 @@ SpotifyPlaylists::trackId( sp_track* track )
 
 
 
-
 /**
  getPLaylist( const QString )
  Gets a specific playlist from the list with id (uri)
+ **/
 
-**/
 SpotifyPlaylists::LoadedPlaylist
 SpotifyPlaylists::getPlaylist( const QString id )
 {
@@ -991,10 +1022,11 @@ SpotifyPlaylists::getPlaylist( const QString id )
 }
 
 /**
- * setSyncPlaylist( const QString )
- *   sets syncflags on a playlist
- *   Saves state to QSettings
+  setSyncPlaylist( const QString )
+    sets syncflags on a playlist
+    Saves state to QSettings
  **/
+
 void
 SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
 {
@@ -1048,11 +1080,11 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
 }
 
 
-
 /**
   tracksRemoved
-  Callback from spotify
+  Callback from libspotify
   **/
+
 void SpotifyPlaylists::tracksRemoved(sp_playlist *playlist, const int *tracks, int num_tracks, void *userdata)
 {
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
@@ -1070,7 +1102,9 @@ void SpotifyPlaylists::tracksRemoved(sp_playlist *playlist, const int *tracks, i
 
 /**
   tracksMoved
+  Callback from libspotify
   **/
+
 void
 SpotifyPlaylists::tracksMoved(sp_playlist *playlist, const int *tracks, int num_tracks, int new_position, void *userdata)
 {
@@ -1108,7 +1142,10 @@ void SpotifyPlaylists::setPosition( sp_playlist *playlist, int oPos, int nPost )
 
 }
 
-
+/**
+  removePlaylistNotification
+  got a notification to delete a spotify playlist
+  **/
 void
 SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
 {
@@ -1148,7 +1185,11 @@ SpotifyPlaylists::removePlaylistNotification( sp_playlist* playlist )
     emit notifyContainerLoadedSignal();
 }
 
+/**
+  doRemovePlaylist
+  Slot to remove a playlist from the container, PERMANENT
 
+  **/
 void
 SpotifyPlaylists::doRemovePlaylist( sp_playlist *playlist )
 {
@@ -1231,7 +1272,19 @@ SpotifyPlaylists::playlistUpdateInProgress(sp_playlist *pl, bool done, void *use
 
 }
 
-
+/**
+  addNewPlaylist
+  this will create a new playlist from QVariantMap
+  The map must contain
+    Title
+    Sync
+    QVariantList of tracks
+        With string keys
+            track
+            artist
+            album
+    qid
+  **/
 void
 SpotifyPlaylists::addNewPlaylist( const QVariantMap& data )
 {
@@ -1256,7 +1309,10 @@ SpotifyPlaylists::addNewPlaylist( const QVariantMap& data )
     doAddNewPlaylist( playlist, tracks, sync, qid );
 }
 
-
+/**
+  doAddNewPlaylist
+  slot to add new playlist
+  **/
 void
 SpotifyPlaylists::doAddNewPlaylist( sp_playlist* playlist, const QVariantList& tracks, bool sync, const QString& qid )
 {
@@ -1292,7 +1348,10 @@ SpotifyPlaylists::doAddNewPlaylist( sp_playlist* playlist, const QVariantList& t
     emit notifyContainerLoadedSignal();
 }
 
-// Called from client when we are asked to do move
+/**
+  moveTracksInSpotifyPlaylist
+  called from client when move
+  **/
 sp_error
 SpotifyPlaylists::moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId )
 {
@@ -1343,12 +1402,16 @@ SpotifyPlaylists::moveTracksInSpotifyPlaylist( const QString& playlistId, const 
     return ret;
 }
 
+/**
+  renamePlaylist
+  will rename a playlist that contains
+    data[playlistid] = spotifyUri
+    data[newtitle] = QString
+  **/
 
 void
 SpotifyPlaylists::renamePlaylist( const QVariantMap& data )
 {
-
-
     LoadedPlaylist playlist = getPlaylist( data.value( "playlistid" ).toString() );
     if( !playlist.id_.isEmpty() && playlist.isLoaded )
     {
@@ -1368,20 +1431,8 @@ SpotifyPlaylists::addSearchedTrack( sp_search* result, void* userdata )
 
 
 /**
-  Create a playlist with, or without data
-  which appends to spotify container
+  addTracksToSpotify
 
-    QVariantMap data;
-    data[ "playlistname" ] = "ewplaylist";
-    data[ "trackcount" ] = 1;
-    QVariantList trackList;
-    QVariantMap track;
-    track[ "artist" ] = "Madonna";
-    track[ "track" ] = "Like a virgin";
-    trackList << track;
-    data[ "tracklist" ] = trackList;
-
-    addNewPlaylist( data );
   **/
 void
 SpotifyPlaylists::addTracksToSpotifyPlaylist( const QVariantMap& data )
@@ -1421,6 +1472,12 @@ SpotifyPlaylists::addTracksToSpotifyPlaylist( const QVariantMap& data )
     doAddTracksToSpotifyPlaylist( tracks, pl, playlistId, position );
 }
 
+/**
+  doAddTracksToSpotify
+  slot that take a list of tracks, and performs a search
+  to retrevie sp_tracks*'s
+
+  **/
 void
 SpotifyPlaylists::doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* pl, const QString& playlistId, int startPosition )
 {
@@ -1491,21 +1548,7 @@ SpotifyPlaylists::findTrackPosition( const QList< sp_track* > tracks, const QStr
 
 /**
   Remove tracks from spotify playlist with data
-
-    QVariantMap data;
-    data[ "playlistname" ] = "newplaylist";
-    data[ "spotifyId" ] = "spotify:playlist:user:asdasd";
-    data[ "trackcount" ] = 1;
-    QVariantList trackList;
-    QVariantMap track;
-    track[ "artist" ] = "Madonna";
-    track[ "track" ] = "Like a virgin";
-    trackList << track;
-    data[ "tracklist" ] = trackList;
-
-    removeFromSpotifyPlaylist( data );
   **/
-
 
 bool
 SpotifyPlaylists::removeFromSpotifyPlaylist( const QVariantMap& data ){
@@ -1644,12 +1687,6 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl )
             timestamp = tmpTimestamp;
     }
 
-    /**
-      @note: Todo, confirm this. Though it seems its correct.
-      timestamp is 0, that means the playlist is cleared of contents, or was empty to begin with
-      @note This applies if no timestamp was set from within this application, not the API
-      @note Added timestamp to 0
-    **/
     if( timestamp == 0 )
     {
         qDebug() << "Revision playlist was cleared from contents!";
@@ -1717,12 +1754,11 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier, QStringList
                newRevision.revTrackIDs.append( trackId( newRevTrack ) );
         }
 
-        ///   @todo:Hash later with appropriate hash algorithm.
         ///   @note: we try and keep all the revision, these should be cached
-        ///          for next start
 
         pl.oldTimestamp = pl.newTimestamp;
         pl.newTimestamp = qualifier;
+        // MD5 hash for revisionId
         newRevision.revId = QString(QCryptographicHash::hash( QString( pl.name_ + QString::number( qualifier ) ).toUtf8(),QCryptographicHash::Md5).toHex() );
         pl.revisions.append( newRevision );
         m_playlists[ plIndex ] = pl;
@@ -1732,6 +1768,10 @@ SpotifyPlaylists::updateRevision( LoadedPlaylist &pl, int qualifier, QStringList
 
 }
 
+/**
+  Closure callback
+  Adds a waitFor playlist to LoadedPlaylists
+  **/
 
 void
 SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
@@ -1741,7 +1781,9 @@ SpotifyPlaylists::playlistLoadedSlot(sp_playlist* pl)
     checkForPlaylistsLoaded();
 }
 
-
+/**
+  checkForPlaylistLoaded
+  **/
 void
 SpotifyPlaylists::checkForPlaylistsLoaded()
 {
@@ -1751,6 +1793,7 @@ SpotifyPlaylists::checkForPlaylistsLoaded()
         m_isLoading = false;
         m_allLoaded = true;
         emit notifyContainerLoadedSignal();
+
     }
 }
 
@@ -1799,7 +1842,6 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
         ///    wait for the playlist to be loaded before you can successfully construct an URI.
         ///    If sp_link_create_from_playlist() returns NULL, try again after teh playlist_state_changed callback has fired
         ///    @author Spotify dev
-
         ///    Will be added at next state change
 
         qDebug() << "Failed to get URI! Aborting...";
@@ -1888,8 +1930,12 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
     playlist.newTimestamp = -1;
 
     updateRevision( playlist, tmpRev );
+
 }
 
+/**
+  ensurePlaylistLoadedTimerFired
+  **/
 void SpotifyPlaylists::ensurePlaylistsLoadedTimerFired()
 {
     if ( m_waitingToLoad.isEmpty() )
