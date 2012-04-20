@@ -44,9 +44,11 @@ def return_exact_results(request, results, callback):
 		"source": "jazz-on-line.com",
 	    }
 	if 1800 < song.get("year", 0) < 2100:
-		result["year"] = song["year"]
+            result["year"] = song["year"]
         formatted_results.append(result)
-    response = {'qid': request['qid'],
+
+    response = {
+            'qid': request['qid'],
             'results': formatted_results,
             '_msgtype': 'results'
 	}
@@ -97,7 +99,9 @@ if __name__ == "__main__":
 	songs_by_name_artist = transpose(songs_by_artist_name)
 
 	logger.info("Advertising settings.")
-	settings = {"_msgtype": "settings", "name": "jazz-on-line resolver",
+	settings = {
+                "_msgtype": "settings",
+                "name": "jazz-on-line resolver",
 		"targettime": 100, # ms
 		"weight": 80
 		}
