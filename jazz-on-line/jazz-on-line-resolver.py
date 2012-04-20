@@ -134,6 +134,9 @@ if __name__ == "__main__":
                     continue
             elif request['_msgtype'] == 'config':
                 logger.debug("ignoring config message: %s", request)
+            elif request['_msgtype'] == 'quit':
+                logger.info("Asked to Quit. Exiting.")
+                exit(0)
             else:
                 logger.warn("Don't understand %s", request)
 
