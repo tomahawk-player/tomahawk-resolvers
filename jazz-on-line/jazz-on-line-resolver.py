@@ -19,14 +19,14 @@ import json
 import logging
 
 logger = logging.getLogger('jazz-on-line-resolver')
-	
+
 def print_json(o):
     s = json.dumps(o)
     logger.debug("responding %s", s)
     if LINE_BASED_PROCESSING:
         sys.stdout.write(s + '\n')
     else:
-	sys.stdout.write(pack('!L', len(s)))
+        sys.stdout.write(pack('!L', len(s)))
         sys.stdout.write(s)
     sys.stdout.flush()
 
@@ -35,14 +35,14 @@ def return_exact_results(request, results, callback):
     formatted_results = []
     for song in results:
     	result = {
-		"artist": song["artist"],
-		"track": song["name"],
-		"score": 1,
-		"url": song["link"],
-		"mimetime": "audio/mpeg",
-		"source": "jazz-on-line.com",
-	    }
-	if 1800 < song.get("year", 0) < 2100:
+                "artist": song["artist"],
+                "track": song["name"],
+                "score": 1,
+                "url": song["link"],
+                "mimetime": "audio/mpeg",
+                "source": "jazz-on-line.com",
+            }
+        if 1800 < song.get("year", 0) < 2100:
             result["year"] = song["year"]
         formatted_results.append(result)
 
@@ -50,7 +50,7 @@ def return_exact_results(request, results, callback):
             'qid': request['qid'],
             'results': formatted_results,
             '_msgtype': 'results'
-	}
+        }
     callback(response)
 
 def search_for_track(request, callback):
@@ -64,7 +64,7 @@ def search_for_track(request, callback):
                 exact_results.append(song)
 
     if exact_results:
-    	return_exact_results(request, exact_results, callback)
+        return_exact_results(request, exact_results, callback)
     else:
         logger.debug("%s produced no results", request)
 	

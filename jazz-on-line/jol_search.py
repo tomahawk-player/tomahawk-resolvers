@@ -28,16 +28,16 @@ def normalize_name_tag(string):
     name_tag = normalize(string).replace(':', '')
     for sep in [" - ", " feat. "]:
         name, sep, rest = name_tag.partition(sep)
-	if rest:
-	    name_tag = name
-	    break
+        if rest:
+            name_tag = name
+            break
     return name_tag.replace('-', ' ').replace('ing', 'in').replace("'", "")
 
 def parse_artist_tag(string):
     artists = []
     artist_tag = normalize(string)
     for sep in [" w ", " et ", " and ", " & ", "'s ", " orch",
-		" sextet", " quintet", " quartet", " trio"]:
+                " sextet", " quintet", " quartet", " trio"]:
         artist, sep, rest = artist_tag.partition(sep)
         if sep:
             artists.append(artist)
@@ -48,7 +48,7 @@ def parse_artist_tag(string):
     for sep in [" feat. ", " and ", " w "]:
         artist, sep, feature = artist_tag.partition(sep)
         if feature and not feature.startswith("his ") \
-		and not feature.startswith("her "):
+                and not feature.startswith("her "):
             artists.append(feature)
 
     mistakes = {"rgythm": "rhythm", "the ": ""}
@@ -59,23 +59,23 @@ def parse_artist_tag(string):
     return artists
 
 def get_structured_listing(listings_filename):
-	listings = open(listings_filename)
-	listings.next()
-	structured_listing = []
-	previous_line = ""
-	for lineno, line in enumerate(listings):
-	    splitline = line.split("\t")
-	    if len(splitline) < len(LISTING_FORMAT):
-		logger.error("problem on line %s", lineno)
-		logger.error("%s", repr(previous_line))
-		logger.error("%s", repr(line))
-		continue
-	    song = dict(zip(LISTING_FORMAT, splitline))
-	    structured_listing.append(song)
-	    previous_line = line
+        listings = open(listings_filename)
+        listings.next()
+        structured_listing = []
+        previous_line = ""
+        for lineno, line in enumerate(listings):
+            splitline = line.split("\t")
+            if len(splitline) < len(LISTING_FORMAT):
+                logger.error("problem on line %s", lineno)
+                logger.error("%s", repr(previous_line))
+                logger.error("%s", repr(line))
+                continue
+            song = dict(zip(LISTING_FORMAT, splitline))
+            structured_listing.append(song)
+            previous_line = line
 
-	structured_listing.sort(key=lambda x: x["link"].rpartition('/')[-1])
-	return structured_listing
+        structured_listing.sort(key=lambda x: x["link"].rpartition('/')[-1])
+        return structured_listing
 
 def get_artist_list(song):
     artists = parse_artist_tag(song["artist"])
