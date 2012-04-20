@@ -95,7 +95,6 @@ http://www.jazz-on-line.com/a/mp3w/1939_282.mp3	Bob Crosby And His Orchestra Fea
 http://www.jazz-on-line.com/a/mp3w/1931_214.mp3	Boswell Sisters Feat. New Yorkers, The	(with You On My Mind I Find) I Can't Write The Words	BRUNSWICK	6170		1931	
 http://www.jazz-on-line.com/a/mp3t/TS481512.mp3	Charles Mingus	(woody?n You) Wouldn't You?	Bethlehem	BCP6026		1957	Jimmy Knepper (tb), Shafi Hadi (as, ts), Horace Parlan (p), Charles Mingus (sb, arr), Dannie Richmond (dm)
 http://www.jazz-on-line.com/a/mp3h/GenX-57-A.mp3	Duke Ellington & His Orch.	(you've Got Those) ''wanna Go Back Again'' Blues	Gennett	3291-A	X-57-A	1926	Harry Cooper, Leroy Rutledge (tp) Charlie Irvis (tb) Don Redman (cl,as) Prince Robinson (cl,ts) Otto Hardwick (as,bar) Duke Ellington (p) Fred Guy (bj) Bass Edwards (tu) Vocal by Sonny Greer
-
 http://www.jazz-on-line.com/a/mp3w/1956_031.mp3	Platters	(you've Got) The Magic Touch	Mercury	70819		1956	
 http://www.jazz-on-line.com/a/mp3r/RiBLU11414.mp3	Carson Robison Trio	- We're Gonna Have To Slap The Dirty Little Jap	BLUEBIRD	11414			
 http://www.jazz-on-line.com/a/mp3c/V-D255.mp3	Red Norvo & His Orchestra	1-2-3-4 Jump	V-DISC	085	255	1943	
@@ -301,8 +300,7 @@ http://www.jazz-on-line.com/a/mp3w/1915_018.mp3	Charles Harrison	A Little Bit Of
 http://www.jazz-on-line.com/a/mp3b/VIC33883-2.mp3	Roger Wolfe Kahn & His Orchestra	A Little Bungalow	VICTOR	19860A	33883-2	1925	
 http://www.jazz-on-line.com/a/mp3c/V-D705pp.mp3	Buddy Rich Orchestra	A Little Handicap	V-DISC	705			
 http://www.jazz-on-line.com/a/mp3b/Joh033.mp3	The Organ, The Dance Band And Me (billy Thorburn	A Little King Without A Crown	Parlophone	F-1746	CE-10497-1	1940	
-http://www.jazz-on-line.com/a/mp3w/1938_132.mp3	Benny Goodman And His Orchestra Feat. Martha Tilton	A Little Kiss At Twilight	VICTOR	25878	023517-2	1938	Harry James, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Vernon Brown (tb), Benny Goodman (cl), Dave 
-Matthews, Noni Bernardi (as), Bud Freeman, Arthur Rollini (ts), Jess Stacy (p), Ben Heller (g), Harry Goodman (sb), Dave Tough (dm)
+http://www.jazz-on-line.com/a/mp3w/1938_132.mp3	Benny Goodman And His Orchestra Feat. Martha Tilton	A Little Kiss At Twilight	VICTOR	25878	023517-2	1938	Harry James, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Vernon Brown (tb), Benny Goodman (cl), Dave Matthews, Noni Bernardi (as), Bud Freeman, Arthur Rollini (ts), Jess Stacy (p), Ben Heller (g), Harry Goodman (sb), Dave Tough (dm)
 http://www.jazz-on-line.com/a/mp3a/VIC57124-5.mp3	Rudy Vallee Connecticut Yankee	A Little Kiss Each Morning	VICTOR	22193	57124-5	1929	
 http://www.jazz-on-line.com/a/mp3b/Lee1929_1205_02.mp3	Lee Morse And Her Bluegrass Boys	A Little Kiss Each Morning	Columbia	2063DB		1929	
 http://www.jazz-on-line.com/a/mp3w/1930_034.mp3	Rudy Vallee And His Connecticut Yankees	A Little Kiss Each Morning (a Little Kiss Each Night)	VICTOR	22193	57124-5	1930	
@@ -2794,8 +2792,7 @@ http://www.jazz-on-line.com/a/mp3w/1948_127.mp3	Jo Stafford And Gordon Macrae	Bl
 http://www.jazz-on-line.com/a/mp3w/1948_175.mp3	Jan Peerce	Bluebird Of Happiness	RCA	11-9007		1948	
 http://www.jazz-on-line.com/a/mp3w/1949_179.mp3	Doris Day Feat. O/george Siravo	Bluebird On Your Windowsill	COLUMBIA	38611	HCO3902	1949	
 http://www.jazz-on-line.com/a/mp3e/COL26204-A.mp3	Benny Goodman & His Orchestra	Bluebirds In The Moonlight	COLUMBIA	35289	26204-A	1939	
-http://www.jazz-on-line.com/a/mp3w/1940_227.mp3	Benny Goodman And His Orchestra Feat. Mildred Bailey	Bluebirds In The Moonlight	COLUMBIA	35289	26204-A	1939	Ziggy Elman, Jimmy Maxwell, Johnny Martell (tp), Red Ballard, Vernon Brown, Ted Vesley (tb), Benny 
-Goodman (cl), Toots Mondello, Buff Estes (as), Jerry Jerome, Bus Bassey (ts), Fletcher Henderson (p), Arnold Covey (g), Artie Bernstein (sb), Nick Fatool (dm)
+http://www.jazz-on-line.com/a/mp3w/1940_227.mp3	Benny Goodman And His Orchestra Feat. Mildred Bailey	Bluebirds In The Moonlight	COLUMBIA	35289	26204-A	1939	Ziggy Elman, Jimmy Maxwell, Johnny Martell (tp), Red Ballard, Vernon Brown, Ted Vesley (tb), Benny Goodman (cl), Toots Mondello, Buff Estes (as), Jerry Jerome, Bus Bassey (ts), Fletcher Henderson (p), Arnold Covey (g), Artie Bernstein (sb), Nick Fatool (dm)
 http://www.jazz-on-line.com/a/mp3a/CONWC2792-A.mp3	Dick Jurgens And His Orchestra	Bluebirds In The Moonlight (ve.howard)	CONQUEROR	9339	WC2792-A	1939	
 http://www.jazz-on-line.com/a/mp3c/BLU042924.mp3	Glenn Miller And His Orchestra	Bluebirds In The Moonlight (vmarion Hutton)	BLUEBIRD	10465	042924	1939	
 http://www.jazz-on-line.com/a/mp3a/COLH10270.mp3	Colwell Bros	Bluebonnet Lane	COLUMBIA	21023	H10270	1952	
@@ -2922,8 +2919,7 @@ http://www.jazz-on-line.com/a/mp3a/VIC09688-2.mp3	Benny Goodman And His Orchestr
 http://www.jazz-on-line.com/a/mp3c/VOCLA1444.mp3	Mildred Bailey & Her Orchestra	Bob White	VOCALION	3712	LA1444	1937	
 http://www.jazz-on-line.com/a/mp3r/RiVic25683.mp3	Benny Goodman & His Orchestra	Bob White	Victor	25683		1937	
 http://www.jazz-on-line.com/a/mp3d/BruDLA972-A.mp3	John Scott Trotter And His Orchestra	Bob White	Brunswick	E-02492  	DLA972-A  	1937	
-http://www.jazz-on-line.com/a/mp3w/1937_257.mp3	Benny Goodman And His Orchestra Feat. Martha Tilton	Bob White	VICTOR	25683	09688-2	1937	Harry James, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Murray McEachern (tb), Benny Goodman (cl), 
-Hymie Schertzer, George Koenig (as), Arthur Rollini, Vido Musso (ts), Jess Stacy (p), Allen Reuss (g), Harry Goodman (sb), Gene Krupa (dm)
+http://www.jazz-on-line.com/a/mp3w/1937_257.mp3	Benny Goodman And His Orchestra Feat. Martha Tilton	Bob White	VICTOR	25683	09688-2	1937	Harry James, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Murray McEachern (tb), Benny Goodman (cl), Hymie Schertzer, George Koenig (as), Arthur Rollini, Vido Musso (ts), Jess Stacy (p), Allen Reuss (g), Harry Goodman (sb), Gene Krupa (dm)
 http://www.jazz-on-line.com/a/mp3w/1937_235.mp3	Mildred Bailey Feat. Red Norvo (director/xylophone)	Bob White (whatcha Gonna Swing Tonight)	VOCALION	3712	LA1444	1937	
 http://www.jazz-on-line.com/a/mp3w/1937_026.mp3	Bing Crosby And Connee Boswell Feat. John Scott Trotter's Orchestra	Bob White (whatcha Gonna Swing Tonight?)	DECCA	1483	DLA972	1937	
 http://www.jazz-on-line.com/a/mp3a/MGM49S3115.mp3	Bob Wills Texas Playboys	Bob Wills Square Dance No.1	MGM	10469	49S3115	1949	
@@ -3754,8 +3750,7 @@ http://www.jazz-on-line.com/a/mp3c/DIA1073.mp3	Charlie Parker	Carvin' The Bird	D
 http://www.jazz-on-line.com/a/mp3a/DECDLA835-A.mp3	Glen Gray And Casa Loma Orchestra	Casa Loma Stomp	DECCA	1412	DLA835-A	1937	
 http://www.jazz-on-line.com/a/mp3a/OKE404569-B.mp3	Casa Loma Orchestra	Casa Loma Stomp	OKeh	41492	404569-B	1930	
 http://www.jazz-on-line.com/a/mp3h/ARCB-11856-A.mp3	Casa Loma Orchestra	Casa Loma Stomp	ARC		B-11856-A	1932	
-http://www.jazz-on-line.com/a/mp3w/1931_176.mp3	Glen Gray And Casa Loma Orchestra	Casa Loma Stomp	OKeh	41492	404569-B	1930	Joe Hostetter, Dub Shoffner, Bobby Jones (tp), Pee Wee Hunt, Billy Rauch (tb), Glen Gray (as, ldr), Ray Eberle 
-(as), Pat Davis (ts), Mel Jenssen (vn), Joe Hall (p), Gene Gifford (bj, g), Stanley Dennis (bb, sb), Tony Briglia (dm)
+http://www.jazz-on-line.com/a/mp3w/1931_176.mp3	Glen Gray And Casa Loma Orchestra	Casa Loma Stomp	OKeh	41492	404569-B	1930	Joe Hostetter, Dub Shoffner, Bobby Jones (tp), Pee Wee Hunt, Billy Rauch (tb), Glen Gray (as, ldr), Ray Eberle (as), Pat Davis (ts), Mel Jenssen (vn), Joe Hall (p), Gene Gifford (bj, g), Stanley Dennis (bb, sb), Tony Briglia (dm)
 http://www.jazz-on-line.com/a/mp3c/CAP105-A.mp3	Capitol Jazzmen	Casanova's Lament (v J T)	CAPITOL		105-A		
 http://www.jazz-on-line.com/a/mp3c/KINK8265-1.mp3	Hot Lips Page	Casavova Cricket	KING	15198	K8265-1		
 http://www.jazz-on-line.com/a/mp3c/DEC65636.mp3	Woody Herman & His Orchestra	Casbah Blues	DECCA	2582A	65636	1939	
@@ -4967,8 +4962,7 @@ http://www.jazz-on-line.com/a/mp3a/COLHCO4079.mp3	Doris Day	Darn That Dream	COLU
 http://www.jazz-on-line.com/a/mp3c/DISD140.mp3	Georgie Auld & His Orchestra	Darn That Dream	DISC	109	D140	1949	
 http://www.jazz-on-line.com/a/mp3w/1940_239.mp3	Tommy Dorsey And His Orchestra Feat. Anna Boyer	Darn That Dream	VICTOR	26433	044254	1940	
 http://www.jazz-on-line.com/a/mp3t/TS480439.mp3	Art Farmer And Benny Golson	Darn That Dream	United Artists	UAL4007		1958	Art Farmer, T, Flh, Benny Golson, Ts, Addison Farmer, B, Bill Evans, P, Dave Bailey, D, Gigi Gryce, Ar
-http://www.jazz-on-line.com/a/mp3w/1940_060.mp3	Benny Goodman And His Orchestra Feat. Mildred Bailey, V	Darn That Dream	COLUMBIA	35331	26287-A	1939	Ziggy Elman, Jimmy Maxwell, Johnny Martell (tp), Red Ballard, Vernon Brown, Ted Vesley (tb), Benny Goodman (cl), Toots Mondello, Buff Estes (as), Jerry Jerome, Bus Bassey (ts), Fletcher Henderson (p), 
-Charlie Christian (elg), Artie Bernstein (sb), Nick Fatool (dm)
+http://www.jazz-on-line.com/a/mp3w/1940_060.mp3	Benny Goodman And His Orchestra Feat. Mildred Bailey, V	Darn That Dream	COLUMBIA	35331	26287-A	1939	Ziggy Elman, Jimmy Maxwell, Johnny Martell (tp), Red Ballard, Vernon Brown, Ted Vesley (tb), Benny Goodman (cl), Toots Mondello, Buff Estes (as), Jerry Jerome, Bus Bassey (ts), Fletcher Henderson (p), Charlie Christian (elg), Artie Bernstein (sb), Nick Fatool (dm)
 http://www.jazz-on-line.com/a/mp3c/DIA1025.mp3	Dodo Marmosa Trio	Dary Departs	DIAL	1025			
 http://www.jazz-on-line.com/a/mp3c/GUIG603.mp3	Cozy Cole & His Quintette	Dat's Love (the Habanera) (vjune Hawkins)	GUILDE	118	G603	1945	
 http://www.jazz-on-line.com/a/mp3c/MER213-1.mp3	Buddy Rich & His Orchestra	Dateless Brown	MERCURY	2068	213-1	1946	
@@ -8872,8 +8866,7 @@ http://www.jazz-on-line.com/a/mp3a/MUS5418.mp3	Artie Shaw And His New Music	How 
 http://www.jazz-on-line.com/a/mp3c/SIGT1906-1.mp3	Coleman Hawkins & His Orch	How Deep Is The Ocean?	SIGNATURE	28102A	T1906-1	1943	
 http://www.jazz-on-line.com/a/mp3t/TS480442.mp3	Ben Webster And Harry Sweets Edison	How Deep Is The Ocean?	Clef	MGC 717	2984-2	1956	Ben Webster, Ts, Harry Sweets Edison, T, Joe Mondragon, sB, Barney Kessel, G, Jimmy Rowles, P, Alvin Stoller (dm)
 http://www.jazz-on-line.com/a/mp3t/TS480471.mp3	Ben Webster And Oscar Peterson	How Deep Is The Ocean?	Verve	MGV8349	22995-3	1959	Ben Webster (ts), Oscar Peterson, P Ed Thigpen, D, Ray Brown, B
-http://www.jazz-on-line.com/a/mp3w/1945_251.mp3	Benny Goodman And His Orchestra Feat. Peggy Lee, Vcl	How Deep Is The Ocean?	COLUMBIA	36754	CO31363-3	1941	Billy Butterfield, Cootie Williams, Jimmy Maxwell, Al Davis (tp), Lou McGarity, Cutty Cutshall (tb), Benny Goodman (cl), Skippy Martin, Clint Neagley (as), Vido Musso, George Berg (ts), Chuck Gentry (bar), Mel 
-Powell (p), Tom Morgan (g), Sid Weiss (sb), Ralph Collier (dm)
+http://www.jazz-on-line.com/a/mp3w/1945_251.mp3	Benny Goodman And His Orchestra Feat. Peggy Lee, Vcl	How Deep Is The Ocean?	COLUMBIA	36754	CO31363-3	1941	Billy Butterfield, Cootie Williams, Jimmy Maxwell, Al Davis (tp), Lou McGarity, Cutty Cutshall (tb), Benny Goodman (cl), Skippy Martin, Clint Neagley (as), Vido Musso, George Berg (ts), Chuck Gentry (bar), Mel Powell (p), Tom Morgan (g), Sid Weiss (sb), Ralph Collier (dm)
 http://www.jazz-on-line.com/a/mp3w/1932_083.mp3	Rudy Vallee And His Connecticut Yankees	How Deep Is The Ocean? (how-high-is-the-sky?)	COLUMBIA	2724 D	W152313	1932	
 http://www.jazz-on-line.com/a/mp3b/Joh188.mp3	Harry Leader And His Band	How Did He Look ? (v Julie Dawn)	Regal Zonophone	MR-3481	CAR-6058-1	1941	
 http://www.jazz-on-line.com/a/mp3c/DEC70542.mp3	Maxine Sullivan	How Do I Know It's Real?	DECCA	4307A	70542	1942	
@@ -9147,9 +9140,7 @@ http://www.jazz-on-line.com/a/mp3a/COLCO35108.mp3	Harry James W Kitty Kallen	I C
 http://www.jazz-on-line.com/a/mp3a/DECL3904.mp3	Bing Crosby - Carmen Cavallaro	I Can't Begin To Tell You	DECCA	23457	L3904	1945	
 http://www.jazz-on-line.com/a/mp3e/CAP696-2A.mp3	Andy Russell	I Can't Begin To Tell You	CAPITOL		696-2A	1945	
 http://www.jazz-on-line.com/a/mp3w/1946_078.mp3	Andy Russell	I Can't Begin To Tell You	Capitol	221	696-2A	1946	
-http://www.jazz-on-line.com/a/mp3w/1946_052.mp3	Harry James And His Orchestra Feat. Betty Grable	I Can't Begin To Tell You	Columbia	36867	CO35108-1	1945	Harry James, Irwin Berken, James Troutman, James Campbell, Al Ramsey (tp), Victor Hamann, Jesse Heath, Charles Prebble, Juan Tizol (tb), Willie Smith (cl, as), Murray Williams (as), Corky Corcoran, Clint Davis (ts), Stewart Bruner (as, ts, bar),  Bob Bain, Sam Caplan, John DeVoogdt, Sol Geskin, Jack Gootkin, George Grossman, Harry Jawarski, Ernest Karpati, Gerson Oberstein, Jerome Reisler (vn), David Uchitel, 
-Bill Spears, Al Nieman, Hal Sorin (va), Elias Friede, Carl Ziegler (vc), Arnold Ross (p), Hayden Causey (g), Ed 
-Mihelich (sb), Ray Toland (dm).
+http://www.jazz-on-line.com/a/mp3w/1946_052.mp3	Harry James And His Orchestra Feat. Betty Grable	I Can't Begin To Tell You	Columbia	36867	CO35108-1	1945	Harry James, Irwin Berken, James Troutman, James Campbell, Al Ramsey (tp), Victor Hamann, Jesse Heath, Charles Prebble, Juan Tizol (tb), Willie Smith (cl, as), Murray Williams (as), Corky Corcoran, Clint Davis (ts), Stewart Bruner (as, ts, bar),  Bob Bain, Sam Caplan, John DeVoogdt, Sol Geskin, Jack Gootkin, George Grossman, Harry Jawarski, Ernest Karpati, Gerson Oberstein, Jerome Reisler (vn), David Uchitel, Bill Spears, Al Nieman, Hal Sorin (va), Elias Friede, Carl Ziegler (vc), Arnold Ross (p), Hayden Causey (g), Ed Mihelich (sb), Ray Toland (dm).
 http://www.jazz-on-line.com/a/mp3b/BRU11838-A.mp3	Isham Jones' Orch	I Can't Believe It's True	BRUNSWICK	6308	11838-A	1932	
 http://www.jazz-on-line.com/a/mp3r/RiBru6308.mp3	Isham Jones' Orchestra	I Can't Believe It's True	Brunswick	6308		1932	
 http://www.jazz-on-line.com/a/mp3c/MERYW604.mp3	Frankie Lane	I Can't Believe That You're In Love With Me	MERCURY	1028	YW604	1946	
@@ -10191,9 +10182,7 @@ http://www.jazz-on-line.com/a/mp3a/MAN1046x.mp3	Four Tunes Savannah Churchill	I 
 http://www.jazz-on-line.com/a/mp3c/CAP1867.mp3	Benny Goodman And His Orchestra	I Want To Be Loved	CAPITOL		1867		
 http://www.jazz-on-line.com/a/mp3c/MGM47S100.mp3	Sy Oliver & His Orchestra	I Want To Be Loved	MGM	10030	47S100	1947	
 http://www.jazz-on-line.com/a/mp3w/1947_244.mp3	Savannah Churchill	I Want To Be Loved	MANOR	1046		1947	
-http://www.jazz-on-line.com/a/mp3w/1947_231.mp3	Benny Goodman And His Orchestra Feat. V/lillian Lane	I Want To Be Loved	CAPITOL	416	1867	1947	John Best, Nate Kazebier, George Seaburg, Frank Beach (tp), Lou McGarity, Ray Simms, Tommy 
-Pederson (tb), Benny Goodman (cl), Gus Bivona, Heinie Beau (as), Babe Russin, Zoot Sims (ts), Chuck Gentry 
-(bar), Tommy Todd (p), Al Hendrickson (g), Harry Babasin (sb), Tommy Romersa (dm)
+http://www.jazz-on-line.com/a/mp3w/1947_231.mp3	Benny Goodman And His Orchestra Feat. V/lillian Lane	I Want To Be Loved	CAPITOL	416	1867	1947	John Best, Nate Kazebier, George Seaburg, Frank Beach (tp), Lou McGarity, Ray Simms, Tommy Pederson (tb), Benny Goodman (cl), Gus Bivona, Heinie Beau (as), Babe Russin, Zoot Sims (ts), Chuck Gentry (bar), Tommy Todd (p), Al Hendrickson (g), Harry Babasin (sb), Tommy Romersa (dm)
 http://www.jazz-on-line.com/a/mp3w/1951_302.mp3	Johnny Desmond Feat. Tony Mottola's Orchestra And Ray Charles Singers	I Want To Be Near You	MGM	11027	51S250	1951	
 http://www.jazz-on-line.com/a/mp3w/1951_303.mp3	Percy Faith And His Orchestra	I Want To Be Near You	COLUMBIA	39528	CO47002	1951	
 http://www.jazz-on-line.com/a/mp3o/EDI7664-C.mp3	Premier Quartette (incl. Billy Murray) - O	I Want To Be The Leader Of The Band	EDISON		7664-C		
@@ -11942,9 +11931,7 @@ http://www.jazz-on-line.com/a/mp3w/1918_072.mp3	Wilbur Sweatman's Original Jazz 
 http://www.jazz-on-line.com/a/mp3c/COLB16976.mp3	Duke Ellington & His Orch	Indigo Echoes	COLUMBIA	37297	B16976	1935	
 http://www.jazz-on-line.com/a/mp3c/BLU48869-2.mp3	Johnny Dodds Trio	Indigo Stomp	BLUEBIRD	10238	48869-2	1929	
 http://www.jazz-on-line.com/a/mp3r/RiBan33015.mp3	Charlie Barnet & His Orchestra	Infatuation	Banner	33015			
-http://www.jazz-on-line.com/a/mp3w/1934_220.mp3	Glen Gray And Casa Loma Orchestra Feat. Kenny Sargent, V	Infatuation	BRUNSWICK	6791	14925-A	1934	Bobby Jones, Grady Watts, Sonny Dunham (tp), Billy Rauch, Pee Wee Hunt (tb), Glen Gray (as), Clarence 
-Hutchinrider (cl, as, fl), Kenny Sargent (cl, as), Pat Davis (cl, ts, fl), Mel Jenssen (vn), Joe Hall (p), Jack 
-Blanchette (g), Stanley Dennis (sb), Tony Briglia (dm)
+http://www.jazz-on-line.com/a/mp3w/1934_220.mp3	Glen Gray And Casa Loma Orchestra Feat. Kenny Sargent, V	Infatuation	BRUNSWICK	6791	14925-A	1934	Bobby Jones, Grady Watts, Sonny Dunham (tp), Billy Rauch, Pee Wee Hunt (tb), Glen Gray (as), Clarence Hutchinrider (cl, as, fl), Kenny Sargent (cl, as), Pat Davis (cl, ts, fl), Mel Jenssen (vn), Joe Hall (p), Jack Blanchette (g), Stanley Dennis (sb), Tony Briglia (dm)
 http://www.jazz-on-line.com/a/mp3c/BAN14986-1.mp3	Charlie Barnet & His Orch	Infatuation (v H. Heath)	BANNER	33015	14986-1	1934	
 http://www.jazz-on-line.com/a/mp3c/DECL4594.mp3	Louis Jordan & His Tympani 5	Inflation Blues	DECCA	24381	L4594	1947	
 http://www.jazz-on-line.com/a/mp3h/COLHCO3017.mp3	Victor Borge	Inflation Language	COLUMBIA 38183		HCO 3017	1948	
@@ -12430,8 +12417,7 @@ http://www.jazz-on-line.com/a/mp3c/COLHCO4539.mp3	Erroll Garner Trio	It's The Ta
 http://www.jazz-on-line.com/a/mp3b/DEC73690.mp3	Roy Eldridge & His Orchestra	It's The Talk Of The Town	DECCA	23783	73690	1946	
 http://www.jazz-on-line.com/a/mp3r/RiCap.mp3	Coleman Hawkins	It's The Talk Of The Town	Capitol Jazz 50th An			1945	
 http://www.jazz-on-line.com/a/mp3d/Col265136-3.mp3	Fletcher Henderson And His Orchestra	It's The Talk Of The Town	Columbia	2825-D	265136-3	1933	
-http://www.jazz-on-line.com/a/mp3w/1933_051.mp3	Glen Gray And Casa Loma Orchestra Feat. Kenny Sargent, V	It's The Talk Of The Town	BRUNSWICK	6626	13739-A	1933	Joe Hostetter, Frank Martinez (tp), Pee Wee Hunt, Billy Rauch (tb), Glen Gray (as, ldr), Clarence Hutchinrider (cl, as), Kenny Sargent, Pat Davis (ts), Mel Jenssen (vn), Joe Hall (p), Gene Gifford (bj, g), Stanley Dennis 
-(bb, sb), Tony Briglia (dm)
+http://www.jazz-on-line.com/a/mp3w/1933_051.mp3	Glen Gray And Casa Loma Orchestra Feat. Kenny Sargent, V	It's The Talk Of The Town	BRUNSWICK	6626	13739-A	1933	Joe Hostetter, Frank Martinez (tp), Pee Wee Hunt, Billy Rauch (tb), Glen Gray (as, ldr), Clarence Hutchinrider (cl, as), Kenny Sargent, Pat Davis (ts), Mel Jenssen (vn), Joe Hall (p), Gene Gifford (bj, g), Stanley Dennis (bb, sb), Tony Briglia (dm)
 http://www.jazz-on-line.com/a/mp3c/BLU041530.mp3	Fats Waller And His Rhythm	It's The Tune That Counts	BLUEBIRD	10393	041530	1939	
 http://www.jazz-on-line.com/a/mp3a/VIC48619-2.mp3	Mckinney's Cotton Pickers	It's Tight Like That	VICTOR	38013	48619-2	1928	
 http://www.jazz-on-line.com/a/mp3c/VOCC2710-A.mp3	Jimmie Noone's Apex Jazz Band	It's Tight Like That	VOCALION	1238	C2710-A	1928	
@@ -13419,7 +13405,6 @@ http://www.jazz-on-line.com/a/mp3w/1923_034.mp3	John Steel	Lady Of The Evening	V
 http://www.jazz-on-line.com/a/mp3c/COLHCO2532.mp3	Duke Ellington	Lady Of The Lavender Mist	COLUMBIA	38235	HCO2532	1947	
 http://www.jazz-on-line.com/a/mp3b/BRUE35771.mp3	Nick Lucas & Crooning Troub.	Lady Play Your Mandolin	BRUNSWICK	6013	E35771	1930	
 http://www.jazz-on-line.com/a/mp3h/DH480864.mp3	Jazz At The Philharmonic	Lady, Be Good!	Asch	453-2B-453-3A-453-3B	1502, 1503, 1504	1945	Joe Guy, Howard McGhee (tp), Willie Smith (as), Illinois Jacquet, Charlie Ventura (ts), Garland Finney (p), Ulysses Livingston (g), Red Callender (sb), Gene Krupa (dm), Norman Granz (dir)
-
 http://www.jazz-on-line.com/a/mp3w/1931_118.mp3	Havana Novelty Orchestra	Lady, Play Your Mandolin	VICTOR	22597A	67724-2	1931	
 http://www.jazz-on-line.com/a/mp3c/VIC74853-1.mp3	Bennie Moten Kansas City Orch	Lafayette	VICTOR	24216	74853-1	1932	
 http://www.jazz-on-line.com/a/mp3c/COL140223.mp3	Eddie Cantor	Laff It Off!	COLUMBIA	283D	140223	1925	
@@ -13579,8 +13564,7 @@ http://www.jazz-on-line.com/a/mp3w/1921_151.mp3	Carl Fenton And His Orchestra	Le
 http://www.jazz-on-line.com/a/mp3e/BRU6034.mp3	Carl Fenton And His Orch	Learn To Smile, Introducing: Conversation Step	BRUNSWICK	2120	6034	1921	
 http://www.jazz-on-line.com/a/mp3w/1955_013.mp3	Frank Sinatra	Learnin' The Blues	Capitol	3102		1955	
 http://www.jazz-on-line.com/a/mp3w/1955_201.mp3	Peggy King	Learnin' To Love	Columbia	40562		1955	
-http://www.jazz-on-line.com/a/mp3w/1934_177.mp3	Glen Gray And Casa Loma Orchestra Feat. Kenny Sargent, V	Learning	BRUNSWICK	6964	15658-A	1934	Grady Watts (tp), Sonny Dunham (tp, tb), Pee Wee Hunt, Billy Rauch (tb), Glen Gray (as, ldr), Clarence Hutchinrider (cl, as), Kenny Sargent, Pat Davis (ts), Mel Jenssen (vn), Joe Hall (p), Jack Blanchette (g), Stanley 
-Dennis (bb, sb), Tony Briglia (dm)
+http://www.jazz-on-line.com/a/mp3w/1934_177.mp3	Glen Gray And Casa Loma Orchestra Feat. Kenny Sargent, V	Learning	BRUNSWICK	6964	15658-A	1934	Grady Watts (tp), Sonny Dunham (tp, tb), Pee Wee Hunt, Billy Rauch (tb), Glen Gray (as, ldr), Clarence Hutchinrider (cl, as), Kenny Sargent, Pat Davis (ts), Mel Jenssen (vn), Joe Hall (p), Jack Blanchette (g), Stanley Dennis (bb, sb), Tony Briglia (dm)
 http://www.jazz-on-line.com/a/mp3c/COLW150200.mp3	Gid Tanner's Skillet Lickers	Leather Breeches	COLUMBIA	15623 D	W150200	1930	
 http://www.jazz-on-line.com/a/mp3h/Ode403964-A.mp3	Casa Loma Orchestra	Leave It That Way	Odéon	ONY-36079	403964-A	1930	
 http://www.jazz-on-line.com/a/mp3w/1954_317.mp3	The Ames Brothers With Hugo Winterhalter's Orchestra And Chorus	Leave It To Your Heart	RCA Victor	5764		1954	
@@ -15736,8 +15720,7 @@ http://www.jazz-on-line.com/a/mp3r/RiVic24486A.mp3	Duke Ellington & His Famous O
 http://www.jazz-on-line.com/a/mp3b/Lee1931_0904_02.mp3	Lee Morse And Her Bluegrass Boys	Mood Indigo	Columbia	2530DB		1931	
 http://www.jazz-on-line.com/a/mp3w/1954_233.mp3	Four Freshmen	Mood Indigo	Capitol	2961		1954	
 http://www.jazz-on-line.com/a/mp3w/1931_030.mp3	Duke Ellington And His Famous Orch.	Mood Indigo	Victor	22587		1931	
-http://www.jazz-on-line.com/a/mp3h/DH480875.mp3	Duke Ellington And His Famous Orchestra, Ivie Anderson, Vocal	Mood Indigo	COLUMBIA	35427	WM1137	1940	Wallace Jones, Cootie Williams (tp), Rex Stewart (co), Joe Nanton, Lawrence Brown (tb), Juan Tizol (vtb), Barney Bigard (cl), Johnny Hodges (cl, ss, as), Harry Carney (cl, as, bar), Otto Hardwick (as, bsx), Duke 
-Ellington (p), Fred Guy (g), Jimmy Blanton (sb), Sonny Greer (dm)
+http://www.jazz-on-line.com/a/mp3h/DH480875.mp3	Duke Ellington And His Famous Orchestra, Ivie Anderson, Vocal	Mood Indigo	COLUMBIA	35427	WM1137	1940	Wallace Jones, Cootie Williams (tp), Rex Stewart (co), Joe Nanton, Lawrence Brown (tb), Juan Tizol (vtb), Barney Bigard (cl), Johnny Hodges (cl, ss, as), Harry Carney (cl, as, bar), Otto Hardwick (as, bsx), Duke Ellington (p), Fred Guy (g), Jimmy Blanton (sb), Sonny Greer (dm)
 http://www.jazz-on-line.com/a/mp3h/DH480876.mp3	Ivy Anderson, V; Duke Ellington And His Orchestra. (comp: Ellington, Mills, Bigard)	Mood Indigo	COLUMBIA	35427	WM1137	1940	
 http://www.jazz-on-line.com/a/mp3h/DH480877.mp3	Andre Kostelanetz And His Orchestra	Mood Indigo	COLUMBIA	7430-M		1945	
 http://www.jazz-on-line.com/a/mp3b/MASLO377-1.mp3	Duke Ellington Orch	Mood Indigo - Solitude	MASTER	102	LO377-1	1936	
@@ -15795,8 +15778,7 @@ http://www.jazz-on-line.com/a/mp3w/1933_046.mp3	Jack Denny And His Orchestra	Moo
 http://www.jazz-on-line.com/a/mp3t/TS480514.mp3	Art Tatum And Roy Eldridge	Moon Song	Clef	MGC 679	2306-2	1955	Roy Eldridge (tp), Art Tatum (p), John Simmons (sb), Alvin Stoller (dm)
 http://www.jazz-on-line.com/a/mp3t/TS480681.mp3	Ben Webster And Harry Edison	Moon Song	Verve	EPV5045	20573-5	1957	Ben Webster, Ts, Harry Sweets Edison, T, Jimmy Rowles, P, Barney Kessel, G, Joe Mandragon, B, Larry Bunker, D, Woody Herman, Vocal
 http://www.jazz-on-line.com/a/mp3c/CAP1619.mp3	Benny Goodman And His Orchestra	Moon-faced And Starry-eyed	CAPITOL		1619		
-http://www.jazz-on-line.com/a/mp3w/1947_232.mp3	Benny Goodman And His Orchestra Feat. V/johnny Mercer	Moon-faced, Starry-eyed	CAPITOL	376	1619	1947	Nate Kazebier, George Wendt, Zeke Zarchy, Joe Triscari (tp), Red Ballard, Lou McGarity, Bill Schaefer 
-(tb), Benny Goodman (cl), Arthur "Skeets" Herfurt, Heinie Beau (as), Babe Russin, Jack Chaney (ts), Chuck Gentry (bar), Jess Stacy (p), Allen Reuss (g), Larry Breen (sb), Sam Weiss (dm) 
+http://www.jazz-on-line.com/a/mp3w/1947_232.mp3	Benny Goodman And His Orchestra Feat. V/johnny Mercer	Moon-faced, Starry-eyed	CAPITOL	376	1619	1947	Nate Kazebier, George Wendt, Zeke Zarchy, Joe Triscari (tp), Red Ballard, Lou McGarity, Bill Schaefer (tb), Benny Goodman (cl), Arthur "Skeets" Herfurt, Heinie Beau (as), Babe Russin, Jack Chaney (ts), Chuck Gentry (bar), Jess Stacy (p), Allen Reuss (g), Larry Breen (sb), Sam Weiss (dm) 
 http://www.jazz-on-line.com/a/mp3a/BRUE21825.mp3	Nick Lucas	Moonbeam Kiss Her For Me	BRUNSWICK	3492	E21825	1927	
 http://www.jazz-on-line.com/a/mp3a/VIC20419-A.mp3	B. F. Goodrich Silvertown Cord	Moonbeam Kiss Her For Me	Victor	20419-A			
 http://www.jazz-on-line.com/a/mp3o/HAR337-Hx.mp3	Lou Gold And His Orch	Moonbeam Kiss Her For Me2	Harmony	337-H			
@@ -16339,8 +16321,7 @@ http://www.jazz-on-line.com/a/mp3b/VIC40501-5.mp3	George Olsen & His Music	My He
 http://www.jazz-on-line.com/a/mp3e/Blu31492.mp3	Artie Shaw And His Orchestra	My Heart Stood Still	Bluebird	10125	031492-1	1939	
 http://www.jazz-on-line.com/a/mp3a/DEC18567A.mp3	Glen Gray And Casa Loma Orch.	My Heart Tells Me	DECCA	18567A			
 http://www.jazz-on-line.com/a/mp3w/1944_127.mp3	Jan Garber And His Orchestra	My Heart Tells Me	Hit	7070		1944	
-http://www.jazz-on-line.com/a/mp3w/1944_009.mp3	Glen Gray And Casa Loma Orchestra	My Heart Tells Me	DECCA	18567	71439	1943	Eugenie Baird (vo), Fritz Austin, John Owens, Ray Grien (tp), Otto Alburn, George Jean, Jack Pageler (tb), Clarence Hutchinrider (cl, as), Glen Gray, Bunny Bardach, Conn Humphries (as), Lon Doty, Gus Jean (ts), Lou Carter (p), Herb Ellis (g), Morrie Rayman 
-(sb), Tony Briglia (dm)
+http://www.jazz-on-line.com/a/mp3w/1944_009.mp3	Glen Gray And Casa Loma Orchestra	My Heart Tells Me	DECCA	18567	71439	1943	Eugenie Baird (vo), Fritz Austin, John Owens, Ray Grien (tp), Otto Alburn, George Jean, Jack Pageler (tb), Clarence Hutchinrider (cl, as), Glen Gray, Bunny Bardach, Conn Humphries (as), Lon Doty, Gus Jean (ts), Lou Carter (p), Herb Ellis (g), Morrie Rayman (sb), Tony Briglia (dm)
 http://www.jazz-on-line.com/a/mp3c/CROC1787-1.mp3	Russ Carlson & His Orch	My Heart's At Ease (v)	CROWN	3351	C1787-1	1932	
 http://www.jazz-on-line.com/a/mp3w/1949_274.mp3	Ralph Flanagan And His Orchestra	My Hero	Bluebird	0006		1949	
 http://www.jazz-on-line.com/a/mp3d/Dec90968-A.mp3	Lil Armstrong And Her Swing Band	My Hi-de-ho-man	Decca	1059	90968-A	1936	
@@ -17737,8 +17718,7 @@ http://www.jazz-on-line.com/a/mp3a/PAR20075-2.mp3	Blind Lemon Jefferson	One Dime
 http://www.jazz-on-line.com/a/mp3a/OKEC4194-1.mp3	Dick Jurgens And His Orch	One Dozen Roses	OKEH	6636	C4194-1	1942	
 http://www.jazz-on-line.com/a/mp3c/DEC70441.mp3	Connie Boswell	One Dozen Roses	DECCA	4280B	70441	1942	
 http://www.jazz-on-line.com/a/mp3c/DEC70607.mp3	Glen Gray & Casa Loma Orch.	One Dozen Roses	DECCA	4299A	70607	1942	
-http://www.jazz-on-line.com/a/mp3w/1942_050.mp3	Glen Gray And Casa Loma Orchestra Feat. Pee Wee Hunt, V	One Dozen Roses	DECCA	4299	70607	1942	Frank Ryerson, Cy Baker, Grady Watts (tp), Billy Rauch, Murray McEachern, Pee Wee Hunt (tb), Glen 
-Gray, Clarence Hutchinrider (cl, as, fl), Kenny Sargent (cl, as), Art Ralston (as, ob, bsn), Danny D'Andrea (as), Pat Davis (cl, ts, fl), Joe Hall (p), Jack Burdette (g), Stanley Dennis (sb), Tony Briglia (dm)
+http://www.jazz-on-line.com/a/mp3w/1942_050.mp3	Glen Gray And Casa Loma Orchestra Feat. Pee Wee Hunt, V	One Dozen Roses	DECCA	4299	70607	1942	Frank Ryerson, Cy Baker, Grady Watts (tp), Billy Rauch, Murray McEachern, Pee Wee Hunt (tb), Glen Gray, Clarence Hutchinrider (cl, as, fl), Kenny Sargent (cl, as), Art Ralston (as, ob, bsn), Danny D'Andrea (as), Pat Davis (cl, ts, fl), Joe Hall (p), Jack Burdette (g), Stanley Dennis (sb), Tony Briglia (dm)
 http://www.jazz-on-line.com/a/mp3w/1950_094.mp3	Frank Sinatra	One Finger Melody	COLUMBIA	39014	CO44367	1950	
 http://www.jazz-on-line.com/a/mp3a/BLUB-10202-B.mp3	Artie Shaw And His Orchestra	One Foot In The Groove	BLUEBIRD	B-10202-B	035304-1	1939	
 http://www.jazz-on-line.com/a/mp3a/MGM52S3115.mp3	Billy Eckstine	One For My Baby	MGM	30805	52S3115		
@@ -17912,8 +17892,7 @@ http://www.jazz-on-line.com/a/mp3o/DEC61246.mp3	Jimmie Lunceford And His Orch	Or
 http://www.jazz-on-line.com/a/mp3w/1936_031.mp3	Jimmie Lunceford And His Orchestra	Organ Grinder's Swing	Decca	908	61246-A	1936	
 http://www.jazz-on-line.com/a/mp3w/1936_160.mp3	Frank Froeba And His Swing Band Feat. Midge Williams	Organ Grinder's Swing	COLUMBIA	3151D	19764-1	1936	
 http://www.jazz-on-line.com/a/mp3w/1953_136.mp3	Four Aces Feat. Owen Bradley's Orchestra	Organ Grinder's Swing	DECCA	28691	84283	1953	
-http://www.jazz-on-line.com/a/mp3w/1936_127.mp3	Benny Goodman And His Orchestra	Organ Grinder's Swing	VICTOR	25442	02101-1	1936	Zeke Zarchy, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Murray McEachern (tb), Benny Goodman (cl), Hymie Schertzer, Bill DePew (as), Arthur Rollini, Vido Musso (ts), Jess Stacy (p), Allen Reuss (g), Harry Goodman (sb), 
-Gene Krupa (dm)
+http://www.jazz-on-line.com/a/mp3w/1936_127.mp3	Benny Goodman And His Orchestra	Organ Grinder's Swing	VICTOR	25442	02101-1	1936	Zeke Zarchy, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Murray McEachern (tb), Benny Goodman (cl), Hymie Schertzer, Bill DePew (as), Arthur Rollini, Vido Musso (ts), Jess Stacy (p), Allen Reuss (g), Harry Goodman (sb), Gene Krupa (dm)
 http://www.jazz-on-line.com/a/mp3d/Dec61246-A.mp3	Jimmie Lunceford And His Orchestra	Organ Grinder's Swing.mp3	Decca	908	61246-A	1936	
 http://www.jazz-on-line.com/a/mp3b/MGM49S391.mp3	Slim Gaillard	Organ Oreenie	MGM	10599A	49S391		
 http://www.jazz-on-line.com/a/mp3b/VIC26377-22.mp3	Paul Whiteman & His Orch	Oriental	VICTOR	21599	26377-22	1922	
@@ -18964,8 +18943,7 @@ http://www.jazz-on-line.com/a/mp3o/RCA47-3212-A.mp3	Ralph Flanagan & His Orch  V
 http://www.jazz-on-line.com/a/mp3w/1950_157.mp3	Jimmy Dorsey And His Orchestra Feat. Claire Hogan And Band	Rag Mop	COLUMBIA	38710	CO42650	1950	
 http://www.jazz-on-line.com/a/mp3d/Dec75636.mp3	Lionel Hampton And His Orchestra	Rag Mop	Decca	24855	75636	1949	Walter Williams-Benny Bailey-Ed Mullens-Duke Garrette-Leo Shepherd-t, AI Grey-Benny Powell-Jimmy Wormick-Paul Lee Higaki-tb, Bobby Plater-Jerome Richardson-as, Curtis Lowe-Johnny Board-Billy ''Smallwood'' Williams-ts, Lonnie Shaw-bar, Lionel Hampton-vi
 http://www.jazz-on-line.com/a/mp3w/1950_037.mp3	Ralph Flanagan And His Orchestra Feat. Harry Prime	Rag Mop	RCA VICTOR	78-3688-A	47-3212-A	1950	
-http://www.jazz-on-line.com/a/mp3w/1950_067.mp3	Lionel Hampton And His Orchestra	Rag Mop	DECCA	24855	75636	1949	Walter Williams, Benny Bailey, Ed Mullens, Duke Garrette, Leo Shepherd (tp), Al Grey, Benny Powell, Paul Lee, R.N. Paul Higaki, Jimmy Wormick (tb), Bobby Plater, Jerome Richardson (as), Curtis Lowe, Johnny Board, Billy Williams (ts), Lonnie Shaw (bar), Lionel Hampton (vib), Douglas Duke (p,org), Wes Montgomery (g), Roy Johnson (sb), Ellis Bartee (dm), vocals by 
-the band. 
+http://www.jazz-on-line.com/a/mp3w/1950_067.mp3	Lionel Hampton And His Orchestra	Rag Mop	DECCA	24855	75636	1949	Walter Williams, Benny Bailey, Ed Mullens, Duke Garrette, Leo Shepherd (tp), Al Grey, Benny Powell, Paul Lee, R.N. Paul Higaki, Jimmy Wormick (tb), Bobby Plater, Jerome Richardson (as), Curtis Lowe, Johnny Board, Billy Williams (ts), Lonnie Shaw (bar), Lionel Hampton (vib), Douglas Duke (p,org), Wes Montgomery (g), Roy Johnson (sb), Ellis Bartee (dm), vocals by the band. 
 http://www.jazz-on-line.com/a/mp3c/OKE81390.mp3	Vance Tennessee Breakdowners	Ragged Ann	OKEH	45151	81390	1927	
 http://www.jazz-on-line.com/a/mp3b/VIC28794-4.mp3	Paul Whiteman & His Orch	Raggedy Ann	VICTOR	19187	28794-4	1923	
 http://www.jazz-on-line.com/a/mp3c/DEC63254.mp3	Bob Howard & His Orch	Raggedy But Right	DECCA	1698	63254	1938	
@@ -19936,12 +19914,9 @@ http://www.jazz-on-line.com/a/mp3c/V-DVP1423.mp3	Nat King Cole Qt	Satchel Mouth 
 http://www.jazz-on-line.com/a/mp3c/ASC656.mp3	Mary Lou Williams	Satchel Mouth Baby	ASCH	502	656	1944	
 http://www.jazz-on-line.com/a/mp3b/decDLA1132-A.mp3	Louis Armstrong And His Orchestra	Satchel Mouth Swing	DECCA	1636	DLA1132-A	1938	
 http://www.jazz-on-line.com/a/mp3t/TS480484.mp3	Art Farmer And Gigi Gryce	Satellite	Prestige	LP7017	807	1955	Art Farmer, FLH, Gigi Gryce, As, Duke Jordan, P, Addison Farmer, B,, Art's Twin Brother, Philly Joe Jones, D, [Featuring Gigi Gryce]
-http://www.jazz-on-line.com/a/mp3w/1953_351.mp3	Duke Ellington And His Famous Orchestra	Satin Doll	Capitol	2458	11398-1	1953	Clark Terry, Willie Cook, Cat Anderson (tp), Ray Nance (tp,vn), Quentin Jackson, Britt Woodman, Juan Tizol (tb), Jimmy Hamilton (cl,ts), Rick Henderson (as), Russell Procope (as,cl), Paul Gonsalves (ts), Harry Carney (bar,b-cl,cl), Duke Ellington (p), Wendell 
-Marshall (sb), Butch Ballard (dm) 
-http://www.jazz-on-line.com/a/mp3h/DH480892.mp3	Duke Ellington And His Famous Orchestra	Satin Doll	CAPITOL	2458	11398-1	1952	Clark Terry, Willie Cook, Cat Anderson (tp), Ray Nance (tp,vn), Quentin Jackson, Britt Woodman, Juan Tizol (tb), Jimmy Hamilton (cl,ts), Rick Henderson (as), Russell Procope (as,cl), Paul Gonsalves (ts), Harry Carney (bar,b-cl,cl), Duke Ellington (p), Wendell 
-Marshall (sb), Butch Ballard (dm) 
-http://www.jazz-on-line.com/a/mp3h/DH480893.mp3	Duke Ellington And His Famous Orchestra	Satin Doll	CAPITOL	2458	11398	1953	Clark Terry, Willie Cook, Cat Anderson (tp), Ray Nance (tp,vn), Quentin Jackson, Britt Woodman, Juan Tizol (tb), Jimmy Hamilton (cl,ts), Rick Henderson (as), Russell Procope (as,cl), Paul Gonsalves (ts), Harry Carney (bar,b-cl,cl), Duke Ellington (p), Wendell 
-Marshall (sb), Butch Ballard (dm) 
+http://www.jazz-on-line.com/a/mp3w/1953_351.mp3	Duke Ellington And His Famous Orchestra	Satin Doll	Capitol	2458	11398-1	1953	Clark Terry, Willie Cook, Cat Anderson (tp), Ray Nance (tp,vn), Quentin Jackson, Britt Woodman, Juan Tizol (tb), Jimmy Hamilton (cl,ts), Rick Henderson (as), Russell Procope (as,cl), Paul Gonsalves (ts), Harry Carney (bar,b-cl,cl), Duke Ellington (p), Wendell Marshall (sb), Butch Ballard (dm) 
+http://www.jazz-on-line.com/a/mp3h/DH480892.mp3	Duke Ellington And His Famous Orchestra	Satin Doll	CAPITOL	2458	11398-1	1952	Clark Terry, Willie Cook, Cat Anderson (tp), Ray Nance (tp,vn), Quentin Jackson, Britt Woodman, Juan Tizol (tb), Jimmy Hamilton (cl,ts), Rick Henderson (as), Russell Procope (as,cl), Paul Gonsalves (ts), Harry Carney (bar,b-cl,cl), Duke Ellington (p), Wendell Marshall (sb), Butch Ballard (dm) 
+http://www.jazz-on-line.com/a/mp3h/DH480893.mp3	Duke Ellington And His Famous Orchestra	Satin Doll	CAPITOL	2458	11398	1953	Clark Terry, Willie Cook, Cat Anderson (tp), Ray Nance (tp,vn), Quentin Jackson, Britt Woodman, Juan Tizol (tb), Jimmy Hamilton (cl,ts), Rick Henderson (as), Russell Procope (as,cl), Paul Gonsalves (ts), Harry Carney (bar,b-cl,cl), Duke Ellington (p), Wendell Marshall (sb), Butch Ballard (dm) 
 http://www.jazz-on-line.com/a/mp3w/1929_207.mp3	Henry Busse And His Orchestra	Satisfied	VICTOR	22116	53987-3	1929	
 http://www.jazz-on-line.com/a/mp3b/COL79888-1.mp3	Nora Bayes	Saturday	COLUMBIA	A-3471	79888-1	1921	
 http://www.jazz-on-line.com/a/mp3w/1921_111.mp3	Nora Bayes Feat. O/charles Prince	Saturday	COLUMBIA	3471	79888-1	1921	
@@ -21020,8 +20995,7 @@ http://www.jazz-on-line.com/a/mp3c/BLU57784-1.mp3	Jelly Roll Morton Trio	Smilin'
 http://www.jazz-on-line.com/a/mp3c/Mon054527.mp3	Arthur Smith Dixie Liners	Smith's Rag	MontgomeryWard	8891	054527	1940	
 http://www.jazz-on-line.com/a/mp3a/BRUC1734-2.mp3	Red Norvo And His Orch	Smoke Dreams	BRUNSWICK	7815	C1734-2	1937	
 http://www.jazz-on-line.com/a/mp3b/VIC03551-2.mp3	Benny Goodman And His Orchestra	Smoke Dreams	VICTOR	25486	03551-2	1936	
-http://www.jazz-on-line.com/a/mp3w/1937_067.mp3	Benny Goodman And His Orchestra Feat. Helen Ward, V	Smoke Dreams	VICTOR	25486	03551-2	1936	Irving Goodman, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Murray McEachern (tb), Benny Goodman 
-(cl), Hymie Schertzer, Bill DePew (as), Arthur Rollini, Vido Musso (ts), Jess Stacy (p), Allen Reuss (g), Harry Goodman (sb), Gene Krupa (dm)
+http://www.jazz-on-line.com/a/mp3w/1937_067.mp3	Benny Goodman And His Orchestra Feat. Helen Ward, V	Smoke Dreams	VICTOR	25486	03551-2	1936	Irving Goodman, Ziggy Elman, Gordon Griffin (tp), Red Ballard, Murray McEachern (tb), Benny Goodman (cl), Hymie Schertzer, Bill DePew (as), Arthur Rollini, Vido Musso (ts), Jess Stacy (p), Allen Reuss (g), Harry Goodman (sb), Gene Krupa (dm)
 http://www.jazz-on-line.com/a/mp3c/VIC018113.mp3	Tommy Dorsey & His Orch	Smoke From A Chimney	VICTOR	25763	018113	1938	
 http://www.jazz-on-line.com/a/mp3a/BLA3000-B.mp3	Gaylord Carter	Smoke Gets In Your Eyes	Black & White	3000-B			
 http://www.jazz-on-line.com/a/mp3a/BRU14387-B.mp3	Leo Reisman And His Orch (vhw)	Smoke Gets In Your Eyes	BRUNSWICK	6715	14387-B	1933	
@@ -21307,8 +21281,7 @@ http://www.jazz-on-line.com/a/mp3r/RiColA1208s.mp3	Arthur Collins	Somebody Else 
 http://www.jazz-on-line.com/a/mp3a/COL31741.mp3	Benny Goodman And His Orchestra	Somebody Else Is Taking My Place	COLUMBIA	38198	31741	1941	vocal Peggy Lee
 http://www.jazz-on-line.com/a/mp3e/COL31741-1.mp3	Benny Goodman & His Orch	Somebody Else Is Taking My Place	COLUMBIA	37244	31741-1	1941	
 http://www.jazz-on-line.com/a/mp3w/1942_032.mp3	Russ Morgan And His Orchestra	Somebody Else Is Taking My Place	DECCA	4098A	69871	1942	
-http://www.jazz-on-line.com/a/mp3w/1942_033.mp3	Benny Goodman And His Orchestra Feat. Peggy Lee	Somebody Else Is Taking My Place	OKEH	6497	31741-1	1941	Billy Butterfield, Jimmy Maxwell,  Al Davis (tp), Lou McGarity, Cutty Cutshall (tb), Benny Goodman (cl), Julie Schwartz, Clint Neagley (as), Vido Musso, George Berg (ts), Chuck Gentry (bar), Mel Powell (p), Tom 
-Morgan (g), Sid Weiss (sb), Ralph Collier (dm)
+http://www.jazz-on-line.com/a/mp3w/1942_033.mp3	Benny Goodman And His Orchestra Feat. Peggy Lee	Somebody Else Is Taking My Place	OKEH	6497	31741-1	1941	Billy Butterfield, Jimmy Maxwell,  Al Davis (tp), Lou McGarity, Cutty Cutshall (tb), Benny Goodman (cl), Julie Schwartz, Clint Neagley (as), Vido Musso, George Berg (ts), Chuck Gentry (bar), Mel Powell (p), Tom Morgan (g), Sid Weiss (sb), Ralph Collier (dm)
 http://www.jazz-on-line.com/a/mp3w/1948_211.mp3	Benny Goodman And His Orchestra	Somebody Else Is Taking My Place	COLUMBIA	38198	31741	1948	
 http://www.jazz-on-line.com/a/mp3b/VARW139.mp3	Bunny Berigan & His Orch	Somebody Else Is Taking My Place (v N S)	VARSITY	EL5019	W139	1942	
 http://www.jazz-on-line.com/a/mp3a/OKE31741-1.mp3	Benny Goodman And His Orchestra	Somebody Else Is Taking My Place (vpl)	OKEH	6497	31741-1	1941	
@@ -23432,8 +23405,7 @@ http://www.jazz-on-line.com/a/mp3a/VIC21917-B.mp3	Helen Kane	That's Why I'm Happ
 http://www.jazz-on-line.com/a/mp3c/COLW147922-2.mp3	Jan Garber & His Orch	That's Why I'm Happy	COLUMBIA	1823 D	W147922-2	1929	
 http://www.jazz-on-line.com/a/mp3c/DEC61811.mp3	Jimmie Davis	That's Why I'm Nobody's Darling	DECCA	5336	61811	1937	
 http://www.jazz-on-line.com/a/mp3w/1956_273.mp3	Otis Williams And His New Group	That's Your Mistake	DeLuxe	6091		1956	
-http://www.jazz-on-line.com/a/mp3b/EasARH001.mp3	Kid Ory's All Stars	Thats A Plenty	Arhoolie			1944	Kid Ory (trombone), Mutt Carey (trumpet), Jimmie Noone (clarinet), Buster Wilson (piano), Bud Scott (guitar), Ed Garland (bass) and
-Zutty Singleton (drums)
+http://www.jazz-on-line.com/a/mp3b/EasARH001.mp3	Kid Ory's All Stars	Thats A Plenty	Arhoolie			1944	Kid Ory (trombone), Mutt Carey (trumpet), Jimmie Noone (clarinet), Buster Wilson (piano), Bud Scott (guitar), Ed Garland (bass) and Zutty Singleton (drums)
 http://www.jazz-on-line.com/a/mp3b/Joh159.mp3	John Firman And His Band	Thats My Desire (v Maurice Elwin)	Zonophone	6039	OY-1533-2	1931	
 http://www.jazz-on-line.com/a/mp3d/MajT-720.mp3	Jimmie Lunceford And His Orchestra	The ''jimmies''	Majestic	1060	T-720	1946	
 http://www.jazz-on-line.com/a/mp3e/MONV-5502.mp3	Ada Jones And Billy Murray	The A.b.c's Of The U.s.a	MONARCH	V-5502		1908	
@@ -26767,8 +26739,7 @@ http://www.jazz-on-line.com/a/mp3c/OKe74091-B.mp3	Clarence Williams Stompers	Wha
 http://www.jazz-on-line.com/a/mp3c/DEC67122.mp3	Ella Fitzgerald & Her Orch	What's The Matter With Me	DECCA	3005A	67122	1940	
 http://www.jazz-on-line.com/a/mp3e/COL26416-A.mp3	Benny Goodman & His Orch	What's The Matter With Me	COLUMBIA	35374	26416-A	1940	
 http://www.jazz-on-line.com/a/mp3c/BLU046434.mp3	Glenn Miller & His Orch	What's The Matter With Me (vmh)	BLUEBIRD	10657 B	046434	1940	
-http://www.jazz-on-line.com/a/mp3w/1940_271.mp3	Benny Goodman And His Orchestra Feat. V/helen Forrest	What's The Matter With Me?	COLUMBIA	35374	26416-A	1940	Ziggy Elman, Jimmy Maxwell, Johnny Martell (tp), Red Ballard, Vernon Brown, Ted Vesley (tb), Benny 
-Goodman (cl), Toots Mondello, Buff Estes (as), Jerry Jerome, Bus Bassey (ts), Johnny Guarneri (p), Charlie Christian (elg), Artie Bernstein (sb), Nick Fatool (dm)
+http://www.jazz-on-line.com/a/mp3w/1940_271.mp3	Benny Goodman And His Orchestra Feat. V/helen Forrest	What's The Matter With Me?	COLUMBIA	35374	26416-A	1940	Ziggy Elman, Jimmy Maxwell, Johnny Martell (tp), Red Ballard, Vernon Brown, Ted Vesley (tb), Benny Goodman (cl), Toots Mondello, Buff Estes (as), Jerry Jerome, Bus Bassey (ts), Johnny Guarneri (p), Charlie Christian (elg), Artie Bernstein (sb), Nick Fatool (dm)
 http://www.jazz-on-line.com/a/mp3c/HITT488.mp3	Louis Prima & His Orch	What's The Matter, Marie? (v L P)	HIT OF THE WEEK	7124b	T488	1944	
 http://www.jazz-on-line.com/a/mp3c/VIC88785-1.mp3	Fats Waller And His Rhythm	What's The Reason	VICTOR	25027	88785-1	1935	
 http://www.jazz-on-line.com/a/mp3c/DECDLA92.mp3	Mills Brothers	What's The Reason	DECCA	402A	DLA92	1935	
