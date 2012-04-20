@@ -18,17 +18,16 @@ import json
 
 import logging
 
-
 logger = logging.getLogger('jazz-on-line-resolver')
 	
 def print_json(o):
     s = json.dumps(o)
     logger.debug("responding %s", s)
-    if 1: #not LINE_BASED_PROCESSING:
+    if LINE_BASED_PROCESSING:
+        sys.stdout.write(s + '\n')
+    else:
 	sys.stdout.write(pack('!L', len(s)))
         sys.stdout.write(s)
-    else:
-        sys.stdout.write(s + '\n')
     sys.stdout.flush()
 
 
@@ -72,29 +71,22 @@ def search_for_track(request, callback):
 
 if __name__ == "__main__":
     try:
-        THIS_DIR = os.path.dirname(__file__)
-        if THIS_DIR:
-            THIS_DIR = os.path.abspath(THIS_DIR)
-            os.chdir(THIS_DIR)
-        else:
-            THIS_DIR = '.'
-
-        handler = logging.FileHandler('.jol_resolver.log')
-        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
-
-	logger.info("Started in %s", THIS_DIR)
-
 	if "--line-based" in sys.argv:
 		sys.argv.remove("--line-based")
 		LINE_BASED_PROCESSING = True
-                #logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+                logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 	else:
 		LINE_BASED_PROCESSING = False
 
-	structured_listing = get_structured_listing("listing.txt")
+        THIS_DIR = os.path.dirname(__file__)
+        if THIS_DIR:
+            THIS_DIR = os.path.abspath(THIS_DIR)
+        else:
+            THIS_DIR = os.path.abspath('.')
+
+	logger.info("Started in %s", THIS_DIR)
+
+	structured_listing = get_structured_listing(THIS_DIR + "/listing.txt")
 	songs_by_artist_name = get_name_artist_map(structured_listing)
 	songs_by_name_artist = transpose(songs_by_artist_name)
 
