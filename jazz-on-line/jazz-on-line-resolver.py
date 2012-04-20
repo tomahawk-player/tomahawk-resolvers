@@ -8,8 +8,7 @@
 ######################################################################
 
 
-import jolify
-from jolify import (get_structured_listing, get_name_artist_map, transpose,
+from jol_search import (get_structured_listing, get_name_artist_map, transpose,
         normalize_name_tag, parse_artist_tag)
 
 import os
