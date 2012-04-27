@@ -32,7 +32,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
 
-    m_SpotifyPlayback = new SpotifyPlayback;
+    m_SpotifyPlayback = new SpotifyPlayback( this );
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
@@ -49,8 +49,6 @@ SpotifySession::getInstance()
 SpotifySession::~SpotifySession(){
 
     qDebug() << "Destroy session";
-    delete m_SpotifyPlaylists;
-    delete m_SpotifyPlayback;
     logout();
 
 }

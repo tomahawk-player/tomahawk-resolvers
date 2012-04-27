@@ -76,7 +76,7 @@ SpotifyPlayback::getIODeviceForNewTrack( uint durMsec )
 {
     if( m_iodev.isNull() )
     {
-        m_iodev = spotifyiodev_ptr( new SpotifyIODevice( this ) );
+        m_iodev = spotifyiodev_ptr( new SpotifyIODevice(), &QObject::deleteLater );
         m_iodev->setDurationMSec( durMsec );
         m_iodev->open( QIODevice::ReadWrite );
 
