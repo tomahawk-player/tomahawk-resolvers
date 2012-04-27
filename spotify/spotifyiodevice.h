@@ -43,6 +43,8 @@ public:
     virtual qint64 bytesAvailable() const;
     virtual bool isSequential() const  { return true; }
 
+    void clear();
+
     void setDurationMSec( uint msec );
 
 public slots:

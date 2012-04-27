@@ -16,6 +16,7 @@
 
 #include "spotifyplayback.h"
 #include "spotifysession.h"
+
 #include <QString>
 #include <QDebug>
 #include <QPair>
@@ -36,6 +37,20 @@ SpotifyPlayback::dataMutex()
 {
     return m_dataMutex;
 }
+
+
+void
+SpotifyPlayback::clearData()
+{
+    if( m_iodev.isNull() )
+    {
+        qWarning() << "Help! Asked to clear dat but iodevice is null...";
+        return;
+    }
+
+    m_iodev->clear();
+}
+
 
 void
 SpotifyPlayback::queueData( const QByteArray& data )
@@ -81,9 +96,7 @@ SpotifyPlayback::endTrack()
         m_iodev->close();
         m_iodev.clear();
 
-        //sp_session_player_unload( spotifySession->Session() );
-
-        qDebug() << "Done unloading too.";
+        sp_session_player_unload(SpotifySession::getInstance()->Session());
     }
     m_trackEnded = true;
 }
@@ -98,27 +111,38 @@ void
 SpotifyPlayback::endOfTrack(sp_session *session)
 {
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( sp_session_userdata( session ) );
-    qDebug() << "Got spotify end of track callback!";
-    _session->Playback()->endTrack();
+//     qDebug() << "Got spotify end of track callback!";
+    if ( !_session->Playback()->trackIsOver() )
+        _session->Playback()->endTrack();
 
 }
 
 int
 SpotifyPlayback::musicDelivery(sp_session *session, const sp_audioformat *format, const void *frames, int numFrames_)
 {
-
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
     Q_ASSERT (_session);
 
-    if (!numFrames_) {
+    QMutex &m = _session->Playback()->dataMutex();
+
+
+    if (numFrames_ == 0) // flush caches
+    {
+        QMutexLocker l(&m);
+        _session->Playback()->clearData();
         return 0;
     }
 
-    QMutex &m = _session->Playback()->dataMutex();
     m.lock();
+    // libspotify v11 bug, seems to retry to push the last batch of audio no matter what. short-circuit to ignore
+    if ( _session->Playback()->trackIsOver() ) {
+        m.unlock();
+        return numFrames_;
+    }
+
     const QByteArray data( (const char*)frames, numFrames_ * 4 ); // 4 == channels * ( bits per sample / 8 ) == 2 * ( 16 / 8 ) == 2 * 2
     _session->Playback()->queueData( data );
     m.unlock();
 
-    return data.size();
+    return numFrames_; // num frames read, not bytes read. we always read all the frames
 }

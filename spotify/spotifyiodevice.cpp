@@ -34,6 +34,7 @@ SpotifyIODevice::SpotifyIODevice( QObject* parent )
 
 SpotifyIODevice::~SpotifyIODevice()
 {
+    qDebug() << Q_FUNC_INFO << "Destroying SpotifyIODevice:" << this;
     if( isOpen() )
         close();
 }
@@ -67,6 +68,13 @@ SpotifyIODevice::~SpotifyIODevice()
     /// data subchunk
     m_header += "data" ;
     m_header.append((char*)&dataChunkSize, 4); // NumSamples * NumChannels * BitsPerSample/8
+}
+
+
+void
+SpotifyIODevice::clear()
+{
+    m_audioData.clear();
 }
 
 
@@ -112,7 +120,7 @@ qint64 SpotifyIODevice::writeData( const char* data, qint64 len )
 
     emit readyRead();
 
-    return m_audioData.size();
+    return len;
 }
 
 qint64 SpotifyIODevice::bytesAvailable() const

@@ -33,6 +33,7 @@ public:
 
     // Internal libspotify methods and data
     QMutex& dataMutex();
+    void clearData();
     void queueData( const QByteArray& data );
     void startPlaying();
     void endTrack();
