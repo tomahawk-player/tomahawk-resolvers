@@ -132,6 +132,7 @@ void SpotifyPlaylists::clear()
 {
     qDebug() << "Destroying playlists";
     writeSettings();
+    m_settings.sync();
     for ( int i = 0; i < m_playlists.size(); i++ )
     {
         foreach ( sp_track* track, m_playlists[ i ].tracks_ )

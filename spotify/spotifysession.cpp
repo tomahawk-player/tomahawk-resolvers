@@ -49,7 +49,7 @@ SpotifySession::getInstance()
 SpotifySession::~SpotifySession(){
 
     qDebug() << "Destroy session";
-    logout();
+    logout( false ); // Make sure to not clear playlists here. ~SpotifyPlaylists() will also call clear() which will save config
 
 }
 
@@ -106,11 +106,12 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 }
 
 
-void SpotifySession::logout()
+void SpotifySession::logout(bool clearPlaylists )
 {
     if ( m_loggedIn ) {
+        if ( clearPlaylists )
+            m_SpotifyPlaylists->unsetAllLoaded();
 
-        m_SpotifyPlaylists->unsetAllLoaded();
         sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
         sp_playlistcontainer_release( m_container );
         sp_session_logout(m_session);
@@ -149,7 +150,7 @@ void SpotifySession::login( const QString& username, const QString& password )
         {
             qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
             m_relogin = true;
-            logout();
+            logout( true );
             return;
         }
 

@@ -69,7 +69,7 @@ public:
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
     bool isLoggedIn(){ return m_loggedIn;}
     void login( const QString& username, const QString& password );
-    void logout();
+    void logout( bool clearPlaylists );
 
     // Playlists
     void setPlaylistContainer( sp_playlistcontainer *pc){ m_container = pc; }
