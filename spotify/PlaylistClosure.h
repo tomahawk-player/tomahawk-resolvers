@@ -28,7 +28,7 @@
 #include <QList>
 #include <QMetaMethod>
 
-#include <tr1/functional>
+#include <tr1/functional.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>

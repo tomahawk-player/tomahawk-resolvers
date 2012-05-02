@@ -45,8 +45,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <fstream>
-
-//#include <QDesktopServices>
 #include <qendian.h>
 
 #include "spotifyresolver.h"
@@ -55,6 +53,12 @@
 #define SPOTIFY_LOGFILE QDir::home().filePath( "Library/Logs/SpotifyResolver.log" ).toLocal8Bit()
 #else
 #define SPOTIFY_LOGFILE QDir( SpotifyResolver::dataDir() ).filePath( "SpotifyResolver.log" ).toLocal8Bit()
+#endif
+
+#ifdef Q_WS_MAC
+#define SPOTIFY_CACHEDIR QString( QDir::home() + QDir::separator() + "Library/Caches/SpotifyResolver/" ).toLocal8Bit()
+#else
+#define SPOTIFY_CACHEDIR QString( SpotifyResolver::dataDir() + QDir::separator() + "cache" + QDir::separator() ).toLocal8Bit()
 #endif
 
 #define SPOTIFY_LOGFILE_SIZE 1024 * 512

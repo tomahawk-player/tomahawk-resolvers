@@ -44,7 +44,6 @@
 #include <QUuid>
 #include <QtCore/QTimer>
 #include <QtCore/QFile>
-#include <QDesktopServices>
 #include <qendian.h>
 
 #include <iostream>
@@ -837,13 +836,14 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
 void
 SpotifyResolver::loadCache()
 {
-    QFile f( QDesktopServices::storageLocation( QDesktopServices::CacheLocation ) + "/SpotifyResolver/cache.dat" );
+    QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
+	//qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
     if ( !f.open( QIODevice::ReadOnly ) )
         return;
     QDataStream stream( &f );
 
     stream >> m_cachedTrackLinkMap;
-    qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
+  //  qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
     f.close();
 
     if ( QFileInfo( f.fileName() ).size() > 10 * SPOTIFY_LOGFILE_SIZE )
@@ -860,19 +860,21 @@ SpotifyResolver::saveCache()
         return;
     m_dirty = false;
 
-    const QString dir = QDesktopServices::storageLocation( QDesktopServices::CacheLocation );
+    const QString dir = SPOTIFY_CACHEDIR;
     QDir d( dir );
-    if ( !d.exists( "SpotifyResolver" ) )
+    if ( !d.exists() )
     {
-        bool ret = d.mkpath( "SpotifyResolver/" );
+        bool ret = d.mkpath( "." );
+		//qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
     }
 
-    QFile f( QDesktopServices::storageLocation( QDesktopServices::CacheLocation ) + "/SpotifyResolver/cache.dat" );
+    QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
     if ( !f.open( QIODevice::WriteOnly ) )
         return;
 
     QDataStream stream( &f );
 
+	//qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
     stream << m_cachedTrackLinkMap;
     f.close();
 }
@@ -961,7 +963,7 @@ void SpotifyResolver::saveSettings() const
 void SpotifyResolver::login()
 {
     if( !m_username.isEmpty() && !m_pw.isEmpty() ) { // log in
-        qDebug() << "Logging in with username:" << m_username;
+        //qDebug() << "Logging in with username:" << m_username;
         m_session->login( m_username, m_pw );
     }
 }
@@ -991,11 +993,11 @@ QString SpotifyResolver::dataDir( bool configDir )
         path = QCoreApplication::applicationDirPath();
 #endif
 
-    path += "/" + QCoreApplication::applicationName();
+    path += QDir::separator() + QCoreApplication::applicationName();
     QDir d( path );
     d.mkpath( path );
 
-    qDebug() << "Using SpotifyResolver log dir:" << path;
+    //qDebug() << "Using SpotifyResolver data dir:" << path;
     return path;
 }
 
