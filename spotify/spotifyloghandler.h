@@ -56,7 +56,7 @@
 #endif
 
 #ifdef Q_WS_MAC
-#define SPOTIFY_CACHEDIR QString( QDir::home() + QDir::separator() + "Library/Caches/SpotifyResolver/" ).toLocal8Bit()
+#define SPOTIFY_CACHEDIR QString( QDir::home().absolutePath() + QDir::separator() + "Library/Caches/SpotifyResolver/" ).toLocal8Bit()
 #else
 #define SPOTIFY_CACHEDIR QString( SpotifyResolver::dataDir() + QDir::separator() + "cache" + QDir::separator() ).toLocal8Bit()
 #endif
