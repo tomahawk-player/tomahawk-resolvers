@@ -145,6 +145,7 @@ void SpotifyResolver::setup()
     connect( m_session->Playlists(), SIGNAL(notifyNameChange(SpotifyPlaylists::LoadedPlaylist)), this, SLOT( sendPlaylistNameChanged(SpotifyPlaylists::LoadedPlaylist) ));
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
+
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
     connect( m_stdinWatcher, SIGNAL( lineRead( QVariant ) ), this, SLOT( playdarMessage( QVariant ) ) );
@@ -564,7 +565,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         msg[ "_msgtype" ] = "credentials";
         msg[ "username" ] = m_username;
-        msg[ "password" ] = m_pw;
+        msg[ "password" ] = (m_pw.isEmpty() ? "*****" : m_pw); // Placeholder for remembered user
         msg[ "highQuality" ] = m_highQuality;
 
         sendMessage( msg );
@@ -837,7 +838,7 @@ void
 SpotifyResolver::loadCache()
 {
     QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
-	//qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
+    //qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
     if ( !f.open( QIODevice::ReadOnly ) )
         return;
     QDataStream stream( &f );
@@ -865,7 +866,7 @@ SpotifyResolver::saveCache()
     if ( !d.exists() )
     {
         bool ret = d.mkpath( "." );
-		//qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
+        //qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
     }
 
     QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
@@ -874,7 +875,7 @@ SpotifyResolver::saveCache()
 
     QDataStream stream( &f );
 
-	//qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
+    //qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
     stream << m_cachedTrackLinkMap;
     f.close();
 }
@@ -948,7 +949,8 @@ void SpotifyResolver::loadSettings()
 {
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
-    m_pw = s.value( "password", QString() ).toString();
+    //WIP - Remembered user
+    //m_pw = s.value( "password", QString() ).toString();
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
 }
 
@@ -956,14 +958,15 @@ void SpotifyResolver::saveSettings() const
 {
     QSettings s;
     s.setValue( "username", m_username );
-    s.setValue( "password", m_pw );
+    //WIP - Remembered user
+    //s.setValue( "password", m_pw );
     s.setValue( "highQualityStreaming", m_highQuality );
 }
 
 void SpotifyResolver::login()
 {
-    if( !m_username.isEmpty() && !m_pw.isEmpty() ) { // log in
-        //qDebug() << "Logging in with username:" << m_username;
+    if( !m_username.isEmpty() ) { // log in
+        qDebug() << "Logging in with username:" << m_username;
         m_session->login( m_username, m_pw );
     }
 }

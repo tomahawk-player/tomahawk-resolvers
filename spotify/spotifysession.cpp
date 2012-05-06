@@ -139,12 +139,16 @@ void SpotifySession::login( const QString& username, const QString& password )
 {
 
     if ( m_loggedIn &&
-         m_username == username &&
-         m_password == password )
+         m_username == username /*&&
+         m_password == password*/ )
     {
+        // If loggedIn and same username, we dont really care about password, do we?
+        // Note: may have some other issue to it.
+
         qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring";
         return;
     }
+
 
     if( m_username != username && m_loggedIn )
     {
@@ -155,29 +159,45 @@ void SpotifySession::login( const QString& username, const QString& password )
     m_username = username;
     m_password = password;
 
-    if( !m_username.isEmpty() && !m_password.isEmpty() )
-    {
-        /// @note:  If current state is not logged out, logout this session
-        ///         and relogin in callback
-        /// @note2: We can be logged out, but the session is still connected to accesspoint
-        ///         Wait for that to.
-        if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
-        {
-            qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
-            m_relogin = true;
-            logout( true );
-            return;
-        }
+    char reloginname[256];
+    sp_session_remembered_user(m_session, reloginname, sizeof(reloginname));
 
-        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
-#if SPOTIFY_API_VERSION >= 11
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
-#else
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false);
-#endif
+    if( QString::fromLatin1(reloginname) == m_username )
+    {
+        if (sp_session_relogin(m_session) == SP_ERROR_NO_CREDENTIALS)
+            qDebug() << "No stored credentials";
+        else
+            qDebug() << "Logging in as remembered user";
+
+    }else
+    {
+        if( !m_username.isEmpty() && !m_password.isEmpty() )
+        {
+            /// @note:  If current state is not logged out, logout this session
+            ///         and relogin in callback
+            /// @note2: We can be logged out, but the session is still connected to accesspoint
+            ///         Wait for that to.
+            if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
+            {
+                qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
+                m_relogin = true;
+                logout( true );
+                return;
+            }
+
+            sp_session_forget_me(m_session);
+
+            qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
+    #if SPOTIFY_API_VERSION >= 11
+            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, NULL);
+    #else
+            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
+    #endif
+        }
+        else
+            qDebug() << "No username or password provided!";
     }
-    else
-        qDebug() << "No username or password provided!";
+
 }
 
 
