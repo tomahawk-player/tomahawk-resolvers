@@ -61,7 +61,6 @@ QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
     out << (quint32)cache.count();
     foreach( const QString& key, cache.keys() )
     {
-
         out << key << cache[ key ];
     }
     return out;
@@ -98,7 +97,6 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     setApplicationVersion( QLatin1String( "2.0" ) );
 
 }
-
 
 SpotifyResolver::~SpotifyResolver()
 {
@@ -144,7 +142,6 @@ void SpotifyResolver::setup()
     connect( m_session->Playlists(), SIGNAL(sendPlaylistDeleted(QString)), this, SLOT(sendPlaylistDeleted(QString)));
     connect( m_session->Playlists(), SIGNAL(notifyNameChange(SpotifyPlaylists::LoadedPlaylist)), this, SLOT( sendPlaylistNameChanged(SpotifyPlaylists::LoadedPlaylist) ));
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
-
 
     // read stdin
     m_stdinWatcher = new ConsoleWatcher( 0 );
@@ -220,7 +217,6 @@ void SpotifyResolver::userChangedReceived()
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
     qDebug() << "Sending playlist to client:" << pl.name_ << "with number of tracks:" << pl.tracks_.size();
-
     if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
     {
         qDebug() << "NULL or not loaded playlist in callbacK!";

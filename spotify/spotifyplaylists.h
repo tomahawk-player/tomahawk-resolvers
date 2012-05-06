@@ -211,6 +211,8 @@ private:
 
 // Use this with boost::bind and bind the first arg
 bool checkTracksAreLoaded(QList<sp_track*> waitingForLoaded);
+bool checkPlaylistIsLoaded(sp_playlist* pl );
+bool checkTracksAreLoaded(QList< sp_track* > waitingForLoaded);
 
 Q_DECLARE_METATYPE( sp_playlistcontainer* );
 Q_DECLARE_METATYPE( sp_playlist* );

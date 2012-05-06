@@ -36,9 +36,12 @@ AudioHTTPServer::AudioHTTPServer( QxtAbstractWebSessionManager* sm, int port, QO
     : QxtWebSlotService( sm, parent )
     , m_port( port )
 {
-    qDebug() << "NEW AUDIO HTTP SERVER!";
+//    qDebug() << "NEW AUDIO HTTP SERVER!";
 }
 
+AudioHTTPServer::~AudioHTTPServer()
+{
+}
 
 void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
 {
@@ -50,7 +53,7 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
 
     // the requested track
     QString uid = a.replace( ".wav", "");
-    qDebug() << QThread::currentThreadId() << "Beginning to stream requested track:" << uid;
+//    qDebug() << QThread::currentThreadId() << "Beginning to stream requested track:" << uid;
     if( uid.isEmpty() || !sApp->hasLinkFromTrack( uid ) ) {
         qWarning() << "Did not find spotify track UID in our list!" << uid;
         sendErrorResponse( event );
@@ -72,14 +75,8 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
         m_savedEvent = event;
         m_savedTrack = track;
         QTimer::singleShot( 250, this, SLOT( checkForLoaded() ) );
-//         sendErrorResponse( event );
         return;
-//         sendErrorResponse( event );
-//         while ( !sp_track_is_loaded( track ) ) {
-//             SleepThread::msleep( 250 );
-//             qDebug() << "zzz";
 
-//         return;
     } else {
         startStreamingResponse( event, track );
     }
@@ -100,7 +97,7 @@ void AudioHTTPServer::checkForLoaded()
 void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_track* track )
 {
     // yay we gots a track
-    qDebug() << QThread::currentThreadId() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
+//    qDebug() << QThread::currentThreadId() << "We got a track!" << sp_track_name( track ) << sp_artist_name( sp_track_artist( track, 0 ) ) << sp_track_duration( track );
     uint duration = sp_track_duration( track );
 
     sp_error err = sp_session_player_load( SpotifySession::getInstance()->Session(), track );
@@ -110,13 +107,13 @@ void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_trac
         return;
     }
 
-    qDebug() << QThread::currentThreadId() << "Starting to play!";
+//    qDebug() << QThread::currentThreadId() << "Starting to play!";
     sp_session_player_play( SpotifySession::getInstance()->Session(), true );
     SpotifySession::getInstance()->Playback()->startPlaying();
 
     qDebug() << "Getting iodevice...";
     spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( duration );
-    qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
+//    qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
     QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
     wpe->streaming = true;
     wpe->contentType = "audio/basic";
@@ -124,10 +121,6 @@ void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_trac
 }
 
 
-AudioHTTPServer::~AudioHTTPServer()
-{
-
-}
 
 
 QString AudioHTTPServer::urlForID( const QString& id )

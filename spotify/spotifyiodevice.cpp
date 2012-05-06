@@ -34,7 +34,7 @@ SpotifyIODevice::SpotifyIODevice( QObject* parent )
 
 SpotifyIODevice::~SpotifyIODevice()
 {
-    qDebug() << Q_FUNC_INFO << "Destroying SpotifyIODevice:" << this;
+//    qDebug() << Q_FUNC_INFO << "Destroying SpotifyIODevice:" << this;
     if( isOpen() )
         close();
 }
@@ -43,7 +43,7 @@ SpotifyIODevice::~SpotifyIODevice()
 {
     quint32 numSamples = ( (quint64)msec * Q_UINT64_C(44100) ) / (quint64)1000;
     quint32 dataChunkSize = numSamples * 2 * 2;
-    qDebug() << "Writing number of samples and data chunk size:" << numSamples << dataChunkSize << "and msec:" << msec;
+//    qDebug() << "Writing number of samples and data chunk size:" << numSamples << dataChunkSize << "and msec:" << msec;
     // got samples, we can make the header now
     m_header += (const char* )"RIFF";
     quint32 data = 36 + dataChunkSize;

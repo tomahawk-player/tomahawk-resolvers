@@ -40,13 +40,21 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
 
     createSession();
 }
-
+/**
+  getInstance
+  used when we need to get sp_session and
+  other vital data around the app
+  **/
 SpotifySession*
 SpotifySession::getInstance()
 {
     return s_instance;
 }
 
+/**
+  dtor
+  loggout
+  **/
 SpotifySession::~SpotifySession(){
 
     qDebug() << "Destroy session";
@@ -54,7 +62,12 @@ SpotifySession::~SpotifySession(){
 
 }
 
-
+/**
+  createSession
+  spotifyWebApi uses custom sessionConfig to
+  not mess with callbacks that are defined.
+  Initilize them as sp_config and create session
+  **/
 void SpotifySession::createSession()
 {
     m_config = sp_session_config();
@@ -84,7 +97,11 @@ void SpotifySession::createSession()
     }
 }
 
-
+/**
+  loggedin
+  callback from spotify
+  also initilizes the playlistcontainer and callbacks
+  **/
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
@@ -95,7 +112,7 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
         _session->setSession(session);
         _session->setLoggedIn(true);
 
-        qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
+//       qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
         _session->setPlaylistContainer( sp_session_playlistcontainer(session) );
         sp_playlistcontainer_add_ref( _session->PlaylistContainer() );
@@ -106,7 +123,11 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
     emit _session->loginResponse( error == SP_ERROR_OK, msg );
 }
 
-
+/**
+  logout
+  if clearPlaylists, also unset all loaded playlists
+  otherwise, just remove callbacks and release
+  **/
 void SpotifySession::logout(bool clearPlaylists )
 {
     if ( m_loggedIn ) {
@@ -120,21 +141,29 @@ void SpotifySession::logout(bool clearPlaylists )
 
 }
 
+/**
+  relogin
+  used when forced to remove cache
+  **/
 void SpotifySession::relogin()
 {
     qDebug() << Q_FUNC_INFO;
     if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
     {
-        qDebug() << "RElogin";
+        qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
         delete m_SpotifyPlaylists;
         m_SpotifyPlaylists = new SpotifyPlaylists( this );
-        qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
         m_relogin = true;
         logout( true );
         return;
     }
 }
 
+/**
+  login
+  takes username, password
+  tries to login with previous remembered user, thus, password can be empty
+  **/
 void SpotifySession::login( const QString& username, const QString& password )
 {
 
@@ -152,7 +181,7 @@ void SpotifySession::login( const QString& username, const QString& password )
 
     if( m_username != username && m_loggedIn )
     {
-        qDebug() << "We were previously logged in with a different user, so notify client of difference!";
+//        qDebug() << "We were previously logged in with a different user, so notify client of difference!";
         emit userChanged();
     }
 
@@ -200,21 +229,26 @@ void SpotifySession::login( const QString& username, const QString& password )
 
 }
 
-
-/// @slot playlistRecieved
-/// @note: will only emit if playlist is in syncstate
+/**
+  slot
+  playlistRecieved
+  will recieve playlists froms signal,
+  will emit only if playlist has syncflag as true
+  **/
 void
 SpotifySession::playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist)
 {
     if( playlist.isLoaded && playlist.sync_ )
     {
-        qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
+//        qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
         emit notifySyncUpdateSignal( playlist );
     }
 }
 
 /**
-  CALLBACKS
+  loggedout
+  callback
+  will relogin if true
   **/
 void SpotifySession::loggedOut(sp_session *session)
 {
@@ -232,29 +266,47 @@ void SpotifySession::loggedOut(sp_session *session)
 
 
 }
+/**
+  connectionError
+  callback when we cant connect
+  **/
 void SpotifySession::connectionError(sp_session *session, sp_error error)
 {
     Q_UNUSED(session);
     qDebug() << "Connection error: " << QString::fromUtf8(sp_error_message(error));
 
 }
+/**
+  notifyMainThread
+  callback from the lib
+  **/
 void SpotifySession::notifyMainThread(sp_session *session)
 {
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
     _session->sendNotifyThreadSignal();
 }
+/**
+  logMessage
+  callback, if logging is enabled
+  **/
 void SpotifySession::logMessage(sp_session *session, const char *data)
 {
     Q_UNUSED(session);
     qDebug() << "SpotifyLog: " << QString::fromUtf8(data);
 }
 
-
+/**
+  sendNotifyThreadSignal
+  **/
 void SpotifySession::sendNotifyThreadSignal()
 {
     emit notifyMainThreadSignal();
 }
 
+/**
+  notifyMainThread
+  this will be called when spotify needs to process events
+  **/
 void SpotifySession::notifyMainThread()
 {
     int timeout = 0;
