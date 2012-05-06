@@ -838,13 +838,13 @@ void
 SpotifyResolver::loadCache()
 {
     QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
-    //qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
+    qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
     if ( !f.open( QIODevice::ReadOnly ) )
         return;
     QDataStream stream( &f );
 
     stream >> m_cachedTrackLinkMap;
-  //  qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
+    qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
     f.close();
 
     if ( QFileInfo( f.fileName() ).size() > 10 * SPOTIFY_LOGFILE_SIZE )
@@ -866,7 +866,7 @@ SpotifyResolver::saveCache()
     if ( !d.exists() )
     {
         bool ret = d.mkpath( "." );
-        //qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
+        qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
     }
 
     QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
@@ -875,7 +875,7 @@ SpotifyResolver::saveCache()
 
     QDataStream stream( &f );
 
-    //qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
+    qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
     stream << m_cachedTrackLinkMap;
     f.close();
 }
