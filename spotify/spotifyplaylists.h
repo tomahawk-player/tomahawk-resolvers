@@ -115,7 +115,7 @@ public:
 
     // Mixed
     sp_playlist *getPlaylistFromUri( const QString &uri );
-
+    bool removeDirContent(const QString &dirName);
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );
     static void SP_CALLCONV playlistRemovedCallback( sp_playlistcontainer* pc, sp_playlist* playlist, int position, void* userdata );
@@ -168,12 +168,13 @@ signals:
     void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
     void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
     void sendPlaylistDeleted( const QString& playlistId );
+    void forcePruneCache();
 
 private slots:
 
     void ensurePlaylistsLoadedTimerFired();
     void checkWaitingForLoads();
-
+    void pruneCacheAndReload();
     void doAddNewPlaylist( sp_playlist* pl, const QVariantList& tracks, bool sync, const QString& qid );
     void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
 
@@ -197,6 +198,7 @@ private:
 
     QTimer* m_checkPlaylistsTimer;
     QTimer* m_periodicTimer;
+    QTimer* m_loadTimer;
     QList< sp_playlist* > m_waitingToLoad;
     QList< PlaylistClosure* > m_stateChangedCallbacks;
 

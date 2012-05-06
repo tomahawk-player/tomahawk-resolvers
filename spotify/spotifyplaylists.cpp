@@ -19,6 +19,11 @@
 #include "spotifyresolver.h"
 #include <QCryptographicHash>
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QFileInfoList>
+
 
 void printPlaylistTracks( const QList<sp_track* > tracks )
 {
@@ -53,6 +58,7 @@ bool checkPlaylistIsLoaded(sp_playlist* pl )
 
 SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
    : QObject( parent )
+   , m_loadTimer( new QTimer( this ) )
    , m_checkPlaylistsTimer( new QTimer( this ) )
    , m_periodicTimer( new QTimer( this ) )
    , m_allLoaded( false )
@@ -72,6 +78,12 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_checkPlaylistsTimer->setInterval( 2000 );
     m_checkPlaylistsTimer->setSingleShot( true );
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
+
+    // See comments on pruneCacheAndReload
+    m_loadTimer->setInterval( 20000 ); // 20s
+    m_loadTimer->setSingleShot( true );
+    connect( m_loadTimer, SIGNAL( timeout() ), this, SLOT( pruneCacheAndReload() ) );
+    m_loadTimer->start();
 
     m_periodicTimer->setInterval( 5000 );
     connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
@@ -164,6 +176,62 @@ SpotifyPlaylists::~SpotifyPlaylists()
 {
 
     clear();
+
+}
+
+
+/**
+  remove dir contents
+  */
+bool SpotifyPlaylists::removeDirContent(const QString &dirName)
+{
+    bool result = true;
+    QDir dir( dirName );
+    if ( dir.exists( dirName ) )
+    {
+        foreach(QFileInfo info, dir.entryInfoList( QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst) )
+        {
+            if ( info.isDir() )
+                result = removeDirContent( info.absoluteFilePath() );
+            else
+                result = QFile::remove( info.absoluteFilePath() );
+
+            if ( !result )
+                return result;
+        }
+    }
+    return result;
+}
+
+/** pruneCacheAndReload
+
+    Sometimes we get spotify cache miss, and playlists will not load.
+    The behaviour is hard to reproduce, but often spotify fixes it self. ( try rm cache during load to reproduce )
+    However, it may take up to serveral minutes to get fixed. SO lets fix that when it happens
+    @note WIP
+**/
+void
+SpotifyPlaylists::pruneCacheAndReload()
+{
+
+    if( !m_allLoaded )
+    {
+        qDebug() << "====== PRUNE CACHE!!!!";
+        sp_session_config config = SpotifySession::getInstance()->getSessionConfig();
+        if( config.cache_location != NULL )
+        {
+            QString cacheDir = config.cache_location;
+            if( !cacheDir.isEmpty() )
+            {
+               // Remove cache and clear old
+               removeDirContent( cacheDir );
+               // emit signal to force relogin
+               emit forcePruneCache();
+            }
+        }else
+            qDebug() << "Tried to prune chache, but no cache dir! Hm.... something is fucked up";
+    }
+
 
 }
 
@@ -1793,6 +1861,7 @@ SpotifyPlaylists::checkForPlaylistsLoaded()
         qDebug() << "========== GOT ALL PLAYLISTS LOADED, EMITTING SIGNAL!";
         m_isLoading = false;
         m_allLoaded = true;
+        m_loadTimer->stop();
         emit notifyContainerLoadedSignal();
 
     }

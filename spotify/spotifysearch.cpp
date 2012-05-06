@@ -157,7 +157,9 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
         int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 1 );
         for( int i = 0; i < num; i++ ) {
-            sp_track *const tr = sp_search_track( result, i );
+            // get playable track
+            // note: if track is local, its added within the lib, and is playable
+            sp_track *const tr = sp_track_get_playable( SpotifySession::getInstance()->Session(), sp_search_track( result, i ) );
             if( !tr || !sp_track_is_loaded( tr ) ) {
                 qDebug() << "Got still loading track, skipping";
                 continue;

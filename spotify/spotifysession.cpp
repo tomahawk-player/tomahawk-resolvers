@@ -31,7 +31,8 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
-
+    // Playlist cachemiss fix
+    connect( m_SpotifyPlaylists, SIGNAL( forcePruneCache() ), this, SLOT( relogin() ) );
     m_SpotifyPlayback = new SpotifyPlayback( this );
 
     // Connect to signals
@@ -119,6 +120,20 @@ void SpotifySession::logout(bool clearPlaylists )
 
 }
 
+void SpotifySession::relogin()
+{
+    qDebug() << Q_FUNC_INFO;
+    if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
+    {
+        qDebug() << "RElogin";
+        delete m_SpotifyPlaylists;
+        m_SpotifyPlaylists = new SpotifyPlaylists( this );
+        qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
+        m_relogin = true;
+        logout( true );
+        return;
+    }
+}
 
 void SpotifySession::login( const QString& username, const QString& password )
 {
