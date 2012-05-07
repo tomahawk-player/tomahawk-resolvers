@@ -455,6 +455,9 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         }
         plObj[ "revid" ] = pl.revisions.last().revId;
         plObj[ "sync" ] = pl.sync_;
+        plObj[ "collaborative" ] = pl.isCollaborative;
+        plObj[ "subscribed" ] = pl.isSubscribed;
+        plObj[ "owner" ] = pl.owner_;
         playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
@@ -657,6 +660,18 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         const QString plid = m.value( "playlistid" ).toString();
         m_session->Playlists()->setSyncPlaylist( plid, false );
+    }
+    else if ( m.value( "_msgtype" ) == "setCollaborative" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const bool collab = m.value( "collaborative" ).toBool();
+        m_session->Playlists()->setCollaborative( plid, collab );
+    }
+    else if ( m.value( "_msgtype" ) == "setSubscription" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const bool collab = m.value( "subscribe" ).toBool();
+        m_session->Playlists()->addSubscribedPlaylist( plid );
     }
     else if ( m.value( "_msgtype" ) == "removeTracksFromPlaylist" )
     {

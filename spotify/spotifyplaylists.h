@@ -61,7 +61,7 @@ public:
       // Revision timestamp
       int newTimestamp;
       int oldTimestamp;
-
+      QString owner_;
       QString name_;
       QString id_;
       sp_playlist* playlist_;

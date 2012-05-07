@@ -285,7 +285,10 @@ SpotifyPlaylists::checkForPlaylistCallbacks( sp_playlist *, void * )
     }
 }
 
-
+/**
+  checkWaitingForLoads
+  Periodic check for tracks waiting to load
+  **/
 void
 SpotifyPlaylists::checkWaitingForLoads()
 {
@@ -330,6 +333,8 @@ sp_playlist * SpotifyPlaylists::getPlaylistFromUri(const QString &uri)
   addSubscribedPlaylist
   Takes QString uri, to add a subscribed playlist to container
   this user will have permission to alter it, and it will be added to synclist + subscribedlist
+  @note: there seems to be no way of actually subscribing on a playlist
+         we just add it to sync list, and hope for the best
   **/
 void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
 {
@@ -339,8 +344,16 @@ void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
     lpl.playlist_ = playlist;
     lpl.id_ = playlistUri;
 
-    if( m_playlists.contains( lpl ) )
+    if( m_playlists.contains( lpl ) ){
+        int index = m_playlists.indexOf( lpl );
+        if( index != -1)
+        {
+            lpl = m_playlists[ index ];
+            if( lpl.isSubscribed )
+                removeSubscribedPlaylist( playlistUri );
+        }
         return;
+    }
 
     if( playlist != NULL )
     {
@@ -395,20 +408,29 @@ void SpotifyPlaylists::setCollaborative(const QString &playlistUri, bool collab 
     LoadedPlaylist lpl;
     lpl.id_ = playlistUri;
 
-    if( !m_playlists.contains( lpl ) )
+    if( !m_playlists.contains( lpl ) ){
+        qDebug() << "Failed to set collbab for " << playlistUri << " not in playlistMap!";
         return;
-
+    }
     int index;
     index = m_playlists.indexOf( lpl );
     if( index != -1 )
     {
+        lpl = m_playlists[ index ];
         // set_collaborative is void function, so check if the user can set the state on this uri
-        QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
-        if( lpl.isLoaded && lpl.name_.contains( username ) )
+        QString username = QString::fromLatin1(sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) ) );
+        if( lpl.isLoaded )
         {
-            sp_playlist_set_collaborative(lpl.playlist_, collab );
-            m_playlists[ index ].isCollaborative = collab;
-        }
+            if( username == lpl.owner_ )
+            {
+                qDebug() << "Setting collab!" << collab;
+                sp_playlist_set_collaborative(lpl.playlist_, collab );
+                m_playlists[ index ].isCollaborative = collab;
+
+            }else
+                qDebug() << "ERROR: This user doesnt have access to modify this playlist";
+        }else
+            qDebug() << "Error, playlist isnt loaded! hmhmhm";
     }
 
 }
@@ -1889,6 +1911,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
 
     playlist.playlist_ = pl;
     playlist.name_ = sp_playlist_name(pl);
+    playlist.owner_ = sp_user_canonical_name( sp_playlist_owner( pl ) );
     playlist.isCollaborative = sp_playlist_is_collaborative( pl );
     playlist.isSubscribed = isSubscribed;
     playlist.starContainer_ = false;
