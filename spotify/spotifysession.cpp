@@ -213,7 +213,7 @@ void SpotifySession::login( const QString& username, const QString& password )
                 logout( true );
                 return;
             }
-
+            // TODO: need a way to prompt for password if fail to login as remebered on startup
             sp_session_forget_me(m_session);
 
             qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
