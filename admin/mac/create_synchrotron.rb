@@ -11,20 +11,21 @@ QT_VERSION = "4.8.0"
 LIBSPOTIFY_VERSION = "11.1.60"
 QJSON_VERSION = "0.7.1"
 
-if ARGV.length < 3
-  puts "Usage: ruby create_synchrotron.rb spotify_tomahawkresolver metadata.desktop private_key_file"
-  puts "\nCall this from the build directory."
+if ARGV.length < 4
+  puts "Usage: ruby create_synchrotron.rb spotify_tomahawkresolver metadata.desktop private_key_file /path/to/tomahawk-synchrotron"
+  puts "\n"
   puts "If you don't have the tomahawk private key and you think you should, ask leo :)"
   exit
 end
 
-if not File.exists?(ARGV[0]) or not File.exists?(ARGV[1]) or not File.exists?(ARGV[2])
+if not File.exists?(ARGV[0]) or not File.exists?(ARGV[1]) or not File.exists?(ARGV[2]) or not File.directory?(ARGV[3])
   puts "One of your arguments didn't exist!"
   exit
 end
 
 resolver = Pathname.new(ARGV[0]).basename.to_s
 resolvername = resolver.split("_")[0]
+platform = "osx"
   
 
 puts "Creating zipfile for #{resolver}..."
@@ -37,7 +38,7 @@ puts "Creating zipfile for #{resolver}..."
 `install_name_tool -change /usr/local/lib/libqjson.#{QJSON_VERSION}.dylib @executable_path/../Frameworks/libqjson.#{QJSON_VERSION}.dylib #{resolver}`
 `install_name_tool -change /usr/local/lib/libspotify.#{LIBSPOTIFY_VERSION}.dylib @executable_path/../Frameworks/libspotify.#{LIBSPOTIFY_VERSION}.dylib #{resolver}`
 
-tarball = "#{resolvername}.zip"
+tarball = "#{resolvername}-#{platform}.zip"
 `zip -r #{tarball} #{resolver}`
 `rm #{resolver}`
 
@@ -50,7 +51,17 @@ manifest = fd.read
 
 manifest["_SIGNATURE_"] = signature
 manifest["_ZIPFILE_"] = tarball
+manifest["_PLATFORM_"] = platform
+manifest["_TYPE_"] = platform
+manifest["_BINARY_"] = resolver
 
-File.open("#{resolvername}.desktop", "w") do |f|
+
+
+resolverDir = "#{ARGV[3]}/resolvers/#{resolvername}-#{platform}/content"
+`mkdir -p #{resolverDir}` if not File.directory?(resolverDir)
+
+File.open("#{resolverDir}/metadata.desktop", "w") do |f|
   f.write(manifest)
 end
+
+`mv #{tarball} #{resolverDir}`
