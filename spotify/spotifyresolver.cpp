@@ -101,6 +101,8 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
 SpotifyResolver::~SpotifyResolver()
 {
     qDebug() << "exiting...";
+    clearTrackLinkMap();
+
     delete m_session;
     delete m_stdinWatcher;
     m_stdinThread.exit();
@@ -865,6 +867,16 @@ sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
         return l;
     }
     return 0;
+}
+
+void SpotifyResolver::clearTrackLinkMap()
+{
+    QHash<QString, sp_link*>::iterator i = m_trackLinkMap.begin();
+    while ( i != m_trackLinkMap.end() )
+    {
+        sp_link_release( i.value() );
+        i = m_trackLinkMap.erase( i );
+    }
 }
 
 void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)

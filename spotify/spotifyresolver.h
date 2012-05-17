@@ -115,6 +115,7 @@ private:
     void loadSettings();
     void saveSettings() const;
     void login();
+    void clearTrackLinkMap();
 
     // Session
     SpotifySession *m_session;
