@@ -96,8 +96,6 @@ public slots:
 
 private slots:
     void playdarMessage( const QVariant& );
-    void loadCache();
-    void saveCache();
     void initSpotify();
     void loginResponse( bool success, const QString& msg );
     void notifyAllPlaylistsLoaded();
@@ -128,8 +126,6 @@ private:
 
     // Cache
     QHash< QString, sp_link* > m_trackLinkMap;
-    bool m_dirty;
-    CacheEntry m_cachedTrackLinkMap;
 
     // Http
     QxtHttpServerConnector m_connector;
