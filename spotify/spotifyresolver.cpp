@@ -894,15 +894,12 @@ SpotifyResolver::saveCache()
 
 QString SpotifyResolver::addToTrackLinkMap(sp_link* link)
 {
-    QString uid = QUuid::createUuid().toString().replace( "{", "" ).replace( "}", "" ).replace( "-", "" );
-    m_trackLinkMap.insert( uid, link );
-
-    QSettings s;
     char url[1024];
     sp_link_as_string( link, url, sizeof( url ) );
 
-    m_cachedTrackLinkMap[ uid ] = url;
-    m_dirty = true;
+    QString uid = url;
+    m_trackLinkMap.insert( uid, link );
+
     return uid;
 }
 
@@ -911,8 +908,14 @@ sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
     if ( sp_link* l = m_trackLinkMap.value( uid, 0 ) )
         return l;
 
-    QString linkStr = m_cachedTrackLinkMap.value( uid );
-    if (!linkStr.isEmpty() )
+    QString linkStr;
+
+    if ( uid.startsWith( "spotify:track" ) )
+        linkStr = uid;
+    else
+        linkStr = m_cachedTrackLinkMap.value( uid );
+
+    if ( !linkStr.isEmpty() )
     {
         sp_link* l = sp_link_create_from_string( linkStr.toAscii() );
         m_trackLinkMap[ uid ] = l;
@@ -928,7 +931,9 @@ void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
 {
-   return m_trackLinkMap.contains( linkStr ) || m_cachedTrackLinkMap.contains( linkStr );
+    if( linkStr.startsWith( "spotify:track" ) )
+        return true;
+    return m_trackLinkMap.contains( linkStr ) || m_cachedTrackLinkMap.contains( linkStr );
 }
 
 QVariantMap
