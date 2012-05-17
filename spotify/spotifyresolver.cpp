@@ -898,7 +898,12 @@ QString SpotifyResolver::addToTrackLinkMap(sp_link* link)
     sp_link_as_string( link, url, sizeof( url ) );
 
     QString uid = url;
-    m_trackLinkMap.insert( uid, link );
+
+    if ( !m_trackLinkMap.contains( uid ) )
+    {
+        sp_link_add_ref( link );
+        m_trackLinkMap.insert( uid, link );
+    }
 
     return uid;
 }

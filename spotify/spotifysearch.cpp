@@ -175,6 +175,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
 
             sp_link* link  = sp_link_create_from_track( tr, 0 );
             QString uid = data->resolver->addToTrackLinkMap( link );
+            sp_link_release( link );
 
             int duration = sp_track_duration( tr ) / 1000;
             QVariantMap track;
