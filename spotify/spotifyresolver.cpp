@@ -923,7 +923,7 @@ sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
 
 void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 {
-    m_trackLinkMap.remove( linkStr );
+    sp_link_release( m_trackLinkMap.take( linkStr ) );
 }
 
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
