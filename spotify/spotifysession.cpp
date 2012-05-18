@@ -31,7 +31,8 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
-
+    // Playlist cachemiss fix
+    connect( m_SpotifyPlaylists, SIGNAL( forcePruneCache() ), this, SLOT( relogin() ) );
     m_SpotifyPlayback = new SpotifyPlayback( this );
 
     // Connect to signals
@@ -39,13 +40,21 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
 
     createSession();
 }
-
+/**
+  getInstance
+  used when we need to get sp_session and
+  other vital data around the app
+  **/
 SpotifySession*
 SpotifySession::getInstance()
 {
     return s_instance;
 }
 
+/**
+  dtor
+  loggout
+  **/
 SpotifySession::~SpotifySession(){
 
     qDebug() << "Destroy session";
@@ -53,7 +62,12 @@ SpotifySession::~SpotifySession(){
 
 }
 
-
+/**
+  createSession
+  spotifyWebApi uses custom sessionConfig to
+  not mess with callbacks that are defined.
+  Initilize them as sp_config and create session
+  **/
 void SpotifySession::createSession()
 {
     m_config = sp_session_config();
@@ -83,7 +97,11 @@ void SpotifySession::createSession()
     }
 }
 
-
+/**
+  loggedin
+  callback from spotify
+  also initilizes the playlistcontainer and callbacks
+  **/
 void SpotifySession::loggedIn(sp_session *session, sp_error error)
 {
    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
@@ -94,7 +112,7 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
         _session->setSession(session);
         _session->setLoggedIn(true);
 
-        qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
+//       qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
 
         _session->setPlaylistContainer( sp_session_playlistcontainer(session) );
         sp_playlistcontainer_add_ref( _session->PlaylistContainer() );
@@ -105,7 +123,11 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
     emit _session->loginResponse( error == SP_ERROR_OK, msg );
 }
 
-
+/**
+  logout
+  if clearPlaylists, also unset all loaded playlists
+  otherwise, just remove callbacks and release
+  **/
 void SpotifySession::logout(bool clearPlaylists )
 {
     if ( m_loggedIn ) {
@@ -119,67 +141,114 @@ void SpotifySession::logout(bool clearPlaylists )
 
 }
 
+/**
+  relogin
+  used when forced to remove cache
+  **/
+void SpotifySession::relogin()
+{
+    qDebug() << Q_FUNC_INFO;
+    if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
+    {
+        qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
+        delete m_SpotifyPlaylists;
+        m_SpotifyPlaylists = new SpotifyPlaylists( this );
+        m_relogin = true;
+        logout( true );
+        return;
+    }
+}
 
+/**
+  login
+  takes username, password
+  tries to login with previous remembered user, thus, password can be empty
+  **/
 void SpotifySession::login( const QString& username, const QString& password )
 {
 
     if ( m_loggedIn &&
-         m_username == username &&
-         m_password == password )
+         m_username == username /*&&
+         m_password == password*/ )
     {
+        // If loggedIn and same username, we dont really care about password, do we?
+        // Note: may have some other issue to it.
+
         qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring";
         return;
     }
 
+
     if( m_username != username && m_loggedIn )
     {
-        qDebug() << "We were previously logged in with a different user, so notify client of difference!";
+//        qDebug() << "We were previously logged in with a different user, so notify client of difference!";
         emit userChanged();
     }
 
     m_username = username;
     m_password = password;
 
-    if( !m_username.isEmpty() && !m_password.isEmpty() )
-    {
-        /// @note:  If current state is not logged out, logout this session
-        ///         and relogin in callback
-        /// @note2: We can be logged out, but the session is still connected to accesspoint
-        ///         Wait for that to.
-        if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
-        {
-            qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
-            m_relogin = true;
-            logout( true );
-            return;
-        }
+    char reloginname[256];
+    sp_session_remembered_user(m_session, reloginname, sizeof(reloginname));
 
-        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
-#if SPOTIFY_API_VERSION >= 11
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false, NULL);
-#else
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), false);
-#endif
+    if( QString::fromLatin1(reloginname) == m_username )
+    {
+        if (sp_session_relogin(m_session) == SP_ERROR_NO_CREDENTIALS)
+            qDebug() << "No stored credentials";
+        else
+            qDebug() << "Logging in as remembered user";
+
+    }else
+    {
+        if( !m_username.isEmpty() && !m_password.isEmpty() )
+        {
+            /// @note:  If current state is not logged out, logout this session
+            ///         and relogin in callback
+            /// @note2: We can be logged out, but the session is still connected to accesspoint
+            ///         Wait for that to.
+            if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
+            {
+                qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
+                m_relogin = true;
+                logout( true );
+                return;
+            }
+            // TODO: need a way to prompt for password if fail to login as remebered on startup
+            sp_session_forget_me(m_session);
+
+            qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
+    #if SPOTIFY_API_VERSION >= 11
+            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, NULL);
+    #else
+            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
+    #endif
+        }
+        else
+            qDebug() << "No username or password provided!";
     }
-    else
-        qDebug() << "No username or password provided!";
+
 }
 
-
-/// @slot playlistRecieved
-/// @note: will only emit if playlist is in syncstate
+/**
+  slot
+  playlistRecieved
+  will recieve playlists froms signal,
+  will emit only if playlist has syncflag as true
+  **/
 void
 SpotifySession::playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist)
 {
     if( playlist.isLoaded && playlist.sync_ )
     {
-        qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
+//        qDebug() << "Received sync: " << playlist.id_ << sp_playlist_name( playlist.playlist_);
         emit notifySyncUpdateSignal( playlist );
     }
 }
 
 /**
-  CALLBACKS
+  loggedout
+  callback
+  will relogin if true
   **/
 void SpotifySession::loggedOut(sp_session *session)
 {
@@ -197,29 +266,47 @@ void SpotifySession::loggedOut(sp_session *session)
 
 
 }
+/**
+  connectionError
+  callback when we cant connect
+  **/
 void SpotifySession::connectionError(sp_session *session, sp_error error)
 {
     Q_UNUSED(session);
     qDebug() << "Connection error: " << QString::fromUtf8(sp_error_message(error));
 
 }
+/**
+  notifyMainThread
+  callback from the lib
+  **/
 void SpotifySession::notifyMainThread(sp_session *session)
 {
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
     _session->sendNotifyThreadSignal();
 }
+/**
+  logMessage
+  callback, if logging is enabled
+  **/
 void SpotifySession::logMessage(sp_session *session, const char *data)
 {
     Q_UNUSED(session);
     qDebug() << "SpotifyLog: " << QString::fromUtf8(data);
 }
 
-
+/**
+  sendNotifyThreadSignal
+  **/
 void SpotifySession::sendNotifyThreadSignal()
 {
     emit notifyMainThreadSignal();
 }
 
+/**
+  notifyMainThread
+  this will be called when spotify needs to process events
+  **/
 void SpotifySession::notifyMainThread()
 {
     int timeout = 0;

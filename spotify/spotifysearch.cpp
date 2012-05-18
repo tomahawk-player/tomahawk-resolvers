@@ -32,7 +32,12 @@
 #include <QDebug>
 #include <boost/bind.hpp>
 class SpotifyPlaylists;
-
+/**
+  addSearchedTrack
+  callback from sp_search_create
+  will try and add track to spotify playlist passed in
+  serachData ( userdata )
+  **/
 void
 SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 {
@@ -139,12 +144,15 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     }
 }
 
-
+/**
+  searchComplete
+  callback from sp_search
+  **/
 void
 SpotifySearch::searchComplete( sp_search *result, void *userdata )
 {
     UserData* data = reinterpret_cast<UserData*>( userdata );
-    qDebug() << "Got search result for qid:" << data->qid;
+    //qDebug() << "Got search result for qid:" << data->qid;
 
     // we return the top 50 results for searches, just top 1 for resolve
     QVariantMap resp;
@@ -153,11 +161,13 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     QVariantList results;
 
     // TODO search by popularity!
-    qDebug() << "Got num results:" << sp_search_num_tracks( result );
+    //qDebug() << "Got num results:" << sp_search_num_tracks( result );
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
         int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 1 );
         for( int i = 0; i < num; i++ ) {
-            sp_track *const tr = sp_search_track( result, i );
+            // get playable track
+            // note: if track is local, its added within the lib, and is playable
+            sp_track *const tr = sp_track_get_playable( SpotifySession::getInstance()->Session(), sp_search_track( result, i ) );
             if( !tr || !sp_track_is_loaded( tr ) ) {
                 qDebug() << "Got still loading track, skipping";
                 continue;
@@ -186,7 +196,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             track[ "size" ] = bytes;
             results << track;
             data->searchCount = 0;
-            //qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
+//            qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
         }
 
     }else

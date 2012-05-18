@@ -61,7 +61,6 @@ QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
     out << (quint32)cache.count();
     foreach( const QString& key, cache.keys() )
     {
-
         out << key << cache[ key ];
     }
     return out;
@@ -98,7 +97,6 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     setApplicationVersion( QLatin1String( "2.0" ) );
 
 }
-
 
 SpotifyResolver::~SpotifyResolver()
 {
@@ -219,7 +217,6 @@ void SpotifyResolver::userChangedReceived()
 void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
     qDebug() << "Sending playlist to client:" << pl.name_ << "with number of tracks:" << pl.tracks_.size();
-
     if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
     {
         qDebug() << "NULL or not loaded playlist in callbacK!";
@@ -458,6 +455,9 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         }
         plObj[ "revid" ] = pl.revisions.last().revId;
         plObj[ "sync" ] = pl.sync_;
+        plObj[ "collaborative" ] = pl.isCollaborative;
+        plObj[ "subscribed" ] = pl.isSubscribed;
+        plObj[ "owner" ] = pl.owner_;
         playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
@@ -564,7 +564,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         msg[ "_msgtype" ] = "credentials";
         msg[ "username" ] = m_username;
-        msg[ "password" ] = m_pw;
+        msg[ "password" ] = (m_pw.isEmpty() ? "*****" : m_pw); // Placeholder for remembered user
         msg[ "highQuality" ] = m_highQuality;
 
         sendMessage( msg );
@@ -660,6 +660,18 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         const QString plid = m.value( "playlistid" ).toString();
         m_session->Playlists()->setSyncPlaylist( plid, false );
+    }
+    else if ( m.value( "_msgtype" ) == "setCollaborative" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const bool collab = m.value( "collaborative" ).toBool();
+        m_session->Playlists()->setCollaborative( plid, collab );
+    }
+    else if ( m.value( "_msgtype" ) == "setSubscription" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const bool collab = m.value( "subscribe" ).toBool();
+        m_session->Playlists()->addSubscribedPlaylist( plid );
     }
     else if ( m.value( "_msgtype" ) == "removeTracksFromPlaylist" )
     {
@@ -837,13 +849,13 @@ void
 SpotifyResolver::loadCache()
 {
     QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
-	//qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
+    qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
     if ( !f.open( QIODevice::ReadOnly ) )
         return;
     QDataStream stream( &f );
 
     stream >> m_cachedTrackLinkMap;
-  //  qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
+    qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
     f.close();
 
     if ( QFileInfo( f.fileName() ).size() > 10 * SPOTIFY_LOGFILE_SIZE )
@@ -865,7 +877,7 @@ SpotifyResolver::saveCache()
     if ( !d.exists() )
     {
         bool ret = d.mkpath( "." );
-		//qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
+        qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
     }
 
     QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
@@ -874,7 +886,7 @@ SpotifyResolver::saveCache()
 
     QDataStream stream( &f );
 
-	//qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
+    qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
     stream << m_cachedTrackLinkMap;
     f.close();
 }
@@ -911,7 +923,7 @@ sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
 
 void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 {
-    m_trackLinkMap.remove( linkStr );
+    sp_link_release( m_trackLinkMap.take( linkStr ) );
 }
 
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
@@ -948,6 +960,7 @@ void SpotifyResolver::loadSettings()
 {
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
+    //WIP - Remembered user
     m_pw = s.value( "password", QString() ).toString();
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
 }
@@ -956,14 +969,15 @@ void SpotifyResolver::saveSettings() const
 {
     QSettings s;
     s.setValue( "username", m_username );
-    s.setValue( "password", m_pw );
+    //WIP - Remembered user
+    //s.setValue( "password", m_pw );
     s.setValue( "highQualityStreaming", m_highQuality );
 }
 
 void SpotifyResolver::login()
 {
-    if( !m_username.isEmpty() && !m_pw.isEmpty() ) { // log in
-        //qDebug() << "Logging in with username:" << m_username;
+    if( !m_username.isEmpty() ) { // log in
+        qDebug() << "Logging in with username:" << m_username;
         m_session->login( m_username, m_pw );
     }
 }

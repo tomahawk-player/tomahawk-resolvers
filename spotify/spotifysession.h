@@ -64,7 +64,7 @@ public:
     // Session functions
     void setSession(sp_session* session){ m_session = session; }
     sp_session* Session() const { return m_session; }
-
+    sp_session_config getSessionConfig() { return m_config; }
     //  Login
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
     bool isLoggedIn(){ return m_loggedIn;}
@@ -104,7 +104,7 @@ public slots:
 
 private slots:
     void notifyMainThread();
-
+    void relogin();
 private:
     void createSession();
     // When username changed, clear old users data
