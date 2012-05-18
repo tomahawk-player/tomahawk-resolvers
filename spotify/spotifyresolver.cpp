@@ -961,7 +961,7 @@ void SpotifyResolver::loadSettings()
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
     //WIP - Remembered user
-    //m_pw = s.value( "password", QString() ).toString();
+    m_pw = s.value( "password", QString() ).toString();
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
 }
 
