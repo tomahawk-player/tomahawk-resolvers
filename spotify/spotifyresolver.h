@@ -65,7 +65,6 @@ public:
 
     explicit SpotifyResolver( int& argc, char** argv );
     virtual ~SpotifyResolver();
-    void setup();
 
     void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText );
 
@@ -91,6 +90,8 @@ public:
     void registerQidForPlaylist( const QString& qid, const QString& playlist );
 
 public slots:
+    void setup();
+
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
 private slots:

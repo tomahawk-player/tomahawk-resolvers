@@ -42,7 +42,12 @@ int main(int argc, char *argv[])
     KDSingleApplicationGuard guard( KDSingleApplicationGuard::NoPolicy );
     QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
 
+#ifdef Q_OS_WIN
+	QTimer::singleShot( 500, &app, SLOT( setup() ) );
+#else
     app.setup();
+#endif
+
     return app.exec();
 
     /*
