@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     SpotifyResolver app( argc, argv );
     // To force dtors
     //SpotifyCallbacks::CleanExit cleanExit;
-    KDSingleApplicationGuard guard( &app, KDSingleApplicationGuard::NoPolicy );
+    KDSingleApplicationGuard guard( KDSingleApplicationGuard::NoPolicy );
     QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
 
     app.setup();
