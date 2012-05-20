@@ -28,7 +28,11 @@
 #include <QList>
 #include <QMetaMethod>
 
+#ifdef Q_OS_WIN
+#include <tr1/functional.hpp>
+#else
 #include <tr1/functional>
+#endif
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
