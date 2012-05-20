@@ -886,8 +886,18 @@ void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
 {
-    if( linkStr.startsWith( "spotify:track" ) )
+    if( m_trackLinkMap.contains( linkStr ) )
         return true;
+
+    sp_link *test_link = sp_link_create_from_string( linkStr.toAscii() );
+    if( test_link == NULL ){
+        return false;
+    }
+    if( sp_link_type( test_link ) == SP_LINKTYPE_TRACK ){
+        sp_link_release( test_link );
+        return true;
+    }
+    sp_link_release( test_link );
     return false;
 }
 
