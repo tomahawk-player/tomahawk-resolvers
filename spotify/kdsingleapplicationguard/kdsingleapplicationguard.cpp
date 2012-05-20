@@ -25,6 +25,7 @@
 #endif
 
 #ifdef Q_WS_WIN
+#define NOMINMAX
 #include <windows.h>
 typedef signed int ssize_t;
 #endif
