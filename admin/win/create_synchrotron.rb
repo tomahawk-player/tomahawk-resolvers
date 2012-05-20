@@ -14,7 +14,7 @@ zipper = "C:\\Program Files\\7-Zip\\7z.exe"
 
 if ARGV.length < 5
   puts "Usage: ruby create_synchrotron_win.rb /path/to/resolver_folder resolver_name.exe metadata.desktop private_key_file /path/to/tomahawk-synchrotron"
-  puts "\nCall this from the build directory."
+  puts "\nCall this from any directory."
   puts "If you don't have the tomahawk private key and you think you should, ask leo :)"
   exit
 end
@@ -34,8 +34,8 @@ folder = "spotify-win"
 `mkdir #{folder}`
 `copy #{ARGV[0]} #{folder}`
 
-tarball = "#{resolver}.zip"
-`"#{zipper}" a -tzip #{tarball} #{folder}`
+tarball = "#{resolver}-#{platform}.zip"
+`pushd #{folder} && "#{zipper}" a -tzip "#{tarball}" * && move "#{tarball}" .. && popd`
 `del /q #{folder}`
 `rd #{folder}`
 
