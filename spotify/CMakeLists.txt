@@ -38,24 +38,11 @@ set( tomahawkspotify_NOMOC_HDRS
     kdsingleapplicationguard/kdlockedsharedmemorypointer.h
 )
 
-set( tomahawkspotify_HDRS
-    kdsingleapplicationguard/kdsingleapplicationguard.h
-    PlaylistClosure.h
-    spotifyloghandler.h
-    spotifyplayback.h
-    spotifysearch.h
-    spotifyplaylists.h
-    spotifysession.h
-    spotifyresolver.h
-    consolewatcher.h
-    audiohttpserver.h
-    spotifyiodevice.h
-)
 
-qt4_wrap_cpp( tomahawkspotify_MOC_HDRS ${tomahawkspotify_HDRS})
-
-add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_MOC_HDRS} ${tomahawkspotify_NOMOC_HDRS} )
+add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_NOMOC_HDRS} )
 target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
+
+SET_TARGET_PROPERTIES(spotify_tomahawkresolver PROPERTIES AUTOMOC TRUE)
 
 if("${CMAKE_VERSION}" STREQUAL "2.8.5" OR "${CMAKE_VERSION}" STRGREATER "2.8.5")
     include(GNUInstallDirs)
