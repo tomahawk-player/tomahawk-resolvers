@@ -30,7 +30,7 @@ platform = "win"
   
 puts "Creating zipfile for #{resolver} in folder #{fullPath}..."
 
-folder = "spotify-win"
+folder = "#{resolver}-#{platform}"
 `mkdir #{folder}`
 `copy #{ARGV[0]} #{folder}`
 
