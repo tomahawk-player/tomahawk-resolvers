@@ -6,7 +6,7 @@
 #
 require 'pathname'
 
-LIBSPOTIFY_VERSION = "libspotify.so.11"
+LIBSPOTIFY_VERSION = "libspotify.so.12"
 
 if ARGV.length < 6
   puts "Usage: ruby create_synchrotron.rb [x86|x64] /path/to/static/builddir resolvername_tomahawkresolver metadata.desktop private_key_file /path/to/tomahawk-synchrotron"
