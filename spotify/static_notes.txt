@@ -1,0 +1,8 @@
+Build your Qt statically. This is my configure line:
+
+./configure -static -prefix /home/leo/qt/4.8-static -nomake demos -opensource -fast -release -nomake translations -system-libtiff -system-libjpeg -graphicssystem raster -no-phonon -exceptions -confirm-license -no-glib -nomake tools -nomake docs -nomake examples
+
+
+This is my patch to qt 4.8 git:
+
+https://gist.github.com/2765227
