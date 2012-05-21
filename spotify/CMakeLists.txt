@@ -13,6 +13,11 @@ add_subdirectory(qxtweb-standalone)
 
 include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ ${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
+SET(CMAKE_C_FLAGS " -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
+SET(CMAKE_CXX_FLAGS " -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
+SET(ZLIB_LIBRARY "/usr/lib/libz.a")
+
+
 set(tomahawkspotify_SRCS
 
     kdsingleapplicationguard/kdsingleapplicationguard.cpp
