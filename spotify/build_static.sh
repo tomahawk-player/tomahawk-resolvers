@@ -1,6 +1,8 @@
 #!/bin/bash
 echo "Building static binary. Please make sure you have a libdl.a in this directory as well as a libspotify.so.11."
 echo "Remove any libspotify.so installed in system-wide paths, as well."
+echo "\n\n"
+
 mkdir static
 pushd static
 cp ../libdl.a .
