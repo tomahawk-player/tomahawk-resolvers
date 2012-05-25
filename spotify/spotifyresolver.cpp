@@ -134,7 +134,6 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
     connect( m_session, SIGNAL( blobUpdated(const QByteArray,const QByteArray) ), this, SLOT( updateBlob(const QByteArray, const QByteArray) ) );
     connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
-    connect( m_session, SIGNAL( notifyLoggedin() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
 

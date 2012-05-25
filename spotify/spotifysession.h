@@ -100,7 +100,7 @@ signals:
     void sendErrorMsg( const QString &msg, bool isDebug );
     void userChanged();
     void blobUpdated( const QByteArray& username, const QByteArray& blob);
-    void notifyLoggedin();
+
 public slots:
     void playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist);
 
