@@ -101,6 +101,8 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
 SpotifyResolver::~SpotifyResolver()
 {
     qDebug() << "exiting...";
+    clearTrackLinkMap();
+
     delete m_session;
     delete m_stdinWatcher;
     m_stdinThread.exit();
@@ -498,15 +500,7 @@ void SpotifyResolver::initSpotify()
     qDebug() << "Starting HTTPd on" << m_httpS.listenInterface().toString() << m_httpS.port();
     m_httpS.start();
 
-    m_dirty = false;
-    QTimer* t = new QTimer( this );
-    t->setInterval( 5000 );
-    connect( t, SIGNAL( timeout() ), this, SLOT( saveCache() ) );
-    t->start();
-
     login();
-    loadCache();
-
 
     // testing
 //     search( "123", "coldplay", "the scientist" );
@@ -859,64 +853,19 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
 #endif
 }
 
-void
-SpotifyResolver::loadCache()
-{
-    QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
-    qDebug() << "Loading cache from" <<  SPOTIFY_CACHEDIR + "cache.dat";
-    if ( !f.open( QIODevice::ReadOnly ) )
-        return;
-    QDataStream stream( &f );
-
-    stream >> m_cachedTrackLinkMap;
-    qDebug() << "LOADED CACHED:" << m_cachedTrackLinkMap.count();
-    f.close();
-
-    if ( QFileInfo( f.fileName() ).size() > 10 * SPOTIFY_LOGFILE_SIZE )
-    {
-        QFile::remove( f.fileName() );
-    }
-}
-
-
-void
-SpotifyResolver::saveCache()
-{
-    if ( !m_dirty )
-        return;
-    m_dirty = false;
-
-    const QString dir = SPOTIFY_CACHEDIR;
-    QDir d( dir );
-    if ( !d.exists() )
-    {
-        bool ret = d.mkpath( "." );
-        qDebug() << "Tried to create cache dir:" << d.absolutePath() << "returned:" << ret;
-    }
-
-    QFile f( SPOTIFY_CACHEDIR + "cache.dat" );
-    if ( !f.open( QIODevice::WriteOnly ) )
-        return;
-
-    QDataStream stream( &f );
-
-    qDebug() << "Saving cache to:" <<  SPOTIFY_CACHEDIR + "cache.dat";
-    stream << m_cachedTrackLinkMap;
-    f.close();
-}
-
-
 QString SpotifyResolver::addToTrackLinkMap(sp_link* link)
 {
-    QString uid = QUuid::createUuid().toString().replace( "{", "" ).replace( "}", "" ).replace( "-", "" );
-    m_trackLinkMap.insert( uid, link );
-
-    QSettings s;
     char url[1024];
     sp_link_as_string( link, url, sizeof( url ) );
 
-    m_cachedTrackLinkMap[ uid ] = url;
-    m_dirty = true;
+    QString uid = url;
+
+    if ( !m_trackLinkMap.contains( uid ) )
+    {
+        sp_link_add_ref( link );
+        m_trackLinkMap.insert( uid, link );
+    }
+
     return uid;
 }
 
@@ -925,14 +874,23 @@ sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
     if ( sp_link* l = m_trackLinkMap.value( uid, 0 ) )
         return l;
 
-    QString linkStr = m_cachedTrackLinkMap.value( uid );
-    if (!linkStr.isEmpty() )
+    if ( uid.startsWith( "spotify:track" ) )
     {
-        sp_link* l = sp_link_create_from_string( linkStr.toAscii() );
+        sp_link* l = sp_link_create_from_string( uid.toAscii() );
         m_trackLinkMap[ uid ] = l;
         return l;
     }
     return 0;
+}
+
+void SpotifyResolver::clearTrackLinkMap()
+{
+    QHash<QString, sp_link*>::iterator i = m_trackLinkMap.begin();
+    while ( i != m_trackLinkMap.end() )
+    {
+        sp_link_release( i.value() );
+        i = m_trackLinkMap.erase( i );
+    }
 }
 
 void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
@@ -942,7 +900,19 @@ void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
 
 bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
 {
-   return m_trackLinkMap.contains( linkStr ) || m_cachedTrackLinkMap.contains( linkStr );
+    if( m_trackLinkMap.contains( linkStr ) )
+        return true;
+
+    sp_link *test_link = sp_link_create_from_string( linkStr.toAscii() );
+    if( test_link == NULL ){
+        return false;
+    }
+    if( sp_link_type( test_link ) == SP_LINKTYPE_TRACK ){
+        sp_link_release( test_link );
+        return true;
+    }
+    sp_link_release( test_link );
+    return false;
 }
 
 QVariantMap
