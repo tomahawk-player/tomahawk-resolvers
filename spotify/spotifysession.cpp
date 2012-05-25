@@ -167,9 +167,15 @@ void SpotifySession::relogin()
   **/
 void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blob)
 {
-    qDebug() << "Got blob " << blob;
+    qDebug() << "Got blob";
+    QByteArray username;
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
-    emit _session->blobUpdated( QByteArray( sp_session_user_name(session)).constData(), QByteArray(blob).constData() );
+#if SPOTIFY_API_VERSION > 12
+    username = QByteArray( sp_session_user_name(session));
+#else
+    username = QByteArray( sp_user_canonical_name( sp_session_user(session) ) );
+#endif
+    emit _session->blobUpdated( username.constData(), QByteArray(blob).constData() );
 }
 
 /**
@@ -211,8 +217,7 @@ void SpotifySession::login( const QString& username, const QString& password, co
         }
         else
         {
-            qDebug() << "Logging in as remembered user: "
-                     << QString::fromLatin1(sp_session_user_name( m_session ) );
+            qDebug() << "Logging in as remembered user: " << sp_user_canonical_name( sp_session_user(m_session) );
             return;
 
         }
