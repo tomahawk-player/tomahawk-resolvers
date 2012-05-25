@@ -68,7 +68,7 @@ public:
     //  Login
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
     bool isLoggedIn(){ return m_loggedIn;}
-    void login( const QString& username, const QString& password );
+    void login( const QString& username, const QString& password, const QByteArray &blob = NULL );
     void logout( bool clearPlaylists );
 
     // Playlists
@@ -87,6 +87,7 @@ public:
     static void SP_CALLCONV connectionError(sp_session *session, sp_error error);
     static void SP_CALLCONV notifyMainThread(sp_session *session);
     static void SP_CALLCONV logMessage(sp_session *session, const char *data);
+    static void SP_CALLCONV credentialsBlobUpdated(sp_session *session, const char *blob);
 
     // Error
     void doSendErrorMsg( const QString &msg, bool isDebug){ emit sendErrorMsg( msg, isDebug); }
@@ -98,6 +99,7 @@ signals:
     void sendErrorMsg( sp_error );
     void sendErrorMsg( const QString &msg, bool isDebug );
     void userChanged();
+    void blobUpdated( const QByteArray& username, const QByteArray& blob);
 
 public slots:
     void playlistReceived( const SpotifyPlaylists::LoadedPlaylist& playlist);

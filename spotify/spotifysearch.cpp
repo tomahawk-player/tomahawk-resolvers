@@ -206,10 +206,12 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
         QString queryString = QString::fromUtf8(sp_search_query(	result ) );
         if(data->searchCount <= 1 ){
             if( didYouMean.isEmpty() )
-                qDebug() << "Tried DidYouMean, but no suggestions available for " << queryString;
+            {
+                //qDebug() << "Tried DidYouMean, but no suggestions available for " << queryString;
+            }
             else
             {
-                qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
+                //qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
                 //int distance = QString::compare(queryString, didYouMean, Qt::CaseInsensitive);
                 //qDebug() << "Distance for query is " << distance;//if( distance < 4)
 #if SPOTIFY_API_VERSION >= 11

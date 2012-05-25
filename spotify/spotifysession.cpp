@@ -160,20 +160,30 @@ void SpotifySession::relogin()
 }
 
 /**
+  credentialsBlobUpdated
+  callback from login when we get the blob, used instead of plain password
+  will send blob to application to storage
+  @note its up the the application to store it
+  **/
+void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blob)
+{
+    qDebug() << "Got blob " << blob;
+    SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
+    emit _session->blobUpdated( QByteArray( sp_session_user_name(session)).constData(), QByteArray(blob).constData() );
+}
+
+/**
   login
   takes username, password
   tries to login with previous remembered user, thus, password can be empty
   **/
-void SpotifySession::login( const QString& username, const QString& password )
+void SpotifySession::login( const QString& username, const QString& password, const QByteArray& blob )
 {
 
-    if ( m_loggedIn &&
-         m_username == username /*&&
-         m_password == password*/ )
+    if ( m_loggedIn && m_username == username )
     {
-        // If loggedIn and same username, we dont really care about password, do we?
-        // Note: may have some other issue to it.
-
+        /// If loggedIn and same username, we dont really care about password, do we?
+        /// @note: may have some other issue to it.
         qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring";
         return;
     }
@@ -187,20 +197,26 @@ void SpotifySession::login( const QString& username, const QString& password )
 
     m_username = username;
     m_password = password;
-
     char reloginname[256];
-    sp_session_remembered_user(m_session, reloginname, sizeof(reloginname));
+    sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
 
-    if( QString::fromLatin1(reloginname) == m_username )
+    if( QString::fromLatin1( reloginname ) == m_username )
     {
         if (sp_session_relogin(m_session) == SP_ERROR_NO_CREDENTIALS)
-            qDebug() << "No stored credentials";
+        {
+            qDebug() << "No stored credentials tryin blob";
+        }
         else
-            qDebug() << "Logging in as remembered user";
+        {
+            qDebug() << "Logging in as remembered user: "
+                     << QString::fromLatin1(sp_session_user_name( m_session ) );
+            return;
 
-    }else
+        }
+    }
+    else
     {
-        if( !m_username.isEmpty() && !m_password.isEmpty() )
+        if( !m_username.isEmpty() && ( !m_password.isEmpty() || !blob.isEmpty() )  )
         {
             /// @note:  If current state is not logged out, logout this session
             ///         and relogin in callback
@@ -213,18 +229,23 @@ void SpotifySession::login( const QString& username, const QString& password )
                 logout( true );
                 return;
             }
-            // TODO: need a way to prompt for password if fail to login as remebered on startup
+            // Forget last user
             sp_session_forget_me(m_session);
-
             qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
     #if SPOTIFY_API_VERSION >= 11
-            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, NULL);
+            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
     #else
             sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
     #endif
         }
         else
-            qDebug() << "No username or password provided!";
+        {
+            qDebug() << "No username, password or blob provided!";
+            /// TODO: need a way to prompt for password if fail to login as remebered on startup
+            /// If auth widget is not visual, we should promt user for re-entering creds
+            emit loginResponse( false, "Failed to authenticate credentials." );
+
+        }
     }
 
 }

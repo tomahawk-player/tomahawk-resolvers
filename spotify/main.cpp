@@ -37,8 +37,6 @@ int main(int argc, char *argv[])
     */
 
     SpotifyResolver app( argc, argv );
-    // To force dtors
-    //SpotifyCallbacks::CleanExit cleanExit;
     KDSingleApplicationGuard guard( KDSingleApplicationGuard::NoPolicy );
     QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
 
@@ -50,27 +48,4 @@ int main(int argc, char *argv[])
 
     return app.exec();
 
-    /*
-    QCoreApplication a(argc, argv);
-
-    //  Sometimes location causes errors, so if your not able
-    //  to login, change the location or rm the dirs + trace
-
-    sessionConfig config;
-    config.cache_location = "/tmp";
-    config.settings_location = "/tmp";
-    config.g_app_key = g_appkey;
-    config.application_key_size = g_appkey_size;
-    config.user_agent = "spotifyApi";
-    config.tracefile = "/tmp/trace.dat";
-    config.device_id = "spotifyApi";
-
-
-    SpotifySession *Spotify = new SpotifySession(config);
-    Spotify->setCredentials( "", "");
-    Spotify->login();
-
-   return a.exec();*/
-
-    /** END EXAMPLE **/
 }

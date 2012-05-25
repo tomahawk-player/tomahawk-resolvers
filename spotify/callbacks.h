@@ -24,23 +24,6 @@ using namespace std;
 
 namespace SpotifyCallbacks{
 
-
-/**
-    Clean exit, to call dtors when sigint
-**/
-struct CleanExit{
-    CleanExit() {
-        signal(SIGINT, &CleanExit::exitQt);
-        signal(SIGTERM, &CleanExit::exitQt);
-    }
-
-    static void exitQt(int sig) {
-        QCoreApplication::exit(0);
-    }
-};
-
-
-
 static sp_session_callbacks callbacks = {
 
     &SpotifySession::loggedIn,
@@ -54,16 +37,16 @@ static sp_session_callbacks callbacks = {
     &SpotifySession::logMessage,
     &SpotifyPlayback::endOfTrack,
     &SpotifyPlayback::streamingError,
-    #if SPOTIFY_API_VERSION > 4
     NULL, //&SpotifySession::userinfoUpdated,
     &SpotifyPlayback::startPlayback,
     &SpotifyPlayback::stopPlayback,
     &SpotifyPlayback::getAudioBufferStats,
-    #else
-    &SpotifySession::userinfoUpdated,
-    #endif
-    NULL,
-    NULL,
+    NULL, //offline_status_updated
+    NULL, // offline_error
+    &SpotifySession::credentialsBlobUpdated,
+    NULL, // &SpotifySession::connectionstateUpdated,
+    NULL, //scrobble_error
+    NULL, //private_session_mode_changed
 
 };
 
