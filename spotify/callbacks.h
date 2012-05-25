@@ -44,9 +44,11 @@ static sp_session_callbacks callbacks = {
     NULL, //offline_status_updated
     NULL, // offline_error
     &SpotifySession::credentialsBlobUpdated,
+    #if SPOTIFY_API_VERSION > 12
     NULL, // &SpotifySession::connectionstateUpdated,
     NULL, //scrobble_error
     NULL, //private_session_mode_changed
+    #endif
 
 };
 
