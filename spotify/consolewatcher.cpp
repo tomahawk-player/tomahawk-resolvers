@@ -80,6 +80,12 @@ void ConsoleWatcher::checkStdin()
         m_curmsg.clear();
     }
 
+    if( m_msgsize < (quint32) m_curmsg.length() )
+    {
+	// split m_curmsg at m_msgsize and process
+	// read the first 4 bytes
+	// dump the rest in m_curmsg
+    }
 }
 
 void ConsoleWatcher::parseMsg(const QByteArray& msg)
