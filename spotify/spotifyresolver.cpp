@@ -132,6 +132,7 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL( loginResponse( bool, QString ) ), this, SLOT( loginResponse( bool, QString ) ) );
     connect( m_session, SIGNAL( userChanged() ), this, SLOT( userChangedReceived() ) );
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
+    connect( m_session, SIGNAL( blobUpdated(const QByteArray,const QByteArray) ), this, SLOT( updateBlob(const QByteArray, const QByteArray) ) );
     connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
@@ -190,6 +191,17 @@ void SpotifyResolver::errorMsgReceived(sp_error error)
             break;
     }
     errorMsgReceived( errMsg, debugMsg );
+}
+
+void SpotifyResolver::updateBlob(const QByteArray& username, const QByteArray& blob)
+{
+    if( m_username == QString(username) )
+    {
+        QSettings s;
+        s.setValue( m_username+"/blob", QString(blob) );
+    }
+    else
+        qDebug() << "===== FAILED TO SAVE BLOB";
 }
 
 void SpotifyResolver::errorMsgReceived( const QString &errMsg, bool isDebug )
@@ -960,8 +972,9 @@ void SpotifyResolver::loadSettings()
 {
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
+    m_blob = s.value( m_username+"/blob", QByteArray() ).toByteArray();
     //WIP - Remembered user
-    m_pw = s.value( "password", QString() ).toString();
+    //m_pw = s.value( "password", QString() ).toString();
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
 }
 
@@ -978,7 +991,7 @@ void SpotifyResolver::login()
 {
     if( !m_username.isEmpty() ) { // log in
         qDebug() << "Logging in with username:" << m_username;
-        m_session->login( m_username, m_pw );
+        m_session->login( m_username, m_pw, m_blob );
     }
 }
 

@@ -48,7 +48,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
 
     // See comments on pruneCacheAndReload
-    m_loadTimer->setInterval( 20000 ); // 20s
+    m_loadTimer->setInterval( 60000 ); // 60s
     m_loadTimer->setSingleShot( true );
     connect( m_loadTimer, SIGNAL( timeout() ), this, SLOT( pruneCacheAndReload() ) );
     m_loadTimer->start();
@@ -175,6 +175,7 @@ bool SpotifyPlaylists::removeDirContent(const QString &dirName)
     The behaviour is hard to reproduce, but often spotify fixes it self. ( try rm cache during load to reproduce )
     However, it may take up to serveral minutes to get fixed. SO lets fix that when it happens
     @note WIP
+    @note Very bad practice... issue seem to stem from not exiting correctly and thus writing cache
 **/
 void
 SpotifyPlaylists::pruneCacheAndReload()

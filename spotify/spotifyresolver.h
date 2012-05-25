@@ -110,6 +110,7 @@ private slots:
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
     void sendPlaylistDeleted( const QString& playlist );
     void userChangedReceived();
+    void updateBlob( const QByteArray& username, const QByteArray &blob );
 private:
     QVariantMap spTrackToVariant( sp_track* track );
 
@@ -145,6 +146,7 @@ private:
 
     QString m_username;
     QString m_pw;
+    QByteArray m_blob;
 
     bool m_highQuality;
     bool m_loggedIn;
