@@ -185,6 +185,9 @@ void SpotifySession::login( const QString& username, const QString& password, co
         /// If loggedIn and same username, we dont really care about password, do we?
         /// @note: may have some other issue to it.
         qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring";
+        /// Send response, and notifyLoggedin, this will make config gui to stop "loading"
+        emit loginResponse( true, "Logged in" );
+        emit notifyLoggedin();
         return;
     }
 
@@ -198,13 +201,15 @@ void SpotifySession::login( const QString& username, const QString& password, co
     m_username = username;
     m_password = password;
     char reloginname[256];
+    sp_error loginError;
     sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
 
     if( QString::fromLatin1( reloginname ) == m_username )
     {
-        if (sp_session_relogin(m_session) == SP_ERROR_NO_CREDENTIALS)
+        loginError = sp_session_relogin(m_session) ;
+        if ( loginError == SP_ERROR_NO_CREDENTIALS)
         {
-            qDebug() << "No stored credentials tryin blob";
+            qDebug() << "No stored credentials tryin blob" << sp_error_message( loginError );
         }
         else
         {
@@ -214,39 +219,37 @@ void SpotifySession::login( const QString& username, const QString& password, co
 
         }
     }
+    if( !m_username.isEmpty() && ( !m_password.isEmpty() || !blob.isEmpty() )  )
+    {
+        /// @note:  If current state is not logged out, logout this session
+        ///         and relogin in callback
+        /// @note2: We can be logged out, but the session is still connected to accesspoint
+        ///         Wait for that to.
+        if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
+        {
+            qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
+            m_relogin = true;
+            logout( true );
+            return;
+        }
+        // Forget last user
+        sp_session_forget_me(m_session);
+        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
+#if SPOTIFY_API_VERSION >= 11
+        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+#else
+        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
+#endif
+    }
     else
     {
-        if( !m_username.isEmpty() && ( !m_password.isEmpty() || !blob.isEmpty() )  )
-        {
-            /// @note:  If current state is not logged out, logout this session
-            ///         and relogin in callback
-            /// @note2: We can be logged out, but the session is still connected to accesspoint
-            ///         Wait for that to.
-            if( sp_session_connectionstate(m_session) != SP_CONNECTION_STATE_LOGGED_OUT || m_loggedIn)
-            {
-                qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
-                m_relogin = true;
-                logout( true );
-                return;
-            }
-            // Forget last user
-            sp_session_forget_me(m_session);
-            qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
-    #if SPOTIFY_API_VERSION >= 11
-            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
-    #else
-            sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
-    #endif
-        }
-        else
-        {
-            qDebug() << "No username, password or blob provided!";
-            /// TODO: need a way to prompt for password if fail to login as remebered on startup
-            /// If auth widget is not visual, we should promt user for re-entering creds
-            emit loginResponse( false, "Failed to authenticate credentials." );
+        qDebug() << "No username, password or blob provided!";
+        /// TODO: need a way to prompt for password if fail to login as remebered on startup
+        /// If auth widget is not visual, we should promt user for re-entering creds
+        emit loginResponse( false, "Failed to authenticate credentials." );
 
-        }
     }
+
 
 }
 
