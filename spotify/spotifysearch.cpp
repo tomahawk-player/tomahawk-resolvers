@@ -163,7 +163,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     // TODO search by popularity!
     //qDebug() << "Got num results:" << sp_search_num_tracks( result );
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
-        int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 1 );
+        int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 5 );
         for( int i = 0; i < num; i++ ) {
             // get playable track
             // note: if track is local, its added within the lib, and is playable
@@ -215,9 +215,9 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
                 //int distance = QString::compare(queryString, didYouMean, Qt::CaseInsensitive);
                 //qDebug() << "Distance for query is " << distance;//if( distance < 4)
 #if SPOTIFY_API_VERSION >= 11
-                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
+                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 5, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
-                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 5, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
 #endif
             }
             data->searchCount++;

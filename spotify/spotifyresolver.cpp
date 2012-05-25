@@ -586,8 +586,8 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         // Spotify is sensitive, - equals minus next string, not so good in
         // examples like Queen Breakthru - 2011 remastered == Queen Breaktru ( Does not exist )
         // Also, for some reason, spotify cant find Camelcases at times.
-        const QString artist = m.value( "artist" ).toString().replace(" - ", " ").toLower();
-        const QString track = m.value( "track" ).toString().replace(" - ", " ").toLower();
+        const QString artist = m.value( "artist" ).toString();
+        const QString track = m.value( "track" ).toString();
         const QString fullText = m.value( "fulltext" ).toString();
 
         qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText;
@@ -847,7 +847,7 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
         data->fulltext = true;
     }
 #if SPOTIFY_API_VERSION >= 11
-    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 5, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
     sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
 #endif
