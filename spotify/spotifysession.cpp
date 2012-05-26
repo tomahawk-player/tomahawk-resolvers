@@ -217,7 +217,7 @@ void SpotifySession::login( const QString& username, const QString& password, co
         }
         else
         {
-            qDebug() << "Logging in as remembered user: " << sp_user_canonical_name( sp_session_user(m_session) );
+            qDebug() << "Logging in as remembered user";
             return;
 
         }
