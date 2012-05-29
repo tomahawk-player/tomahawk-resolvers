@@ -37,7 +37,7 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
-
+    qDebug() << " === Using LibVersion " << SPOTIFY_API_VERSION << " ===";
     createSession();
 }
 /**
