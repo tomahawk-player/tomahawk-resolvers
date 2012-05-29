@@ -866,6 +866,7 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
         if( cleanedTrack.indexOf( "ft." ) > -1 )
             cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );*/
 
+        cleanedTrack.replace(":", "");
         query = QString( "artist:%1 track:%2" ).arg( artist ).arg( cleanedTrack );
 
     }
