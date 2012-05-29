@@ -99,6 +99,7 @@ private slots:
     void initSpotify();
     void loginResponse( bool success, const QString& msg );
     void notifyAllPlaylistsLoaded();
+    void resendAllPlaylists();
     void errorMsgReceived( sp_error );
     void errorMsgReceived( const QString &msg, bool isDebug );
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
