@@ -161,9 +161,9 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     QVariantList results;
 
     // TODO search by popularity!
-    //qDebug() << "Got num results:" << sp_search_num_tracks( result );
+    qDebug() << "Got num results:" << sp_search_num_tracks( result ) << " for query " << sp_search_query( result );
     if( sp_search_num_tracks( result ) > 0 ) {// we have a result
-        int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 5 );
+        int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 3 );
         for( int i = 0; i < num; i++ ) {
             // get playable track
             // note: if track is local, its added within the lib, and is playable
@@ -204,28 +204,26 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     {
         QString didYouMean = QString::fromUtf8(sp_search_did_you_mean(	result ) );
         QString queryString = QString::fromUtf8(sp_search_query(	result ) );
-        if(data->searchCount <= 1 ){
+        if(data->searchCount < 1 ){
             if( didYouMean.isEmpty() )
             {
                 //qDebug() << "Tried DidYouMean, but no suggestions available for " << queryString;
             }
             else
             {
-                //qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
+                 qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
                 //int distance = QString::compare(queryString, didYouMean, Qt::CaseInsensitive);
                 //qDebug() << "Distance for query is " << distance;//if( distance < 4)
 #if SPOTIFY_API_VERSION >= 11
-                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 5, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
+                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
-                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 5, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+                sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
 #endif
             }
             data->searchCount++;
             return;
         }else
             qDebug() << "Tried to find suggestion to many times";
-
-
     }
 
     resp[ "results" ] = results;

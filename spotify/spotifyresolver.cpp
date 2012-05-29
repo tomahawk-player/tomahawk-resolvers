@@ -861,12 +861,13 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
     {
         // Not a search, just a track resolve.
         QString cleanedTrack = track;
-        if( cleanedTrack.indexOf( "feat" ) > -1 )
+        /*if( cleanedTrack.indexOf( "feat" ) > -1 )
             cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "feat" ) );
         if( cleanedTrack.indexOf( "ft." ) > -1 )
-            cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );
+            cleanedTrack = cleanedTrack.mid( cleanedTrack.indexOf( "ft." ) );*/
 
-        query = QString( "%1 %2" ).arg( artist ).arg( cleanedTrack );
+        query = QString( "artist:%1 track:%2" ).arg( artist ).arg( cleanedTrack );
+
     }
     else
     {
@@ -875,9 +876,9 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
         data->fulltext = true;
     }
 #if SPOTIFY_API_VERSION >= 11
-    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 5, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
-    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 1, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
 #endif
 }
 
