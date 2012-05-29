@@ -43,7 +43,7 @@ static sp_session_callbacks callbacks = {
     &SpotifyPlayback::getAudioBufferStats,
     NULL, //offline_status_updated
     NULL, // offline_error
-    #if SPOTIFY_API_VERSION > 12
+    #if SPOTIFY_API_VERSION >= 12
     &SpotifySession::credentialsBlobUpdated,
     NULL, // &SpotifySession::connectionstateUpdated,
     NULL, //scrobble_error
