@@ -528,7 +528,7 @@ SpotifyPlaylists::loadContainerSlot(sp_playlistcontainer *pc){
             {
                 sp_playlist* pl = sp_playlistcontainer_playlist( pc, i );
 
-                qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
+                //qDebug() << "Adding playlist:" << pl << sp_playlist_is_loaded( pl ) << sp_playlist_name( pl ) << sp_playlist_num_tracks( pl );
                 if ( sp_playlist_is_loaded( pl ) )
                     addPlaylist( pl );
                 else

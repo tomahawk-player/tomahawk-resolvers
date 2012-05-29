@@ -164,17 +164,21 @@ void SpotifySession::relogin()
   callback from login when we get the blob, used instead of plain password
   will send blob to application to storage
   @note its up the the application to store it
+  @note2: it will be fired more than once, always store latest blob
+  @note3: if user have no cache, it will fire once, if cache it will (maybe) update current blob
   **/
 void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blob)
 {
-    qDebug() << "Got blob";
+
     QByteArray username;
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
-#if SPOTIFY_API_VERSION > 12
-    username = QByteArray( sp_session_user_name(session));
+#if SPOTIFY_API_VERSION >= 12
+    username = QByteArray( sp_session_user_name( session ) );
 #else
-    username = QByteArray( sp_user_canonical_name( sp_session_user(session) ) );
+    username = QByteArray( sp_user_canonical_name( sp_session_user( session ) ) );
 #endif
+    _session->m_blob = QByteArray(blob);
+    qDebug() << " ==== Got blob update for " << username << " ==== ";
     emit _session->blobUpdated( username.constData(), QByteArray(blob).constData() );
 }
 
@@ -182,6 +186,7 @@ void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blo
   login
   takes username, password
   tries to login with previous remembered user, thus, password can be empty
+  will  also try and utilize blob
   **/
 void SpotifySession::login( const QString& username, const QString& password, const QByteArray& blob )
 {
@@ -190,10 +195,10 @@ void SpotifySession::login( const QString& username, const QString& password, co
     {
         /// If loggedIn and same username, we dont really care about password, do we?
         /// @note: may have some other issue to it.
-        qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring";
-        /// Send response, and notifyLoggedin, this will make config gui to stop "loading"
+        qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring login";
+        /// Send response, and notifyAllreadyLoggedin, this will make config gui to stop "loading", and refetch all playlists
         emit loginResponse( true, "Logged in" );
-        emit notifyLoggedin();
+        emit notifyAllreadyLoggedin();
         return;
     }
 
@@ -232,12 +237,13 @@ void SpotifySession::login( const QString& username, const QString& password, co
         {
             qDebug() << Q_FUNC_INFO << "SpotifySession asked to relog in! Logging out";
             m_relogin = true;
+            m_blob = blob;
             logout( true );
             return;
         }
         // Forget last user
         sp_session_forget_me(m_session);
-        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username;
+        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "using" ) << "blob";
 #if SPOTIFY_API_VERSION >= 11
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
 #else
@@ -288,7 +294,7 @@ void SpotifySession::loggedOut(sp_session *session)
     if(_session->m_relogin)
     {
         _session->m_relogin = false;
-        _session->login( _session->m_username, _session->m_password );
+        _session->login( _session->m_username, _session->m_password, _session->m_blob.constData() );
     }
 
 

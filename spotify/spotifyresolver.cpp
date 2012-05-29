@@ -136,7 +136,7 @@ void SpotifyResolver::setup()
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
     connect( m_session, SIGNAL( blobUpdated(const QByteArray,const QByteArray) ), this, SLOT( updateBlob(const QByteArray, const QByteArray) ) );
     connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
-    connect( m_session, SIGNAL( notifyLoggedin() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
+    connect( m_session, SIGNAL( notifyAllreadyLoggedin() ), this, SLOT( resendAllPlaylists() ) );
 
     // Signals
     connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
@@ -481,8 +481,35 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
 
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
-    qDebug() << "SENDING ALL PLAYLISTS JSON:" << m;
+    qDebug() << "SENDING ALL PLAYLISTS JSON:"; // << m;
 
+    sendMessage( msg );
+}
+
+void
+SpotifyResolver::resendAllPlaylists()
+{
+    qDebug() << Q_FUNC_INFO << "ReSending all spotify playlists, found:" << m_session->Playlists()->getPlaylists().size();
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "allPlaylists";
+    QVariantList playlists;
+
+    foreach ( const SpotifyPlaylists::LoadedPlaylist& pl, m_session->Playlists()->getPlaylists() )
+    {
+        QVariantMap plObj;
+        plObj[ "name" ] = pl.name_;
+        plObj[ "id" ] = pl.id_;
+        plObj[ "revid" ] = pl.revisions.last().revId;
+        plObj[ "sync" ] = pl.sync_;
+        plObj[ "collaborative" ] = pl.isCollaborative;
+        plObj[ "subscribed" ] = pl.isSubscribed;
+        plObj[ "owner" ] = pl.owner_;
+        playlists << plObj;
+    }
+    msg[ "playlists" ] = playlists;
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "reSENDING ALL PLAYLISTS JSON";
     sendMessage( msg );
 }
 
@@ -554,8 +581,9 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         m_username = m[ "username" ].toString();
         m_pw = m[ "password" ].toString();
+        QSettings s;
+        m_blob = s.value( m_username+"/blob", QByteArray() ).toByteArray();
         m_highQuality = m[ "highQuality" ].toBool();
-
         login();
         saveSettings();
 
