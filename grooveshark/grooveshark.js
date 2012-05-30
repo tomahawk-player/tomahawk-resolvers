@@ -78,7 +78,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
         Tomahawk.log("URL: " + url);
         Tomahawk.log("Post Body: " + json);
-//         xmlHttpRequest.send(json);
+        xmlHttpRequest.send(json);
         if (xmlHttpRequest.status == 200) {
             return xmlHttpRequest.responseText;
         } else {
@@ -216,8 +216,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         //Tomahawk.log("Got factory function called to get grooveshark streaming url from:" + ourUrl + " and songId:" + songId);
         var params = {
             songID: songId,
-            country: JSON.parse(this.countryId),
-            lowBitrate: 0
+            country: JSON.parse(this.countryId)
         };
 
         var streamResult = this.apiCallSync('getSubscriberStreamKey', params );
