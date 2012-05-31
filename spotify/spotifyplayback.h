@@ -82,6 +82,9 @@ public:
     }
     #endif
 
+    uint m_currSamples;
+    int m_currFrames;
+    int m_currChannels;
 private:
      QMutex m_dataMutex;
      spotifyiodev_ptr m_iodev;
