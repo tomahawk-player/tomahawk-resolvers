@@ -125,6 +125,9 @@ SpotifyPlayback::musicDelivery(sp_session *session, const sp_audioformat *format
 
     QMutex &m = _session->Playback()->dataMutex();
 
+    _session->Playback()->m_currChannels = format->channels;
+    _session->Playback()->m_currFrames = numFrames_;
+    _session->Playback()->m_currSamples = format->sample_rate;
 
     if (numFrames_ == 0) // flush caches
     {
