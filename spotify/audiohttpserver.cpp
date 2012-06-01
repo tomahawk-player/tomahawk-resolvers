@@ -65,26 +65,27 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
             /// Every minute, we need to remove 1440msec from the seek
             seek = seek - (seek/1000/60 * 1440);
 
-            // Debug
+            // extraDebug
             int seconds = seek/1000;
             int hrs  = seconds / 60 / 60;
             int mins = seconds / 60 % 60;
             int secs = seconds % 60;
 
-            if ( seconds < 0 )
-            {
-                hrs = mins = secs = 0;
-            }
-
             qDebug() << " ==== Seeking to : " << QString( "%1%2:%3" ).arg( hrs > 0 ? hrs  < 10 ? "0" + QString::number( hrs ) + ":" : QString::number( hrs ) + ":" : "" )
                                        .arg( mins < 10 ? "0" + QString::number( mins ) : QString::number( mins ) )
                         .arg( secs < 10 ? "0" + QString::number( secs ) : QString::number( secs ) ) << " ======";
 
-            // We need to give back the byte range
-            int durationToByte = m_savedDuration * SpotifySession::getInstance()->Playback()->m_currSamples * 16 * SpotifySession::getInstance()->Playback()->m_currChannels / 8;
+            // end extraDebug
 
             // Perform seek
-            sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
+            sp_error error = sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
+
+            if( !error == SP_ERROR_OK )
+            {
+                qDebug() << "Failed to seek!";
+                sendErrorResponse( event );
+                return;
+            }
 
             qDebug() << "Getting iodevice...";
             spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( seek-m_savedDuration );
@@ -94,8 +95,8 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
             QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
             wpe->streaming = true;
             wpe->status = 206;
-            QString range = QString::number(byte) + "-" + QString::number(durationToByte);
-            wpe->headers.insert("Content-Range", range);
+            QString range = QString::number(byte) + "-" + QString::number(m_savedDurationInBytes);
+            wpe->headers.insert("Content-Range", "bytes=" + range);
             wpe->contentType = "audio/basic";
             postEvent( wpe );
             return;
@@ -113,7 +114,6 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
         if( uid.isEmpty() || !sApp->hasLinkFromTrack( uid ) ) {
             qWarning() << "Did not find spotify track UID in our list!" << uid;
             sendErrorResponse( event );
-
             return;
         }
 
@@ -168,7 +168,10 @@ void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_trac
 //    qDebug() << QThread::currentThreadId() << "Starting to play!";
     sp_session_player_play( SpotifySession::getInstance()->Session(), true );
     SpotifySession::getInstance()->Playback()->startPlaying();
+
     m_savedDuration = duration;
+    m_savedDurationInBytes = duration * SpotifySession::getInstance()->Playback()->m_currSamples * 16 * SpotifySession::getInstance()->Playback()->m_currChannels / 8;
+
     qDebug() << "Getting iodevice...";
     spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( duration );
 //    qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
@@ -176,7 +179,7 @@ void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_trac
     wpe->streaming = true;
     // Partial Content
     wpe->status = 206;
-    wpe->headers.insert("Content-Range", QString::number(0) + "-" + QString::number((duration * SpotifySession::getInstance()->Playback()->m_currSamples * 16 * SpotifySession::getInstance()->Playback()->m_currChannels / 8 ) ));
+    wpe->headers.insert("Content-Range", "bytes=" + QString::number(0) + "-" + QString::number( m_savedDurationInBytes ) );
     wpe->contentType = "audio/basic";
     postEvent( wpe );
 }

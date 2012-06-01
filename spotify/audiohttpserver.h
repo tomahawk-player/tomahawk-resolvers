@@ -57,6 +57,7 @@ private:
     // If we need to wait for them to be loaded. Ugh.
     QxtWebRequestEvent* m_savedEvent;
     uint m_savedDuration;
+    int m_savedDurationInBytes;
     sp_track* m_savedTrack;
     QString m_savedTrackUri;
 
