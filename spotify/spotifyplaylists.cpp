@@ -48,10 +48,11 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
 
     // See comments on pruneCacheAndReload
-    m_loadTimer->setInterval( 60000 ); // 60s
+    /*m_loadTimer->setInterval( 60000 ); // 60s
     m_loadTimer->setSingleShot( true );
     connect( m_loadTimer, SIGNAL( timeout() ), this, SLOT( pruneCacheAndReload() ) );
     m_loadTimer->start();
+    */
 
     m_periodicTimer->setInterval( 5000 );
     connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
