@@ -78,14 +78,7 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
             // end extraDebug
 
             // Perform seek
-            sp_error error = sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
-
-            if( !error == SP_ERROR_OK )
-            {
-                qDebug() << "Failed to seek!";
-                sendErrorResponse( event );
-                return;
-            }
+            sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
 
             qDebug() << "Getting iodevice...";
             spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( seek-m_savedDuration );
