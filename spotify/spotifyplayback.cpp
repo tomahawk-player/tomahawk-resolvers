@@ -61,7 +61,8 @@ SpotifyPlayback::queueData( const QByteArray& data )
         return;
     }
 
-    m_iodev->write( data );
+     m_iodev->write( data );
+
 }
 
 
@@ -92,10 +93,10 @@ SpotifyPlayback::endTrack()
 {
     qDebug() << QThread::currentThreadId() << "And stopping track";
     if( !m_iodev.isNull() ) {
+
         qDebug() << "Stopping track and closign iodev! from thread with other:" << QThread::currentThreadId() << "and iodev:" << m_iodev->thread()->currentThreadId();
         m_iodev->close();
         m_iodev.clear();
-
         sp_session_player_unload(SpotifySession::getInstance()->Session());
     }
     m_trackEnded = true;

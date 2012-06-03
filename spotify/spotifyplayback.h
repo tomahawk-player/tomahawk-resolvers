@@ -38,7 +38,6 @@ public:
     void startPlaying();
     void endTrack();
     bool trackIsOver();
-
     void startPlayingTrack( sp_track *);
 
     spotifyiodev_ptr getIODeviceForNewTrack( uint durMsec );
@@ -88,6 +87,7 @@ public:
 private:
      QMutex m_dataMutex;
      spotifyiodev_ptr m_iodev;
+
      bool m_trackEnded;
 };
 

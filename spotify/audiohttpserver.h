@@ -53,11 +53,13 @@ private slots:
 private:
     void startStreamingResponse( QxtWebRequestEvent* event, sp_track* );
     void sendErrorResponse( QxtWebRequestEvent* event );
-
+    int convertByteRangeToMsec( int byteRange );
+    void performSeek( QxtWebRequestEvent* event, int seek, QString uid);
     // If we need to wait for them to be loaded. Ugh.
     QxtWebRequestEvent* m_savedEvent;
     uint m_savedDuration;
     int m_savedDurationInBytes;
+    int m_savedByteRange;
     sp_track* m_savedTrack;
     QString m_savedTrackUri;
 
