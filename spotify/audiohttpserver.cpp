@@ -1,5 +1,6 @@
 /*
     Copyright (c) 2011 Leo Franchi <leo@kdab.com>
+    Copyright (c) 2012,Hugo Lindström <hugolm84@gmail.com>
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -23,9 +24,7 @@
     OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
 #include "audiohttpserver.h"
-
 #include "spotifyresolver.h"
 #include "QxtWebPageEvent"
 #include "spotifyiodevice.h"
@@ -36,6 +35,7 @@ AudioHTTPServer::AudioHTTPServer( QxtAbstractWebSessionManager* sm, int port, QO
     : QxtWebSlotService( sm, parent )
     , m_port( port )
     , m_savedDuration( 0 )
+    , m_savedByteRange( 0 )
 {
 //    qDebug() << "NEW AUDIO HTTP SERVER!";
 }
@@ -48,59 +48,31 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
 {
     qDebug() << QThread::currentThreadId() << "HTTP" << event->url.toString() << a;
     // byte range, if seek
-    int byte = QString(event->headers.value( "Range" ) ).remove( "bytes=" ).remove( "-" ).toInt();
+    int m_savedByteRange = QString(event->headers.value( "Range" ) ).remove( "bytes=" ).remove( "-" ).toInt();
     // the requested track
     QString uid = a.replace( ".wav", "");
 
-    if( byte != 0 ){
-        if( !m_savedTrackUri.isEmpty() && uid == m_savedTrackUri && byte > 0 && m_savedDuration > 0 )
+    if( m_savedByteRange != 0 )
+    {
+        if( !m_savedTrackUri.isEmpty() && uid == m_savedTrackUri && m_savedByteRange > 0 && m_savedDuration > 0 )
         {
+            int seek = convertByteRangeToMsec( m_savedByteRange );
+            if( seek <= 0 )
+            {
+                qDebug() << "Seekrange was invaild, aborting" << seek;
+                sendErrorResponse( event );
+                return;
+            }
 
-            qDebug() << " === GOT BYTES " << byte;
-            //The bit rate is then 44100 samples/second x 16 bits/sample x 2 tracks
-            int seek = byte / SpotifySession::getInstance()->Playback()->m_currSamples * 16 * SpotifySession::getInstance()->Playback()->m_currChannels * 8;
-
-            /// @magic: magic number to set the seek msec straight! Donno why it works
-            ///         probably a misscalc in byte to msec
-            /// Every minute, we need to remove 1440msec from the seek
-            seek = seek - (seek/1000/60 * 1440);
-
-            // extraDebug
-            int seconds = seek/1000;
-            int hrs  = seconds / 60 / 60;
-            int mins = seconds / 60 % 60;
-            int secs = seconds % 60;
-
-            qDebug() << " ==== Seeking to : " << QString( "%1%2:%3" ).arg( hrs > 0 ? hrs  < 10 ? "0" + QString::number( hrs ) + ":" : QString::number( hrs ) + ":" : "" )
-                                       .arg( mins < 10 ? "0" + QString::number( mins ) : QString::number( mins ) )
-                        .arg( secs < 10 ? "0" + QString::number( secs ) : QString::number( secs ) ) << " ======";
-
-            // end extraDebug
-
-            // Perform seek
-            sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
-
-            qDebug() << "Getting iodevice...";
-            spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( seek-m_savedDuration );
-            qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
-
-            // Partial Content
-            QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
-            wpe->streaming = true;
-            wpe->status = 206;
-            QString range = QString::number(byte) + "-" + QString::number(m_savedDurationInBytes);
-            wpe->headers.insert("Content-Range", "bytes=" + range);
-            wpe->contentType = "audio/basic";
-            postEvent( wpe );
+            performSeek( event, seek, uid );
             return;
         }
     }
     else
     {
 
-        qDebug() << "NOT SAME TRACK" << uid << m_savedTrackUri;
-
-        if( !SpotifySession::getInstance()->Playback()->trackIsOver() ) {
+        if( !SpotifySession::getInstance()->Playback()->trackIsOver() )
+        {
             SpotifySession::getInstance()->Playback()->endTrack();
         }
     //    qDebug() << QThread::currentThreadId() << "Beginning to stream requested track:" << uid;
@@ -115,23 +87,100 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
         sp_track* track = sp_link_as_track( link );
         m_savedTrackUri = uid;
 
-        if( !track ) {
+        if( !track )
+        {
             qWarning() << QThread::currentThreadId() << "Uh oh... got null track from link :(" << sp_link_type( link );
             sendErrorResponse( event );
             return;
         }
-        if( !sp_track_is_loaded( track ) ) {
+        if( !sp_track_is_loaded( track ) )
+        {
             qWarning() << QThread::currentThreadId() << "uh oh... track not loaded yet! Asked for:" << sp_track_name( track );
             m_savedEvent = event;
             m_savedTrack = track;
             QTimer::singleShot( 250, this, SLOT( checkForLoaded() ) );
             return;
 
-        } else {
+        } else
+        {
             startStreamingResponse( event, track );
         }
     }
 }
+
+
+void AudioHTTPServer::performSeek( QxtWebRequestEvent* event, int seek, QString uid)
+{
+
+    // Perform seek
+    spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( m_savedDuration-seek );
+    qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
+
+    if( SpotifySession::getInstance()->Playback()->trackIsOver() )
+    {
+        qDebug() << " Seeking on track thats ended, setting offset";
+
+        sp_link* link = sApp->linkFromTrack( uid );
+        sp_track* track = sp_link_as_track( link );
+
+        sp_error err = sp_session_player_load( SpotifySession::getInstance()->Session(), track );
+        if( err != SP_ERROR_OK )
+        {
+            qWarning() << QThread::currentThreadId() << "Failed to restart track with offset from spotify :(" << sp_error_message( err );
+            sendErrorResponse( event );
+            return;
+        }
+
+        sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
+        sp_session_player_play( SpotifySession::getInstance()->Session(), true );
+        SpotifySession::getInstance()->Playback()->startPlaying();
+
+    }
+    else
+    {
+        qDebug() << " Seeking on track thats still playing";
+        sp_session_player_seek( SpotifySession::getInstance()->Session(), seek );
+    }
+    // Partial Content
+    QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
+    wpe->streaming = true;
+    wpe->status = 206;
+    QString range = QString::number(m_savedByteRange) + "-" + QString::number(m_savedDurationInBytes);
+    wpe->headers.insert("Content-Range", "bytes=" + range);
+    wpe->contentType = "audio/basic";
+    postEvent( wpe );
+
+}
+
+int AudioHTTPServer::convertByteRangeToMsec( int byteRange )
+{
+
+    if( byteRange > 0 )
+    {
+        qDebug() << " === GOT BYTES " << byteRange;
+        //The bit rate is then 44100 samples/second x 16 bits/sample x 2 tracks
+        int seek = byteRange / SpotifySession::getInstance()->Playback()->m_currSamples * 16 * SpotifySession::getInstance()->Playback()->m_currChannels * 8;
+
+        /// @magic: magic number to set the seek msec straight! Donno why it works
+        ///         probably a misscalc in byte to msec
+        /// Every minute, we need to remove 1440msec from the seek
+        seek = seek - (seek/1000/60 * 1440);
+
+        // extraDebug
+        int seconds = seek/1000;
+        int hrs  = seconds / 60 / 60;
+        int mins = seconds / 60 % 60;
+        int secs = seconds % 60;
+
+        qDebug() << " ==== Seeking to : " << QString( "%1%2:%3" ).arg( hrs > 0 ? hrs  < 10 ? "0" + QString::number( hrs ) + ":" : QString::number( hrs ) + ":" : "" )
+                                   .arg( mins < 10 ? "0" + QString::number( mins ) : QString::number( mins ) )
+                    .arg( secs < 10 ? "0" + QString::number( secs ) : QString::number( secs ) ) << " ======";
+        return seek;
+
+    }
+    return -1;
+}
+
 
 void AudioHTTPServer::checkForLoaded()
 {
