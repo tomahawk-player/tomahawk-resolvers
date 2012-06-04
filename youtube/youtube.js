@@ -207,6 +207,19 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									if(xhr2.status === 200) {
 										if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
 											result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
+											
+											// Get the expiration time, to be able to cache results in tomahawk
+											if( result.url.indexOf("expire=") !== -1 )
+											{
+											    var expireSlice = result.url.indexOf("expire=");
+												var expiresInMinutes = Math.floor( ( result.url.slice( expireSlice, result.url.indexOf("&key=") ).replace("expire=", "") - (new Date).getTime()/1000 ) / 60 );
+												if( expiresInMinutes > 0 )
+												{
+													Tomahawk.log( "Found expirationdate! " + expiresInMinutes);
+													result.expires = expiresInMinutes;
+												}
+												
+											}
 											result.bitrate = self.getBitrate(result.url);
 											result.id = i;
 											results.push(result);
