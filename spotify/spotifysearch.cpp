@@ -147,6 +147,8 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 /**
   searchComplete
   callback from sp_search
+  @note: spotify api will never return a track that isnt available,
+         though, it can return a track thats autolinked.
   **/
 void
 SpotifySearch::searchComplete( sp_search *result, void *userdata )
@@ -191,6 +193,8 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             track[ "duration" ] = duration;
             track[ "score" ] = .95; // TODO
             track[ "bitrate" ] = data->resolver->highQuality() ? 320 : 160; // TODO
+            // Persistant url, never expire
+            track[ "expires" ] = 0;
 
             // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
             quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
