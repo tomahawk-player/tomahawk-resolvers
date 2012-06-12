@@ -334,57 +334,58 @@ sp_playlist * SpotifyPlaylists::getPlaylistFromUri(const QString &uri)
 /**
   addSubscribedPlaylist
   Takes QString uri, to add a subscribed playlist to container
-  this user will have permission to alter it, and it will be added to synclist + subscribedlist
-  @note: there seems to be no way of actually subscribing on a playlist
-         we just add it to sync list, and hope for the best
+  this user will have permission to alter it in tomahawk, but changes will only be
+  added in spotify if collaborative
+  it will be added to synclist + subscribedlist
   **/
 void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
 {
     sp_playlist *playlist = getPlaylistFromUri( playlistUri );
+    if( !sp_playlist_is_loaded( playlist ) )
+    {
+        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( addSubscribedPlaylist( const QString&) ), playlistUri) );
+        return;
+    }
 
     LoadedPlaylist lpl;
     lpl.playlist_ = playlist;
     lpl.id_ = playlistUri;
 
-    if( m_playlists.contains( lpl ) ){
+    if( m_playlists.contains( lpl ) )
+    {
         int index = m_playlists.indexOf( lpl );
-        if( index != -1)
+        if( index != -1 )
         {
-            lpl = m_playlists[ index ];
-            if( lpl.isSubscribed )
-                removeSubscribedPlaylist( playlistUri );
+            if( m_playlists[ index ].isSubscribed )
+            {
+                qDebug() << "Removing subscription!";
+                removeSubscribedPlaylist( m_playlists[ index ].playlist_ );
+            }
+            else
+                qDebug() << "Playlist isnt subscribed!" <<  m_playlists[ index ].id_ <<  m_playlists[ index ].isCollaborative <<  m_playlists[ index ].isLoaded <<  m_playlists[ index ].isSubscribed
+                            <<  m_playlists[ index ].name_;
         }
         return;
     }
 
-    if( playlist != NULL )
-    {
-        if( sp_playlist_is_loaded( playlist ) )
-        {
-            /// @note we can subscribe on a non collaborative pl as well
-            addPlaylist( playlist, true, true );
+    // Hard to set isSubscribed through playlist_added callback, as it doesnt except userdata from here
+    addPlaylist( playlist, true, true );
+    /// @note we can subscribe on a non collaborative pl as well
+    sp_playlistcontainer_add_playlist( SpotifySession::getInstance()->PlaylistContainer(), sp_link_create_from_string( playlistUri.toUtf8() ) );
+    sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), playlist );
 
-        }
-        else
-        {
-//            qDebug() << "Subscribed not loaded, adding to wait";
-            m_waitingToLoad << playlist;
-        }
 
-       checkForPlaylistsLoaded();
-    }
 }
 
 
 /**
   removeSubscribedPlaylist
-
   **/
-void SpotifyPlaylists::removeSubscribedPlaylist(const QString &playlistUri )
+void SpotifyPlaylists::removeSubscribedPlaylist( sp_playlist* playlist )
 {
     qDebug() << Q_FUNC_INFO;
     LoadedPlaylist lpl;
-    lpl.id_ = playlistUri;
+    lpl.playlist_ = playlist;
 
     if( !m_playlists.contains( lpl ) )
         return;
@@ -395,7 +396,11 @@ void SpotifyPlaylists::removeSubscribedPlaylist(const QString &playlistUri )
     {
 
         if( m_playlists[ index ].isSubscribed )
-            setSyncPlaylist( playlistUri, false );
+        {
+            qDebug() << "Removing subscription";
+            doRemovePlaylist( playlist );
+        }
+
     }
 
 }
@@ -635,7 +640,7 @@ SpotifyPlaylists::playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* 
     QString pl;
     if ( playlist )
         pl = QString::fromUtf8( sp_playlist_name( playlist ) );
-//    qDebug() << Q_FUNC_INFO << "================ IN PLAYLISTADDED CALLBACK for playlist:" << playlist << pl;
+//        qDebug() << Q_FUNC_INFO << "================ IN PLAYLISTADDED CALLBACK for playlist:" << playlist << pl;
 
     SpotifySession* _session = reinterpret_cast<SpotifySession*>( userdata );
 
@@ -1866,6 +1871,7 @@ SpotifyPlaylists::checkForPlaylistsLoaded()
 void
 SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribed )
 {
+
 //     qDebug() << "addPlaylist from thread id" << thread()->currentThreadId();
     if( !pl )
     {
@@ -1910,6 +1916,9 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
     // if it's already loaded, ignore it!
     if ( m_playlists.indexOf( playlist ) >= 0 && m_playlists[ m_playlists.indexOf( playlist ) ].isLoaded )
         return;
+
+    if( isSubscribed )
+        qDebug() << "ADDDING SUBSCRIBED!!";
 
     playlist.playlist_ = pl;
     playlist.name_ = sp_playlist_name(pl);
