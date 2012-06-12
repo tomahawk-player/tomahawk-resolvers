@@ -109,8 +109,7 @@ public:
     sp_error moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId );
 
 
-    void addSubscribedPlaylist( const QString &uri );
-    void removeSubscribedPlaylist(const QString &uri );
+
     void setCollaborative(const QString &playlistUri, bool collab );
 
     // Mixed
@@ -159,6 +158,8 @@ public slots:
     void doRemovePlaylist( sp_playlist* playlist );
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
+    void addSubscribedPlaylist( const QString &uri );
+    void removeSubscribedPlaylist(sp_playlist *playlist );
 signals:
     void sendLoadedPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
     void notifyContainerLoadedSignal();

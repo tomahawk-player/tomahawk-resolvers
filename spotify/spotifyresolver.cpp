@@ -705,6 +705,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     }
     else if ( m.value( "_msgtype" ) == "setSubscription" )
     {
+        qDebug() << "GOT SUBSCRIPTION REQ!";
         const QString plid = m.value( "playlistid" ).toString();
         const bool collab = m.value( "subscribe" ).toBool();
         m_session->Playlists()->addSubscribedPlaylist( plid );
