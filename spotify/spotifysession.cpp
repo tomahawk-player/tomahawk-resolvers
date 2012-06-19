@@ -212,6 +212,7 @@ void SpotifySession::login( const QString& username, const QString& password, co
     m_username = username;
     m_password = password;
     char reloginname[256];
+    sp_error error;
     sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
 
     if( QString::fromLatin1( reloginname ) == m_username )
@@ -245,10 +246,14 @@ void SpotifySession::login( const QString& username, const QString& password, co
         sp_session_forget_me(m_session);
         qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "using" ) << "blob";
 #if SPOTIFY_API_VERSION >= 11
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+        error = sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+        if( error != SP_ERROR_OK )
+            emit loginResponse( false, sp_error_message( error ) );
 #else
         sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
 #endif
+
+
     }
     else
     {
