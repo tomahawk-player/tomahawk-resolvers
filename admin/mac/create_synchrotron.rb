@@ -35,6 +35,8 @@ puts "Creating zipfile for #{resolver}..."
 # This assumes the resolver will be in the Tomahawk.app/Contents/MacOS folder
 `install_name_tool -change /usr/local/Cellar/qt/#{QT_VERSION}/lib/QtCore.framework/Versions/4/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore #{resolver}`
 `install_name_tool -change /usr/local/Cellar/qt/#{QT_VERSION}/lib/QtNetwork.framework/Versions/4/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork #{resolver}`
+`install_name_tool -change /usr/local/lib/QtCore.framework/Versions/4/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore #{resolver}`
+`install_name_tool -change /usr/local/lib/QtNetwork.framework/Versions/4/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork #{resolver}`
 `install_name_tool -change /usr/local/lib/libqjson.#{QJSON_VERSION}.dylib @executable_path/../Frameworks/libqjson.#{QJSON_VERSION}.dylib #{resolver}`
 `install_name_tool -change /usr/local/lib/libspotify.#{LIBSPOTIFY_VERSION}.dylib @executable_path/../Frameworks/libspotify.#{LIBSPOTIFY_VERSION}.dylib #{resolver}`
 
