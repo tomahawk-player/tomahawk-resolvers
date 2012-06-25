@@ -81,6 +81,7 @@ QDataStream& operator>>(QDataStream& in, CacheEntry& cache)
     return in;
 }
 
+
 SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     : QCoreApplication( argc, argv )
     , m_session( 0 )
@@ -90,6 +91,9 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     , m_apiKey( QByteArray::fromBase64( spotifyApiKey ) )
     , m_highQuality( true )
     , m_ignoreNextUpdate( false )
+    , m_statusTimer( new QTimer( this ) )
+    , m_foundTomahawkInstance( false )
+    , m_haveSentStatus( false )
 {
     setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
@@ -97,6 +101,7 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     setApplicationVersion( QLatin1String( "2.0" ) );
 
 }
+
 
 SpotifyResolver::~SpotifyResolver()
 {
@@ -108,7 +113,9 @@ SpotifyResolver::~SpotifyResolver()
     m_stdinThread.exit();
 }
 
-void SpotifyResolver::setup()
+
+void
+SpotifyResolver::setup()
 {
     setupLogfile();
 
@@ -130,22 +137,22 @@ void SpotifyResolver::setup()
     config.device_id = "tomahawkspotify";
 
     // When signal is emitted, you are logged in
-    m_session = new SpotifySession(config);
+    m_session = new SpotifySession( config );
     connect( m_session, SIGNAL( loginResponse( bool, QString ) ), this, SLOT( loginResponse( bool, QString ) ) );
     connect( m_session, SIGNAL( userChanged() ), this, SLOT( userChangedReceived() ) );
     connect( m_session, SIGNAL( sendErrorMsg( sp_error ) ), this, SLOT( errorMsgReceived( sp_error ) ) );
-    connect( m_session, SIGNAL( blobUpdated(const QByteArray,const QByteArray) ), this, SLOT( updateBlob(const QByteArray, const QByteArray) ) );
+    connect( m_session, SIGNAL( blobUpdated(const QByteArray,const QByteArray) ), this, SLOT( updateBlob( const QByteArray, const QByteArray ) ) );
     connect( m_session, SIGNAL( sendErrorMsg( QString, bool ) ), this, SLOT( errorMsgReceived( QString, bool ) ) );
     connect( m_session, SIGNAL( notifyAllreadyLoggedin() ), this, SLOT( resendAllPlaylists() ) );
 
     // Signals
-    connect( m_session, SIGNAL(notifySyncUpdateSignal(SpotifyPlaylists::LoadedPlaylist) ), this, SLOT( sendPlaylist(SpotifyPlaylists::LoadedPlaylist) ) );
+    connect( m_session, SIGNAL(notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylist( SpotifyPlaylists::LoadedPlaylist ) ) );
 
-    connect( m_session->Playlists(), SIGNAL(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)), this, SLOT(sendTracksAdded(sp_playlist*,QList<sp_track*>,QString)));
-    connect( m_session->Playlists(), SIGNAL(sendTracksMoved(sp_playlist*,QStringList,QString)), this, SLOT(sendTracksMoved(sp_playlist*,QStringList,QString)));
-    connect( m_session->Playlists(), SIGNAL(sendTracksRemoved(sp_playlist*,QStringList)), this, SLOT(sendTracksRemoved(sp_playlist*,QStringList)));
-    connect( m_session->Playlists(), SIGNAL(sendPlaylistDeleted(QString)), this, SLOT(sendPlaylistDeleted(QString)));
-    connect( m_session->Playlists(), SIGNAL(notifyNameChange(SpotifyPlaylists::LoadedPlaylist)), this, SLOT( sendPlaylistNameChanged(SpotifyPlaylists::LoadedPlaylist) ));
+    connect( m_session->Playlists(), SIGNAL( sendTracksAdded( sp_playlist*, QList<sp_track*>,QString ) ), this, SLOT( sendTracksAdded( sp_playlist*, QList<sp_track*>, QString ) ) );
+    connect( m_session->Playlists(), SIGNAL( sendTracksMoved( sp_playlist*, QStringList,QString ) ), this, SLOT( sendTracksMoved( sp_playlist*, QStringList, QString ) ) );
+    connect( m_session->Playlists(), SIGNAL( sendTracksRemoved( sp_playlist*, QStringList ) ), this, SLOT( sendTracksRemoved( sp_playlist*, QStringList ) ) );
+    connect( m_session->Playlists(), SIGNAL( sendPlaylistDeleted( QString ) ), this, SLOT( sendPlaylistDeleted( QString ) ) );
+    connect( m_session->Playlists(), SIGNAL( notifyNameChange( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylistNameChanged( SpotifyPlaylists::LoadedPlaylist ) ) );
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -153,9 +160,47 @@ void SpotifyResolver::setup()
     connect( m_stdinWatcher, SIGNAL( lineRead( QVariant ) ), this, SLOT( playdarMessage( QVariant ) ) );
     m_stdinWatcher->moveToThread( &m_stdinThread );
     m_stdinThread.start( QThread::LowPriority );
+
+    m_statusTimer->setInterval( 2000 );
+    m_statusTimer->setSingleShot( true );
+    connect( m_statusTimer, SIGNAL( timeout() ), this, SLOT( getStatus() ) );
+    m_statusTimer->start();
 }
 
-void SpotifyResolver::errorMsgReceived(sp_error error)
+
+void
+SpotifyResolver::getStatus()
+{
+    qDebug() << "FOUND tomahawk:" << m_foundTomahawkInstance;
+    if ( m_haveSentStatus && !m_foundTomahawkInstance )
+    {
+        qDebug() << "TOMAHAWK NOT RUNNING? Exiting...";
+        quit();
+        return;
+    }
+
+    QVariantMap resp;
+    resp[ "_msgtype" ] = "status";
+    QJson::Serializer s;
+    QByteArray msg = s.serialize( resp );
+    sendMessage( resp );
+
+    m_statusTimer->start();
+    m_foundTomahawkInstance = false;
+    m_haveSentStatus = true;
+}
+
+
+void
+SpotifyResolver::gotStatus()
+{
+    qDebug() << Q_FUNC_INFO;
+    m_foundTomahawkInstance = true;
+}
+
+
+void
+SpotifyResolver::errorMsgReceived( sp_error error )
 {
     QString errMsg;
     bool debugMsg( false );
@@ -197,7 +242,9 @@ void SpotifyResolver::errorMsgReceived(sp_error error)
     errorMsgReceived( errMsg, debugMsg );
 }
 
-void SpotifyResolver::updateBlob(const QByteArray& username, const QByteArray& blob)
+
+void
+SpotifyResolver::updateBlob( const QByteArray& username, const QByteArray& blob )
 {
     if( m_username == QString(username) )
     {
@@ -208,7 +255,9 @@ void SpotifyResolver::updateBlob(const QByteArray& username, const QByteArray& b
         qDebug() << "===== FAILED TO SAVE BLOB";
 }
 
-void SpotifyResolver::errorMsgReceived( const QString &errMsg, bool isDebug )
+
+void
+SpotifyResolver::errorMsgReceived( const QString &errMsg, bool isDebug )
 {
     QVariantMap resp;
     resp[ "_msgtype" ] = "spotifyError";
@@ -220,7 +269,9 @@ void SpotifyResolver::errorMsgReceived( const QString &errMsg, bool isDebug )
     sendMessage( resp );
 }
 
-void SpotifyResolver::userChangedReceived()
+
+void
+SpotifyResolver::userChangedReceived()
 {
 
     QVariantMap resp;
@@ -230,7 +281,9 @@ void SpotifyResolver::userChangedReceived()
 
 }
 
-void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
+
+void
+SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
     qDebug() << "Sending playlist to client:" << pl.name_ << "with number of tracks:" << pl.tracks_.size();
     if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
@@ -272,7 +325,9 @@ void SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
     sendMessage( resp );
 }
 
-void SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist &pl )
+
+void
+SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
     qDebug() << "Sending playlist namechange to client:" << pl.name_;
 
@@ -299,6 +354,7 @@ void SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPla
 
     sendMessage( resp );
 }
+
 
 void
 SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId )
@@ -486,6 +542,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
     sendMessage( msg );
 }
 
+
 void
 SpotifyResolver::resendAllPlaylists()
 {
@@ -514,7 +571,8 @@ SpotifyResolver::resendAllPlaylists()
 }
 
 
-void SpotifyResolver::initSpotify()
+void
+SpotifyResolver::initSpotify()
 {
     m_port = 55050;
     m_httpS.setPort( m_port ); //TODO config
@@ -533,7 +591,9 @@ void SpotifyResolver::initSpotify()
 //     search( "123", "coldplay", "the scientist" );
 }
 
-void SpotifyResolver::loginResponse( bool success , const QString& msg)
+
+void
+SpotifyResolver::loginResponse( bool success , const QString& msg )
 {
     qDebug() << Q_FUNC_INFO << "Notified of login response, sending to client:" << success << msg;
     m_loggedIn = true;
@@ -552,7 +612,8 @@ void SpotifyResolver::loginResponse( bool success , const QString& msg)
 }
 
 
-void SpotifyResolver::sendSettingsMessage()
+void
+SpotifyResolver::sendSettingsMessage()
 {
     QVariantMap m;
     m[ "_msgtype" ] = "settings";
@@ -576,8 +637,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
     QVariantMap m = msg.toMap();
 
-
-    if( m.value( "_msgtype" ) == "login" )
+    if ( m.value( "_msgtype" ) == "login" )
     {
         m_username = m[ "username" ].toString();
         m_pw = m[ "password" ].toString();
@@ -587,6 +647,10 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         login();
         saveSettings();
 
+    }
+    else if ( m.value( "_msgtype" ) == "status" )
+    {
+        gotStatus();
     }
     else if ( m.value( "_msgtype" ) == "quit" )
     {
@@ -830,10 +894,11 @@ SpotifyResolver::registerQidForPlaylist( const QString& qid, const QString& play
 {
     if ( !qid.isEmpty() )
         m_playlistToQid[ playlist ] = qid;
-
 }
 
-void SpotifyResolver::sendMessage(const QVariant& v)
+
+void
+SpotifyResolver::sendMessage(const QVariant& v)
 {
     QJson::Serializer s;
     QByteArray msg = s.serialize( v );
@@ -851,7 +916,8 @@ void SpotifyResolver::sendMessage(const QVariant& v)
 }
 
 
-void SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track, const QString& fullText )
+void
+SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track, const QString& fullText )
 {
     // search spotify..
     // do some cleanups.. remove ft/feat
@@ -884,7 +950,9 @@ void SpotifyResolver::search( const QString& qid, const QString& artist, const Q
 #endif
 }
 
-QString SpotifyResolver::addToTrackLinkMap(sp_link* link)
+
+QString
+SpotifyResolver::addToTrackLinkMap( sp_link* link )
 {
     char url[1024];
     sp_link_as_string( link, url, sizeof( url ) );
@@ -900,7 +968,9 @@ QString SpotifyResolver::addToTrackLinkMap(sp_link* link)
     return uid;
 }
 
-sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
+
+sp_link*
+SpotifyResolver::linkFromTrack( const QString& uid )
 {
     if ( sp_link* l = m_trackLinkMap.value( uid, 0 ) )
         return l;
@@ -914,7 +984,9 @@ sp_link* SpotifyResolver::linkFromTrack(const QString& uid)
     return 0;
 }
 
-void SpotifyResolver::clearTrackLinkMap()
+
+void
+SpotifyResolver::clearTrackLinkMap()
 {
     QHash<QString, sp_link*>::iterator i = m_trackLinkMap.begin();
     while ( i != m_trackLinkMap.end() )
@@ -924,12 +996,16 @@ void SpotifyResolver::clearTrackLinkMap()
     }
 }
 
-void SpotifyResolver::removeFromTrackLinkMap(const QString& linkStr)
+
+void
+SpotifyResolver::removeFromTrackLinkMap( const QString& linkStr )
 {
     sp_link_release( m_trackLinkMap.take( linkStr ) );
 }
 
-bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
+
+bool
+SpotifyResolver::hasLinkFromTrack( const QString& linkStr )
 {
     if( m_trackLinkMap.contains( linkStr ) )
         return true;
@@ -945,6 +1021,7 @@ bool SpotifyResolver::hasLinkFromTrack(const QString& linkStr)
     sp_link_release( test_link );
     return false;
 }
+
 
 QVariantMap
 SpotifyResolver::spTrackToVariant( sp_track* tr )
@@ -969,9 +1046,11 @@ SpotifyResolver::spTrackToVariant( sp_track* tr )
     return track;
 }
 
+
 /// misc stuff
 
-void SpotifyResolver::loadSettings()
+void
+SpotifyResolver::loadSettings()
 {
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
@@ -981,7 +1060,9 @@ void SpotifyResolver::loadSettings()
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
 }
 
-void SpotifyResolver::saveSettings() const
+
+void
+SpotifyResolver::saveSettings() const
 {
     QSettings s;
     s.setValue( "username", m_username );
@@ -990,7 +1071,9 @@ void SpotifyResolver::saveSettings() const
     s.setValue( "highQualityStreaming", m_highQuality );
 }
 
-void SpotifyResolver::login()
+
+void
+SpotifyResolver::login()
 {
     if( !m_username.isEmpty() ) { // log in
         qDebug() << "Logging in with username:" << m_username;
@@ -999,7 +1082,8 @@ void SpotifyResolver::login()
 }
 
 
-QString SpotifyResolver::dataDir( bool configDir )
+QString
+SpotifyResolver::dataDir( bool configDir )
 {
     QString path;
 
@@ -1030,6 +1114,7 @@ QString SpotifyResolver::dataDir( bool configDir )
     //qDebug() << "Using SpotifyResolver data dir:" << path;
     return path;
 }
+
 
 void
 SpotifyResolver::instanceStarted( KDSingleApplicationGuard::Instance )

@@ -44,19 +44,23 @@
 #define sApp static_cast< SpotifyResolver* >( QCoreApplication::instance() )
 
 class QxtHttpSessionManager;
-
 class ConsoleWatcher;
+class SpotifyResolver;
 
 typedef QHash<QString, QString > CacheEntry;
 
-class SpotifyResolver;
-struct UserData {
+struct UserData
+{
     QString qid;
     bool fulltext;
     SpotifyResolver* resolver;
     int searchCount;
-    UserData( const QString& qidd, SpotifyResolver* resolverr ) : qid( qidd ), fulltext( false ), resolver( resolverr ), searchCount(0) {}
+
+    UserData( const QString& qidd, SpotifyResolver* resolverr )
+        : qid( qidd ), fulltext( false ), resolver( resolverr ), searchCount( 0 )
+    {}
 };
+
 
 class SpotifyResolver : public QCoreApplication
 {
@@ -109,7 +113,9 @@ private slots:
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
     void sendPlaylistDeleted( const QString& playlist );
     void userChangedReceived();
-    void updateBlob( const QByteArray& username, const QByteArray &blob );
+    void updateBlob( const QByteArray& username, const QByteArray& blob );
+    void getStatus();
+
 private:
     QVariantMap spTrackToVariant( sp_track* track );
 
@@ -118,6 +124,8 @@ private:
     void saveSettings() const;
     void login();
     void clearTrackLinkMap();
+
+    void gotStatus();
 
     // Session
     SpotifySession *m_session;
@@ -150,10 +158,14 @@ private:
     bool m_loggedIn;
     bool m_ignoreNextUpdate;
 
+    QTimer* m_statusTimer;
+    bool m_foundTomahawkInstance;
+    bool m_haveSentStatus;
 };
 
 Q_DECLARE_METATYPE( CacheEntry )
 Q_DECLARE_METATYPE( sp_search* )
 Q_DECLARE_METATYPE( void* )
+
 #endif // tomahawkspotify_H
 
