@@ -191,10 +191,9 @@ void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blo
 void SpotifySession::login( const QString& username, const QString& password, const QByteArray& blob )
 {
 
-    if ( m_loggedIn && m_username == username )
+    if ( m_loggedIn && m_username == username && m_password == password )
     {
-        /// If loggedIn and same username, we dont really care about password, do we?
-        /// @note: may have some other issue to it.
+        /// Always relogin when ever credentials change
         qDebug() << "Asked to log in with same username and pw that we are already logged in with, ignoring login";
         /// Send response, and notifyAllreadyLoggedin, this will make config gui to stop "loading", and refetch all playlists
         emit loginResponse( true, "Logged in" );
@@ -224,8 +223,6 @@ void SpotifySession::login( const QString& username, const QString& password, co
         else
         {
             qDebug() << "Logging in as remembered user";
-            return;
-
         }
     }
     if( !m_username.isEmpty() && ( !m_password.isEmpty() || !blob.isEmpty() )  )
