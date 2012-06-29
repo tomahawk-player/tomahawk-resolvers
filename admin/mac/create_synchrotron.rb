@@ -8,9 +8,10 @@
 require 'pathname'
 
 QT_VERSION = "4.8.0"
-LIBSPOTIFY_VERSION = "11.1.60"
+LIBSPOTIFY_VERSION = "#{`brew ls -version libspotify | tr -s " " "\012" | tail -n 1`}".strip
 QJSON_VERSION = "0.7.1"
 
+puts "LIBS version: #{LIBSPOTIFY_VERSION}"
 if ARGV.length < 4
   puts "Usage: ruby create_synchrotron.rb spotify_tomahawkresolver metadata.desktop private_key_file /path/to/tomahawk-synchrotron"
   puts "\n"
@@ -38,11 +39,15 @@ puts "Creating zipfile for #{resolver}..."
 `install_name_tool -change /usr/local/lib/QtCore.framework/Versions/4/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore #{resolver}`
 `install_name_tool -change /usr/local/lib/QtNetwork.framework/Versions/4/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/4/QtNetwork #{resolver}`
 `install_name_tool -change /usr/local/lib/libqjson.#{QJSON_VERSION}.dylib @executable_path/../Frameworks/libqjson.#{QJSON_VERSION}.dylib #{resolver}`
-`install_name_tool -change /usr/local/lib/libspotify.#{LIBSPOTIFY_VERSION}.dylib @executable_path/../Frameworks/libspotify.#{LIBSPOTIFY_VERSION}.dylib #{resolver}`
+`install_name_tool -change /usr/local/lib/libspotify.#{LIBSPOTIFY_VERSION}.dylib @executable_path/libspotify.#{LIBSPOTIFY_VERSION}.dylib #{resolver}`
 
+LIBSPOTIFY_LOCAL = "libspotify.#{LIBSPOTIFY_VERSION}.dylib"
+`cp /usr/local/lib/libspotify.#{LIBSPOTIFY_VERSION}.dylib #{LIBSPOTIFY_LOCAL}`
+`chmod +rw #{LIBSPOTIFY_LOCAL}`
 tarball = "#{resolvername}-#{platform}.zip"
-`zip -r #{tarball} #{resolver}`
+`zip -r #{tarball} #{resolver} #{LIBSPOTIFY_LOCAL}`
 `rm #{resolver}`
+`rm #{LIBSPOTIFY_LOCAL}`
 
 puts "Signing..."
 signature = `openssl dgst -sha1 -binary < "#{tarball}" | openssl dgst -dss1 -sign "#{ARGV[2]}" | openssl enc -base64`
