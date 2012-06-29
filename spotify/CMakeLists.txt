@@ -47,7 +47,7 @@ set( tomahawkspotify_NOMOC_HDRS
 
 
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_NOMOC_HDRS} )
-target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
+target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES}  /System/Library/Frameworks/Security.framework /System/Library/Frameworks/SystemConfiguration.framework )
 
 SET_TARGET_PROPERTIES(spotify_tomahawkresolver PROPERTIES AUTOMOC TRUE)
 
