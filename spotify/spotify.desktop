@@ -8,6 +8,7 @@ X-Synchrotron-Signature=_SIGNATURE_
 X-Synchrotron-ContentUrl=_ZIPFILE_
 X-Synchrotron-Type=_TYPE_
 X-Synchrotron-MainScript=_BINARY_
+X-Synchrotron-Requires-Tomahawk-Version=0.5.1
 
 X-KDE-PluginInfo-Name=spotify-_PLATFORM_
 X-KDE-PluginInfo-Category=BinaryResolver
