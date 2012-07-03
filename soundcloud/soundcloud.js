@@ -1,3 +1,6 @@
+/*
+ * (c) 2012 thierry göckel <thierry@strayrayday.lu>
+ */
 var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	getConfigUi: function () {
@@ -33,7 +36,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 	
 	settings: {
-		name: 'SoundCloud',
+		name: 'Soundcloud',
 		weight: 85,
 		timeout: 15
 	},
@@ -80,7 +83,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 				for (i = 0; i < resp.length; i++) {
 					// Need some more validation here
 					// This doesnt help it seems, or it just throws the error anyhow, and skips?
-					if (resp[i] === undefined){
+					if(resp[i] === undefined){
 						continue;
 					}
 
@@ -125,7 +128,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	search: function( qid, searchString )
 	{
-		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" +  encodeURIComponent(searchString.replace('"', '').replace("'", ""));
+		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + encodeURIComponent(searchString.replace('"', '').replace("'", ""));
 		var that = this;
 		var empty = {
 			results: [],
@@ -145,27 +148,27 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
 					if (that.getTrack(resp[i].title, "")){
 						var track = resp[i].title;
-						if(track.indexOf(" - ") !== -1){
+						if(track.indexOf(" - ") !== -1 && track.slice(track.indexOf(" - ") + 3).trim() !== ""){
 							result.track = track.slice(track.indexOf(" - ") + 3).trim();
 							result.artist = track.slice(0, track.indexOf(" - ")).trim();
 						}
-						else if(track.indexOf(" -") !== -1){
+						else if(track.indexOf(" -") !== -1 && track.slice(track.indexOf(" -") + 2).trim() !== ""){
 							result.track = track.slice(track.indexOf(" -") + 2).trim();
 							result.artist = track.slice(0, track.indexOf(" -")).trim();
 						}
-						else if(track.indexOf(": ") !== -1){
+						else if(track.indexOf(": ") !== -1 && track.slice(track.indexOf(": ") + 2).trim() !== ""){
 							result.track = track.slice(track.indexOf(": ") + 2).trim();
 							result.artist = track.slice(0, track.indexOf(": ")).trim();
 						}
-						else if(track.indexOf("-") !== -1){
+						else if(track.indexOf("-") !== -1 && track.slice(track.indexOf("-") + 1).trim() !== ""){
 							result.track = track.slice(track.indexOf("-") + 1).trim();
 							result.artist = track.slice(0, track.indexOf("-")).trim();
 						}
-						else if(track.indexOf(":") !== -1){
+						else if(track.indexOf(":") !== -1 && track.slice(track.indexOf(":") + 1).trim() !== ""){
 							result.track = track.slice(track.indexOf(":") + 1).trim();
 							result.artist = track.slice(0, track.indexOf(":")).trim();
 						}
-						else if(track.indexOf("\u2014") !== -1){
+						else if(track.indexOf("\u2014") !== -1 && track.slice(track.indexOf("\u2014") + 2).trim() !== ""){
 							result.track = track.slice(track.indexOf("\u2014") + 2).trim();
 							result.artist = track.slice(0, track.indexOf("\u2014")).trim();
 						}
@@ -174,7 +177,8 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 							result.track = resp[i].title;
 							result.artist = resp[i].user.username;
 							
-						}else{
+						}
+						else {
 							stop = stop - 1;
 							continue;
 						}
@@ -209,7 +213,6 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 											stop = stop - 1;
 										}
 										else {
-											
 											stop = stop - 1;
 										}
 										if (stop === 0) {
@@ -235,6 +238,9 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 						};
 						xhr.send(null);
 					})(i, result);	
+				}
+				if (stop === 0){
+					Tomahawk.addTrackResults(empty);
 				}
 			}
 			else {
