@@ -71,6 +71,7 @@ public:
     virtual ~SpotifyResolver();
 
     void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText );
+    void albumSearch( const QString& album, const QString& artist, const QString& qid );
 
     // adds a track to the link map, returns a unique ID for identifying it
     QString addToTrackLinkMap( sp_link* link );
@@ -87,6 +88,8 @@ public:
     bool highQuality() const { return m_highQuality; }
 
     void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
+
+    void sendAlbumSearchResult( const QString& qid, const QString& albumName, const QString& artistName, const QList<sp_track*> tracks);
 
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
     void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }

@@ -236,3 +236,62 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     delete data;
 }
 
+void
+SpotifySearch::albumSearchComplete( sp_search *result, void *userdata )
+{
+    UserData* data = static_cast<UserData*>(userdata);
+    if ( sp_search_num_albums( result ) < 1 ) {
+        qDebug() << "No album results for search:" << QString::fromUtf8( sp_search_query(result) );
+
+        sp_search_release(result);
+        delete data;
+        return;
+    }
+
+    sp_album* album = sp_search_album(result, 0);
+    sp_albumbrowse_create(data->resolver->session()->Session(), album, &SpotifySearch::albumBrowseLoaded, data );
+
+    sp_search_release(result);
+}
+
+void
+SpotifySearch::albumBrowseLoaded(sp_albumbrowse *album, void *userdata)
+{
+    UserData* data = static_cast<UserData*>(userdata);
+    Q_ASSERT( data->resolver );
+
+    if ( !sp_albumbrowse_is_loaded(album) || sp_albumbrowse_error(album) != SP_ERROR_OK) {
+        qDebug() << "Got failed to load album in albumBrowseLoaded or otherwise non-OK error state:" << sp_albumbrowse_error(album) << sp_album_name( sp_albumbrowse_album(album) );
+        sp_albumbrowse_release(album);
+        delete data;
+
+        return;
+    }
+
+    const QString albumName = sp_album_name( sp_albumbrowse_album(album) );
+    QString artistName;
+    if (sp_artist* artist = sp_albumbrowse_artist(album))
+        artistName = sp_artist_name(artist);
+
+    qDebug() << "Got successfully album  browse request for:" << albumName << artistName;
+    bool needToWait = false;
+    QList<sp_track*> tracks;
+    for ( int i = 0; i < sp_albumbrowse_num_tracks(album); i++ ) {
+        sp_track* track = sp_albumbrowse_track(album, i);
+        sp_track_add_ref( track );
+
+        tracks << track;
+
+        if ( !sp_track_is_loaded( track ) )
+            needToWait = true;
+    }
+
+    if ( needToWait ) {
+
+    } else {
+        data->resolver->sendAlbumSearchResult(data->qid, albumName, artistName, tracks);
+    }
+
+    delete data;
+    sp_albumbrowse_release(album);
+}

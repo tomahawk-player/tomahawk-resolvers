@@ -511,12 +511,32 @@ SpotifyResolver::sendAddTracksResult( const QString& spotifyId, QList<int> track
     resp[ "trackIdInserted" ] = ids;
 
     QJson::Serializer s;
-
-    QByteArray m = s.serialize( resp );
-    qDebug() << "SENDING ADD TRACKS RESULT JSON:" << m;
-
     sendMessage( resp );
 }
+
+
+void
+SpotifyResolver::sendAlbumSearchResult(const QString& qid, const QString& albumName, const QString& artistName, const QList<sp_track*> tracks)
+{
+    QVariantMap resp;
+    resp[ "_msgtype" ] = "albumListing";
+    resp[ "qid" ] = qid;
+    resp[ "album" ] = albumName;
+    resp[ "artist" ] = artistName;
+
+    QVariantList trackListing;
+    foreach(sp_track* track, tracks) {
+        trackListing << spTrackToVariant(track);
+        sp_track_release(track);
+    }
+    resp[ "tracks" ] = trackListing;
+
+
+    QJson::Serializer s;
+    QByteArray m = s.serialize( resp );
+    qDebug() << "Sending results of album search" << m;
+
+    sendMessage( resp );}
 
 
 void
@@ -898,6 +918,14 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         if ( pl )
             m_session->Playlists()->doRemovePlaylist( pl );
     }
+    else if ( m.value( "_msgtype" ) == "albumListing" )
+    {
+        const QString albumName = m.value( "album" ).toString();
+        const QString artistName = m.value( "artist" ).toString();
+        const QString& qid = m.value( "qid" ).toString();
+
+        albumSearch( albumName, artistName, qid );
+    }
 }
 
 
@@ -959,6 +987,19 @@ SpotifyResolver::search( const QString& qid, const QString& artist, const QStrin
     sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
     sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
+#endif
+}
+
+
+void
+SpotifyResolver::albumSearch( const QString& album, const QString& artist, const QString& qid )
+{
+    UserData* data = new UserData(qid, this);
+    const QString query = QString( "album:\"%1\" artist:\"%2\"" ).arg( album ).arg( artist );
+#if SPOTIFY_API_VERSION >= 11
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, 0, 0, 1, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::albumSearchComplete, data );
+#else
+    sp_search_create( m_session->Session(), query.toUtf8().data(), 0, 0, 0, 1, 0, 0, &SpotifySearch::albumSearchComplete, data );
 #endif
 }
 
