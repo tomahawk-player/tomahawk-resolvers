@@ -149,7 +149,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
         if (!this.sessionId) {
             this.getSessionId();
-        } else if (!this.countryId) {
+        } else if (!this.countryId || this.countryId == '') {
             this.getCountry();
         }
 
@@ -199,12 +199,13 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     getCountry: function () {
+	var that = this;
         Tomahawk.log("Grooveshark resolver Getting country..." );
         this.apiCall('getCountry', [], function (xhr) {
             var ret = JSON.parse(xhr.responseText);
-            this.countryId = JSON.stringify(ret.result);
-            Tomahawk.log("Got country id: " + this.countryId);
-            window.localStorage['countryId'] = this.countryId;
+            that.countryId = JSON.stringify(ret.result);
+            Tomahawk.log("Got country id: " + that.countryId);
+            window.localStorage['countryId'] = that.countryId;
 
             // Finally ready
         });
