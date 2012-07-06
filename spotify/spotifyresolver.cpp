@@ -55,6 +55,7 @@
 #include <shlobj.h>
 #endif
 
+#define PLAYLIST_DEBUG 0
 
 QDataStream& operator<<(QDataStream& out, const CacheEntry& cache)
 {
@@ -318,9 +319,11 @@ SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 
     resp[ "tracks" ] = tracks;
 
+#if PLAYLIST_DEBUG
      QJson::Serializer s;
      QByteArray msg = s.serialize( resp );
      qDebug() << "SENDING PLAYLIST JSON:" << msg;
+#endif
 
     sendMessage( resp );
 }
@@ -348,9 +351,11 @@ SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist
     resp[ "sync" ] = pl.sync_;
     resp[ "_msgtype" ] = "playlistRenamed";
 
+#if PLAYLIST_DEBUG
     QJson::Serializer s;
     QByteArray msg = s.serialize( resp );
     qDebug() << "SENDING PLAYLIST JSON:" << msg;
+#endif
 
     sendMessage( resp );
 }
@@ -387,9 +392,12 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tra
 
     msg[ "tracks" ] = outgoingTracks;
 
+
+#if PLAYLIST_DEBUG
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
     qDebug() << "SENDING ADDED TRACKS JSON:" << m;
+#endif
 
     sendMessage( msg );
 }
@@ -419,9 +427,11 @@ SpotifyResolver::sendTracksMoved( sp_playlist* pl, const QStringList& tracks, co
 
     msg[ "tracks" ] = v;
 
+#if PLAYLIST_DEBUG
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
     qDebug() << "SENDING MOVED TRACKS JSON:" << m;
+#endif
 
     sendMessage( msg );
 }
@@ -449,9 +459,11 @@ SpotifyResolver::sendTracksRemoved( sp_playlist* pl, const QStringList& tracks )
 
     msg[ "trackPositions" ] = v;
 
+#if PLAYLIST_DEBUG
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
     qDebug() << "SENDING TRACKS REMOVED JSON:" << m;
+#endif
 
     sendMessage( msg );
 }
@@ -464,9 +476,11 @@ SpotifyResolver::sendPlaylistDeleted( const QString& playlist )
     msg[ "_msgtype" ] = "playlistDeleted";
     msg[ "playlistid" ] = playlist;
 
+#if PLAYLIST_DEBUG
     QJson::Serializer s;
     QByteArray m = s.serialize( msg );
     qDebug() << "SENDING PLAYLIST REMOVED JSON:" << m;
+#endif
 
     sendMessage( msg );
 }
