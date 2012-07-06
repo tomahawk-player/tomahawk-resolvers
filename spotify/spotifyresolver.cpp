@@ -181,6 +181,8 @@ SpotifyResolver::getStatus()
 
     QVariantMap resp;
     resp[ "_msgtype" ] = "status";
+    resp[ "loggedIn" ] = m_loggedIn;
+    resp[ "username" ] = m_username;
     sendMessage( resp );
 
     m_statusTimer->start();
@@ -684,6 +686,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         m_pw.clear();
         m_blob.clear();
         saveSettings();
+        m_loggedIn = false;
         m_session->logout( true );
     }
     else if ( m.value( "_msgtype" ) == "status" )
@@ -697,7 +700,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     else if ( m.value( "_msgtype" ) == "getCredentials" )
     {
         // For migrating to tomahawk accounts
-        qDebug() << "Tomahawk asked for credentials, sending!";
+        qDebug() << "Tomahawk asked for credentials, sending! Logged in?" << m_loggedIn;
         QVariantMap msg;
 
         msg[ "_msgtype" ] = "credentials";
