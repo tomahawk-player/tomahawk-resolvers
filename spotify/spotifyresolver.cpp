@@ -162,7 +162,7 @@ SpotifyResolver::setup()
     m_stdinWatcher->moveToThread( &m_stdinThread );
     m_stdinThread.start( QThread::LowPriority );
 
-    m_statusTimer->setInterval( 2000 );
+    m_statusTimer->setInterval( 20000 );
     m_statusTimer->setSingleShot( true );
     connect( m_statusTimer, SIGNAL( timeout() ), this, SLOT( getStatus() ) );
     m_statusTimer->start();
