@@ -182,8 +182,6 @@ SpotifyResolver::getStatus()
 
     QVariantMap resp;
     resp[ "_msgtype" ] = "status";
-    QJson::Serializer s;
-    QByteArray msg = s.serialize( resp );
     sendMessage( resp );
 
     m_statusTimer->start();
