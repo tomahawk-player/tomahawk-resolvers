@@ -689,6 +689,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         m_loggedIn = false;
         sp_session_forget_me( m_session->Session() );
         m_session->logout( true );
+
     }
     else if ( m.value( "_msgtype" ) == "status" )
     {
@@ -756,28 +757,23 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
             return;
         }
 
-        if ( m.value( "proxytype" ) == "socks5" )
+        if( !m.value( "proxyhost" ).toString().isEmpty() )
         {
-            if ( m.value( "proxypass" ).toString().isEmpty() )
-            {
-                QString proxyString = QString( "%1:%2@socks5" ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );
-                spotifySettings["proxy"] = proxyString;
-                spotifySettings["proxy_mode"] = 2;
-                spotifySettings["proxy_pass"] = QString();
-            }
-            else
-            {
-                qDebug() << "The Spotify resolver does not currently support SOCKS5 proxies with a username and password";
-                QTimer::singleShot( 0, this, SLOT( initSpotify() ) );
-                return;
-            }
+            qDebug() << "Using PROXY!";
+            QString proxyString = QString( "%1//%2:%3" ).arg( m.value( "proxytype" ).toString() ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );
+            spotifySettings["proxy"] = proxyString;
+            spotifySettings["proxy_pass"] =  m.value( "proxypassword" ).toString();
+            spotifySettings["proxy_username"] = m.value( "proxyusername" ).toString();
+            qDebug() << spotifySettings;
         }
         else
         {
             spotifySettings.remove( "proxy" );
             spotifySettings.remove( "proxy_pass" );
             spotifySettings.remove( "proxy_mode" );
+            spotifySettings.remove( "proxy_username" );
         }
+
         settingsFile.open( QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate );
         QJson::Serializer serializer;
         QByteArray json = serializer.serialize( spotifySettings );
