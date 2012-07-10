@@ -248,7 +248,7 @@ SpotifyResolver::updateBlob( const QByteArray& username, const QByteArray& blob 
     if( m_username == QString(username) )
     {
         QSettings s;
-        s.setValue( m_username+"/blob", QString(blob) );
+        s.setValue( "blob", QString(blob) );
     }
     else
         qDebug() << "===== FAILED TO SAVE BLOB";
@@ -674,7 +674,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         m_username = m[ "username" ].toString();
         m_pw = m[ "password" ].toString();
         QSettings s;
-        m_blob = s.value( m_username+"/blob", QByteArray() ).toByteArray();
+        m_blob = s.value( "blob", QByteArray() ).toByteArray();
         m_highQuality = m[ "highQuality" ].toBool();
         login();
         saveSettings();
@@ -687,6 +687,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         m_blob.clear();
         saveSettings();
         m_loggedIn = false;
+        sp_session_forget_me( m_session->Session() );
         m_session->logout( true );
     }
     else if ( m.value( "_msgtype" ) == "status" )
@@ -705,7 +706,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         msg[ "_msgtype" ] = "credentials";
         msg[ "username" ] = m_username;
-        msg[ "password" ] = (m_pw.isEmpty() ? "*****" : m_pw); // Placeholder for remembered user
+        msg[ "password" ] = m_pw; // Set to empty pass, we dont want too fool anyone
         msg[ "loggedIn" ] = m_loggedIn;
         msg[ "highQuality" ] = m_highQuality;
 
@@ -1117,7 +1118,7 @@ SpotifyResolver::loadSettings()
 {
     QSettings s;
     m_username = s.value( "username", QString() ).toString();
-    m_blob = s.value( m_username+"/blob", QByteArray() ).toByteArray();
+    m_blob = s.value( "blob", QByteArray() ).toByteArray();
     //WIP - Remembered user
     //m_pw = s.value( "password", QString() ).toString();
     m_highQuality = s.value( "highQualityStreaming", true ).toBool();
@@ -1129,6 +1130,7 @@ SpotifyResolver::saveSettings() const
 {
     QSettings s;
     s.setValue( "username", m_username );
+    s.setValue( "blob", m_blob.constData() );
     //WIP - Remembered user
     //s.setValue( "password", m_pw );
     s.setValue( "highQualityStreaming", m_highQuality );

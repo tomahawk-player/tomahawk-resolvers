@@ -111,13 +111,12 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 
         _session->setSession(session);
         _session->setLoggedIn(true);
-
-//       qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
-
         _session->setPlaylistContainer( sp_session_playlistcontainer(session) );
+
         sp_playlistcontainer_add_ref( _session->PlaylistContainer() );
         sp_playlistcontainer_add_callbacks(_session->PlaylistContainer(), &SpotifyCallbacks::containerCallbacks, _session);
     }
+
     qDebug() << Q_FUNC_INFO << "==== " << sp_error_message( error ) << " ====";
     const QString msg = QString::fromUtf8( sp_error_message( error ) );
     emit _session->loginResponse( error == SP_ERROR_OK, msg );
@@ -136,7 +135,7 @@ void SpotifySession::logout(bool clearPlaylists )
 
         sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
         sp_playlistcontainer_release( m_container );
-        sp_session_logout(m_session);
+        sp_session_logout( m_session );
     }
 
 }
@@ -223,8 +222,16 @@ void SpotifySession::login( const QString& username, const QString& password, co
         else
         {
             qDebug() << "Logging in as remembered user";
+            return;
         }
     }
+    else
+    {
+        // Forget last user
+        qDebug() << "Forgetting last user!" << QString::fromLatin1( reloginname ) << m_username;
+        sp_session_forget_me(m_session);
+    }
+
     if( !m_username.isEmpty() && ( !m_password.isEmpty() || !blob.isEmpty() )  )
     {
         /// @note:  If current state is not logged out, logout this session
@@ -239,11 +246,10 @@ void SpotifySession::login( const QString& username, const QString& password, co
             logout( true );
             return;
         }
-        // Forget last user
-        sp_session_forget_me(m_session);
-        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "using" ) << "blob";
+
+        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "" ) << "using blob" << blob.constData();
 #if SPOTIFY_API_VERSION >= 12
-        error = sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+        error = sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData()  );
         if( error != SP_ERROR_OK )
             emit loginResponse( false, sp_error_message( error ) );
 #elif SPOTIFY_API_VERSION >= 11
@@ -260,7 +266,6 @@ void SpotifySession::login( const QString& username, const QString& password, co
         /// TODO: need a way to prompt for password if fail to login as remebered on startup
         /// If auth widget is not visual, we should promt user for re-entering creds
         emit loginResponse( false, "Failed to authenticate credentials." );
-
     }
 
 
