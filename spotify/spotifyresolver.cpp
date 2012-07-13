@@ -606,20 +606,30 @@ SpotifyResolver::resendAllPlaylists()
 void
 SpotifyResolver::initSpotify()
 {
-    m_port = 55050;
-    m_httpS.setPort( m_port ); //TODO config
-    m_httpS.setListenInterface( QHostAddress::LocalHost );
-    m_httpS.setConnector( &m_connector );
+    // Create the session here, as we now have the settings from tomahawk
+    if( m_session->createSession() )
+    {
+        m_port = 55050;
+        m_httpS.setPort( m_port ); //TODO config
+        m_httpS.setListenInterface( QHostAddress::LocalHost );
+        m_httpS.setConnector( &m_connector );
 
-    m_handler = new AudioHTTPServer( &m_httpS, m_httpS.port() );
-    m_httpS.setStaticContentService( m_handler );
 
-    qDebug() << "Starting HTTPd on" << m_httpS.listenInterface().toString() << m_httpS.port();
-    m_httpS.start();
+        m_handler = new AudioHTTPServer( &m_httpS, m_httpS.port() );
+        m_httpS.setStaticContentService( m_handler );
 
-    login();
+        qDebug() << "Starting HTTPd on" << m_httpS.listenInterface().toString() << m_httpS.port();
+        m_httpS.start();
 
-    // testing
+
+        login();
+    }
+    else
+    {
+        qDebug() << "====== FAILED TO CREATE SESSION!!! =======";
+        quit();
+    }
+        // testing
 //     search( "123", "coldplay", "the scientist" );
 }
 
@@ -730,7 +740,8 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
 
         search( qid, artist, track, fullText );
     }
-    else if( m.value( "_msgtype" ) == "config" ) {
+    else if( m.value( "_msgtype" ) == "config" )
+    {
         const QByteArray configPath = dataDir( true ).toUtf8();
         QString settingsFilename( QString( configPath ) + "/settings" );
 
@@ -757,14 +768,15 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
             return;
         }
 
-        if( !m.value( "proxyhost" ).toString().isEmpty() )
+        if( !m.value( "proxyhost" ).toString().isEmpty() && m.value( "proxytype" ).toString() == "socks5" )
         {
-            qDebug() << "Using PROXY!";
-            QString proxyString = QString( "%1//%2:%3" ).arg( m.value( "proxytype" ).toString() ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );
+            qDebug() << " ===== Using PROXY! =====";
+            QString proxyString = QString( "%1://%2:%3" ).arg( m.value( "proxytype" ).toString() ).arg( m.value( "proxyhost" ).toString() ).arg( m.value( "proxyport" ).toString() );
             spotifySettings["proxy"] = proxyString;
             spotifySettings["proxy_pass"] =  m.value( "proxypassword" ).toString();
             spotifySettings["proxy_username"] = m.value( "proxyusername" ).toString();
-            qDebug() << spotifySettings;
+            // Set proxySettings
+            m_session->setProxySettings( spotifySettings );
         }
         else
         {

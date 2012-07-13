@@ -23,6 +23,7 @@
 #include <QTimer>
 #include <QString>
 #include <QThread>
+#include <QVariantMap>
 #include <libspotify/api.h>
 #include "spotifyplayback.h"
 #include "spotifyplaylists.h"
@@ -42,6 +43,9 @@ typedef struct
     QByteArray tracefile;
     QByteArray device_id;
     QByteArray application_key;
+    QByteArray proxyString;
+    QByteArray proxy_pass;
+    QByteArray proxy_user;
     // Use if your appkey isnt encrypted
     const void *g_app_key;
     size_t application_key_size;
@@ -65,6 +69,8 @@ public:
     void setSession(sp_session* session){ m_session = session; }
     sp_session* Session() const { return m_session; }
     sp_session_config getSessionConfig() { return m_config; }
+    bool createSession();
+    void setProxySettings( QVariantMap& settings );
     //  Login
     void setLoggedIn( bool loggedIn ){ m_loggedIn = loggedIn; }
     bool isLoggedIn(){ return m_loggedIn;}
@@ -109,7 +115,7 @@ private slots:
     void notifyMainThread();
     void relogin();
 private:
-    void createSession();
+
     // When username changed, clear old users data
     void clearOldUserdata();
 

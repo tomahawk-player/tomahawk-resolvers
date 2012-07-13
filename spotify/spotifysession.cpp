@@ -31,14 +31,18 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
+
     // Playlist cachemiss fix
+    // @note: bad way of handling exitfails
     connect( m_SpotifyPlaylists, SIGNAL( forcePruneCache() ), this, SLOT( relogin() ) );
+
     m_SpotifyPlayback = new SpotifyPlayback( this );
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
     qDebug() << " === Using LibVersion " << SPOTIFY_API_VERSION << " ===";
-    createSession();
+    // User needs to create session himself, that way, config
+    //createSession();
 }
 /**
   getInstance
@@ -63,13 +67,28 @@ SpotifySession::~SpotifySession(){
 }
 
 /**
+ * @brief SpotifySession::setProxySettings
+ * @param settings
+ * Url to the proxy server that should be used.
+ * The format is protocol://<host>:port (where protocal is http/https/socks4/socks5)
+ */
+void SpotifySession::setProxySettings( QVariantMap& settings )
+{
+
+    m_sessionConfig.proxyString = settings[ "proxy" ].toString().toUtf8();
+    m_sessionConfig.proxy_user = settings[ "proxy_user" ].toString().toUtf8();
+    m_sessionConfig.proxy_pass = settings[ "proxy_pass" ].toString().toUtf8();
+}
+
+/**
   createSession
   spotifyWebApi uses custom sessionConfig to
   not mess with callbacks that are defined.
   Initilize them as sp_config and create session
   **/
-void SpotifySession::createSession()
+bool SpotifySession::createSession()
 {
+
     m_config = sp_session_config();
 
     if(!m_sessionConfig.application_key.isEmpty() || m_sessionConfig.g_app_key != NULL) {
@@ -87,6 +106,14 @@ void SpotifySession::createSession()
         m_config.dont_save_metadata_for_playlists = false;
         m_config.initially_unload_playlists = false;
 
+        if( !m_sessionConfig.proxyString.isEmpty() )
+            m_config.proxy = m_sessionConfig.proxyString;
+        if( !m_sessionConfig.proxy_user.isEmpty() )
+            m_config.proxy_username = m_sessionConfig.proxy_user;
+        if( !m_sessionConfig.proxy_pass.isEmpty() )
+            m_config.proxy_password = m_sessionConfig.proxy_pass;
+
+
     }
     m_config.userdata = this;
     sp_error err = sp_session_create( &m_config, &m_session );
@@ -94,7 +121,9 @@ void SpotifySession::createSession()
     if ( SP_ERROR_OK != err )
     {
         qDebug() << "Failed to create spotify session: " << sp_error_message( err );
+        return false;
     }
+    return true;
 }
 
 /**
