@@ -165,7 +165,6 @@ SpotifyResolver::setup()
     m_statusTimer->setInterval( 20000 );
     m_statusTimer->setSingleShot( true );
     connect( m_statusTimer, SIGNAL( timeout() ), this, SLOT( getStatus() ) );
-    m_statusTimer->start();
 }
 
 
@@ -174,9 +173,7 @@ SpotifyResolver::getStatus()
 {
     if ( m_haveSentStatus && !m_foundTomahawkInstance )
     {
-        qDebug() << "TOMAHAWK NOT RUNNING? Exiting...";
-        quit();
-        return;
+        qDebug() << "TOMAHAWK NOT RUNNING? NOT Exiting...";
     }
 
     QVariantMap resp;
