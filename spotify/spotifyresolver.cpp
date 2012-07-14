@@ -136,6 +136,9 @@ SpotifyResolver::setup()
     config.user_agent = "Tomahawk Player";
     config.tracefile = tracePath.toUtf8();
     config.device_id = "tomahawkspotify";
+    config.proxyString = "";
+    config.proxy_pass = "";
+    config.proxy_user = "";
 
     // When signal is emitted, you are logged in
     m_session = new SpotifySession( config );
@@ -607,6 +610,12 @@ void
 SpotifyResolver::initSpotify()
 {
     // Create the session here, as we now have the settings from tomahawk
+    if( m_session->isLoggedIn() )
+    {
+        qDebug() << "ALREADY LOGGEDIN, CANT RECREATE SESSION, REQUIRES RESTART!";
+        return;
+    }
+
     if( m_session->createSession() )
     {
         m_port = 55050;
@@ -621,13 +630,11 @@ SpotifyResolver::initSpotify()
         qDebug() << "Starting HTTPd on" << m_httpS.listenInterface().toString() << m_httpS.port();
         m_httpS.start();
 
-
         login();
     }
     else
     {
         qDebug() << "====== FAILED TO CREATE SESSION!!! =======";
-        quit();
     }
         // testing
 //     search( "123", "coldplay", "the scientist" );
