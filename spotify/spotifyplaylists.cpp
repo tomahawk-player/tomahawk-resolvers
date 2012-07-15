@@ -1917,13 +1917,15 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
     if ( m_playlists.indexOf( playlist ) >= 0 && m_playlists[ m_playlists.indexOf( playlist ) ].isLoaded )
         return;
 
-    if( isSubscribed )
-        qDebug() << "ADDDING SUBSCRIBED!!";
-
     playlist.playlist_ = pl;
     playlist.name_ = sp_playlist_name(pl);
     playlist.owner_ = sp_user_canonical_name( sp_playlist_owner( pl ) );
     playlist.isCollaborative = sp_playlist_is_collaborative( pl );
+
+    QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
+    if( username != playlist.owner_ )
+        isSubscribed = true;
+
     playlist.isSubscribed = isSubscribed;
     playlist.starContainer_ = false;
     playlist.sync_ = false;
@@ -1933,7 +1935,6 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
     sp_playlist_add_ref( pl );
 
     // Precaution, to prevent mixing up the starred tracks container and user playlistnameings.
-    QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
 #if SPOTIFY_API_VERSION >= 11
     if( playlist.id_.contains( username + ":starred" ) )
 #else

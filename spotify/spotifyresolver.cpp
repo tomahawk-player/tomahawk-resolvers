@@ -501,6 +501,7 @@ SpotifyResolver::sendAddTracksResult( const QString& spotifyId, QList<int> track
 
     resp[ "latestrev" ] = pl.revisions.last().revId;
     resp[ "playlistid" ] = spotifyId;
+    resp[ "playlistname" ] = pl.name_;
 
     QVariantList ins;
     foreach ( int i, tracksInserted )
@@ -567,6 +568,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         plObj[ "owner" ] = pl.owner_;
         playlists << plObj;
     }
+
     msg[ "playlists" ] = playlists;
 //     qDebug() << "ALL" << playlists;
 
