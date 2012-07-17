@@ -109,9 +109,8 @@ public:
     sp_error moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId );
 
 
-
     void setCollaborative(const QString &playlistUri, bool collab );
-
+    
     // Mixed
     sp_playlist *getPlaylistFromUri( const QString &uri );
     bool removeDirContent(const QString &dirName);

@@ -35,6 +35,8 @@
 #include "qjson/serializer.h"
 #include "spotifyloghandler.h"
 #include "spotifysession.h"
+#include "PlaylistClosure.h"
+
 #include <QTimer>
 #include <QTextStream>
 #include <QSettings>
@@ -484,6 +486,58 @@ SpotifyResolver::sendPlaylistDeleted( const QString& playlist )
 #endif
 
     sendMessage( msg );
+}
+
+
+void
+SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
+{
+    Q_ASSERT( sp_playlist_is_loaded( pl ) );
+    
+    if ( !sp_playlist_is_loaded( pl ) )
+    {
+        qWarning() << Q_FUNC_INFO << "Got NON_LOADED playlist in playlist loaded callback, wtf?" << sp_playlist_name( pl );
+        return;
+    }
+
+    QVariantMap resp;
+
+    if ( m_playlistToQid.contains( plid ) )
+        resp[ "qid" ] = m_playlistToQid.take( plid );
+
+    resp[ "id" ] = plid;
+    resp[ "name" ] = QString::fromUtf8( sp_playlist_name( pl ) );
+    if ( sp_playlist_owner( pl ) )
+        resp[ "creator" ] = QString::fromUtf8( sp_user_display_name( sp_playlist_owner( pl ) ) );
+    
+    resp[ "_msgtype" ] = "playlistListing";
+
+    QVariantList tracks;
+
+    for ( int i = 0; i < sp_playlist_num_tracks( pl ); i++ )
+    {
+        sp_track* tr = sp_playlist_track( pl, i );
+        
+        if ( !tr || !sp_track_is_loaded( tr ) )
+        {
+            qDebug() << "IGNORING not loaded track!";
+            continue;
+        }
+
+        tracks << spTrackToVariant( tr );
+    }
+
+    resp[ "tracks" ] = tracks;
+
+#if PLAYLIST_DEBUG
+     QJson::Serializer s;
+     QByteArray msg = s.serialize( resp );
+     qDebug() << "SENDING PLAYLISTLISTING JSON:" << msg;
+#endif
+
+    sendMessage( resp );
+
+    sp_playlist_release( pl );
 }
 
 
@@ -950,9 +1004,45 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         const QString albumName = m.value( "album" ).toString();
         const QString artistName = m.value( "artist" ).toString();
-        const QString& qid = m.value( "qid" ).toString();
+        const QString qid = m.value( "qid" ).toString();
 
         albumSearch( albumName, artistName, qid );
+    }
+    else if ( m.value( "_msgtype" ) == "playlistListing" )
+    {
+        const QString id = m.value( "id" ).toString();
+        const QString qid = m.value( "qid" ).toString();
+
+        m_playlistToQid[ id ] = qid;
+
+        if ( id.isEmpty() )
+        {
+            qDebug() << "Asked for playlistlisting with empty ID. Oops.";
+
+            QVariantMap resp;
+            resp[ "_msgtype" ] = "";
+            resp[ "qid" ] = qid;
+            resp[ "success" ] = false;
+            resp[ "playlistid" ] = id;
+            resp[ "tracks" ] = QVariantList();
+            sendMessage( resp );
+            return;
+        }
+        qDebug() << "Asked to get playlist listing from playlist id:" << id;
+
+        sp_playlist *playlist = m_session->Playlists()->getPlaylistFromUri( id );
+
+        if( !sp_playlist_is_loaded( playlist ) )
+        {
+            qDebug() << "Got playlist but waiting for it to be loaded";
+            m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( sendPlaylistListing( sp_playlist*, QString) ), playlist, id) );
+            return;
+        }
+        else
+        {
+            qDebug() << "Got playlist and sending it back!";
+            sendPlaylistListing( playlist, id );
+        }
     }
 }
 

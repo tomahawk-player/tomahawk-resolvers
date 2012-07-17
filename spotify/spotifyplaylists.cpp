@@ -54,7 +54,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_loadTimer->start();
     */
 
-    m_periodicTimer->setInterval( 5000 );
+    m_periodicTimer->setInterval( 500 );
     connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
     m_periodicTimer->start();
 

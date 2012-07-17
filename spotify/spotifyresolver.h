@@ -115,6 +115,8 @@ private slots:
     void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
     void sendPlaylistDeleted( const QString& playlist );
+    void sendPlaylistListing( sp_playlist* pl, const QString& plid  );
+    
     void userChangedReceived();
     void updateBlob( const QByteArray& username, const QByteArray& blob );
     void getStatus();
