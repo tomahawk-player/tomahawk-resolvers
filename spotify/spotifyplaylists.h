@@ -157,8 +157,8 @@ public slots:
     void doRemovePlaylist( sp_playlist* playlist );
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
-    void addSubscribedPlaylist( const QString &uri );
-    void removeSubscribedPlaylist(sp_playlist *playlist );
+    
+    void setSubscribedPlaylist( const QString &uri, bool doSubscribe );
 signals:
     void sendLoadedPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
     void notifyContainerLoadedSignal();
@@ -171,7 +171,6 @@ signals:
     void forcePruneCache();
 
 private slots:
-
     void ensurePlaylistsLoadedTimerFired();
     void checkWaitingForLoads();
     void pruneCacheAndReload();
@@ -187,6 +186,7 @@ private:
     void playlistNameChange( sp_playlist * pl );
     void checkForPlaylistsLoaded();
     void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
+    void removeSubscribedPlaylist(sp_playlist *playlist );
 
     int findTrackPosition( const QList< sp_track* > tracks, const QString& trackId );
 

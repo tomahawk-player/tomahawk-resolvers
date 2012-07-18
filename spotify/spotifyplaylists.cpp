@@ -338,7 +338,7 @@ sp_playlist * SpotifyPlaylists::getPlaylistFromUri(const QString &uri)
   added in spotify if collaborative
   it will be added to synclist + subscribedlist
   **/
-void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
+void SpotifyPlaylists::setSubscribedPlaylist(const QString &playlistUri, bool subscribe )
 {
     sp_playlist *playlist = getPlaylistFromUri( playlistUri );
     if( !sp_playlist_is_loaded( playlist ) )
@@ -356,25 +356,28 @@ void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
         int index = m_playlists.indexOf( lpl );
         if( index != -1 )
         {
-            if( m_playlists[ index ].isSubscribed )
+            if( m_playlists[ index ].isSubscribed && !subscribe )
             {
                 qDebug() << "Removing subscription!";
                 removeSubscribedPlaylist( m_playlists[ index ].playlist_ );
             }
             else
-                qDebug() << "Playlist isnt subscribed!" <<  m_playlists[ index ].id_ <<  m_playlists[ index ].isCollaborative <<  m_playlists[ index ].isLoaded <<  m_playlists[ index ].isSubscribed
+                qDebug() << "Playlist isnt subscribed but in our list?!" << subscribe <<  m_playlists[ index ].id_ <<  m_playlists[ index ].isCollaborative <<  m_playlists[ index ].isLoaded <<  m_playlists[ index ].isSubscribed
                             <<  m_playlists[ index ].name_;
         }
         return;
     }
 
-    // Hard to set isSubscribed through playlist_added callback, as it doesnt except userdata from here
-    addPlaylist( playlist, true, true );
-    /// @note we can subscribe on a non collaborative pl as well
-    sp_playlistcontainer_add_playlist( SpotifySession::getInstance()->PlaylistContainer(), sp_link_create_from_string( playlistUri.toUtf8() ) );
-    sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), playlist );
-
-
+    if( subscribe )
+    {
+        // Hard to set isSubscribed through playlist_added callback, as it doesnt except userdata from here
+        addPlaylist( playlist, true, true );
+        /// @note we can subscribe on a non collaborative pl as well
+        sp_playlistcontainer_add_playlist( SpotifySession::getInstance()->PlaylistContainer(), sp_link_create_from_string( playlistUri.toUtf8() ) );
+        sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), playlist );
+    } else {
+        qWarning() << "Asked to unsubscribe a playlist we don't know about!" << playlistUri;
+    }
 }
 
 

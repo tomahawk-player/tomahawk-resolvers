@@ -885,8 +885,8 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     {
         qDebug() << "GOT SUBSCRIPTION REQ!";
         const QString plid = m.value( "playlistid" ).toString();
-        const bool collab = m.value( "subscribe" ).toBool();
-        m_session->Playlists()->addSubscribedPlaylist( plid );
+        const bool subscribe = m.value( "subscribe" ).toBool();
+        m_session->Playlists()->setSubscribedPlaylist( plid, subscribe );
     }
     else if ( m.value( "_msgtype" ) == "removeTracksFromPlaylist" )
     {
