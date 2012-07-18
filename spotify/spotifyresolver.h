@@ -1,5 +1,6 @@
 /*
     Copyright (c) 2011-2012 Leo Franchi <lfranchi@kde.org>
+    Copyright (c) 2012 Hugo Lindström <hugolm84@gmail.com>
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -70,7 +71,7 @@ public:
     explicit SpotifyResolver( int& argc, char** argv );
     virtual ~SpotifyResolver();
 
-    void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText );
+    void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText, const QString& resultHint = QString() );
     void albumSearch( const QString& album, const QString& artist, const QString& qid );
 
     // adds a track to the link map, returns a unique ID for identifying it
@@ -88,17 +89,15 @@ public:
     bool highQuality() const { return m_highQuality; }
 
     void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
-
+    QVariantMap spTrackToVariant( sp_track* track );
     void sendAlbumSearchResult( const QString& qid, const QString& albumName, const QString& artistName, const QList<sp_track*> tracks);
-
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
     void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
-
+    bool useResultHint( const QString& qid, const QString& resultHint );
     void registerQidForPlaylist( const QString& qid, const QString& playlist );
 
 public slots:
     void setup();
-
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
 private slots:
@@ -120,10 +119,9 @@ private slots:
     void userChangedReceived();
     void updateBlob( const QByteArray& username, const QByteArray& blob );
     void getStatus();
+    void checkForLoaded();
 
 private:
-    QVariantMap spTrackToVariant( sp_track* track );
-
     void sendSettingsMessage();
     void loadSettings();
     void saveSettings() const;
@@ -151,7 +149,7 @@ private:
     // Spotify
     QByteArray m_apiKey;
     QByteArray m_configWidget;
-
+    QList< QVariantMap > m_savedTracks;
     // Callback QIDs
     QHash< QString, QString > m_playlistToQid;
 
@@ -170,6 +168,7 @@ private:
 
 Q_DECLARE_METATYPE( CacheEntry )
 Q_DECLARE_METATYPE( sp_search* )
+Q_DECLARE_METATYPE( sp_track* )
 Q_DECLARE_METATYPE( void* )
 
 #endif // tomahawkspotify_H

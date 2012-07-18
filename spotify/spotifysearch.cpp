@@ -180,26 +180,7 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             sp_link_release( link );
 
             int duration = sp_track_duration( tr ) / 1000;
-            QVariantMap track;
-            track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
-            track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
-            track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
-            track[ "albumpos" ] = sp_track_index( tr );
-            track[ "discnumber"] = sp_track_disc( tr );
-            track[ "year" ] = sp_album_year( sp_track_album( tr ) );
-            track[ "mimetype" ] = "audio/basic";
-            track[ "source" ] = "Spotify";
-            track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( data->resolver->port() ).arg( uid );
-            track[ "duration" ] = duration;
-            track[ "score" ] = .95; // TODO
-            track[ "bitrate" ] = data->resolver->highQuality() ? 320 : 160; // TODO
-            // Persistant url, never expire
-            track[ "expires" ] = 0;
-
-            // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
-            quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
-            track[ "size" ] = bytes;
-            results << track;
+            results << data->resolver->spTrackToVariant( tr );
             data->searchCount = 0;
 //            qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
         }

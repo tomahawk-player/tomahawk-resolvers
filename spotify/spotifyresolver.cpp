@@ -1,5 +1,6 @@
 /*
     Copyright (c) 2011-2012 Leo Franchi <lfranchi@kde.org>
+    Copyright (c) 2012 Hugo Lindström <hugolm84@gmail.com>
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -798,10 +799,10 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         const QString artist = m.value( "artist" ).toString();
         const QString track = m.value( "track" ).toString();
         const QString fullText = m.value( "fulltext" ).toString();
-
+        const QString resultHint = m.value( "resultHint" ).toString();
         qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText;
 
-        search( qid, artist, track, fullText );
+        search( qid, artist, track, fullText, resultHint );
     }
     else if( m.value( "_msgtype" ) == "config" )
     {
@@ -1074,9 +1075,108 @@ SpotifyResolver::sendMessage(const QVariant& v)
 }
 
 
+/**
+ * @brief SpotifyResolver::checkForLoaded
+ * Slot for checking loaded track in rq response
+ * Will send as soon as sp_track is loaded
+ */
+
 void
-SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track, const QString& fullText )
+SpotifyResolver::checkForLoaded()
 {
+    for ( int i = 0; i < m_savedTracks.size(); i++ )
+    {
+        QVariant track = m_savedTracks[ i ].value( "track" );
+         if ( track.canConvert<sp_track*>() )
+         {
+             sp_track *lTrack = track.value< sp_track* >();
+
+             if( sp_track_is_loaded( lTrack ) )
+             {
+                 m_savedTracks[ i ].remove( "track" );
+
+                 QVariantList results;
+                 results << spTrackToVariant( lTrack );
+                 m_savedTracks[ i ][ "results" ] = results;
+                 sendMessage( m_savedTracks[ i ] );
+                 m_savedTracks.removeAt( i );
+
+             }
+             else
+             {
+                 qWarning() << " Waiting to load... " << m_savedTracks[ i ].value( "resultHint" );
+                 QTimer::singleShot( 50, this, SLOT( checkForLoaded( ) ) );
+
+             }
+         }
+    }
+}
+
+/**
+ * @brief SpotifyResolver::resultHint
+ * @param resultHint
+ * We have a spotify id in our request
+ * utilize that and load the track instantly
+ * to make us skip doing a search, and always give correct
+ * track back.
+ */
+bool
+SpotifyResolver::useResultHint( const QString& qid, const QString& resultHint )
+{
+    qDebug() << "Got resulthint!" << resultHint;
+    sp_link *resultHintLink = sp_link_create_from_string( resultHint.toAscii() );
+
+    if( resultHintLink )
+    {
+        if( sp_link_type( resultHintLink ) == SP_LINKTYPE_TRACK )
+        {
+
+            QVariantMap resp;
+            resp[ "qid" ] = qid;
+            resp[ "_msgtype" ] = "results";
+            resp[ "resultHint" ] = resultHint;
+
+            QVariantList results;
+            sp_track *spTrack = sp_track_get_playable( m_session->Session(), sp_link_as_track( resultHintLink ) );
+            sp_track_add_ref( spTrack );
+
+            if( !sp_track_is_loaded( spTrack ) )
+            {
+                qDebug() << "rq Track isnt loaded yet...";
+                QVariant vTrack;
+                vTrack.setValue( spTrack );
+                resp[ "track" ] = vTrack;
+                m_savedTracks << resp;
+                QTimer::singleShot( 150, this, SLOT( checkForLoaded( ) ) );
+            }
+            else
+            {
+                addToTrackLinkMap( resultHintLink );
+                results << spTrackToVariant( spTrack );
+                resp[ "results" ] = results;
+                sp_link_release( resultHintLink );
+                sendMessage( resp );
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+void
+SpotifyResolver::search( const QString& qid, const QString& artist, const QString& track, const QString& fullText, const QString& resultHint )
+{
+
+    // We gots resulthint, use that instead of search
+    if( !resultHint.isEmpty() && resultHint.contains( "spotify:track" ) )
+    {
+        // Do some cleanups if it somehow got the http to it
+        QString cleanResult = resultHint;
+        cleanResult.remove( "http://localhost:55050/sid/" ).remove( ".wav" );
+        if( useResultHint( qid, cleanResult ) )
+            return;
+    }
+
     // search spotify..
     // do some cleanups.. remove ft/feat
     QString query;
@@ -1101,11 +1201,14 @@ SpotifyResolver::search( const QString& qid, const QString& artist, const QStrin
         query = fullText;
         data->fulltext = true;
     }
+
+
 #if SPOTIFY_API_VERSION >= 11
     sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
     sp_search_create( m_session->Session(), query.toUtf8().data(), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, &SpotifySearch::searchComplete, data );
 #endif
+
 }
 
 
@@ -1197,21 +1300,35 @@ SpotifyResolver::hasLinkFromTrack( const QString& linkStr )
 QVariantMap
 SpotifyResolver::spTrackToVariant( sp_track* tr )
 {
+    if( !sp_track_is_loaded( tr ) )
+        return QVariantMap();
+
     QVariantMap track;
+
+    int duration = sp_track_duration( tr ) / 1000;
     track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
+    track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+    track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
+    track[ "albumpos" ] = sp_track_index( tr );
+    track[ "discnumber"] = sp_track_disc( tr );
+    track[ "year" ] = sp_album_year( sp_track_album( tr ) );
+    track[ "mimetype" ] = "audio/basic";
+    track[ "source" ] = "Spotify";
+    track[ "duration" ] = duration;
+    track[ "score" ] = .95; // TODO
+    track[ "bitrate" ] = highQuality() ? 320 : 160; // TODO
+    // Persistant url, never expire
+    track[ "expires" ] = 0;
 
-    sp_artist* artist = sp_track_artist( tr, 0 );
-    if ( sp_artist_is_loaded( artist ) )
-        track[ "artist" ] = QString::fromUtf8( sp_artist_name( artist ) );
-
-    sp_album* album = sp_track_album( tr );
-    if ( sp_album_is_loaded( album ) )
-        track[ "album" ] = QString::fromUtf8( sp_album_name( album ) );
+    // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
+    quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
+    track[ "size" ] = bytes;
 
     sp_link* l = sp_link_create_from_track( tr, 0 );
     char urlStr[256];
     sp_link_as_string( l, urlStr, sizeof(urlStr) );
     track[ "id" ] = QString::fromUtf8( urlStr );
+    track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( port() ).arg( QString::fromUtf8( urlStr ) );
     sp_link_release( l );
 
     return track;
