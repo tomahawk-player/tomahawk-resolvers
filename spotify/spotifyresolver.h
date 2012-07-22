@@ -32,7 +32,7 @@
 #include "kdsingleapplicationguard/kdsingleapplicationguard.h"
 
 #include <libspotify/api.h>
-
+#include "spotifyplaylists.h"
 #include <QCoreApplication>
 #include <QTimer>
 #include <QThread>
@@ -89,11 +89,11 @@ public:
     bool highQuality() const { return m_highQuality; }
 
     void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
-    QVariantMap spTrackToVariant( sp_track* track );
+    QVariantMap spTrackToVariant(sp_track* track );
     void sendAlbumSearchResult( const QString& qid, const QString& albumName, const QString& artistName, const QList<sp_track*> tracks);
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
     void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
-    bool useResultHint( const QString& qid, const QString& resultHint );
+
     void registerQidForPlaylist( const QString& qid, const QString& playlist );
 
 public slots:
@@ -115,11 +115,10 @@ private slots:
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
     void sendPlaylistDeleted( const QString& playlist );
     void sendPlaylistListing( sp_playlist* pl, const QString& plid  );
-    
+    bool useResultHint(const QString& qid, sp_link *resultHintLink );
     void userChangedReceived();
     void updateBlob( const QByteArray& username, const QByteArray& blob );
     void getStatus();
-    void checkForLoaded();
 
 private:
     void sendSettingsMessage();
@@ -166,10 +165,12 @@ private:
     bool m_haveSentStatus;
 };
 
+bool checkTrackIsLoaded( sp_track* track );
 Q_DECLARE_METATYPE( CacheEntry )
 Q_DECLARE_METATYPE( sp_search* )
 Q_DECLARE_METATYPE( sp_track* )
 Q_DECLARE_METATYPE( void* )
-
+Q_DECLARE_METATYPE( SpotifyPlaylists::LoadedPlaylist )
+Q_DECLARE_METATYPE( sp_link* )
 #endif // tomahawkspotify_H
 

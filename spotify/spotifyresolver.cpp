@@ -309,16 +309,23 @@ SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
     resp[ "_msgtype" ] = "playlist";
 
     QVariantList tracks;
-
+    QList< sp_track*> waitingFor;
     foreach( sp_track *tr, pl.tracks_ )
     {
         if ( !tr || !sp_track_is_loaded( tr ) )
         {
-            qDebug() << "IGNORING not loaded track!";
-            continue;
+            qDebug() << "PlaylistTrack isnt loaded yet... waiting";
+            waitingFor << tr;
         }
+        else
+            tracks << spTrackToVariant( tr );
+    }
 
-        tracks << spTrackToVariant( tr );
+    if( !waitingFor.isEmpty() )
+    {
+        qDebug() << "PlaylistTracks isnt loaded yet... waiting";
+        m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), pl ) );
+        return;
     }
 
     resp[ "tracks" ] = tracks;
@@ -383,17 +390,23 @@ SpotifyResolver::sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tra
     msg[ "startPosition" ] = positionId;
 
     QVariantList outgoingTracks;
+    QList< sp_track*> waitingFor;
     foreach( sp_track* track, tracks )
     {
         if ( !track || !sp_track_is_loaded( track ) )
         {
-            qDebug() << "IGNORING not loaded track!";
-            continue;
+            waitingFor << track;
         }
-
-        outgoingTracks << spTrackToVariant( track );
+        else
+            outgoingTracks << spTrackToVariant( track );
     }
 
+    if( !waitingFor.isEmpty() )
+    {
+        qDebug() << "PlaylistTracks isnt loaded yet... waiting";
+        m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendTracksAdded(sp_playlist*,QList<sp_track*>,QString) ), pl, tracks, positionId ) );
+        return;
+    }
     msg[ "tracks" ] = outgoingTracks;
 
 
@@ -514,30 +527,37 @@ SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
     resp[ "_msgtype" ] = "playlistListing";
 
     QVariantList tracks;
-
+    QList< sp_track *> waitingFor;
     for ( int i = 0; i < sp_playlist_num_tracks( pl ); i++ )
     {
         sp_track* tr = sp_playlist_track( pl, i );
         
         if ( !tr || !sp_track_is_loaded( tr ) )
         {
-            qDebug() << "IGNORING not loaded track!";
-            continue;
+            waitingFor << tr;
         }
-
-        tracks << spTrackToVariant( tr );
+        else
+            tracks << spTrackToVariant( tr );
     }
 
+
+    if( !waitingFor.isEmpty() )
+    {
+        qDebug() << "PlaylistTracks isnt loaded yet... waiting";
+        m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendPlaylistListing( sp_playlist*, QString ) ), pl, plid ) );
+        return;
+    }
+
+    qDebug() << "Sending playlistListning";
     resp[ "tracks" ] = tracks;
 
 #if PLAYLIST_DEBUG
-     QJson::Serializer s;
-     QByteArray msg = s.serialize( resp );
-     qDebug() << "SENDING PLAYLISTLISTING JSON:" << msg;
+    QJson::Serializer s;
+    QByteArray msg = s.serialize( resp );
+    qDebug() << "SENDING PLAYLISTLISTING JSON:" << msg;
 #endif
 
     sendMessage( resp );
-
     sp_playlist_release( pl );
 }
 
@@ -800,7 +820,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         const QString track = m.value( "track" ).toString();
         const QString fullText = m.value( "fulltext" ).toString();
         const QString resultHint = m.value( "resultHint" ).toString();
-        qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText;
+        qDebug() << "Resolving:" << qid << artist << track << "fulltext?" << fullText << resultHint;
 
         search( qid, artist, track, fullText, resultHint );
     }
@@ -1074,44 +1094,6 @@ SpotifyResolver::sendMessage(const QVariant& v)
 
 }
 
-
-/**
- * @brief SpotifyResolver::checkForLoaded
- * Slot for checking loaded track in rq response
- * Will send as soon as sp_track is loaded
- */
-
-void
-SpotifyResolver::checkForLoaded()
-{
-    for ( int i = 0; i < m_savedTracks.size(); i++ )
-    {
-        QVariant track = m_savedTracks[ i ].value( "track" );
-         if ( track.canConvert<sp_track*>() )
-         {
-             sp_track *lTrack = track.value< sp_track* >();
-
-             if( sp_track_is_loaded( lTrack ) )
-             {
-                 m_savedTracks[ i ].remove( "track" );
-
-                 QVariantList results;
-                 results << spTrackToVariant( lTrack );
-                 m_savedTracks[ i ][ "results" ] = results;
-                 sendMessage( m_savedTracks[ i ] );
-                 m_savedTracks.removeAt( i );
-
-             }
-             else
-             {
-                 qWarning() << " Waiting to load... " << m_savedTracks[ i ].value( "resultHint" );
-                 QTimer::singleShot( 50, this, SLOT( checkForLoaded( ) ) );
-
-             }
-         }
-    }
-}
-
 /**
  * @brief SpotifyResolver::resultHint
  * @param resultHint
@@ -1121,11 +1103,8 @@ SpotifyResolver::checkForLoaded()
  * track back.
  */
 bool
-SpotifyResolver::useResultHint( const QString& qid, const QString& resultHint )
+SpotifyResolver::useResultHint( const QString& qid, sp_link* resultHintLink )
 {
-    qDebug() << "Got resulthint!" << resultHint;
-    sp_link *resultHintLink = sp_link_create_from_string( resultHint.toAscii() );
-
     if( resultHintLink )
     {
         if( sp_link_type( resultHintLink ) == SP_LINKTYPE_TRACK )
@@ -1134,7 +1113,6 @@ SpotifyResolver::useResultHint( const QString& qid, const QString& resultHint )
             QVariantMap resp;
             resp[ "qid" ] = qid;
             resp[ "_msgtype" ] = "results";
-            resp[ "resultHint" ] = resultHint;
 
             QVariantList results;
             sp_track *spTrack = sp_track_get_playable( m_session->Session(), sp_link_as_track( resultHintLink ) );
@@ -1143,21 +1121,22 @@ SpotifyResolver::useResultHint( const QString& qid, const QString& resultHint )
             if( !sp_track_is_loaded( spTrack ) )
             {
                 qDebug() << "rq Track isnt loaded yet...";
-                QVariant vTrack;
-                vTrack.setValue( spTrack );
-                resp[ "track" ] = vTrack;
-                m_savedTracks << resp;
-                QTimer::singleShot( 150, this, SLOT( checkForLoaded( ) ) );
+                m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTrackIsLoaded, spTrack), this, SLOT( useResultHint( QString, sp_link*) ), qid, resultHintLink) );
+                return true;
             }
             else
             {
-                addToTrackLinkMap( resultHintLink );
-                results << spTrackToVariant( spTrack );
-                resp[ "results" ] = results;
-                sp_link_release( resultHintLink );
+                if( sp_track_get_availability( m_session->Session() , spTrack ) == SP_TRACK_AVAILABILITY_AVAILABLE )
+                {
+                    qDebug() << "Sending resultHint";
+                    addToTrackLinkMap( resultHintLink );
+                    results << spTrackToVariant( spTrack );
+                    resp[ "results" ] = results;
+                    sp_link_release( resultHintLink );
+
+                }
                 sendMessage( resp );
             }
-            return true;
         }
     }
     return false;
@@ -1168,13 +1147,23 @@ SpotifyResolver::search( const QString& qid, const QString& artist, const QStrin
 {
 
     // We gots resulthint, use that instead of search
-    if( !resultHint.isEmpty() && resultHint.contains( "spotify:track" ) )
+    if( !resultHint.isEmpty() )
     {
-        // Do some cleanups if it somehow got the http to it
-        QString cleanResult = resultHint;
-        cleanResult.remove( "http://localhost:55050/sid/" ).remove( ".wav" );
-        if( useResultHint( qid, cleanResult ) )
-            return;
+        if( resultHint.contains( "spotify:track" ) )
+        {
+            // Do some cleanups if it somehow got the http to it
+            QString cleanResult = resultHint;
+            cleanResult.remove( "http://localhost:55050/sid/" ).remove( ".wav" );
+
+            sp_link *link = sp_link_create_from_string( cleanResult.toAscii() );
+            if( sp_link_type( link ) == SP_LINKTYPE_TRACK )
+            {
+                useResultHint( qid, link );
+                return;
+            }
+            else
+                qDebug() << "Got resultHint but isnt spotifytrack type, doing search instead" << cleanResult;
+        }
     }
 
     // search spotify..
@@ -1303,37 +1292,44 @@ SpotifyResolver::spTrackToVariant( sp_track* tr )
     if( !sp_track_is_loaded( tr ) )
         return QVariantMap();
 
-    QVariantMap track;
+     QVariantMap track;
 
-    int duration = sp_track_duration( tr ) / 1000;
-    track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
-    track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
-    track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
-    track[ "albumpos" ] = sp_track_index( tr );
-    track[ "discnumber"] = sp_track_disc( tr );
-    track[ "year" ] = sp_album_year( sp_track_album( tr ) );
-    track[ "mimetype" ] = "audio/basic";
-    track[ "source" ] = "Spotify";
-    track[ "duration" ] = duration;
-    track[ "score" ] = .95; // TODO
-    track[ "bitrate" ] = highQuality() ? 320 : 160; // TODO
-    // Persistant url, never expire
-    track[ "expires" ] = 0;
+     sp_artist* artist = sp_track_artist( tr, 0 );
+     sp_album* album = sp_track_album( tr );
 
-    // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
-    quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
-    track[ "size" ] = bytes;
+     if( sp_artist_is_loaded( artist ) )
+         track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
+     if( sp_album_is_loaded( album ) )
+         track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
 
-    sp_link* l = sp_link_create_from_track( tr, 0 );
-    char urlStr[256];
-    sp_link_as_string( l, urlStr, sizeof(urlStr) );
-    track[ "id" ] = QString::fromUtf8( urlStr );
-    track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( port() ).arg( QString::fromUtf8( urlStr ) );
-    sp_link_release( l );
+     int duration = sp_track_duration( tr ) / 1000;
+     track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
 
-    return track;
+     track[ "albumpos" ] = sp_track_index( tr );
+     track[ "discnumber"] = sp_track_disc( tr );
+     track[ "year" ] = sp_album_year( sp_track_album( tr ) );
+     track[ "mimetype" ] = "audio/basic";
+     track[ "source" ] = "Spotify";
+     track[ "duration" ] = duration;
+     track[ "score" ] = .95; // TODO
+     track[ "bitrate" ] = highQuality() ? 320 : 160; // TODO
+     // Persistant url, never expire
+     track[ "expires" ] = 0;
+
+     // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
+     quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
+     track[ "size" ] = bytes;
+
+     sp_link* l = sp_link_create_from_track( tr, 0 );
+     QString uid = addToTrackLinkMap( l );
+     sp_link_release( l );
+
+     track[ "id" ] = uid;
+     track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( port() ).arg( uid );
+
+
+     return track;
 }
-
 
 /// misc stuff
 
@@ -1410,4 +1406,16 @@ SpotifyResolver::instanceStarted( KDSingleApplicationGuard::Instance )
 {
     // well goodbye!
     qApp->quit();
+}
+
+/**
+ * @brief checkTracktIsLoaded
+ * @param track
+ * @return bool
+ * For use with closure
+ */
+bool checkTrackIsLoaded( sp_track* track )
+{
+    qDebug() << "Checking track" << sp_track_name( track ) << sp_track_is_loaded( track );
+    return track && sp_track_is_loaded( track );
 }
