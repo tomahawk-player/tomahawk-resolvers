@@ -182,6 +182,12 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
                 continue;
             }
 
+            if( sp_track_get_availability( SpotifySession::getInstance()->Session(), tr) != SP_TRACK_AVAILABILITY_AVAILABLE )
+            {
+                qDebug() << "Track isnt available for this user/region";
+                continue;
+            }
+
             results << data->resolver->spTrackToVariant( tr );
             data->searchCount = 0;
 //            qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
