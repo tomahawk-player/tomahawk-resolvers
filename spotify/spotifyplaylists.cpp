@@ -343,7 +343,7 @@ void SpotifyPlaylists::setSubscribedPlaylist(const QString &playlistUri, bool su
     sp_playlist *playlist = getPlaylistFromUri( playlistUri );
     if( !sp_playlist_is_loaded( playlist ) )
     {
-        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( addSubscribedPlaylist( const QString&) ), playlistUri) );
+        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( setSubscribedPlaylist(const QString&, bool) ), playlistUri, subscribe) );
         return;
     }
 
