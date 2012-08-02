@@ -358,7 +358,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
             // Bitrate information
             if (this.formatId == 6 && retrievedTrack.streaming_type == "full") {
                 bitrate = "0";
-                audioMimetype = "audio/flac";<
+                audioMimetype = "audio/flac";
             } else {
                 bitrate = "320";
                 audioMimetype = "audio/mpeg";           
