@@ -69,8 +69,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
     // General configuration
     qobuzTomahawkProtocol: "qobuz",
     formatId: 5, // MP3 320Kbits by default, except if user is HIFI
-    textForSamples: " (1min sample)",
-
+    purchaseUrl: "http://www.qobuz.com/abonnement-streaming",
 
     // Get Config UI
     getConfigUi: function () {
@@ -343,40 +342,43 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
         var results = [];
         var durationTC = [];
         var duration;
-        var bitrate;
-        var sampleInfo = "";
+        var bitrate = "320";
+        var audioMimetype = "audio/mpeg";
+        var isPreview = false;
 
         for (var i = 0; i < count; i++) {
 
             var retrievedTrack = itemsArray[i];
 
             // If the track is a sample or if the user is not registered, we gotta change the track info
-            if (!this.hasFullTracks || retrievedTrack.streaming_type == "sample") {
-                sampleInfo = this.textForSamples;
-                duration = 60;
-            } else {
-                sampleInfo = "";
-                durationTC = retrievedTrack.duration.split(':');
-                duration = parseInt(durationTC[0] * 3600 + durationTC[1] * 60 + durationTC[2] * 1);
-            }
+            isPreview = (!this.hasFullTracks || retrievedTrack.streaming_type == "sample");
+            durationTC = retrievedTrack.duration.split(':');
+            duration = parseInt(durationTC[0] * 3600 + durationTC[1] * 60 + durationTC[2] * 1);
 
             // Bitrate information
-            bitrate = "320";
-            if (this.formatId == 6 && retrievedTrack.streaming_type == "full")
+            if (this.formatId == 6 && retrievedTrack.streaming_type == "full") {
                 bitrate = "0";
+                audioMimetype = "audio/flac";<
+            } else {
+                bitrate = "320";
+                audioMimetype = "audio/mpeg";           
+            }
 
+            // Building result array
             var resultTrack = {
                 artist: retrievedTrack.interpreter.name,
                 album: retrievedTrack.album.title,
-                track: retrievedTrack.title + sampleInfo,
+                track: retrievedTrack.title,
                 source: this.settings.nameForTracks,
                 url: this.qobuzTomahawkProtocol + "://" + retrievedTrack.id,
-                mimetype: 'audio/mpeg',
+                mimetype: audioMimetype,
                 duration: duration,
                 bitrate: bitrate,
                 year: retrievedTrack.album.release_date.substr(0,4),
                 albumpos: retrievedTrack.track_number,
-                discnumber: retrievedTrack.media_number
+                discnumber: retrievedTrack.media_number,
+                preview: isPreview,
+                purchaseurl: (isPreview)?this.purchaseUrl:null
                 //score: How accurate this search result is, a float, from 0-1.
             }
             results.push(resultTrack);
