@@ -50,7 +50,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
         name: 'Qobuz (Beta)',
         nameForTracks: 'Qobuz',
         weight: 91,
-        timeout: 20
+        timeout: 5
     },
     userAuthToken: false,
     hasFullTracks: false,
