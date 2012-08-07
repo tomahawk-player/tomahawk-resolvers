@@ -60,7 +60,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
     apiParameter: {
         endPoint: "http://www.qobuz.com/api.json/0.2/",
         userLogin: "user/login",
-        search: "track/search",
+        search: "search/getResults",
         getFileUrl: "track/getFileUrl", 
         app_id: "546568742",
         secret: "6e3e4f6d46c15303c618f474eb7962c3"
@@ -345,6 +345,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
         var bitrate = "320";
         var audioMimetype = "audio/mpeg";
         var isPreview = false;
+        var release_date;
 
         for (var i = 0; i < count; i++) {
 
@@ -364,9 +365,11 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
                 audioMimetype = "audio/mpeg";           
             }
 
+            release_date = new Date(retrievedTrack.album.released_at * 1000) // Unix timestamp in javascript : x1000
+
             // Building result array
             var resultTrack = {
-                artist: retrievedTrack.interpreter.name,
+                artist: retrievedTrack.performer.name,
                 album: retrievedTrack.album.title,
                 track: retrievedTrack.title,
                 source: this.settings.nameForTracks,
@@ -374,7 +377,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
                 mimetype: audioMimetype,
                 duration: duration,
                 bitrate: bitrate,
-                year: retrievedTrack.album.release_date.substr(0,4),
+                year: release_date.getFullYear(),
                 albumpos: retrievedTrack.track_number,
                 discnumber: retrievedTrack.media_number,
                 preview: isPreview,
@@ -453,7 +456,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
         // Constructing the query string
         var params = {
             query: flatten(searchString),
-            type: "tracks"
+            type: "tracks"  
         };
 
         // Calling the API
