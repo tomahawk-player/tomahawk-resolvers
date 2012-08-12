@@ -50,7 +50,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     {
         name: 'Subsonic',
         weight: 70,
-        timeout: 15
+        timeout: 8
     },
 
     encodePassword : function(password)
@@ -153,12 +153,18 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     //  appropriate url.
     resolve: function(qid, artist, album, title)
     {
+        if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
+            return { qid: qid, results: [] };
+
         var search_url = this.buildBaseUrl("/rest/search.view") + "&artist=" + artist + "&album=" + album + "&title=" + title + "&count=1";
         this.executeSearchQuery(qid, search_url, "match", 1);
     },
 
     search: function( qid, searchString )
     {
+        if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
+            return { qid: qid, results: [] };
+
         var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=" + encodeURIComponent(searchString);
         this.executeSearchQuery(qid, search_url, "song", this.max_songs);
     }
