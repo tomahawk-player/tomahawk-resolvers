@@ -5,7 +5,7 @@
  *
  */
 
-var debug = false;
+var debug = true;
 
 // Construct Query from object and url
 function http_build_query(url, parameters){
@@ -336,7 +336,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
 
         if (!itemsArray) return;
 
-        count = itemsArray.length;
+        var count = itemsArray.length;
 
         // Building results
         var results = [];
@@ -352,9 +352,8 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
             var retrievedTrack = itemsArray[i];
 
             // If the track is a sample or if the user is not registered, we gotta change the track info
-            isPreview = (!this.hasFullTracks || retrievedTrack.streaming_type == "sample");
-            durationTC = retrievedTrack.duration.split(':');
-            duration = parseInt(durationTC[0] * 3600 + durationTC[1] * 60 + durationTC[2] * 1);
+            if (!this.hasFullTracks || retrievedTrack.streaming_type == "sample") isPreview = true;
+            else isPreview = false;
 
             // Bitrate information
             if (this.formatId == 6 && retrievedTrack.streaming_type == "full") {
@@ -365,7 +364,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
                 audioMimetype = "audio/mpeg";           
             }
 
-            release_date = new Date(retrievedTrack.album.released_at * 1000) // Unix timestamp in javascript : x1000
+            release_date = new Date(retrievedTrack.album.released_at * 1000); // Unix timestamp in javascript : x1000
 
             // Building result array
             var resultTrack = {
@@ -375,7 +374,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
                 source: this.settings.nameForTracks,
                 url: this.qobuzTomahawkProtocol + "://" + retrievedTrack.id,
                 mimetype: audioMimetype,
-                duration: duration,
+                duration: retrievedTrack.duration,
                 bitrate: bitrate,
                 year: release_date.getFullYear(),
                 albumpos: retrievedTrack.track_number,
