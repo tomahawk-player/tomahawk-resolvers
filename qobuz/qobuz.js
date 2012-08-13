@@ -5,7 +5,7 @@
  *
  */
 
-var debug = true;
+var debug = false;
 
 // Construct Query from object and url
 function http_build_query(url, parameters){
