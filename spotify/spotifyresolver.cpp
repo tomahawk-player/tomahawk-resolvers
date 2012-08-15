@@ -306,6 +306,8 @@ SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
     resp[ "name" ] = pl.name_;
     resp[ "revid" ] = pl.revisions.last().revId;
     resp[ "sync" ] = pl.sync_;
+    resp[ "owner" ] = ( m_username == pl.owner_ );
+    resp[ "collaborative" ] = pl.isCollaborative;
     resp[ "_msgtype" ] = "playlist";
 
     QVariantList tracks;
@@ -523,7 +525,8 @@ SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
     resp[ "name" ] = QString::fromUtf8( sp_playlist_name( pl ) );
     if ( sp_playlist_owner( pl ) )
         resp[ "creator" ] = QString::fromUtf8( sp_user_display_name( sp_playlist_owner( pl ) ) );
-    
+    resp[ "collaborative" ] = sp_playlist_is_collaborative( pl );
+
     resp[ "_msgtype" ] = "playlistListing";
 
     QVariantList tracks;
@@ -640,7 +643,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         plObj[ "sync" ] = pl.sync_;
         plObj[ "collaborative" ] = pl.isCollaborative;
         plObj[ "subscribed" ] = pl.isSubscribed;
-        plObj[ "owner" ] = pl.owner_;
+        plObj[ "owner" ] = ( m_username == pl.owner_ );
         playlists << plObj;
     }
 
@@ -672,7 +675,7 @@ SpotifyResolver::resendAllPlaylists()
         plObj[ "sync" ] = pl.sync_;
         plObj[ "collaborative" ] = pl.isCollaborative;
         plObj[ "subscribed" ] = pl.isSubscribed;
-        plObj[ "owner" ] = pl.owner_;
+        plObj[ "owner" ] = ( m_username == pl.owner_ );
         playlists << plObj;
     }
     msg[ "playlists" ] = playlists;
