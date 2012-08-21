@@ -61,6 +61,7 @@ public:
       // Revision timestamp
       int newTimestamp;
       int oldTimestamp;
+      int numSubscribers;
       QString owner_;
       QString name_;
       QString id_;
@@ -69,7 +70,7 @@ public:
       QList<RevisionChanges> revisions;
 
       LoadedPlaylist() : starContainer_( false ), isSubscribed( false ), isCollaborative( false ), sync_( false ), isLoaded( false )
-                       , newTimestamp( -1 ), oldTimestamp( -1 ), playlist_( 0 ) {}
+                       , newTimestamp( -1 ), oldTimestamp( -1 ), numSubscribers( 0 ), playlist_( 0 ) {}
 
     };
     struct Sync {
@@ -108,7 +109,6 @@ public:
     void addNewPlaylist( const QVariantMap& data );
     sp_error moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId );
 
-
     void setCollaborative(const QString &playlistUri, bool collab );
     
     // Mixed
@@ -127,7 +127,7 @@ public:
     static void SP_CALLCONV stateChanged(sp_playlist* pl, void* userdata);
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata);
-
+    static void SP_CALLCONV subscribersChanged( sp_playlist *pl, void *userdata);
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
     static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata);
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
@@ -169,6 +169,8 @@ signals:
     void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
     void sendPlaylistDeleted( const QString& playlistId );
     void forcePruneCache();
+    void notifyCollaborativeChanged( const SpotifyPlaylists::LoadedPlaylist& );
+    void notifySubscriberCountChanged( const SpotifyPlaylists::LoadedPlaylist& );
 
 private slots:
     void ensurePlaylistsLoadedTimerFired();

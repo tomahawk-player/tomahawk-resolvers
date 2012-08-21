@@ -159,7 +159,9 @@ SpotifyResolver::setup()
     connect( m_session->Playlists(), SIGNAL( sendTracksMoved( sp_playlist*, QStringList,QString ) ), this, SLOT( sendTracksMoved( sp_playlist*, QStringList, QString ) ) );
     connect( m_session->Playlists(), SIGNAL( sendTracksRemoved( sp_playlist*, QStringList ) ), this, SLOT( sendTracksRemoved( sp_playlist*, QStringList ) ) );
     connect( m_session->Playlists(), SIGNAL( sendPlaylistDeleted( QString ) ), this, SLOT( sendPlaylistDeleted( QString ) ) );
-    connect( m_session->Playlists(), SIGNAL( notifyNameChange( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylistNameChanged( SpotifyPlaylists::LoadedPlaylist ) ) );
+    connect( m_session->Playlists(), SIGNAL( notifyNameChange( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylistMetadataChanged( SpotifyPlaylists::LoadedPlaylist ) ) );
+    connect( m_session->Playlists(), SIGNAL( notifyCollaborativeChanged( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylistMetadataChanged( SpotifyPlaylists::LoadedPlaylist ) ) );
+    connect( m_session->Playlists(), SIGNAL( notifySubscriberCountChanged( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylistMetadataChanged( SpotifyPlaylists::LoadedPlaylist ) ) );
     connect( m_session->Playlists(), SIGNAL( notifyContainerLoadedSignal() ), this, SLOT( notifyAllPlaylistsLoaded() ) );
 
     // read stdin
@@ -343,9 +345,9 @@ SpotifyResolver::sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& pl )
 
 
 void
-SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist& pl )
+SpotifyResolver::sendPlaylistMetadataChanged( const SpotifyPlaylists::LoadedPlaylist& pl )
 {
-    qDebug() << "Sending playlist namechange to client:" << pl.name_;
+    qDebug() << "Sending playlist metadata to client:" << pl.name_;
 
     if ( !pl.playlist_ || !sp_playlist_is_loaded( pl.playlist_ ) )
     {
@@ -362,7 +364,9 @@ SpotifyResolver::sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist
     resp[ "name" ] = pl.name_;
     resp[ "revid" ] = pl.revisions.last().revId;
     resp[ "sync" ] = pl.sync_;
-    resp[ "_msgtype" ] = "playlistRenamed";
+    resp[ "collaborative" ] = pl.isCollaborative;
+    resp[ "subscribers" ] = pl.numSubscribers;
+    resp[ "_msgtype" ] = "playlistMetadataChanged";
 
 #if PLAYLIST_DEBUG
     QJson::Serializer s;
@@ -526,7 +530,7 @@ SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
     if ( sp_playlist_owner( pl ) )
         resp[ "creator" ] = QString::fromUtf8( sp_user_display_name( sp_playlist_owner( pl ) ) );
     resp[ "collaborative" ] = sp_playlist_is_collaborative( pl );
-
+    resp[ "subscribers" ] = sp_playlist_num_subscribers( pl );
     resp[ "_msgtype" ] = "playlistListing";
 
     QVariantList tracks;
