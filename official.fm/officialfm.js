@@ -34,7 +34,7 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
         if (title !== "") {
             query += encodeURIComponent(title);
         }
-        var apiQuery = "http://api.official.fm/tracks/search?api_key=" + this.secret + "api_version=2.0&q=" + query;
+        var apiQuery = "http://api.official.fm/tracks/search?api_key=" + this.secret + "&fields=streaming&" + "api_version=2.0&q=" + query;
         var that = this;
         var resultObj = {
             results: [],
