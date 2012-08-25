@@ -48,7 +48,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver,
                     url: baseUrl + '/item/' + item['id'] + '/file',
                     bitrate: Math.floor(item['bitrate'] / 1024),
                     duration: Math.floor(item['length']),
-                    size: 83375, //!
+                    size: (item['size'] || 0),
                     score: 1.0,
                     extension: "mp3", //!
                     mimetype: "audio/mpeg", //!
