@@ -1,3 +1,14 @@
+// Map all the audio types supported by beets to extensions and MIME types.
+var AUDIO_TYPES = {
+    'MP3':      ['mp3',  'audio/mpeg'],
+    'AAC':      ['m4a',  'audio/mp4'],
+    'OGG':      ['ogg',  'audio/ogg'],
+    'FLAC':     ['flac', 'audio/x-flac'],
+    'APE':      ['ape',  'audio/ape'],
+    'WavPack':  ['wv',   'audio/x-wavpack'],
+    'MusePack': ['mpc',  'audio/x-musepack']
+};
+
 var BeetsResolver = Tomahawk.extend(TomahawkResolver,
 {
     // Basic setup.
@@ -39,6 +50,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver,
             var searchResults = [];
             for (var i = 0; i < items.length; ++i) {
                 item = items[i];
+                var type_info = AUDIO_TYPES[item['format']];
                 searchResults.push({
                     artist: item['artist'],
                     album: item['album'],
@@ -50,8 +62,8 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver,
                     duration: Math.floor(item['length']),
                     size: (item['size'] || 0),
                     score: 1.0,
-                    extension: "mp3", //!
-                    mimetype: "audio/mpeg", //!
+                    extension: type_info[0],
+                    mimetype: type_info[1],
                     year: item['year']
                 });
             }
