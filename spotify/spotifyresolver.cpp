@@ -253,7 +253,7 @@ SpotifyResolver::errorMsgReceived( sp_error error )
 void
 SpotifyResolver::updateBlob( const QByteArray& username, const QByteArray& blob )
 {
-    if( m_username == QString(username) )
+    if( m_username.toUtf8() == username.constData() )
     {
         QSettings s;
         s.setValue( "blob", QString(blob) );

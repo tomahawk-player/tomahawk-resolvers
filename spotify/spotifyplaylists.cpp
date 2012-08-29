@@ -1530,7 +1530,7 @@ SpotifyPlaylists::renamePlaylist( const QVariantMap& data )
     {
         const QString newTitle = data.value( "newTitle").toString();
         qDebug() << "Renameing playlist with name " << playlist.name_ << " to " << newTitle;
-        sp_playlist_rename( playlist.playlist_, newTitle.toLatin1() );
+        sp_playlist_rename( playlist.playlist_, newTitle.toUtf8() );
 
     }
 

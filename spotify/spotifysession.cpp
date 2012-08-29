@@ -198,16 +198,15 @@ void SpotifySession::relogin()
 void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blob)
 {
 
-    QByteArray username;
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
 #if SPOTIFY_API_VERSION >= 12
-    username = QByteArray( sp_session_user_name( session ) );
+    const char* username = sp_session_user_name( session );
 #else
-    username = QByteArray( sp_user_canonical_name( sp_session_user( session ) ) );
+    const char* username = sp_user_canonical_name( sp_session_user( session ) );
 #endif
     _session->m_blob = QByteArray(blob);
-    qDebug() << " ==== Got blob update for " << username << " ==== ";
-    emit _session->blobUpdated( username.constData(), QByteArray(blob).constData() );
+    qDebug() << " ==== Got blob update for " << QString::fromUtf8(username, strlen(username) ) << " ==== ";
+    emit _session->blobUpdated( username, QByteArray(blob).constData() );
 }
 
 /**
@@ -240,9 +239,9 @@ void SpotifySession::login( const QString& username, const QString& password, co
     m_password = password;
     char reloginname[256];
     sp_error error;
-    sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
+    int ok = sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
 
-    if( QString::fromLatin1( reloginname ) == m_username )
+    if( ok != -1 && QString::fromUtf8( reloginname, strlen(reloginname) ) == m_username.toUtf8() )
     {
         if ( sp_session_relogin(m_session) == SP_ERROR_NO_CREDENTIALS)
         {
@@ -257,7 +256,11 @@ void SpotifySession::login( const QString& username, const QString& password, co
     else
     {
         // Forget last user
-        qDebug() << "Forgetting last user!" << QString::fromLatin1( reloginname ) << m_username;
+        if( ok == -1 )
+            qDebug() << " Relogin username was truncated or an error occured... Logging in with credentials";
+        else
+            qDebug() << "Forgetting last user!" << QString::fromUtf8( reloginname, strlen( reloginname ) ) << m_username;
+
         sp_session_forget_me(m_session);
     }
 
@@ -276,15 +279,15 @@ void SpotifySession::login( const QString& username, const QString& password, co
             return;
         }
 
-        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "" ) << "using blob" << blob.constData();
+        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "" ) << "using blob";
 #if SPOTIFY_API_VERSION >= 12
-        error = sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData()  );
+        error = sp_session_login(m_session, m_username.toUtf8(), m_password.toUtf8(), 1, blob.isEmpty() ? NULL : blob.constData()  );
         if( error != SP_ERROR_OK )
             emit loginResponse( false, sp_error_message( error ) );
 #elif SPOTIFY_API_VERSION >= 11
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+        sp_session_login(m_session, m_username.toUtf8(), m_password.toUtf8(), 1, blob.isEmpty() ? NULL : blob.constData() );
 #else
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
+        sp_session_login(m_session, m_username.toUtf8(), m_password.toUtf8(), 1);
 #endif
 
 
