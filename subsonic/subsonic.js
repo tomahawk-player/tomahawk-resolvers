@@ -49,6 +49,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     settings:
     {
         name: 'Subsonic',
+        icon: 'subsonic-icon.png',
         weight: 70,
         timeout: 8
     },

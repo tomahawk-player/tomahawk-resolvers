@@ -40,6 +40,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	settings:
 	{
 		name: 'YouTube',
+		icon: 'youtube-icon.png',
 		weight: 70,
 		timeout: 15
 	},
