@@ -2,6 +2,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	getConfigUi: function () {
 		var uiData = Tomahawk.readBase64("config.ui");
+		// Set userConfig here
+		var userConfig = this.getUserConfig();
+		this.includeCovers = userConfig.includeCovers;
+		this.includeRemixes = userConfig.includeRemixes;
+		this.includeLive = userConfig.includeLive;
+		this.qualityPreference = userConfig.qualityPreference;
 		return {
 			"widget": uiData,
 			fields: [{
@@ -25,23 +31,21 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				"youtube.png" : Tomahawk.readBase64("youtube.png")
 			}]
 		};
+		
+		
 	},
 
 	newConfigSaved: function () {
 		var userConfig = this.getUserConfig();
 		if((userConfig.includeCovers !== this.includeCovers) || (userConfig.includeRemixes !== this.includeRemixes) || (userConfig.includeLive !== this.includeLive) || (userConfig.qualityPreference !== this.qualityPreference)) {
-			this.setConfig();
+			this.includeCovers = userConfig.includeCovers;
+			this.includeRemixes = userConfig.includeRemixes;
+			this.includeLive = userConfig.includeLive;
+			this.qualityPreference = userConfig.qualityPreference;
+			this.saveUserConfig();
 		}
 	},
 
-	setConfig: function() {
-		var userConfig = this.getUserConfig();
-		this.includeCovers = userConfig.includeCovers;
-		this.includeRemixes = userConfig.includeRemixes;
-		this.includeLive = userConfig.includeLive;
-		this.qualityPreference = userConfig.qualityPreference;
-	},
-	
 	settings:
 	{
 		name: 'YouTube',
@@ -82,13 +86,11 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	init: function() {
-		// Set the config
-		this.setConfig();
 		String.prototype.capitalize = function(){
 			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
-		};		
+		};
 	},
-	
+
 	parseVideoUrlFromYtPage: function (html) {
 		
 		var magic = "url_encoded_fmt_stream_map\": \"url=";
@@ -119,7 +121,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		
 		if(this.qualityPreference === undefined){
 			// One way of throwing an "assert" :p
-			console.log("Assert:" + this.qualityPreference);
+			Tomahawk.log("Assert: " + this.qualityPreference);
 		}
 
 		if(this.qualityPreference === 0){
@@ -161,7 +163,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 		return finalUrl;
 	},
-	
+
 	resolve: function(qid, artist, album, title)
 	{
 		if (artist !== "") {
@@ -188,24 +190,24 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						stop = stop - 1;
 						continue;
 					}
-					
+
 					if(resp.data.items[i].duration === undefined){
 						stop = stop - 1;
 						continue;
 					}
-		
+
 					// Check whether the artist and title (if set) are in the returned title, discard otherwise
 					if (resp.data.items[i].title !== undefined && resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
 						stop = stop - 1;
 						continue;
 					}
-					
+
 					if (that.getTrack(resp.data.items[i].title, title)){
 						var result = new Object();
 						if (artist !== "") {
 							result.artist = artist;
 						}
-							
+
 						result.source = that.settings.name;
 						result.mimetype = "video/h264";
 						result.duration = resp.data.items[i].duration;
@@ -221,6 +223,18 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									if(xhr2.status === 200) {
 										if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
 											result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
+											// Get the expiration time, to be able to cache results in tomahawk
+											if( result.url.indexOf("expire=") !== -1 )
+											{
+												var expireSlice = result.url.indexOf("expire=");
+												var expiresInMinutes = Math.floor( ( result.url.slice( expireSlice, result.url.indexOf("&key=") ).replace("expire=", "") - (new Date).getTime()/1000 ) / 60 );
+												if( expiresInMinutes > 0 )
+												{
+													Tomahawk.log( "Found expirationdate! " + expiresInMinutes);
+													result.expires = expiresInMinutes;
+												}
+
+											}
 											result.bitrate = self.getBitrate(result.url);
 											result.id = i;
 											results.push(result);
@@ -267,7 +281,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		});
 	},
-	
+
 	search: function( qid, searchString )
 	{			
 		var limit = 20;
@@ -292,7 +306,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						stop = stop -1;
 						continue;
 					}
-		
+
 					// Check whether the artist and title (if set) are in the returned title, discard otherwise
 					if (resp.data.items[i].title === undefined) {
 						stop = stop - 1;
@@ -301,7 +315,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 					if (that.getTrack(resp.data.items[i].title, "")){
 						var result = new Object();
-						
+
 						result.source = that.settings.name;
 						result.mimetype = "video/h264";
 						result.duration = resp.data.items[i].duration;
