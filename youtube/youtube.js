@@ -30,11 +30,16 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	newConfigSaved: function () {
 		var userConfig = this.getUserConfig();
 		if((userConfig.includeCovers !== this.includeCovers) || (userConfig.includeRemixes !== this.includeRemixes) || (userConfig.includeLive !== this.includeLive) || (userConfig.qualityPreference !== this.qualityPreference)) {
-			this.includeCovers = userConfig.includeCovers;
-			this.includeRemixes = userConfig.includeRemixes;
-			this.includeLive = userConfig.includeLive;
-			this.qualityPreference = userConfig.qualityPreference;
+			this.setConfig();
 		}
+	},
+
+	setConfig: function() {
+		var userConfig = this.getUserConfig();
+		this.includeCovers = userConfig.includeCovers;
+		this.includeRemixes = userConfig.includeRemixes;
+		this.includeLive = userConfig.includeLive;
+		this.qualityPreference = userConfig.qualityPreference;
 	},
 	
 	settings:
@@ -60,9 +65,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 	
 	getBitrate: function (urlString) {
+		//http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
+		// No need to get higher than hd720, as it only will eat bandwith and do nothing for sound quality
 		var bitrate;
-		if (urlString.indexOf("quality=hd720") !== -1){
-			bitrate = 152;
+		
+		if (urlString.indexOf("quality=hd720") !== -1 ){
+			bitrate = 192;
 		}
 		else if(urlString.indexOf("quality=medium") !== -1){
 			bitrate = 128;
@@ -74,12 +82,15 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	init: function() {
+		// Set the config
+		this.setConfig();
 		String.prototype.capitalize = function(){
-		return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
-		};
+			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
+		};		
 	},
 	
 	parseVideoUrlFromYtPage: function (html) {
+		
 		var magic = "url_encoded_fmt_stream_map\": \"url=";
 		var magicLimit = "\", ";
 		var pos = html.indexOf(magic) + magic.length;
@@ -105,9 +116,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		}
 		var finalUrl;
+		
 		if(this.qualityPreference === undefined){
-			this.qualityPreference = 1;
+			// One way of throwing an "assert" :p
+			console.log("Assert:" + this.qualityPreference);
 		}
+
 		if(this.qualityPreference === 0){
 			finalUrl = urlsArray[0];
 		}
@@ -157,7 +171,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			query += encodeURIComponent(title);
 		}
 		var limit = 10;
-		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + query + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
+		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + query + "&v=2&alt=jsonc&safeSearch=none&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
 		var empty = {
@@ -207,19 +221,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									if(xhr2.status === 200) {
 										if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
 											result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
-											
-											// Get the expiration time, to be able to cache results in tomahawk
-											if( result.url.indexOf("expire=") !== -1 )
-											{
-											    var expireSlice = result.url.indexOf("expire=");
-												var expiresInMinutes = Math.floor( ( result.url.slice( expireSlice, result.url.indexOf("&key=") ).replace("expire=", "") - (new Date).getTime()/1000 ) / 60 );
-												if( expiresInMinutes > 0 )
-												{
-													Tomahawk.log( "Found expirationdate! " + expiresInMinutes);
-													result.expires = expiresInMinutes;
-												}
-												
-											}
 											result.bitrate = self.getBitrate(result.url);
 											result.id = i;
 											results.push(result);
@@ -268,7 +269,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 	
 	search: function( qid, searchString )
-	{				
+	{			
 		var limit = 20;
 		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
