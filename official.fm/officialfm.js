@@ -1,6 +1,7 @@
 var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Official.fm',
+        icon: 'officialfm-icon.png',
         weight: 70,
         timeout: 5
     },

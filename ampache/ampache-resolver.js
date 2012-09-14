@@ -4,6 +4,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     albums: {},
     settings: {
         name: 'Ampache Resolver',
+        icon: 'ampache-icon.png',
         weight: 85,
         timeout: 5,
         limit: 10

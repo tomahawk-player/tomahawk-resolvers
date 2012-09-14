@@ -10,6 +10,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
     settings: {
         name: 'Grooveshark',
+        icon: 'grooveshark-icon.png',
         weight: 30,
         timeout: 20
     },

@@ -37,6 +37,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	settings: {
 		name: 'SoundCloud',
+		icon: 'soundcloud-icon.png',
 		weight: 85,
 		timeout: 15
 	},

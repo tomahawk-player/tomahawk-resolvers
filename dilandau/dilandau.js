@@ -7,6 +7,7 @@ var DilandauResolver = Tomahawk.extend(TomahawkResolver, {
 
 	settings: {
 		name: 'Dilandau',
+		icon: 'dilandau-icon.png',
 		weight: 90,
 		timeout: 10
 	},
