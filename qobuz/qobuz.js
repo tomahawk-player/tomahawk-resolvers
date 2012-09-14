@@ -49,6 +49,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Qobuz (Beta)',
         nameForTracks: 'Qobuz',
+        icon: 'qobuz.png',
         weight: 91,
         timeout: 5
     },

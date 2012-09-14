@@ -4,6 +4,7 @@
 var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 	settings: {
 		name: 'Ex.fm',
+		icon: 'exfm-icon.png',
 		weight: 30,
 		timeout: 5
 	},

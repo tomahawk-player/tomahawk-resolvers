@@ -4,6 +4,7 @@
 var FSharedResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: '4shared',
+        icon: '4shared-icon.png',
         weight: 50,
         timeout: 5
     },

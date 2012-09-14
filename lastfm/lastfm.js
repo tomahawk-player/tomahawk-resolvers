@@ -1,6 +1,7 @@
 var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Last.fm',
+        icon: 'lastfm-icon.png',
         weight: 85,
         timeout: 5
     },

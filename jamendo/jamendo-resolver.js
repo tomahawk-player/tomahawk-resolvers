@@ -4,6 +4,7 @@
 var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Jamendo',
+        icon: 'jamendo-icon.png',
         weight: 75,
         timeout: 5
     },
