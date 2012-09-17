@@ -13,6 +13,13 @@ add_subdirectory(qxtweb-standalone)
 
 include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ ${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/spotify-sourceicon.png")
+    message("Copying spotify source icon to binary dir")
+    file(COPY "${CMAKE_SOURCE_DIR}/spotify-sourceicon.png" DESTINATION ${CMAKE_BINARY_DIR})
+else()
+    message("Found existing spotify source icon, not copying")
+endif()
+
 set(tomahawkspotify_SRCS
 
     kdsingleapplicationguard/kdsingleapplicationguard.cpp

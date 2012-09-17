@@ -513,7 +513,7 @@ void
 SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
 {
     Q_ASSERT( sp_playlist_is_loaded( pl ) );
-    
+
     if ( !sp_playlist_is_loaded( pl ) )
     {
         qWarning() << Q_FUNC_INFO << "Got NON_LOADED playlist in playlist loaded callback, wtf?" << sp_playlist_name( pl );
@@ -538,7 +538,7 @@ SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
     for ( int i = 0; i < sp_playlist_num_tracks( pl ); i++ )
     {
         sp_track* tr = sp_playlist_track( pl, i );
-        
+
         if ( !tr || !sp_track_is_loaded( tr ) )
         {
             waitingFor << tr;
@@ -753,6 +753,7 @@ SpotifyResolver::sendSettingsMessage()
     m[ "name" ] = "Spotify";
     m[ "weight" ] = "90";
     m[ "timeout" ] = "10";
+    m[ "icon" ] = "spotify-sourceicon.png";
 
     sendMessage( m );
 }
