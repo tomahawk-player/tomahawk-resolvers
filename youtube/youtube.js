@@ -49,7 +49,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	settings:
 	{
 		name: 'YouTube',
-		icon: 'youtube-icon.png',
 		weight: 70,
 		timeout: 15
 	},
@@ -87,37 +86,40 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	init: function() {
+		
+		this.includeCovers = false;
+		this.includeRemixes = false;
+		this.includeLive = false;
+		this.qualityPreference = 1;
+		
 		String.prototype.capitalize = function(){
 			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
 		};
 	},
 
 	parseVideoUrlFromYtPage: function (html) {
-		
-		var magic = "url_encoded_fmt_stream_map\": \"url=";
-		var magicLimit = "\", ";
+	
+
+		var magic = "url_encoded_fmt_stream_map=";
+		var magicLimit = "\\u0026";
 		var pos = html.indexOf(magic) + magic.length;
 		html = html.slice(pos);
+		
 		var urls = html.slice(0, html.indexOf(magicLimit));
-		urls = urls.split("fallback_host=");
+
+		urls = unescape(urls);
+		urls = urls.split(",");
+		
 		var urlsArray = [];
 		for (i = 0; i < urls.length - 1; i++){
-			var startUrl = "url=";
-			var stopUrl = "\\u0026";
-			var startSlice;
-			if (urls[i].indexOf(startUrl) !== -1){ //We don't want to slice if startUrl is not found
-				startSlice = urls[i].indexOf(startUrl) + startUrl.length;
-			}
-			else {
-				startSlice = 0;
-			}
-			var subUrl = urls[i].slice(startSlice);
-			subUrl = subUrl.slice(0, subUrl.lastIndexOf(stopUrl));
-			subUrl = decodeURIComponent(subUrl).replace(/%2C/g, ",").replace(/\\u0026/g, "&");
+			// decodeUri and replace itag, url,  ;codec=blabla" as well as the sig, currently resides in the fallback url 
+			var subUrl = decodeURIComponent( urls[i]).replace(/\itag=(.[0-9]?&url=)/g, "").replace(/\;(.*?)"&/g, "&").replace("sig", "signature");
+			// Append quality=large if hd720 isnt found? Need to check sound difference
 			if (subUrl.indexOf("quality=hd720") !== -1 || subUrl.indexOf("quality=medium") !== -1 || subUrl.indexOf("quality=small") !== -1) {
 				urlsArray.push(subUrl);
 			}
 		}
+
 		var finalUrl;
 		
 		if(this.qualityPreference === undefined){
@@ -227,12 +229,14 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 											// Get the expiration time, to be able to cache results in tomahawk
 											if( result.url.indexOf("expire=") !== -1 )
 											{
-												var expireSlice = result.url.indexOf("expire=");
-												var expiresInMinutes = Math.floor( ( result.url.slice( expireSlice, result.url.indexOf("&key=") ).replace("expire=", "") - (new Date).getTime()/1000 ) / 60 );
-												if( expiresInMinutes > 0 )
-												{
-													Tomahawk.log( "Found expirationdate! " + expiresInMinutes);
-													result.expires = expiresInMinutes;
+												var regex = /expire=([^&#]*)/g;
+												var match = regex.exec(result.url);
+												if( match[1] !== undefined ){
+													var expiresInMinutes = Math.floor( ( match[1] - (new Date).getTime()/1000 ) / 60 );
+													if( expiresInMinutes > 0 )
+													{
+														result.expires = expiresInMinutes;
+													}
 												}
 
 											}
@@ -286,7 +290,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	search: function( qid, searchString )
 	{			
 		var limit = 20;
-		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
+		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + 20;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
 		var empty = {
@@ -347,8 +351,18 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 							stop = stop - 1;
 							continue;
 						}
+						
 						(function(i, qid, result) {
 							var xmlHttpRequest = new XMLHttpRequest();
+							// True story:
+						    // 	This url could be used instead of parsing the yt html. However, if the content is restricted from beeing
+						    // 	played from other sites, it will fail. It could be a way to get results faster and do a "normal" lookup if 
+						    // 	response is status=fail&errorcode=150&reason=This+video+contains+content+from+Vevo
+							// 	URL: http://www.youtube.com/get_video_info?&video_id= + resp.data.items[i]['id']
+							// 	If it is used in future, magic needs to be
+							// 		var magic = "&url_encoded_fmt_stream_map=";
+							//  	var magicLimit = ",";
+							// End of anecdote
 							xmlHttpRequest.open('GET', resp.data.items[i].player['default'], true);
 							xmlHttpRequest.onreadystatechange = function() {
 								if (xmlHttpRequest.readyState === 4){
@@ -366,6 +380,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 													result.bitrate = that.getBitrate(result.url);
 													result.id = i;
 													results.push(result);
+													Tomahawk.log("Found:" + result);
 													stop = stop - 1;
 												}
 												else {
