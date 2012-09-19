@@ -218,58 +218,56 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.track = title;
 						var self = that;
 						(function(i, qid, result) {
-							var xhr2 = new XMLHttpRequest();
-							xhr2.open('GET', resp.data.items[i].player['default'], true);
-							xhr2.onreadystatechange = function() {
-								if (xhr2.readyState === 4){
-									if(xhr2.status === 200) {
-										if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
-											result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
-											// Get the expiration time, to be able to cache results in tomahawk
-											if( result.url.indexOf("expire=") !== -1 )
-											{
-												var regex = /expire=([^&#]*)/g;
-												var match = regex.exec(result.url);
-												if( match[1] !== undefined ){
-													var expiresInMinutes = Math.floor( ( match[1] - (new Date).getTime()/1000 ) / 60 );
-													if( expiresInMinutes > 0 )
-													{
-														result.expires = expiresInMinutes;
-													}
+							Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2) {
+								if(xhr2.status === 200) {
+									if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined 
+										&& self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 
+										&& self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
+										
+										result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
+										// Get the expiration time, to be able to cache results in tomahawk
+										if( result.url.indexOf("expire=") !== -1 )
+										{
+											var regex = /expire=([^&#]*)/g;
+											var match = regex.exec(result.url);
+											if( match[1] !== undefined ){
+												var expiresInMinutes = Math.floor( ( match[1] - (new Date).getTime()/1000 ) / 60 );
+												if( expiresInMinutes > 0 )
+												{
+													result.expires = expiresInMinutes;
 												}
+											}
 
-											}
-											result.bitrate = self.getBitrate(result.url);
-											result.id = i;
-											results.push(result);
-											stop = stop - 1;
-											if (stop === 0){
-												var best = i + 1;
-												for (var j = 0; j < results.length; j++){
-													if (results[j].id < best){
-														best = results[j].id;
-														var finalResult = results[j];
-													}
-												}
-												delete finalResult.id;
-												var resolveReturn = {
-													results: [finalResult],
-													qid: qid
-												};
-												Tomahawk.addTrackResults(resolveReturn);
-											}
 										}
-										else {
-											stop = stop - 1;
+										result.bitrate = self.getBitrate(result.url);
+										result.id = i;
+										results.push(result);
+										stop = stop - 1;
+										if (stop === 0){
+											var best = i + 1;
+											for (var j = 0; j < results.length; j++){
+												if (results[j].id < best){
+													best = results[j].id;
+													var finalResult = results[j];
+												}
+											}
+											delete finalResult.id;
+											var resolveReturn = {
+												results: [finalResult],
+												qid: qid
+											};
+											Tomahawk.addTrackResults(resolveReturn);
 										}
 									}
 									else {
-										Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
-										Tomahawk.log("Error: " + xhr2.status + " " + xhr2.statusText);
+										stop = stop - 1;
 									}
 								}
-							};
-							xhr2.send(null);
+								else {
+									Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
+									Tomahawk.log("Error: " + xhr2.status + " " + xhr2.statusText);
+								}
+							});
 						})(i, qid, result);
 					}
 					else {
@@ -352,7 +350,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						}
 						
 						(function(i, qid, result) {
-							var xmlHttpRequest = new XMLHttpRequest();
 							// True story:
 							// 	This url could be used instead of parsing the yt html. However, if the content is restricted from beeing
 							// 	played from other sites, it will fail. It could be a way to get results faster and do a "normal" lookup if 
@@ -362,55 +359,51 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 							// 		var magic = "&url_encoded_fmt_stream_map=";
 							//  	var magicLimit = ",";
 							// End of anecdote
-							xmlHttpRequest.open('GET', resp.data.items[i].player['default'], true);
-							xmlHttpRequest.onreadystatechange = function() {
-								if (xmlHttpRequest.readyState === 4){
-									if(xmlHttpRequest.status === 200) {
-										result.url = that.parseVideoUrlFromYtPage(xmlHttpRequest.responseText);
-										var artist = encodeURIComponent(result.artist.capitalize());
-										var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=5&sort=hotttnesss-desc&text=" + artist;
-										var self = that;
-										Tomahawk.asyncRequest(url, function(xhr) {
-											var response = JSON.parse(xhr.responseText).response;
-											if (response && response.artists && response.artists.length > 0) {
-												artist = response.artists[0].name;
-												result.artist = artist;
-												if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
-													result.bitrate = that.getBitrate(result.url);
-													result.id = i;
-													results.push(result);
-													stop = stop - 1;
-												}
-												else {
-													stop = stop - 1;
-												}
+							Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2) {
+								if(xhr2.status === 200) {
+									result.url = that.parseVideoUrlFromYtPage(xhr2.responseText);
+									var artist = encodeURIComponent(result.artist.capitalize());
+									var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=5&sort=hotttnesss-desc&text=" + artist;
+									var self = that;
+									Tomahawk.asyncRequest(url, function(xhr3) {
+										var response = JSON.parse(xhr3.responseText).response;
+										if (response && response.artists && response.artists.length > 0) {
+											artist = response.artists[0].name;
+											result.artist = artist;
+											if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
+												result.bitrate = that.getBitrate(result.url);
+												result.id = i;
+												results.push(result);
+												stop = stop - 1;
 											}
 											else {
 												stop = stop - 1;
 											}
-											if (stop === 0) {
-												function sortResults(a, b){
-													return a.id - b.id;
-												}
-												results = results.sort(sortResults);
-												for (var j = 0; j < results.length; j++){
-													delete results[j].id;
-												}
-												var toReturn = {
-													results: results,
-													qid: qid
-												};
-												Tomahawk.addTrackResults(toReturn);
+										}
+										else {
+											stop = stop - 1;
+										}
+										if (stop === 0) {
+											function sortResults(a, b){
+												return a.id - b.id;
 											}
-										});
-									}
-									else {
-										Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
-										Tomahawk.log("Error: " + xmlHttpRequest.status + " " + xmlHttpRequest.statusText);
-									}
+											results = results.sort(sortResults);
+											for (var j = 0; j < results.length; j++){
+												delete results[j].id;
+											}
+											var toReturn = {
+												results: results,
+												qid: qid
+											};
+											Tomahawk.addTrackResults(toReturn);
+										}
+									});
 								}
-							};
-							xmlHttpRequest.send(null);
+								else {
+									Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
+									Tomahawk.log("Error: " + xhr2.status + " " + xhr2.statusText);
+								}
+							});
 						})(i, qid, result);
 					}
 					else {
