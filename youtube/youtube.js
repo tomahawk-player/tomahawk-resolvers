@@ -2,12 +2,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	getConfigUi: function () {
 		var uiData = Tomahawk.readBase64("config.ui");
-		// Set userConfig here
-		var userConfig = this.getUserConfig();
-		this.includeCovers = userConfig.includeCovers;
-		this.includeRemixes = userConfig.includeRemixes;
-		this.includeLive = userConfig.includeLive;
-		this.qualityPreference = userConfig.qualityPreference;
 		return {
 			"widget": uiData,
 			fields: [{
@@ -88,10 +82,19 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 	init: function() {
 		
-		this.includeCovers = false;
-		this.includeRemixes = false;
-		this.includeLive = false;
-		this.qualityPreference = 1;
+		// Set userConfig here
+		var userConfig = this.getUserConfig();
+		if( userConfig !== undefined && userConfig.qualityPreference !== undefined ){
+			this.includeCovers = userConfig.includeCovers;
+			this.includeRemixes = userConfig.includeRemixes;
+			this.includeLive = userConfig.includeLive;
+			this.qualityPreference = userConfig.qualityPreference;
+		}else{
+			this.includeCovers = false;
+			this.includeRemixes = false;
+			this.includeLive = false;
+			this.qualityPreference = 1;
+		}
 		
 		String.prototype.capitalize = function(){
 			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
