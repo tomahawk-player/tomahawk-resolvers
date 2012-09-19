@@ -49,6 +49,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	settings:
 	{
 		name: 'YouTube',
+		icon: 'youtube-icon.png',
 		weight: 70,
 		timeout: 15
 	},
@@ -98,8 +99,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	parseVideoUrlFromYtPage: function (html) {
-	
-
 		var magic = "url_encoded_fmt_stream_map=";
 		var magicLimit = "\\u0026";
 		var pos = html.indexOf(magic) + magic.length;
@@ -290,7 +289,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	search: function( qid, searchString )
 	{			
 		var limit = 20;
-		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + 20;
+		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
 		var empty = {
@@ -355,9 +354,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						(function(i, qid, result) {
 							var xmlHttpRequest = new XMLHttpRequest();
 							// True story:
-						    // 	This url could be used instead of parsing the yt html. However, if the content is restricted from beeing
-						    // 	played from other sites, it will fail. It could be a way to get results faster and do a "normal" lookup if 
-						    // 	response is status=fail&errorcode=150&reason=This+video+contains+content+from+Vevo
+							// 	This url could be used instead of parsing the yt html. However, if the content is restricted from beeing
+							// 	played from other sites, it will fail. It could be a way to get results faster and do a "normal" lookup if 
+							// 	response is status=fail&errorcode=150&reason=This+video+contains+content+from+Vevo
 							// 	URL: http://www.youtube.com/get_video_info?&video_id= + resp.data.items[i]['id']
 							// 	If it is used in future, magic needs to be
 							// 		var magic = "&url_encoded_fmt_stream_map=";
@@ -380,7 +379,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 													result.bitrate = that.getBitrate(result.url);
 													result.id = i;
 													results.push(result);
-													Tomahawk.log("Found:" + result);
 													stop = stop - 1;
 												}
 												else {
