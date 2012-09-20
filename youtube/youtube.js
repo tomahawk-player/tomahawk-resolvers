@@ -84,12 +84,13 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		
 		// Set userConfig here
 		var userConfig = this.getUserConfig();
-		if( userConfig !== undefined && userConfig.qualityPreference !== undefined ){
+		if ( userConfig !== undefined && userConfig.qualityPreference !== undefined ){
 			this.includeCovers = userConfig.includeCovers;
 			this.includeRemixes = userConfig.includeRemixes;
 			this.includeLive = userConfig.includeLive;
 			this.qualityPreference = userConfig.qualityPreference;
-		}else{
+		}
+		else {
 			this.includeCovers = false;
 			this.includeRemixes = false;
 			this.includeLive = false;
@@ -124,45 +125,45 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 		var finalUrl;
 		
-		if(this.qualityPreference === undefined){
+		if (this.qualityPreference === undefined){
 			// One way of throwing an "assert" :p
 			Tomahawk.log("Assert: " + this.qualityPreference);
 		}
 
-		if(this.qualityPreference === 0){
+		if (this.qualityPreference === 0){
 			finalUrl = urlsArray[0];
 		}
-		if(this.qualityPreference === 1){
+		if (this.qualityPreference === 1){
 			for (i = 0; i < urlsArray.length; i++){
-				if(urlsArray[i].indexOf("quality=medium") !== -1){
+				if (urlsArray[i].indexOf("quality=medium") !== -1){
 					finalUrl = urlsArray[i];
 				}
 			}
-			if(finalUrl === undefined){
+			if (finalUrl === undefined){
 				for (i = 0; i < urlsArray.length; i++){
-					if(urlsArray[i].indexOf("quality=small") !== -1){
+					if (urlsArray[i].indexOf("quality=small") !== -1){
 						finalUrl = urlsArray[i];
 					}
 				}
 			}
-			if(finalUrl === undefined){
+			if (finalUrl === undefined){
 				finalUrl = urlsArray[0];
 			}
 		}
-		if(this.qualityPreference === 2){
+		if (this.qualityPreference === 2){
 			for (i = 0; i < urlsArray.length; i++){
-				if(urlsArray[i].indexOf("quality=small") !== -1){
+				if (urlsArray[i].indexOf("quality=small") !== -1){
 					finalUrl = urlsArray[i];
 				}
 			}
-			if(finalUrl === undefined){
+			if (finalUrl === undefined){
 				for (i = 0; i < urlsArray.length; i++){
-					if(urlsArray[i].indexOf("quality=medium") !== -1){
+					if (urlsArray[i].indexOf("quality=medium") !== -1){
 						finalUrl = urlsArray[i];
 					}
 				}
 			}
-			if(finalUrl === undefined){
+			if (finalUrl === undefined){
 				finalUrl = urlsArray[0];
 			}
 		}
@@ -191,12 +192,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			if (resp.data.totalItems !== 0){
 				var stop = Math.min(limit, resp.data.totalItems);
 				for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
-					if(resp.data.items[i] === undefined){
+					if (resp.data.items[i] === undefined){
 						stop = stop - 1;
 						continue;
 					}
 
-					if(resp.data.items[i].duration === undefined){
+					if (resp.data.items[i].duration === undefined){
 						stop = stop - 1;
 						continue;
 					}
@@ -222,53 +223,42 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						var self = that;
 						(function(i, qid, result) {
 							Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2) {
-								if(xhr2.status === 200) {
-									if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined 
-										&& self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 
-										&& self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
-										
-										result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
-										// Get the expiration time, to be able to cache results in tomahawk
-										if( result.url.indexOf("expire=") !== -1 )
-										{
-											var regex = /expire=([^&#]*)/g;
-											var match = regex.exec(result.url);
-											if( match[1] !== undefined ){
-												var expiresInMinutes = Math.floor( ( match[1] - (new Date).getTime()/1000 ) / 60 );
-												if( expiresInMinutes > 0 )
-												{
-													result.expires = expiresInMinutes;
-												}
+								if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
+									result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
+									// Get the expiration time, to be able to cache results in tomahawk
+									if ( result.url.indexOf("expire=") !== -1 ){
+										var regex = /expire=([^&#]*)/g;
+										var match = regex.exec(result.url);
+										if ( match[1] !== undefined ){
+											var expiresInMinutes = Math.floor( ( match[1] - (new Date).getTime()/1000 ) / 60 );
+											if ( expiresInMinutes > 0 )
+											{
+												result.expires = expiresInMinutes;
 											}
-
-										}
-										result.bitrate = self.getBitrate(result.url);
-										result.id = i;
-										results.push(result);
-										stop = stop - 1;
-										if (stop === 0){
-											var best = i + 1;
-											for (var j = 0; j < results.length; j++){
-												if (results[j].id < best){
-													best = results[j].id;
-													var finalResult = results[j];
-												}
-											}
-											delete finalResult.id;
-											var resolveReturn = {
-												results: [finalResult],
-												qid: qid
-											};
-											Tomahawk.addTrackResults(resolveReturn);
 										}
 									}
-									else {
-										stop = stop - 1;
+									result.bitrate = self.getBitrate(result.url);
+									result.id = i;
+									results.push(result);
+									stop = stop - 1;
+									if (stop === 0){
+										var best = i + 1;
+										for (var j = 0; j < results.length; j++){
+											if (results[j].id < best){
+												best = results[j].id;
+												var finalResult = results[j];
+											}
+										}
+										delete finalResult.id;
+										var resolveReturn = {
+											results: [finalResult],
+											qid: qid
+										};
+										Tomahawk.addTrackResults(resolveReturn);
 									}
 								}
 								else {
-									Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
-									Tomahawk.log("Error: " + xhr2.status + " " + xhr2.statusText);
+									stop = stop - 1;
 								}
 							});
 						})(i, qid, result);
@@ -303,11 +293,11 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				var results = [];
 				var stop = Math.min(limit, resp.data.totalItems);
 				for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
-					if(resp.data.items[i] === undefined){
+					if (resp.data.items[i] === undefined){
 						stop = stop - 1;
 						continue;
 					}
-					if(resp.data.items[i].duration === undefined){
+					if (resp.data.items[i].duration === undefined){
 						stop = stop -1;
 						continue;
 					}
@@ -327,23 +317,23 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.score = 0.85;
 						result.year = resp.data.items[i].uploaded.slice(0,4);
 						var track = resp.data.items[i].title;
-						if(track.indexOf(" - ") !== -1){
+						if (track.indexOf(" - ") !== -1){
 							result.track = track.slice(track.indexOf(" - ") + 3);
 							result.artist = track.slice(0, track.indexOf(" - "));
 						}
-						else if(track.indexOf(" -") !== -1){
+						else if (track.indexOf(" -") !== -1){
 							result.track = track.slice(track.indexOf(" -") + 2);
 							result.artist = track.slice(0, track.indexOf(" -"));
 						}
-						else if(track.indexOf(": ") !== -1){
+						else if (track.indexOf(": ") !== -1){
 							result.track = track.slice(track.indexOf(": ") + 2);
 							result.artist = track.slice(0, track.indexOf(": "));
 						}
-						else if(track.indexOf("-") !== -1){
+						else if (track.indexOf("-") !== -1){
 							result.track = track.slice(track.indexOf("-") + 1);
 							result.artist = track.slice(0, track.indexOf("-"));
 						}
-						else if(track.indexOf(":") !== -1){
+						else if (track.indexOf(":") !== -1){
 							result.track = track.slice(track.indexOf(":") + 1);
 							result.artist = track.slice(0, track.indexOf(":"));
 						}
@@ -362,51 +352,57 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 							// 		var magic = "&url_encoded_fmt_stream_map=";
 							//  	var magicLimit = ",";
 							// End of anecdote
-							Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2) {
-								if(xhr2.status === 200) {
-									result.url = that.parseVideoUrlFromYtPage(xhr2.responseText);
-									var artist = encodeURIComponent(result.artist.capitalize());
-									var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=5&sort=hotttnesss-desc&text=" + artist;
-									var self = that;
-									Tomahawk.asyncRequest(url, function(xhr3) {
-										var response = JSON.parse(xhr3.responseText).response;
-										if (response && response.artists && response.artists.length > 0) {
-											artist = response.artists[0].name;
-											result.artist = artist;
-											if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
-												result.bitrate = that.getBitrate(result.url);
-												result.id = i;
-												results.push(result);
-												stop = stop - 1;
+							var xhr2 = new XMLHttpRequest();
+							xhr2.open('GET', resp.data.items[i].player['default'], true);
+							xhr2.onreadystatechange = function() {
+								if (xhr2.readyState === 4){
+									if (xhr2.status === 200) {
+										result.url = that.parseVideoUrlFromYtPage(xhr2.responseText);
+										var artist = encodeURIComponent(result.artist.capitalize());
+										var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=5&sort=hotttnesss-desc&text=" + artist;
+										var self = that;
+										Tomahawk.asyncRequest(url, function(xhr3) {
+											var response = JSON.parse(xhr3.responseText).response;
+											if (response && response.artists && response.artists.length > 0) {
+												artist = response.artists[0].name;
+												result.artist = artist;
+												if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
+													result.bitrate = that.getBitrate(result.url);
+													result.id = i;
+													results.push(result);
+													stop = stop - 1;
+												}
+												else {
+													stop = stop - 1;
+												}
 											}
 											else {
 												stop = stop - 1;
 											}
-										}
-										else {
-											stop = stop - 1;
-										}
-										if (stop === 0) {
-											function sortResults(a, b){
-												return a.id - b.id;
+											if (stop === 0) {
+												function sortResults(a, b){
+													return a.id - b.id;
+												}
+												results = results.sort(sortResults);
+												for (var j = 0; j < results.length; j++){
+													delete results[j].id;
+												}
+												var toReturn = {
+													results: results,
+													qid: qid
+												};
+												Tomahawk.addTrackResults(toReturn);
 											}
-											results = results.sort(sortResults);
-											for (var j = 0; j < results.length; j++){
-												delete results[j].id;
-											}
-											var toReturn = {
-												results: results,
-												qid: qid
-											};
-											Tomahawk.addTrackResults(toReturn);
-										}
-									});
+										});
+									}
+									else {
+										Tomahawk.log("Failed to do GET request to: " + url);
+										Tomahawk.log("Error: " + xhr.status + " " + xhr.statusText);
+										stop = stop - 1;
+									}
 								}
-								else {
-									Tomahawk.log("Failed to do GET request to: " + resp.data.items[i].player['default']);
-									Tomahawk.log("Error: " + xhr2.status + " " + xhr2.statusText);
-								}
-							});
+							};
+							xhr2.send(null);
 						})(i, qid, result);
 					}
 					else {
