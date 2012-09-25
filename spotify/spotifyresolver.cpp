@@ -520,6 +520,9 @@ SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
         return;
     }
 
+    qDebug() << "Sending playlist listing to client:" << plid << sp_playlist_name( pl ) << "with number of tracks:" << sp_playlist_num_tracks( pl );
+
+
     QVariantMap resp;
 
     if ( m_playlistToQid.contains( plid ) )
@@ -551,6 +554,7 @@ SpotifyResolver::sendPlaylistListing( sp_playlist* pl, const QString& plid )
     if( !waitingFor.isEmpty() )
     {
         qDebug() << "PlaylistTracks isnt loaded yet... waiting";
+        m_playlistToQid[ plid ] = resp[ "qid" ].toString(); // restore qid so we can get it when we are called again
         m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendPlaylistListing( sp_playlist*, QString ) ), pl, plid ) );
         return;
     }
