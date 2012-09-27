@@ -32,6 +32,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 			this.includeCovers = userConfig.includeCovers;
 			this.includeRemixes = userConfig.includeRemixes;
 			this.includeLive = userConfig.includeLive;
+			this.saveUserConfig();
 		}
 	},
 	
@@ -42,7 +43,21 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		timeout: 15
 	},
 	
-	init: function () {
+	init: function() {
+		// Set userConfig here
+		var userConfig = this.getUserConfig();
+		if ( userConfig !== undefined ){
+			this.includeCovers = userConfig.includeCovers;
+			this.includeRemixes = userConfig.includeRemixes;
+			this.includeLive = userConfig.includeLive;
+		}
+		else {
+			this.includeCovers = false;
+			this.includeRemixes = false;
+			this.includeLive = false;
+		}
+	
+	
 		String.prototype.capitalize = function(){
 			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
 		};
@@ -52,7 +67,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1){
 			return null;
 		}
-		if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/remix/i) !== -1 && origTitle.search(/remix/i) === -1){
+		if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/(re)*mix/i) !== -1 && origTitle.search(/(re)*mix/i) === -1){
 			return null;
 		}
 		if ((this.includeLive === false || this.includeLive === undefined) && trackTitle.search(/live/i) !== -1 && origTitle.search(/live/i) === -1){
@@ -94,7 +109,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
 					// Check whether the artist and title (if set) are in the returned title, discard otherwise
 					// But also, the artist could be the username
-					if (resp[i].title !== undefined && resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 && resp[i].user.username.toLowerCase().indexOf( artist.toLowerCase() ) === -1){
+					if (resp[i].title !== undefined && (resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || resp[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
 						continue;
 					}
 					var result = new Object();

@@ -31,7 +31,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 	newConfigSaved: function () {
 		var userConfig = this.getUserConfig();
-		if((userConfig.includeCovers !== this.includeCovers) || (userConfig.includeRemixes !== this.includeRemixes) || (userConfig.includeLive !== this.includeLive) || (userConfig.qualityPreference !== this.qualityPreference)) {
+		if ((userConfig.includeCovers !== this.includeCovers) || (userConfig.includeRemixes !== this.includeRemixes) || (userConfig.includeLive !== this.includeLive) || (userConfig.qualityPreference !== this.qualityPreference)) {
 			this.includeCovers = userConfig.includeCovers;
 			this.includeRemixes = userConfig.includeRemixes;
 			this.includeLive = userConfig.includeLive;
@@ -52,7 +52,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1){
 			return null;
 		}
-		if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/remix/i) !== -1 && origTitle.search(/remix/i) === -1){
+		if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/(re)*mix/i) !== -1 && origTitle.search(/(re)*mix/i) === -1){
 			return null;
 		}
 		if ((this.includeLive === false || this.includeLive === undefined) && trackTitle.search(/live/i) !== -1 && origTitle.search(/live/i) === -1){
@@ -71,17 +71,16 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		if (urlString.indexOf("quality=hd720") !== -1 ){
 			bitrate = 192;
 		}
-		else if(urlString.indexOf("quality=medium") !== -1){
+		else if (urlString.indexOf("quality=medium") !== -1){
 			bitrate = 128;
 		}
-		else if(urlString.indexOf("quality=small") !== -1){
+		else if (urlString.indexOf("quality=small") !== -1){
 			bitrate = 96;
 		}
 		return bitrate;
 	},
 
 	init: function() {
-		
 		// Set userConfig here
 		var userConfig = this.getUserConfig();
 		if ( userConfig !== undefined && userConfig.qualityPreference !== undefined ){
