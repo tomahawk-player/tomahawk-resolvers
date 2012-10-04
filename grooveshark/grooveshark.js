@@ -87,11 +87,8 @@ var defaultDiacriticsRemovalMap = [
 ];
 var changes;
 function removeDiacritics (str) {
-    if(!changes) {
-        changes = defaultDiacriticsRemovalMap;
-    }
-    for(var i=0; i<changes.length; i++) {
-        str = str.replace(changes[i].letters, changes[i].base);
+    for(var i=0; i<defaultDiacriticsRemovalMap.length; i++) {
+        str = str.replace(defaultDiacriticsRemovalMap[i].letters, defaultDiacriticsRemovalMap[i].base);
     }
     return str;
 }
