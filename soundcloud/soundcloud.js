@@ -128,6 +128,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 					result.score = 0.85;
 					result.year = resp[i].release_year;
 					result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
+					if (resp[i].permalink_url !== undefined) result.linkUrl = resp[i].permalink_url;
 					results.push(result);
 				}
 				var return1 = {
@@ -210,6 +211,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 					result.score = 0.85;
 					result.year = resp[i].release_year;
 					result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
+					if (resp[i].permalink_url !== undefined) result.linkUrl = resp[i].permalink_url;
 					
 					(function (i, result) {
 						var artist = encodeURIComponent(result.artist.capitalize());
