@@ -219,6 +219,8 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.score = 0.85;
 						result.year = resp.data.items[i].uploaded.slice(0,4);
 						result.track = title;
+						result.linkUrl = resp.data.items[i].player['default'];
+						if (that.qualityPreference === 0) result.linkUrl = resp.data.items[i].player['default'] + "&hd=1";
 						var self = that;
 						(function(i, qid, result) {
 							Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2) {
@@ -315,6 +317,8 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.duration = resp.data.items[i].duration;
 						result.score = 0.85;
 						result.year = resp.data.items[i].uploaded.slice(0,4);
+						result.linkUrl = resp.data.items[i].player['default'];
+						if (that.qualityPreference === 0) result.linkUrl = resp.data.items[i].player['default'] + "&hd=1";
 						var track = resp.data.items[i].title;
 						if (track.indexOf(" - ") !== -1){
 							result.track = track.slice(track.indexOf(" - ") + 3);
