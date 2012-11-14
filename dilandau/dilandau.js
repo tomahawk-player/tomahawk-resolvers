@@ -45,7 +45,7 @@ var DilandauResolver = Tomahawk.extend(TomahawkResolver, {
 							http.open('HEAD', url, true);
 							http.onreadystatechange = function() {
 								if (http.readyState === 4){
-									if (http.status === 200 && (http.getResponseHeader("Content-Type").indexOf("audio") !== -1 || http.getResponseHeader("Content-Type").indexOf("video") !== -1 )){
+									if (http.status === 200 && http.getResponseHeader("Content-Type") !== null && (http.getResponseHeader("Content-Type").indexOf("audio") !== -1 || http.getResponseHeader("Content-Type").indexOf("video") !== -1 )){
 										var result = {};
 										result.artist = artist;
 										result.track = title;
