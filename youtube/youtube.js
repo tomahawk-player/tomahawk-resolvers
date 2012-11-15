@@ -104,6 +104,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	parseVideoUrlFromYtPage: function (html) {
 		var magic = "url_encoded_fmt_stream_map=";
 		var magicLimit = "\\u0026";
+		// Sometimes, 'magic' is not actually in the code (e.g. if video is blocked or sth), don't assume it always is
+		if (html.indexOf(magic) === -1){
+			return null;
+		}
 		var pos = html.indexOf(magic) + magic.length;
 		html = html.slice(pos);
 		
