@@ -31,7 +31,6 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
             qid: qid,
             results: results
         };
-        Tomahawk.log("Resolved to: " + JSON.stringify(return1));
         Tomahawk.addTrackResults(return1);
     },
     resolve: function (qid, artist, album, title) {
