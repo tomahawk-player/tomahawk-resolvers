@@ -100,7 +100,8 @@ bool SpotifySession::createSession()
         m_config.application_key_size = m_sessionConfig.application_key_size;
         m_config.user_agent = m_sessionConfig.user_agent;
         m_config.callbacks = &SpotifyCallbacks::callbacks;
-        m_config.tracefile = m_sessionConfig.tracefile;
+        // Tracefiles can grow big and we dont actually use them
+        m_config.tracefile = NULL; //m_sessionConfig.tracefile;
         m_config.device_id = m_sessionConfig.device_id;
         m_config.compress_playlists = false;
         m_config.dont_save_metadata_for_playlists = false;
