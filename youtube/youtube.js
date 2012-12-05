@@ -295,6 +295,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 								}
 							});
 						})(i, qid, result);
+						delete result;
 					}
 					else {
 						stop = stop - 1;
@@ -452,6 +453,8 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 							xhr2.send(null);
 							xhr2 = null;
 						})(i, qid, result);
+
+						delete result;
 					}
 					else {
 						stop = stop - 1;
