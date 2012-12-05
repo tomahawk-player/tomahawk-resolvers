@@ -208,8 +208,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					}
 
 					// ContentRating, eg. User needs to verify age or similar that requires login
-					if ( resp.data.items[i].contentRating !== undefined )
-					{
+					if ( resp.data.items[i].contentRating !== undefined ){
 						stop = stop - 1;
 						continue;
 					}
@@ -223,11 +222,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						var newTitle = title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
 						var respTitle = resp.data.items[i].title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
 
-						if (respTitle !== undefined && respTitle.indexOf(artist.toLowerCase()) === -1 || (newTitle !== "" && respTitle.indexOf(newTitle) === -1)) {
-
+						if (respTitle !== undefined && respTitle.indexOf(artist.toLowerCase()) === -1 || (newTitle !== "" && respTitle.indexOf(newTitle) === -1)){
 							stop = stop - 1;
 							continue;
-
 						}
 					}
 
