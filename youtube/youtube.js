@@ -215,12 +215,16 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						// Lets do a deeper check
 						// Users tend to insert [ft. Artist] or **featuring Artist & someOther artist
 						// Remove these
-						var newTitle = title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
-						var respTitle = resp.data.items[i].title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
+						var newTitle = title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
+						var newArtist = artist.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
+						var respTitle = resp.data.items[i].title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
 
-						if (respTitle !== undefined && respTitle.indexOf(artist.toLowerCase()) === -1 || (newTitle !== "" && respTitle.indexOf(newTitle) === -1)){
-							stop = stop - 1;
-							continue;
+						if (respTitle !== undefined && respTitle.indexOf(newArtist) === -1 || (newTitle !== "" && respTitle.indexOf(newTitle) === -1)){
+							// Lets do it in reverse!
+							if( newArtist.indexOf(newTitle) === -1 && newTitle.indexOf(newArtist) === -1){
+								stop = stop - 1;
+								continue;
+							}
 						}
 					}
 
