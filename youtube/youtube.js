@@ -104,27 +104,25 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	hasPreferedQuality: function(urlString){
 		if (this.qualityPreference === undefined){
 			Tomahawk.log("ASSERT: quality undefined!");
-			// Just take the first
 			return true;
 		}
 
+		if (urlString.indexOf("quality="+this.getPreferedQuality()) !== -1 ){
+			return true;
+		}
+		return false;
+	},
+
+	getPreferedQuality: function() {
+		if (this.qualityPreference === undefined){
+			return "hd720"
+		}
+
 		switch( this.qualityPreference ) {
-			case 0 :
-				if (urlString.indexOf("quality=hd720") !== -1 ){
-					return true;
-				}
-			break;
-			case 1 :
-				if (urlString.indexOf("quality=medium") !== -1){
-					return true;
-				}
-			break;
-			case 2 :
-				if (urlString.indexOf("quality=small") !== -1){
-					return true;
-				}
-			default :
-				return false;
+			default:
+			case 0 : return "hd720";
+			case 1 : return "medium"
+			case 2 : return "small";
 		}
 	},
 
@@ -137,12 +135,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 		var pos = html.indexOf(magic) + magic.length;
 		html = html.slice(pos);
-		
+
 		var urls = html.slice(0, html.indexOf(magicLimit));
 
 		urls = unescape(urls);
 		urls = urls.split(",");
-		
+
 		var urlsArray = [];
 		for (i = 0; i < urls.length - 1; i++){
 			// decodeUri and replace itag, url,  ;codec=blabla" as well as the sig, currently resides in the fallback url 
@@ -158,54 +156,17 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		if (this.qualityPreference === undefined){
 			// This shouldnt happen really, but sometimes do?!
 			// One way of throwing an "assert" :p
-			//this.qualityPreference = 1;
-			Tomahawk.log("ASSERT:Failed to set qualitypreference in init!");
+			//this.qualityPreference = 0;
+			Tomahawk.log("Assert: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
 		}
 
-		if (this.qualityPreference === 0){
-			for (i = 0; i < urlsArray.length; i++){
-				if (this.hasPreferedQuality(urlsArray[i])){
-					finalUrl = urlsArray[i];
-				}
-			}
-			if (finalUrl === undefined){
-				finalUrl = urlsArray[0];
+		for (i = 0; i < urlsArray.length; i++){
+			if ( this.hasPreferedQuality(urlsArray[i])){
+				finalUrl = urlsArray[i];
 			}
 		}
-		if (this.qualityPreference === 1){
-			for (i = 0; i < urlsArray.length; i++){
-				if (this.hasPreferedQuality(urlsArray[i])){
-					finalUrl = urlsArray[i];
-				}
-			}
-			if (finalUrl === undefined){
-				for (i = 0; i < urlsArray.length; i++){
-					if (this.hasPreferedQuality(urlsArray[i])){
-						finalUrl = urlsArray[i];
-					}
-				}
-			}
-			if (finalUrl === undefined){
-				finalUrl = urlsArray[0];
-			}
-		}
-
-		if (this.qualityPreference === 2){
-			for (i = 0; i < urlsArray.length; i++){
-				if (this.hasPreferedQuality(urlsArray[i])){
-					finalUrl = urlsArray[i];
-				}
-			}
-			if (finalUrl === undefined){
-				for (i = 0; i < urlsArray.length; i++){
-					if (this.hasPreferedQuality(urlsArray[i])){
-						finalUrl = urlsArray[i];
-					}
-				}
-			}
-			if (finalUrl === undefined){
-				finalUrl = urlsArray[0];
-			}
+		if (finalUrl === undefined){
+			finalUrl = urlsArray[0];
 		}
 		return finalUrl;
 	},
@@ -337,7 +298,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	search: function( qid, searchString )
 	{			
 		var limit = 20;
-		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality=medium&max-results=" + limit;
+		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality="+this.getPreferedQuality()+"&max-results=" + limit;
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
 		var empty = {
