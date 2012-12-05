@@ -129,8 +129,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var finalUrl;
 		
 		if (this.qualityPreference === undefined){
+			// This shouldnt happen really, but sometimes do?!
 			// One way of throwing an "assert" :p
-			Tomahawk.log("Assert: " + this.qualityPreference);
+			this.qualityPreference = 1;
+			Tomahawk.log("Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
 		}
 
 		if (this.qualityPreference === 0){
@@ -205,10 +207,28 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						continue;
 					}
 
-					// Check whether the artist and title (if set) are in the returned title, discard otherwise
-					if (resp.data.items[i].title !== undefined && resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
+					// ContentRating, eg. User needs to verify age or similar that requires login
+					if ( resp.data.items[i].contentRating !== undefined )
+					{
 						stop = stop - 1;
 						continue;
+					}
+
+					// Check whether the artist and title (if set) are in the returned title, discard otherwise
+					if (resp.data.items[i].title !== undefined && resp.data.items[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || (title !== "" && resp.data.items[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
+
+						// Lets do a deeper check
+						// Users tend to insert [ft. Artist] or **featuring Artist & someOther artist
+						// Remove these
+						var newTitle = title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
+						var respTitle = resp.data.items[i].title.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
+
+						if (respTitle !== undefined && respTitle.indexOf(artist.toLowerCase()) === -1 || (newTitle !== "" && respTitle.indexOf(newTitle) === -1)) {
+
+							stop = stop - 1;
+							continue;
+
+						}
 					}
 
 					if (that.getTrack(resp.data.items[i].title, title)){
@@ -228,8 +248,8 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						var self = that;
 						(function(i, qid, result) {
 							Tomahawk.asyncRequest(resp.data.items[i].player['default'], function(xhr2) {
-								if (self.parseVideoUrlFromYtPage(xhr2.responseText) !== undefined && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("http") === 0 && self.parseVideoUrlFromYtPage(xhr2.responseText).indexOf("</body>") === -1) {
-									result.url = self.parseVideoUrlFromYtPage(xhr2.responseText);
+								result.url  = self.parseVideoUrlFromYtPage(xhr2.responseText);
+								if ( typeof result.url !== 'undefined' && result.url !== null ) {
 									// Get the expiration time, to be able to cache results in tomahawk
 									if ( result.url.indexOf("expire=") !== -1 ){
 										var regex = /expire=([^&#]*)/g;
