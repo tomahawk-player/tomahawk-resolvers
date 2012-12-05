@@ -365,6 +365,16 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						continue;
 					}
 
+					// ContentRating, eg. User needs to verify age or similar that requires login
+					// May also indicate country restrictions
+					// @todo: Check user geo? may be found in result url, &gcr=COUNTRY_SHORT_CODE
+					//        Value to be catched is then contentRating.GEOCODE
+					//        If contentRating is just 1, login is required
+					if ( resp.data.items[i].contentRating !== undefined ){
+						stop = stop - 1;
+						continue;
+					}
+
 					if (that.getTrack(resp.data.items[i].title, "")){
 						var result = new Object();
 
@@ -425,7 +435,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 											if (response && response.artists && response.artists.length > 0) {
 												artist = response.artists[0].name;
 												result.artist = artist;
-												if (result.url !== undefined && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
+												if (typeof result.url !== 'undefined' && result.url !== null && result.url.indexOf("http") === 0 && result.url.indexOf("</body>") === -1) {
 													result.bitrate = that.getBitrate(result.url);
 													result.id = i;
 													results.push(result);
