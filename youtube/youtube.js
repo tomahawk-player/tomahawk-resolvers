@@ -101,6 +101,33 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		};
 	},
 
+	hasPreferedQuality: function(urlString){
+		if (this.qualityPreference === undefined){
+			Tomahawk.log("ASSERT: quality undefined!");
+			// Just take the first
+			return true;
+		}
+
+		switch( this.qualityPreference ) {
+			case 0 :
+				if (urlString.indexOf("quality=hd720") !== -1 ){
+					return true;
+				}
+			break;
+			case 1 :
+				if (urlString.indexOf("quality=medium") !== -1){
+					return true;
+				}
+			break;
+			case 2 :
+				if (urlString.indexOf("quality=small") !== -1){
+					return true;
+				}
+			default :
+				return false;
+		}
+	},
+
 	parseVideoUrlFromYtPage: function (html) {
 		var magic = "url_encoded_fmt_stream_map=";
 		var magicLimit = "\\u0026";
@@ -131,22 +158,29 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		if (this.qualityPreference === undefined){
 			// This shouldnt happen really, but sometimes do?!
 			// One way of throwing an "assert" :p
-			this.qualityPreference = 1;
-			Tomahawk.log("Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
+			//this.qualityPreference = 1;
+			Tomahawk.log("ASSERT:Failed to set qualitypreference in init!");
 		}
 
 		if (this.qualityPreference === 0){
-			finalUrl = urlsArray[0];
+			for (i = 0; i < urlsArray.length; i++){
+				if (this.hasPreferedQuality(urlsArray[i])){
+					finalUrl = urlsArray[i];
+				}
+			}
+			if (finalUrl === undefined){
+				finalUrl = urlsArray[0];
+			}
 		}
 		if (this.qualityPreference === 1){
 			for (i = 0; i < urlsArray.length; i++){
-				if (urlsArray[i].indexOf("quality=medium") !== -1){
+				if (this.hasPreferedQuality(urlsArray[i])){
 					finalUrl = urlsArray[i];
 				}
 			}
 			if (finalUrl === undefined){
 				for (i = 0; i < urlsArray.length; i++){
-					if (urlsArray[i].indexOf("quality=small") !== -1){
+					if (this.hasPreferedQuality(urlsArray[i])){
 						finalUrl = urlsArray[i];
 					}
 				}
@@ -155,15 +189,16 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				finalUrl = urlsArray[0];
 			}
 		}
+
 		if (this.qualityPreference === 2){
 			for (i = 0; i < urlsArray.length; i++){
-				if (urlsArray[i].indexOf("quality=small") !== -1){
+				if (this.hasPreferedQuality(urlsArray[i])){
 					finalUrl = urlsArray[i];
 				}
 			}
 			if (finalUrl === undefined){
 				for (i = 0; i < urlsArray.length; i++){
-					if (urlsArray[i].indexOf("quality=medium") !== -1){
+					if (this.hasPreferedQuality(urlsArray[i])){
 						finalUrl = urlsArray[i];
 					}
 				}
@@ -266,7 +301,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									if (stop === 0){
 										var best = i + 1;
 										for (var j = 0; j < results.length; j++){
-											if (results[j].id < best){
+											if (results[j].id < best || self.hasPreferedQuality(results[j].url)){
 												best = results[j].id;
 												var finalResult = results[j];
 											}
