@@ -331,7 +331,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.track = title;
 						result.linkUrl = responseItem.player['default'];
 						if (that.qualityPreference === 0) {
-							result.linkUrl = responseItem.player['default'] + "&hd=1";
+							result.linkUrl += "&hd=1";
 						}
 
 						(function(i, qid, result) {
