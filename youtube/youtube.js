@@ -329,6 +329,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.score = 0.85;
 						result.year = responseItem.uploaded.slice(0,4);
 						result.track = title;
+						result.linkUrl = responseItem.player['default'];
+						if (that.qualityPreference === 0) {
+							result.linkUrl = responseItem.player['default'] + "&hd=1";
+						}
 
 						(function(i, qid, result) {
 							Tomahawk.asyncRequest(responseItem.player['default'], function(xhr2) {
@@ -583,6 +587,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				result.query = searchString;
 				result.artist = parsedTrack.artist;
 				result.track = parsedTrack.track;
+				result.linkUrl = data.items[i].player['default'];
+				if (that.qualityPreference === 0) {
+					result.linkUrl += "&hd=1";
+				}
 				results.push(result);
 
 				// Lets just do one artist lookup query, instead of on all of them
