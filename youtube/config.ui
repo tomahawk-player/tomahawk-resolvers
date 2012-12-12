@@ -127,6 +127,22 @@
     <string>Preferred audio quality:</string>
    </property>
   </widget>
+  <widget class="QCheckBox" name="debug">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>260</y>
+     <width>181</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Check this if you want to include live versions.</string>
+   </property>
+   <property name="text">
+    <string>Debug</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
