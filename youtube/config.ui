@@ -137,7 +137,7 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>Check this if you want to include live versions.</string>
+    <string>Check this to add verbose debug output.</string>
    </property>
    <property name="text">
     <string>Debug</string>
