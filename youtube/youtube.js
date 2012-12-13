@@ -341,7 +341,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									// Get the expiration time, to be able to cache results in tomahawk
 									var expires = result.url.match(/expire=([0-9]+)(?=(&))/);
 									if ( expires && expires[1] !== undefined ) {
-										result.expires = Math.floor( ( expires[1] - (new Date).getTime()/1000));
+										result.expires = Math.floor(expires[1]);
 									}
 									result.bitrate = that.getBitrate(result.url);
 									result.id = i;
@@ -626,7 +626,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 								userdata.results[userdata.id].artist = userdata.artist;
 								var expires = url.match(/expire=([0-9]+)(?=(&))/);
 								if ( expires && expires[1] !== undefined ){
-									userdata.results[userdata.id].expires = Math.floor( ( expires[1] - (new Date).getTime()/1000 ) );
+									userdata.results[userdata.id].expires = Math.floor(expires[1]);
 								}
 								that.debugMsg("Added " + count + " " + userdata.results[userdata.id].url +  "\n");
 								finalResults.push(userdata.results[userdata.id]);
