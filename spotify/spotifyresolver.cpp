@@ -400,7 +400,7 @@ SpotifyResolver::sendStarredChanged(const QList<sp_track *> &tracks, const bool 
     if( !waitingFor.isEmpty() )
     {
         qDebug() << "StarredTracks isnt loaded yet... waiting";
-        m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendStarredAdded(QList<sp_track*>) ), tracks ) );
+        m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendStarredChanged(QList<sp_track*>, bool) ), tracks, starred ) );
         return;
     }
     msg[ "tracks" ] = outgoingTracks;
