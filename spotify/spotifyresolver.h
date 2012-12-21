@@ -62,6 +62,14 @@ struct UserData
     {}
 };
 
+struct StarData
+{
+    QString artist, track;
+    bool starred;
+
+    StarData( const QString& _artist, const QString& _track, bool _starred )
+        : artist(_artist), track(_track), starred(_starred) {}
+};
 
 class SpotifyResolver : public QCoreApplication
 {
@@ -127,7 +135,7 @@ private:
     void saveSettings() const;
     void login();
     void clearTrackLinkMap();
-
+    void searchAndStarrTrack(const QString& artist, const QString& track, const bool starred);
     void gotStatus();
 
     // Session

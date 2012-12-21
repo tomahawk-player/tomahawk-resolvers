@@ -949,6 +949,13 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         const bool sync = m.value( "sync" ).toBool();
         m_session->Playlists()->setSyncPlaylist( plid, sync );
     }
+    else if ( m.value( "_msgtype" ) == "setStarred" )
+    {
+        const QString artist = m.value( "artist" ).toString();
+        const QString track = m.value( "title" ).toString();
+        const bool starred = m.value( "starred" ).toBool();
+        searchAndStarrTrack(artist, track, starred);
+    }
     else if ( m.value( "_msgtype" ) == "setCollaborative" )
     {
         const QString plid = m.value( "playlistid" ).toString();
@@ -1120,6 +1127,17 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     }
 }
 
+void
+SpotifyResolver::searchAndStarrTrack(const QString &artist, const QString &track, const bool starred)
+{
+    const QString query = QString( "artist:%1 track:%2" ).arg( artist ).arg( track );
+    StarData* userdata = new StarData( artist, track, starred );
+#if SPOTIFY_API_VERSION >= 11
+sp_search_create( m_session->Session(), query.toUtf8().data(), 0, 5 , 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchStarredComplete, userdata );
+#else
+sp_search_create( m_session->Session(), query.toUtf8().data(), 0, 5, 0, 0, 0, 0, &SpotifySearch::searchStarredComplete, userdata );
+#endif
+}
 
 void
 SpotifyResolver::registerQidForPlaylist( const QString& qid, const QString& playlist )

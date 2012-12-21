@@ -37,7 +37,7 @@ public:
     static void SP_CALLCONV searchComplete( sp_search *result, void *userdata );
     static void SP_CALLCONV addSearchedTrack( sp_search *result, void *userdata );
     static void SP_CALLCONV albumSearchComplete( sp_search *result, void *userdata );
-
+    static void SP_CALLCONV searchStarredComplete( sp_search *result, void *userdata);
     static void SP_CALLCONV albumBrowseLoaded( sp_albumbrowse* album, void *userdata );
 signals:
     

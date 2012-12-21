@@ -145,6 +145,34 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     }
 }
 
+
+void
+SpotifySearch::searchStarredComplete(sp_search *result, void *userdata)
+{
+    StarData* data = reinterpret_cast<StarData*>( userdata );
+    if( sp_search_num_tracks( result ) > 0 )
+    {
+        QVector<sp_track*> tracks;
+        for( int i = 0; i < sp_search_num_tracks( result ); i++ )
+        {
+            sp_track* track = sp_search_track(result, i);
+            if ( !sp_track_is_loaded( track ) )
+            {
+                qDebug() << "Track not loaded yet!";
+            }
+            QString tArtist = QString::fromUtf8( sp_artist_name( sp_track_artist( track, 0 ) ) );
+            QString tTrack = QString::fromUtf8( sp_track_name( track ) );
+            if( tArtist == data->artist && tTrack == data->track )
+            {
+                tracks << track;
+                break;
+            }
+
+        }
+        sp_track_set_starred(SpotifySession::getInstance()->Session(), const_cast<sp_track* const*>(tracks.data()), tracks.count(), data->starred);
+    }
+}
+
 /**
   searchComplete
   callback from sp_search
