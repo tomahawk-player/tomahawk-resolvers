@@ -943,6 +943,12 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         const QString plid = m.value( "playlistid" ).toString();
         m_session->Playlists()->setSyncPlaylist( plid, false );
     }
+    else if ( m.value( "_msgtype" ) == "setSync" )
+    {
+        const QString plid = m.value( "playlistid" ).toString();
+        const bool sync = m.value( "sync" ).toBool();
+        m_session->Playlists()->setSyncPlaylist( plid, sync );
+    }
     else if ( m.value( "_msgtype" ) == "setCollaborative" )
     {
         const QString plid = m.value( "playlistid" ).toString();
