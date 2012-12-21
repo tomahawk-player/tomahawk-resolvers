@@ -156,6 +156,7 @@ SpotifyResolver::setup()
     connect( m_session, SIGNAL(notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylist( SpotifyPlaylists::LoadedPlaylist ) ) );
 
     connect( m_session->Playlists(), SIGNAL( sendTracksAdded( sp_playlist*, QList<sp_track*>,QString ) ), this, SLOT( sendTracksAdded( sp_playlist*, QList<sp_track*>, QString ) ) );
+    connect( m_session->Playlists(), SIGNAL( sendStarredChanged( QList<sp_track*>, bool ) ), this, SLOT( sendStarredChanged( QList<sp_track*>, bool ) ) );
     connect( m_session->Playlists(), SIGNAL( sendTracksMoved( sp_playlist*, QStringList,QString ) ), this, SLOT( sendTracksMoved( sp_playlist*, QStringList, QString ) ) );
     connect( m_session->Playlists(), SIGNAL( sendTracksRemoved( sp_playlist*, QStringList ) ), this, SLOT( sendTracksRemoved( sp_playlist*, QStringList ) ) );
     connect( m_session->Playlists(), SIGNAL( sendPlaylistDeleted( QString ) ), this, SLOT( sendPlaylistDeleted( QString ) ) );
@@ -375,6 +376,40 @@ SpotifyResolver::sendPlaylistMetadataChanged( const SpotifyPlaylists::LoadedPlay
 #endif
 
     sendMessage( resp );
+}
+
+void
+SpotifyResolver::sendStarredChanged(const QList<sp_track *> &tracks, const bool starred)
+{
+    qDebug() << Q_FUNC_INFO;
+    QVariantMap msg;
+    msg[ "_msgtype" ] = "starredChanged";
+    msg[ "starred" ] = starred;
+    QVariantList outgoingTracks;
+    QList< sp_track*> waitingFor;
+    foreach( sp_track* track, tracks )
+    {
+        if ( !track || !sp_track_is_loaded( track ) )
+        {
+            waitingFor << track;
+        }
+        else
+            outgoingTracks << spTrackToVariant( track );
+    }
+
+    if( !waitingFor.isEmpty() )
+    {
+        qDebug() << "StarredTracks isnt loaded yet... waiting";
+        m_session->Playlists()->addStateChangedCallback( NewPlaylistClosure( boost::bind(checkTracksAreLoaded, waitingFor), this, SLOT( sendStarredAdded(QList<sp_track*>) ), tracks ) );
+        return;
+    }
+    msg[ "tracks" ] = outgoingTracks;
+
+    QJson::Serializer s;
+    QByteArray m = s.serialize( msg );
+    qDebug() << "SENDING STARRED CHANGED TRACKS JSON:" << m;
+
+    sendMessage( msg );
 }
 
 

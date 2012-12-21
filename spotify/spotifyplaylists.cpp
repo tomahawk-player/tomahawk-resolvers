@@ -47,13 +47,6 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_checkPlaylistsTimer->setSingleShot( true );
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
 
-    // See comments on pruneCacheAndReload
-    /*m_loadTimer->setInterval( 60000 ); // 60s
-    m_loadTimer->setSingleShot( true );
-    connect( m_loadTimer, SIGNAL( timeout() ), this, SLOT( pruneCacheAndReload() ) );
-    m_loadTimer->start();
-    */
-
     m_periodicTimer->setInterval( 500 );
     connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
     m_periodicTimer->start();
@@ -146,62 +139,6 @@ SpotifyPlaylists::~SpotifyPlaylists()
     clear();
 }
 
-
-/**
-  remove dir contents
-  */
-bool SpotifyPlaylists::removeDirContent(const QString &dirName)
-{
-    bool result = true;
-    QDir dir( dirName );
-    if ( dir.exists( dirName ) )
-    {
-        foreach(QFileInfo info, dir.entryInfoList( QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst) )
-        {
-            if ( info.isDir() )
-                result = removeDirContent( info.absoluteFilePath() );
-            else
-                result = QFile::remove( info.absoluteFilePath() );
-
-            if ( !result )
-                return result;
-        }
-    }
-    return result;
-}
-
-/** pruneCacheAndReload
-
-    Sometimes we get spotify cache miss, and playlists will not load.
-    The behaviour is hard to reproduce, but often spotify fixes it self. ( try rm cache during load to reproduce )
-    However, it may take up to serveral minutes to get fixed. SO lets fix that when it happens
-    @note WIP
-    @note Very bad practice... issue seem to stem from not exiting correctly and thus writing cache
-**/
-void
-SpotifyPlaylists::pruneCacheAndReload()
-{
-
-    if( !m_allLoaded )
-    {
-        qDebug() << "====== PRUNE CACHE!!!!";
-        sp_session_config config = SpotifySession::getInstance()->getSessionConfig();
-        if( config.cache_location != NULL )
-        {
-            QString cacheDir = config.cache_location;
-            if( !cacheDir.isEmpty() )
-            {
-               // Remove cache and clear old
-               removeDirContent( cacheDir );
-               // emit signal to force relogin
-               emit forcePruneCache();
-            }
-        }else
-            qDebug() << "Tried to prune chache, but no cache dir! Hm.... something is fucked up";
-    }
-
-
-}
 
 /**
   Callback
@@ -884,6 +821,11 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
+    if( m_playlists[index].starContainer_ )
+    {
+        qDebug() << "Tracks where added to starContainer!";
+        emit sendStarredChanged(tracks, true);
+    }
 
     emit sendTracksAdded(pl, tracks, trackPosition);
 }
@@ -1025,6 +967,13 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
         sApp->setIgnoreNextUpdate( false );
         return;
     }
+
+    if( m_playlists[index].starContainer_ )
+    {
+        qDebug() << "Tracks where removed to starContainer!";
+        emit sendStarredChanged(toRemove, false);
+    }
+
     emit sendTracksRemoved(pl, trackIds);
 }
 
