@@ -824,7 +824,8 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
     if( m_playlists[index].starContainer_ )
     {
         qDebug() << "Tracks where added to starContainer!";
-        emit sendStarredChanged(tracks, true);
+        emit sendStarredChanged(pl, tracks, true);
+        //sApp->setIgnoreNextUpdate( true );
     }
 
     emit sendTracksAdded(pl, tracks, trackPosition);
@@ -971,7 +972,8 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
     if( m_playlists[index].starContainer_ )
     {
         qDebug() << "Tracks where removed to starContainer!";
-        emit sendStarredChanged(toRemove, false);
+        emit sendStarredChanged(pl, toRemove, false);
+        //sApp->setIgnoreNextUpdate( true );
     }
 
     emit sendTracksRemoved(pl, trackIds);
@@ -1106,11 +1108,13 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
         // The playlist isnt in syncmode yet, set it
         if( sync )
         {
+
             // We might be setting an (already synced previously) playlist to sync
             // during the initial load. in that case loadSettings() loaded it in m_syncPlaylists
             // but we just now loaded the real playlist from spotify, so sync it up
             if ( !m_syncPlaylists.contains( syncThis ) )
                 m_syncPlaylists.append( syncThis );
+
 
             m_playlists[ index ].sync_ = true;
             // Playlist contents may have changed since we originally loaded it, so we refresh it now
@@ -1121,7 +1125,11 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
             // We dont need to listen for regular changes
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
             qDebug() << "ADDING SYNC CALLBACKS FOR PLAYLIST:" << sp_playlist_name( m_playlists[ index ].playlist_ );
-
+            if ( m_playlists[ index ].sync_ )
+            {
+                qDebug() << "ASKING TO SYNC A ALREADY SYNCED PLAYLIST";
+                sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
+            }
             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
         }
         // The playlist is in syncmode, but user wants to remove it

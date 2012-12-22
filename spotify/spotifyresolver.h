@@ -119,7 +119,7 @@ private slots:
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
     void sendPlaylistMetadataChanged( const SpotifyPlaylists::LoadedPlaylist& );
     void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );
-    void sendStarredChanged( const QList< sp_track* >& tracks, const bool starred );
+    void sendStarredChanged( sp_playlist* pl, const QList< sp_track* >& tracks, const bool starred );
     void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
     void sendPlaylistDeleted( const QString& playlist );

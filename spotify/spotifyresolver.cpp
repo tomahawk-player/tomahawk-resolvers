@@ -156,7 +156,7 @@ SpotifyResolver::setup()
     connect( m_session, SIGNAL(notifySyncUpdateSignal( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT( sendPlaylist( SpotifyPlaylists::LoadedPlaylist ) ) );
 
     connect( m_session->Playlists(), SIGNAL( sendTracksAdded( sp_playlist*, QList<sp_track*>,QString ) ), this, SLOT( sendTracksAdded( sp_playlist*, QList<sp_track*>, QString ) ) );
-    connect( m_session->Playlists(), SIGNAL( sendStarredChanged( QList<sp_track*>, bool ) ), this, SLOT( sendStarredChanged( QList<sp_track*>, bool ) ) );
+    connect( m_session->Playlists(), SIGNAL( sendStarredChanged( sp_playlist*, QList<sp_track*>, bool ) ), this, SLOT( sendStarredChanged( sp_playlist*,QList<sp_track*>, bool ) ) );
     connect( m_session->Playlists(), SIGNAL( sendTracksMoved( sp_playlist*, QStringList,QString ) ), this, SLOT( sendTracksMoved( sp_playlist*, QStringList, QString ) ) );
     connect( m_session->Playlists(), SIGNAL( sendTracksRemoved( sp_playlist*, QStringList ) ), this, SLOT( sendTracksRemoved( sp_playlist*, QStringList ) ) );
     connect( m_session->Playlists(), SIGNAL( sendPlaylistDeleted( QString ) ), this, SLOT( sendPlaylistDeleted( QString ) ) );
@@ -379,12 +379,24 @@ SpotifyResolver::sendPlaylistMetadataChanged( const SpotifyPlaylists::LoadedPlay
 }
 
 void
-SpotifyResolver::sendStarredChanged(const QList<sp_track *> &tracks, const bool starred)
+SpotifyResolver::sendStarredChanged(sp_playlist* pl, const QList<sp_track *> &tracks, const bool starred)
 {
     qDebug() << Q_FUNC_INFO;
+
+    SpotifyPlaylists::LoadedPlaylist lpl = m_session->Playlists()->getLoadedPlaylist( pl );
     QVariantMap msg;
     msg[ "_msgtype" ] = "starredChanged";
     msg[ "starred" ] = starred;
+    msg[ "playlistid" ] = lpl.id_;
+    msg[ "startPosition" ] = lpl.tracks_.count();
+
+    QString oldrev("");
+    if ( lpl.revisions.size() >= 2 )
+        oldrev = lpl.revisions.at( lpl.revisions.size() - 2 ).revId;
+
+    msg[ "oldrev" ] = oldrev;
+    msg[ "revid" ] = lpl.revisions.last().revId;
+
     QVariantList outgoingTracks;
     QList< sp_track*> waitingFor;
     foreach( sp_track* track, tracks )
@@ -687,6 +699,7 @@ SpotifyResolver::notifyAllPlaylistsLoaded()
         plObj[ "collaborative" ] = pl.isCollaborative;
         plObj[ "subscribed" ] = pl.isSubscribed;
         plObj[ "owner" ] = ( m_username == pl.owner_ );
+        plObj[ "starContainer" ] = pl.starContainer_;
         playlists << plObj;
     }
 
@@ -719,6 +732,7 @@ SpotifyResolver::resendAllPlaylists()
         plObj[ "collaborative" ] = pl.isCollaborative;
         plObj[ "subscribed" ] = pl.isSubscribed;
         plObj[ "owner" ] = ( m_username == pl.owner_ );
+        plObj[ "starContainer" ] = pl.starContainer_;
         playlists << plObj;
     }
     msg[ "playlists" ] = playlists;

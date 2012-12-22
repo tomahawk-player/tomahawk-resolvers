@@ -168,7 +168,7 @@ signals:
     void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
     void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
     void sendPlaylistDeleted( const QString& playlistId );
-    void sendStarredChanged( const QList< sp_track* >& tracks, const bool starred );
+    void sendStarredChanged( sp_playlist* pl, const QList< sp_track* >& tracks, const bool starred );
 
     void notifyCollaborativeChanged( const SpotifyPlaylists::LoadedPlaylist& );
     void notifySubscriberCountChanged( const SpotifyPlaylists::LoadedPlaylist& );
