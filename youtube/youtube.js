@@ -178,82 +178,90 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 	},
 
-	parseVideoUrlFromYtPage: function(html)
-	{
-		// Youtube is sneaky, they switch fmt_map randomly
-		// 1. url_encoded_fmt_stream_map": "itag=43\u0026url*
-		// 2. url_encoded_fmt_stream_map=itag%3D43%26url*
-		// 3. url_encoded_fmt_stream_map=itag%3D44%26url*
-		// 4. url_encoded_fmt_stream_map=itag%3D45%26url*
-		// 5. url_encoded_fmt_stream_map=itag%3D46%26url*
-		var streamMatch = html.match(/(url_encoded_fmt_stream_map.*?url)(.*?)(?=(",|\\u0026amp))/i);
+	parseVideoUrlFromYtPage: function(html) {
+        this.debugMode = 1;
+        // Youtube is sneaky!!!!!!!!
+        var parsedUrls = [];
+        var tMatch = html.match(/(yt\.playerConfig =)([^\r\n]+)/);
 
-		if (!streamMatch) {
-			var dasCaptcha = html.match(/www.google.com\/recaptcha\/api\/challenge?/i);
-			if (dasCaptcha)
-				this.debugMsg("Failed to parse url from youtube page. Captcha limitation in place.");
-			else
-				this.debugMsg("Failed to find stream_map in youtube page.");
-			return null;
-		}
+        if (!tMatch) {
+            var dasCaptcha = html.match(/www.google.com\/recaptcha\/api\/challenge?/i);
+            if (dasCaptcha)
+                this.debugMsg("Failed to parse url from youtube page. Captcha limitation in place.");
+            else
+                this.debugMsg("Failed to find stream_map in youtube page.");
+            return null;
+        }
 
-		if (streamMatch[2] === undefined) {
-			this.debugMsg("Failed to parse url from youtube page.");
-			for ( var i = 1; i< streamMatch.length; i++)
-				this.debugMsg("Match " + i + " = " + streamMatch[i] + "\n");
-			return null;
-		}
+        // Todo: I should explain for future pref
+        if( tMatch[2] !== undefined )
+        {
+            try {
+                var jsonMap = JSON.parse(tMatch[2].replace("};", "}"));
+                if ( jsonMap.args.url_encoded_fmt_stream_map !== undefined ) {
+                    var urls = decodeURIComponent( decodeURIComponent( jsonMap.args.url_encoded_fmt_stream_map ));
+                    var matches = urls.match(/^((.+?)(=))/);
+                    if( matches ) {
+                        var urlArray = urls.split(RegExp(","+matches[0], "i"));
+                        for(var i = 0; i < urlArray.length; i++){
+                            var url = "";
+                            if(matches[0] != "url=") {
+                                url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
+                                var urlMatch = url.match(/(.+?)(url=)(.+?)(\?)(.+)/);
+                                var urlBase = urlMatch[3]+urlMatch[4];
+                                var urlParams = urlMatch[1]+urlMatch[5];
+                                url = urlBase + "&" + urlParams;
+                            }
+                            else
+                            {
+                              url = urlArray[i].replace('/^(url=)/', "");
+                            }
+                            var itagMatch = url.match(/(.*)(itag=\d+&)(.*?)/);
+                            url = url.replace(/(.*)(itag=\d+&)(.*?)/, itagMatch[1]+itagMatch[3]);
+                            url = url.replace(/sig=/, "signature=");
+                            url = url.replace(/(&type=)(.+?)(&)/, "&");
+                            if( url.regexIndexOf(/quality=(hd720|high|medium|small)/i, 0) !== -1) {
+                                parsedUrls.push(url);
+                            }
+                        }
+                    }else {
+                        this.debugMsg( "No = matches in fmt_map!");
+                    }
+                }
+                else {
+                  this.debugMsg("No fmt_map in html!!");
+                }
+            }catch(e) {
+                this.debugMsg("Critical: " + e );
+            }
+        }else {
+            this.debugMsg("No match Captch??");
+        }
 
-		var urls = streamMatch[2];
-		var unescapedurls = unescape(urls);
-		urls = unescapedurls.split(",");
+        var finalUrl;
 
-		var urlsArray = [];
-		for (i = 0; i < urls.length - 1; i++){
-			// decodeUri and replace itag, url,  ;codec=blabla" as well as the sig, currently resides in the fallback url 
-			var subUrl = decodeURIComponent( urls[i] ).replace(/\\u0026/gi, "&").replace(/\itag=(.[0-9]*?&url=)/g, "").replace(/\;(.*?)"&/g, "&").replace("sig", "signature");
-			// decoded, url becomes =, but in our regex we dont really know, as they change it.
-			if( subUrl.indexOf("=http") === 0 ) {
-				subUrl = subUrl.substring(1);
-			}
-			if (subUrl.indexOf("url=") === 0 ) {
-				subUrl = subUrl.substring(4);
-			}
-			if( subUrl.indexOf("http") !== 0 ){
-				this.debugMsg("subUrl Fail! Parsed: " + subUrl + "\n");
-				// This is also a bit sneaky, sometimes, there's a , delimiter in codec param
-				continue;
-			}
+        if (this.qualityPreference === undefined){
+            // This shouldnt happen really, but sometimes do?!
+            this.qualityPreference = 0;
+            this.debugMsg("Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
+        }
 
-			// Append quality=large if hd720 isnt found? Need to check sound difference
-			if( subUrl.regexIndexOf(/quality=(hd720|high|medium|small)/i, 0) !== -1) {
-				urlsArray.push(subUrl);
-			}
-		}
+        for (i = 0; i < parsedUrls.length; i++){
+            if (this.hasPreferedQuality(parsedUrls[i])){
+                finalUrl = parsedUrls[i];
+            }
+        }
 
-		var finalUrl;
+        if (finalUrl === undefined) {
+            finalUrl = parsedUrls[0];
+        }
 
-		if (this.qualityPreference === undefined){
-			// This shouldnt happen really, but sometimes do?!
-			this.qualityPreference = 0;
-			this.debugMsg("Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
-		}
+        if (finalUrl && finalUrl !== undefined) {
+            return finalUrl;
+        }
 
-		for (i = 0; i < urlsArray.length; i++){
-			if (this.hasPreferedQuality(urlsArray[i])){
-				finalUrl = urlsArray[i];
-			}
-		}
-
-		if (finalUrl === undefined) {
-			finalUrl = urlsArray[0];
-		}
-
-		if (finalUrl && finalUrl !== undefined) {
-			return finalUrl;
-		}
-		return null;
-	},
+        return null;
+    },
 
 	magicCleanup: function(toClean)
 	{
