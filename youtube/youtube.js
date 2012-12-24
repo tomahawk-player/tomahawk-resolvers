@@ -76,16 +76,16 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	getTrack: function (trackTitle, origTitle, isSearch) {
-		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/(\Wcover(?!(\w)))/i) !== -1 && origTitle.search(/(\Wcover(?!(\w)))/i) === -1){
+		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/(\Wcover(?!(\w)))/i) !== -1 && origTitle.search(/(\Wcover(?!(\w)))/i) === -1) {
 			return null;
 		}
 		// Allow remix:es in search results?
-		if (isSearch === undefined ) {
-			if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/(\W(re)*?mix(?!(\w)))/i) !== -1 && origTitle.search(/(\W(re)*?mix(?!(\w)))/i) === -1){
+		if (isSearch === undefined) {
+			if ((this.includeRemixes === false || this.includeRemixes === undefined) && trackTitle.search(/(\W(re)*?mix(?!(\w)))/i) !== -1 && origTitle.search(/(\W(re)*?mix(?!(\w)))/i) === -1) {
 				return null;
 			}
 		}
-		if ((this.includeLive === false || this.includeLive === undefined) && trackTitle.search(/(live(?!(\w)))/i) !== -1 && origTitle.search(/(live(?!(\w)))/i) === -1){
+		if ((this.includeLive === false || this.includeLive === undefined) && trackTitle.search(/(live(?!(\w)))/i) !== -1 && origTitle.search(/(live(?!(\w)))/i) === -1) {
 			return null;
 		}
 		else {
@@ -97,13 +97,13 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	{
 		//http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
 		// No need to get higher than hd720, as it only will eat bandwith and do nothing for sound quality
-		if (urlString.indexOf("quality=hd720") !== -1 ){
+		if (urlString.indexOf("quality=hd720") !== -1) {
 			return 192;
 		}
-		else if (urlString.indexOf("quality=medium") !== -1){
+		else if (urlString.indexOf("quality=medium") !== -1) {
 			return 128;
 		}
-		else if (urlString.indexOf("quality=small") !== -1){
+		else if (urlString.indexOf("quality=small") !== -1) {
 			return 96;
 		}
 		// Probably
@@ -114,7 +114,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	{
 		// Set userConfig here
 		var userConfig = this.getUserConfig();
-		if ( userConfig !== undefined && userConfig.qualityPreference !== undefined ){
+		if (userConfig !== undefined && userConfig.qualityPreference !== undefined) {
 			this.includeCovers = userConfig.includeCovers;
 			this.includeRemixes = userConfig.includeRemixes;
 			this.includeLive = userConfig.includeLive;
@@ -130,38 +130,38 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 
 		// Protos
-		String.prototype.capitalize = function(){
-			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
+		String.prototype.capitalize = function() {
+			return this.replace(/(^|\s)([a-z])/g , function(m,p1,p2) { return p1+p2.toUpperCase(); });
 		};
 		String.prototype.regexIndexOf = function(regex, startpos) {
 			var indexOf = this.substring(startpos || 0).search(regex);
 			return (indexOf >= 0) ? (indexOf + (startpos || 0)) : indexOf;
 		};
-		String.prototype.splice = function( idx, rem, s ) {
+		String.prototype.splice = function(idx, rem, s) {
 			return (this.slice(0,idx) + s + this.slice(idx + Math.abs(rem)));
 		};
 	},
 
-	hasPreferedQuality: function( urlString )
+	hasPreferedQuality: function(urlString)
 	{
-		if (this.qualityPreference === undefined){
+		if (this.qualityPreference === undefined) {
 			this.debugMsg("ASSERT: quality undefined!");
 			return true;
 		}
 
-		if (urlString.indexOf("quality="+this.getPreferedQuality()) !== -1 )
+		if (urlString.indexOf("quality="+this.getPreferedQuality()) !== -1)
 			return true;
 		return false;
 	},
 
 	getPreferedQuality: function()
 	{
-		if (this.qualityPreference === undefined){
+		if (this.qualityPreference === undefined) {
 			this.qualityPreference = 0;
 			return "hd720"
 		}
 
-		switch( this.qualityPreference ) {
+		switch(this.qualityPreference) {
 			default:
 			case 0 : return "hd720";
 			case 1 : return "medium"
@@ -171,135 +171,136 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 	debugMsg: function(msg)
 	{
-		if( msg.toLowerCase().indexOf("assert") === 0)
+		if (msg.toLowerCase().indexOf("assert") === 0)
 			console.log(this.settings.name + msg);
-		else if( this.debugMode ){
+		else if (this.debugMode)
 			Tomahawk.log(this.settings.name + "Debug: " + msg);
-		}
 	},
 
 	parseURLS: function(rawUrls)
 	{
-        var parsedUrls = new Array();
-        var urls = decodeURIComponent( decodeURIComponent(rawUrls));
-        // Youtube changes the start delimiter randomly
-        var matches = urls.match(/^((.+?)(=))/);
-        if (matches) {
-            // split the decoded urls by matches[0] delimiter, separated by comma
-            var urlArray = urls.split(RegExp(","+matches[0], "i"));
-            for (var i = 0; i < urlArray.length; i++) {
-                if (matches[0] != "url=") {
-                    // Delimiter isnt url=, we need to sort the params
-                    var url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
-                    var urlMatch = url.match(/(.+?)(url=)(.+?)(\?)(.+)/);
-                    // Base & Params
-                    url = urlMatch[3]+urlMatch[4] + "&" + urlMatch[1]+urlMatch[5];
-                }
-                else {
-                    // Just replace url=
-                    var url = urlArray[i].replace('/^(url=)/', "");
-                }
+		var parsedUrls = new Array();
+		var urls = decodeURIComponent(decodeURIComponent(rawUrls));
+		// Youtube changes the start delimiter randomly
+		var matches = urls.match(/^((.+?)(=))/);
+		if (matches) {
+			// split the decoded urls by matches[0] delimiter, separated by comma
+			var urlArray = urls.split(RegExp(","+matches[0], "i"));
+			for (var i = 0; i < urlArray.length; i++) {
+				if (matches[0] != "url=") {
+					// Delimiter isnt url=, we need to sort the params
+					var url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
+					var urlMatch = url.match(/(.+?)(url=)(.+?)(\?)(.+)/);
+					// Base & Params
+					url = urlMatch[3]+urlMatch[4] + "&" + urlMatch[1]+urlMatch[5];
+				}
+				else {
+					// Just replace url=
+					var url = urlArray[i].replace('/^(url=)/', "");
+				}
 
-                // itag is found twice, we need to remove that ( last occurence )
-                var itagMatch = url.match(/(.*)(itag=\d+&)(.*?)/);
-                url = url.replace(/(.*)(itag=\d+&)(.*?)/, itagMatch[1]+itagMatch[3]);
-                // Sig needs to be sigature
-                url = url.replace(/sig=/, "signature=");
+				// itag is found twice, we need to remove that (last occurence)
+				var itagMatch = url.match(/(.*)(itag=\d+&)(.*?)/);
+				url = url.replace(/(.*)(itag=\d+&)(.*?)/, itagMatch[1]+itagMatch[3]);
 
-                try {
-                    // Parse out the type and codec, encode it
-                    // May have an quality effect
-                    var type = url.match(/(&type=)(.+?)(&)/i);
-                    type = type[1]+encodeURIComponent(type[2])+type[3];
-                    url = url.replace(/(&type=)(.+?)(&)/, type);
-                }
-                catch (e) {
-                    try {
-                        // Type is on the end of the url
-                        var type = url.match(/(&type=)(.*?)/i);
-                        type = type[1]+encodeURIComponent(type[1])+type[2];
-                        url = url.replace(/(&type=)(.*?)/, type);
-                    }
-                    catch( e ) {
-                        this.debugMsg("Critical: Cannot parse out type in url\n"+ url );
-                    }
-                }
+				// Sig needs to be sigature
+				url = url.replace(/sig=/, "signature=");
 
-                if (url.regexIndexOf(/quality=(hd720|high|medium|small)/i, 0) !== -1) {
-                    parsedUrls.push(url);
-                }
-            }
-            var finalUrl;
+				try {
+					// Parse out the type and codec, encode it
+					// May have an quality effect
+					var type = url.match(/(&type=)(.+?)(&)/i);
+					url = url.replace(/(&type=)(.+?)(&)/, type[1]+encodeURIComponent(type[2])+type[3]);
+				}
+				catch (e) {
+					try {
+						// Type is on the end of the url
+						var type = url.match(/(&type=)(.*?)/i);
+						type = type[1]+encodeURIComponent(type[1])+type[2];
+						url = url.replace(/(&type=)(.*)/, type);
+					}
+					catch (e) {
+						this.debugMsg("Critical: Cannot parse out type in url" + e + "\nUrl: "+ url);
+					}
+				}
 
-            if (this.qualityPreference === undefined){
-                // This shouldnt happen really, but sometimes do?!
-                this.qualityPreference = 0;
-                this.debugMsg("Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
-            }
+				if (url.regexIndexOf(/quality=(hd720|high|medium|small)/i, 0) !== -1) {
+					parsedUrls.push(url);
+				}
+			}
 
-            for (i = 0; i < parsedUrls.length; i++){
-                if (this.hasPreferedQuality(parsedUrls[i])){
-                    finalUrl = parsedUrls[i];
-                }
-            }
+			var finalUrl;
 
-            if (finalUrl === undefined) {
-                finalUrl = parsedUrls[0];
-            }
+			if (this.qualityPreference === undefined) {
+				// This shouldnt happen really, but sometimes do?!
+				this.qualityPreference = 0;
+				this.debugMsg("Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
+			}
 
-            if (finalUrl && finalUrl !== undefined) {
-                return finalUrl;
-            }
-        }
-        return null;
+			for (i = 0; i < parsedUrls.length; i++) {
+				if (this.hasPreferedQuality(parsedUrls[i])) {
+					finalUrl = parsedUrls[i];
+				}
+			}
+
+			if (finalUrl === undefined) {
+				finalUrl = parsedUrls[0];
+			}
+
+			if (finalUrl && finalUrl !== undefined) {
+				return finalUrl;
+			}
+		}
+		return null;
 	},
 
 	parseVideoUrlFromYtPage: function(html)
 	{
-        // First, lets try and find the stream_map at top of the page
-        // to save some time going to the end and do JSON.parse on the yt.config
-        var streamMatch = html.match(/(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i);
-        if( streamMatch && streamMatch[2] !== undefined ) {
-            var parsed = this.parseURLS(streamMatch[2]);
-            if (parsed) {
-                return parsed;
-            }
-            else {
-                this.debug("Hm, failed to parse urls from top of the page");
-            }
-        }
+		// First, lets try and find the stream_map at top of the page
+		// to save some time going to the end and do JSON.parse on the yt.config
+		var streamMatch = html.match(/(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i);
+		if (streamMatch && streamMatch[2] !== undefined) {
+			var parsed = this.parseURLS(streamMatch[2]);
+			if (parsed) {
+				return parsed;
+			}
+			else {
+				this.debug("Hm, failed to parse urls from top of the page");
+			}
+		}
 
-        // Now we can go further down, and check the yt.config map
-        this.debugMsg("Need to go down and check yt.config");
-        streamMatch = html.match(/(yt\.playerConfig =)([^\r\n]+)/);
+		// Now we can go further down, and check the yt.config map
+		streamMatch = html.match(/(yt\.playerConfig =)([^\r\n]+)/);
 
-        if (!streamMatch) {
-            var dasCaptcha = html.match(/www.google.com\/recaptcha\/api\/challenge?/i);
-            if (dasCaptcha)
-                this.debugMsg("Failed to parse url from youtube page. Captcha limitation in place.");
-            else
-                this.debugMsg("Failed to find stream_map in youtube page.");
-            return null;
-        }
+		if (!streamMatch) {
+			// Todo: Open window for user input?
+			var dasCaptcha = html.match(/www.google.com\/recaptcha\/api\/challenge?/i);
+			if (dasCaptcha) {
+				this.debugMsg("Failed to parse url from youtube page. Captcha limitation in place.");
+			}
+			else {
+				this.debugMsg("Failed to find stream_map in youtube page.");
+			}
+			return null;
+		}
 
-        if( streamMatch && streamMatch[2] !== undefined ){
-            try {
-                var jsonMap = JSON.parse(streamMatch[2].replace("};", "}"));
-                if ( jsonMap.args.url_encoded_fmt_stream_map !== undefined ) {
-                    var parsed = this.parseURLS(jsonMap.args.url_encoded_fmt_stream_map);
-                    if( parsed )
-                        return parsed;
-                    //else this.debugMsg("Failed to get url from yt.config");
-                }
-            }
-            catch (e) {
-                this.debugMsg("Critical: " + e );
-            }
-        }
-        return null;
-    },
+		if (streamMatch && streamMatch[2] !== undefined) {
+			try {
+				var jsonMap = JSON.parse(streamMatch[2].replace("};", "}"));
+				if (jsonMap.args.url_encoded_fmt_stream_map !== undefined) {
+					var parsed = this.parseURLS(jsonMap.args.url_encoded_fmt_stream_map);
+					if (parsed)
+						return parsed;
+				}
+			}
+			catch (e) {
+				this.debugMsg("Critical: " + e);
+			}
+		}
+		return null;
+	},
 
-    magicCleanup: function(toClean)
+	magicCleanup: function(toClean)
 	{
 		return toClean.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
 	},
@@ -323,20 +324,20 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		Tomahawk.asyncRequest(apiQuery, function(xhr) {
 			var results = [];
 			var resp = JSON.parse(xhr.responseText);
-			if (resp.data.totalItems !== 0){
+			if (resp.data.totalItems !== 0) {
 				var stop = Math.min(limit, resp.data.totalItems);
 				for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
-					if (resp.data.items[i] === undefined){
+					if (resp.data.items[i] === undefined) {
 						stop = stop - 1;
 						continue;
 					}
 					var responseItem = resp.data.items[i];
-					if (responseItem.duration === undefined){
+					if (responseItem.duration === undefined) {
 						stop = stop - 1;
 						continue;
 					}
 					// ContentRating, eg. User needs to verify age or similar that requires login
-					if (responseItem.contentRating !== undefined ){
+					if (responseItem.contentRating !== undefined) {
 						stop = stop - 1;
 						continue;
 					}
@@ -354,7 +355,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						if (newRespTitle !== undefined && newRespTitle.indexOf(newArtist) === -1 ||
 						   (newTitle !== "" && newRespTitle.indexOf(newTitle) === -1)) {
 							// Lets do it in reverse!
-							if( newArtist.indexOf(newTitle) === -1 && newTitle.indexOf(newArtist) === -1) {
+							if (newArtist.indexOf(newTitle) === -1 && newTitle.indexOf(newArtist) === -1) {
 								stop = stop - 1;
 								continue;
 							}
@@ -381,10 +382,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						(function(i, qid, result) {
 							Tomahawk.asyncRequest(responseItem.player['default'], function(xhr2) {
 								result.url  = that.parseVideoUrlFromYtPage(xhr2.responseText, result);
-								if ( result.url && result.url !== undefined) {
+								if (result.url && result.url !== undefined) {
 									// Get the expiration time, to be able to cache results in tomahawk
 									var expires = result.url.match(/expire=([0-9]+)(?=(&))/);
-									if ( expires && expires[1] !== undefined ) {
+									if (expires && expires[1] !== undefined) {
 										result.expires = Math.floor(expires[1]);
 									}
 									result.bitrate = that.getBitrate(result.url);
@@ -394,7 +395,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									if (stop === 0) {
 										var best = i + 1;
 										for (var j = 0; j < results.length; j++) {
-											if (results[j].id < best || that.hasPreferedQuality( results[j].url)) {
+											if (results[j].id < best || that.hasPreferedQuality(results[j].url)) {
 												best = results[j].id;
 												var finalResult = results[j];
 											}
@@ -417,7 +418,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						stop = stop - 1;
 					}
 				}
-				if (stop === 0){ // if no results had appropriate titles, return empty
+				if (stop === 0) { // if no results had appropriate titles, return empty
 					Tomahawk.addTrackResults(empty);
 				}
 			}
@@ -432,7 +433,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var result = {};
 		// For the ease of parsing, remove these
 		// Maybe we could up the score a bit?
-		if( title.regexIndexOf(/(?:[([](?=(official))).*?(?:[)\]])|(?:(official|video)).*?(?:(video))/i, 0 ) !== -1 )
+		if (title.regexIndexOf(/(?:[([](?=(official))).*?(?:[)\]])|(?:(official|video)).*?(?:(video))/i, 0) !== -1)
 		{
 			title = title.replace(/(?:[([](?=(official|video))).*?(?:[)\]])/gi, "");
 			title = title.replace(/(official|video(?:([!:-])))/gi, "");
@@ -443,19 +444,19 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		// eg, "\"Young Forever\" Jay Z | Mr. Hudson (OFFICIAL VIDEO)"
 		// this will parse out the that title
 		var inQuote = title.match(/([""'])(?:(?=(\\?))\2.).*\1/g);
-		if ( inQuote && inQuote !== undefined ) {
+		if (inQuote && inQuote !== undefined) {
 			result.track = inQuote[0].substr(1, inQuote[0].length-2);
 			title = title.replace(inQuote[0],'');
 			result.fromQuote = result.track;
-			result.parsed = this.parseCleanTrack( title );
-			if( result.parsed ){
+			result.parsed = this.parseCleanTrack(title);
+			if (result.parsed) {
 				result.parsed.track = result.track;
 				return result.parsed;
 			}
 		}
 		else {
-			result.parsed = this.parseCleanTrack( title );
-			if( result.parsed )
+			result.parsed = this.parseCleanTrack(title);
+			if (result.parsed)
 				return result.parsed;
 		}
 
@@ -473,7 +474,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						replaceWith = searchString;
 					else
 						replaceWith = searchString.concat(" : ");
-					result.parsed = this.parseCleanTrack( title.replace(RegExp(tryMatch, "gi"), replaceWith));
+					result.parsed = this.parseCleanTrack(title.replace(RegExp(tryMatch, "gi"), replaceWith));
 				}
 			}
 		}
@@ -500,20 +501,20 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var result = {};
 		result.query = track;
 		result.query.replace(/.*?(?=([-:|]\s))/g, function (param) {
-			if( param !== "" ) {
-				if( result.artist === undefined ) {
+			if (param !== "") {
+				if (result.artist === undefined) {
 					result.artist = param;
 				}
 				else {
-					if( result.track === undefined )
+					if (result.track === undefined)
 						result.track = param;
 				}
 			}
 		});
 
 		result.query.replace(/(?=([-:|]\s)).*/g, function (param) {
-			if( param !== "" ) {
-				if( param.regexIndexOf(/([-|:]\s)/g, 0) === 0 ) {
+			if (param !== "") {
+				if (param.regexIndexOf(/([-|:]\s)/g, 0) === 0) {
 					if(result.track === undefined)
 						result.track = param.replace(/([-|:]\s)/g, "");
 				}
@@ -525,10 +526,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		});
 
-		if (result.track !== undefined && result.artist !== undefined ){
+		if (result.track !== undefined && result.artist !== undefined) {
 			// Now, lets move featuring to track title, where it belongs
 			var ftmatch = result.artist.match(/(?:(\s)(?=(feat.|feat|ft.|ft|featuring)(?=(\s)))).*/gi);
-			if( ftmatch ){
+			if (ftmatch) {
 				result.artist = result.artist.replace(ftmatch, "");
 				result.track += " " + ftmatch;
 			}
@@ -548,7 +549,8 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		xmlHttpRequest.onreadystatechange = function() {
 			if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
 				callback.call(window, xmlHttpRequest, userdata);
-			} else if (xmlHttpRequest.readyState === 4) {
+			}
+			else if (xmlHttpRequest.readyState === 4) {
 				Tomahawk.log("Failed to do GET request: to: " + url);
 				Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
 			}
@@ -565,7 +567,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		};
 		Tomahawk.addTrackResults(empty);
 	},
-	 
+
 	handleItemResponse: function(qid, searchString, data)
 	{
 		var results = new Array();
@@ -577,7 +579,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var count = 0;
 		for (i = 0; i < data.totalItems; i++) {
 
-			if (data.items[i] === undefined){
+			if (data.items[i] === undefined) {
 				continue;
 			}
 
@@ -593,9 +595,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			// ContentRating, eg. User needs to verify age or similar that requires login
 			// May also indicate country restrictions
 			// @todo: Check user geo? may be found in result url, &gcr=COUNTRY_SHORT_CODE
-			//        Value to be catched is then contentRating.GEOCODE
-			//        If contentRating is just 1, login is required
-			if (data.items[i].contentRating !== undefined ) {
+			//		Value to be catched is then contentRating.GEOCODE
+			//		If contentRating is just 1, login is required
+			if (data.items[i].contentRating !== undefined) {
 				continue;
 			}
 
@@ -603,21 +605,21 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			var searchFoundItem = data.items[i].title.replace(/([^A-Za-z0-9\s])/gi, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,'|');
 			var searchStringItem = searchString.replace(/([^A-Za-z0-9\s])/gi, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,'|');
 			var matches = searchFoundItem.match(RegExp(searchStringItem, "gi"));
-			if( !matches ){
+			if (!matches) {
 				continue;
 			}
 
-			if( matches.length !== searchStringItem.split("|").length ) {
-				this.debugMsg("Skipping: " + data.items[i].title + " Matches: " + matches.length );
-				this.debugMsg("Searched: " + searchString  + " Matches: " + searchStringItem.split("|").length );
+			if (matches.length !== searchStringItem.split("|").length) {
+				this.debugMsg("Skipping: " + data.items[i].title + " Matches: " + matches.length);
+				this.debugMsg("Searched: " + searchString  + " Matches: " + searchStringItem.split("|").length);
 				continue;
 			}
 
 			var track = data.items[i].title;
-			var parsedTrack = this.cleanupAndParseTrack(track, searchString );
+			var parsedTrack = this.cleanupAndParseTrack(track, searchString);
 
-			if( !parsedTrack || parsedTrack.artist === undefined || parsedTrack.artist === undefined ) {
-				this.debugMsg( "Failed to get a possitive match for : " + track);
+			if (!parsedTrack || parsedTrack.artist === undefined || parsedTrack.artist === undefined) {
+				this.debugMsg("Failed to get a possitive match for : " + track);
 				continue;
 			}
 			if (this.getTrack(track, searchString, true)) {
@@ -625,7 +627,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				result.source = this.settings.name;
 				result.mimetype = "video/h264";
 				result.duration = data.items[i].duration;
-				result.score = (parsedTrack.isOfficial !== undefined ? 0.85 : 0.95 );
+				result.score = (parsedTrack.isOfficial !== undefined ? 0.85 : 0.95);
 				result.year = data.items[i].uploaded.slice(0,4);
 				result.url = data.items[i].player['default'];
 				result.query = searchString;
@@ -639,7 +641,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 				// Lets just do one artist lookup query, instead of on all of them
 				var artist = result.artist.toLowerCase();
-				if( artists[artist] )
+				if (artists[artist])
 					artists[artist].push(count);
 				else
 					artists[artist] = [count];
@@ -648,7 +650,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		}
 
-		if ( count == 0 )
+		if (count == 0)
 		{
 			this.debugMsg("Search results where empty for " + searchString);
 			this.sendEmptyResult(qid, searchString);
@@ -656,25 +658,25 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 
 		var finalResults = [];
-		for ( var artistKey in artists ) {
+		for (var artistKey in artists) {
 			this.asyncRequest(artistLookupUrl+artistKey, artists[artistKey], function(xhr, ids) {
 				var response = JSON.parse(xhr.responseText);
 				if (response.results.artistmatches.artist !== undefined) {
 					var artist = response.results.artistmatches.artist.name;
 					for (var i = 0; i < ids.length; i++) {
-						that.asyncRequest( results[ids[i]].url, {id: ids[i], artist: artist, results: results}, function(xhr, userdata) {
+						that.asyncRequest(results[ids[i]].url, {id: ids[i], artist: artist, results: results}, function(xhr, userdata) {
 							var url = that.parseVideoUrlFromYtPage(xhr.responseText);
 							if (url) {
 								userdata.results[userdata.id].url = url;
 								userdata.results[userdata.id].bitrate = that.getBitrate(url);
 								userdata.results[userdata.id].artist = userdata.artist;
 								var expires = url.match(/expire=([0-9]+)(?=(&))/);
-								if ( expires && expires[1] !== undefined ){
+								if (expires && expires[1] !== undefined) {
 									userdata.results[userdata.id].expires = Math.floor(expires[1]);
 								}
 								that.debugMsg("Added " + count + " " + userdata.results[userdata.id].url +  "\n");
 								finalResults.push(userdata.results[userdata.id]);
-								if (count-1 == 0 ){
+								if (count-1 == 0) {
 									var return1 = {
 										results: finalResults,
 										qid: qid
@@ -698,7 +700,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 	},
 
-	search: function( qid, searchString )
+	search: function(qid, searchString)
 	{
 		var limit = 50;
 		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality="+this.getPreferedQuality()+"&max-results=" +limit+"&category=Music";
