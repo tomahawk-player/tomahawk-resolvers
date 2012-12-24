@@ -178,13 +178,102 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 	},
 
-	parseVideoUrlFromYtPage: function(html) {
-        this.debugMode = 1;
-        // Youtube is sneaky!!!!!!!!
-        var parsedUrls = [];
-        var tMatch = html.match(/(yt\.playerConfig =)([^\r\n]+)/);
+	parseURLS: function(rawUrls)
+	{
+        var parsedUrls = new Array();
+        var urls = decodeURIComponent( decodeURIComponent(rawUrls));
+        // Youtube changes the start delimiter randomly
+        var matches = urls.match(/^((.+?)(=))/);
+        if (matches) {
+            // split the decoded urls by matches[0] delimiter, separated by comma
+            var urlArray = urls.split(RegExp(","+matches[0], "i"));
+            for (var i = 0; i < urlArray.length; i++) {
+                if (matches[0] != "url=") {
+                    // Delimiter isnt url=, we need to sort the params
+                    var url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
+                    var urlMatch = url.match(/(.+?)(url=)(.+?)(\?)(.+)/);
+                    // Base & Params
+                    url = urlMatch[3]+urlMatch[4] + "&" + urlMatch[1]+urlMatch[5];
+                }
+                else {
+                    // Just replace url=
+                    var url = urlArray[i].replace('/^(url=)/', "");
+                }
 
-        if (!tMatch) {
+                // itag is found twice, we need to remove that ( last occurence )
+                var itagMatch = url.match(/(.*)(itag=\d+&)(.*?)/);
+                url = url.replace(/(.*)(itag=\d+&)(.*?)/, itagMatch[1]+itagMatch[3]);
+                // Sig needs to be sigature
+                url = url.replace(/sig=/, "signature=");
+
+                try {
+                    // Parse out the type and codec, encode it
+                    // May have an quality effect
+                    var type = url.match(/(&type=)(.+?)(&)/i);
+                    type = type[1]+encodeURIComponent(type[2])+type[3];
+                    url = url.replace(/(&type=)(.+?)(&)/, type);
+                }
+                catch (e) {
+                    try {
+                        // Type is on the end of the url
+                        var type = url.match(/(&type=)(.*?)/i);
+                        type = type[1]+encodeURIComponent(type[1])+type[2];
+                        url = url.replace(/(&type=)(.*?)/, type);
+                    }
+                    catch( e ) {
+                        this.debugMsg("Critical: Cannot parse out type in url\n"+ url );
+                    }
+                }
+
+                if (url.regexIndexOf(/quality=(hd720|high|medium|small)/i, 0) !== -1) {
+                    parsedUrls.push(url);
+                }
+            }
+            var finalUrl;
+
+            if (this.qualityPreference === undefined){
+                // This shouldnt happen really, but sometimes do?!
+                this.qualityPreference = 0;
+                this.debugMsg("Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
+            }
+
+            for (i = 0; i < parsedUrls.length; i++){
+                if (this.hasPreferedQuality(parsedUrls[i])){
+                    finalUrl = parsedUrls[i];
+                }
+            }
+
+            if (finalUrl === undefined) {
+                finalUrl = parsedUrls[0];
+            }
+
+            if (finalUrl && finalUrl !== undefined) {
+                return finalUrl;
+            }
+        }
+        return null;
+	},
+
+	parseVideoUrlFromYtPage: function(html)
+	{
+        // First, lets try and find the stream_map at top of the page
+        // to save some time going to the end and do JSON.parse on the yt.config
+        var streamMatch = html.match(/(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i);
+        if( streamMatch && streamMatch[2] !== undefined ) {
+            var parsed = this.parseURLS(streamMatch[2]);
+            if (parsed) {
+                return parsed;
+            }
+            else {
+                this.debug("Hm, failed to parse urls from top of the page");
+            }
+        }
+
+        // Now we can go further down, and check the yt.config map
+        this.debugMsg("Need to go down and check yt.config");
+        streamMatch = html.match(/(yt\.playerConfig =)([^\r\n]+)/);
+
+        if (!streamMatch) {
             var dasCaptcha = html.match(/www.google.com\/recaptcha\/api\/challenge?/i);
             if (dasCaptcha)
                 this.debugMsg("Failed to parse url from youtube page. Captcha limitation in place.");
@@ -193,77 +282,24 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
             return null;
         }
 
-        // Todo: I should explain for future pref
-        if( tMatch[2] !== undefined )
-        {
+        if( streamMatch && streamMatch[2] !== undefined ){
             try {
-                var jsonMap = JSON.parse(tMatch[2].replace("};", "}"));
+                var jsonMap = JSON.parse(streamMatch[2].replace("};", "}"));
                 if ( jsonMap.args.url_encoded_fmt_stream_map !== undefined ) {
-                    var urls = decodeURIComponent( decodeURIComponent( jsonMap.args.url_encoded_fmt_stream_map ));
-                    var matches = urls.match(/^((.+?)(=))/);
-                    if( matches ) {
-                        var urlArray = urls.split(RegExp(","+matches[0], "i"));
-                        for(var i = 0; i < urlArray.length; i++){
-                            var url = "";
-                            if(matches[0] != "url=") {
-                                url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
-                                var urlMatch = url.match(/(.+?)(url=)(.+?)(\?)(.+)/);
-                                var urlBase = urlMatch[3]+urlMatch[4];
-                                var urlParams = urlMatch[1]+urlMatch[5];
-                                url = urlBase + "&" + urlParams;
-                            }
-                            else
-                            {
-                              url = urlArray[i].replace('/^(url=)/', "");
-                            }
-                            var itagMatch = url.match(/(.*)(itag=\d+&)(.*?)/);
-                            url = url.replace(/(.*)(itag=\d+&)(.*?)/, itagMatch[1]+itagMatch[3]);
-                            url = url.replace(/sig=/, "signature=");
-                            url = url.replace(/(&type=)(.+?)(&)/, "&");
-                            if( url.regexIndexOf(/quality=(hd720|high|medium|small)/i, 0) !== -1) {
-                                parsedUrls.push(url);
-                            }
-                        }
-                    }else {
-                        this.debugMsg( "No = matches in fmt_map!");
-                    }
+                    var parsed = this.parseURLS(jsonMap.args.url_encoded_fmt_stream_map);
+                    if( parsed )
+                        return parsed;
+                    //else this.debugMsg("Failed to get url from yt.config");
                 }
-                else {
-                  this.debugMsg("No fmt_map in html!!");
-                }
-            }catch(e) {
+            }
+            catch (e) {
                 this.debugMsg("Critical: " + e );
             }
-        }else {
-            this.debugMsg("No match Captch??");
         }
-
-        var finalUrl;
-
-        if (this.qualityPreference === undefined){
-            // This shouldnt happen really, but sometimes do?!
-            this.qualityPreference = 0;
-            this.debugMsg("Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference);
-        }
-
-        for (i = 0; i < parsedUrls.length; i++){
-            if (this.hasPreferedQuality(parsedUrls[i])){
-                finalUrl = parsedUrls[i];
-            }
-        }
-
-        if (finalUrl === undefined) {
-            finalUrl = parsedUrls[0];
-        }
-
-        if (finalUrl && finalUrl !== undefined) {
-            return finalUrl;
-        }
-
         return null;
     },
 
-	magicCleanup: function(toClean)
+    magicCleanup: function(toClean)
 	{
 		return toClean.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "").replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ').toLowerCase();
 	},
