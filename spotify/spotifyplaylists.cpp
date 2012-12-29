@@ -559,7 +559,7 @@ SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
     }
 
     qDebug() << "Renamning " << m_playlists[index].name_ << " to " << sp_playlist_name( pl );
-    m_playlists[index].name_ = sp_playlist_name( pl );
+    m_playlists[index].name_ = QString::fromUtf8( sp_playlist_name( pl ) );
 
     // container update, send signal, notify name change
     emit notifyContainerLoadedSignal();
@@ -1933,7 +1933,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
         return;
 
     playlist.playlist_ = pl;
-    playlist.name_ = sp_playlist_name(pl);
+    playlist.name_ = QString::fromUtf8( sp_playlist_name( pl ) );
     playlist.owner_ = sp_user_canonical_name( sp_playlist_owner( pl ) );
     playlist.isCollaborative = sp_playlist_is_collaborative( pl );
 
