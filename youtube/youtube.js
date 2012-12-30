@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2012 Hugo Lindström <hugolm84@gmail.com>
- * Copyright (C) 2012 Thierry Göckel <thierry@strayrayday.lu>
+ * Copyright (C) 2012 Hugo LindstrÃ¶m <hugolm84@gmail.com>
+ * Copyright (C) 2012 Thierry GÃ¶ckel <thierry@strayrayday.lu>
  * Copyright (C) 2012 Leo Franchi <lfranchi@kde.org>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -661,7 +661,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		for (var artistKey in artists) {
 			this.asyncRequest(artistLookupUrl+artistKey, artists[artistKey], function(xhr, ids) {
 				var response = JSON.parse(xhr.responseText);
-				if (response.results.artistmatches.artist !== undefined) {
+				if (response.results !== undefined && response.results.artistmatches.artist !== undefined) {
 					var artist = response.results.artistmatches.artist.name;
 					for (var i = 0; i < ids.length; i++) {
 						that.asyncRequest(results[ids[i]].url, {id: ids[i], artist: artist, results: results}, function(xhr, userdata) {
@@ -693,7 +693,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					}
 				}
 				else {
-					that.debugMsg("Bad name?" + JSON.stringify(response.results["opensearch:Query"], 4, null));
+					if( response.results !== undefined )
+						that.debugMsg("Bad name?" + JSON.stringify(response.results["opensearch:Query"], 4, null));
+					else
+						that.debugMsg("Bad result from artist lookup?");
 					count = count-ids.length
 				}
 			});
@@ -706,7 +709,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality="+this.getPreferedQuality()+"&max-results=" +limit+"&category=Music";
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
-
+		this.debugMsg("Searching for " + searchString);
 		Tomahawk.asyncRequest(apiQuery, function(xhr) {
 			var resp = JSON.parse(xhr.responseText);
 			if (resp.data.totalItems !== 0) {
