@@ -1007,6 +1007,7 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
         else
         {
             qWarning() << "Bad insert position??" << "pos: " << new_position << " size: " <<  m_playlists[index].tracks_.size();
+            return;
         }
     }
     qDebug() << "Moving tracks in a synced spotify playlist, from indexes:" << tracks << "to new position:" << new_position;
