@@ -32,10 +32,6 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
 
-    // Playlist cachemiss fix
-    // @note: bad way of handling exitfails
-    connect( m_SpotifyPlaylists, SIGNAL( forcePruneCache() ), this, SLOT( relogin() ) );
-
     m_SpotifyPlayback = new SpotifyPlayback( this );
 
     // Connect to signals
