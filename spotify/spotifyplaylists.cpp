@@ -998,9 +998,17 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     }
 
     sp_track* beforeinsert = 0;
-    if ( new_position > 0 && new_position <= m_playlists.size() )
-        beforeinsert = m_playlists[index].tracks_.at( new_position - 1 );
-
+    if ( new_position > 0 )
+    {
+        if ( new_position < m_playlists[index].tracks_.size() )
+        {
+            beforeinsert = m_playlists[index].tracks_.at( new_position-1 );
+        }
+        else
+        {
+            qWarning() << "Bad insert position??" << "pos: " << new_position << " size: " <<  m_playlists[index].tracks_.size();
+        }
+    }
     qDebug() << "Moving tracks in a synced spotify playlist, from indexes:" << tracks << "to new position:" << new_position;
 
     // find the spotify track of the song before the newly inserted one
@@ -1010,9 +1018,22 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     QStringList moveIds;
     foreach( int fromPos, tracks )
     {
-        toInsert << m_playlists[index].tracks_[fromPos];
-        moveIds << trackId( m_playlists[index].tracks_[fromPos] );
+        int realIdx = fromPos;
+        if ( fromPos == m_playlists[index].tracks_.size() )
+            realIdx--;
+
+        if ( realIdx < 0 || realIdx >= m_playlists[index].tracks_.size() )
+        {
+            qWarning() << "Tried to move tracks at index:" << realIdx << "(originally" << fromPos
+                       << ") from tracks list that is out of bounds!! We have size:" << m_playlists[index].tracks_.size();
+            continue;
+        }
+
+        toInsert << m_playlists[index].tracks_[realIdx];
+        moveIds << trackId( m_playlists[index].tracks_[realIdx] );
+
     }
+
     foreach( sp_track* removing, toInsert )
         m_playlists[index].tracks_.removeAll( removing );
 
