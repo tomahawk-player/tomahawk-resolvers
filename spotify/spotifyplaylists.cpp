@@ -1000,7 +1000,7 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     sp_track* beforeinsert = 0;
     if ( new_position > 0 )
     {
-        if ( new_position < m_playlists[index].tracks_.size() )
+        if ( new_position <= m_playlists[index].tracks_.size() )
         {
             beforeinsert = m_playlists[index].tracks_.at( new_position-1 );
         }
