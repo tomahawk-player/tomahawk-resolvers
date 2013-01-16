@@ -8,7 +8,7 @@
 #
 require 'pathname'
 
-LIBSPOTIFY_VERSION = "#{`brew ls -version libspotify | tr -s " " "\012" | tail -n 1`}".strip
+LIBSPOTIFY_VERSION = "12.1.51"
 
 puts "Using libspotify version: #{LIBSPOTIFY_VERSION}"
 if ARGV.length < 4
