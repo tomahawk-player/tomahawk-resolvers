@@ -142,39 +142,50 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		};
 	},
 
-	hasPreferedQuality: function(urlString)
+	hasPreferredQuality: function(urlString)
 	{
 		if (this.qualityPreference === undefined) {
 			this.debugMsg("ASSERT: quality undefined!");
 			return true;
 		}
 
-		if (urlString.indexOf("quality="+this.getPreferedQuality()) !== -1)
+		if (urlString.indexOf("quality="+this.getPreferredQuality()) !== -1){
 			return true;
+		}
 		return false;
 	},
 
-	getPreferedQuality: function()
+	getPreferredQuality: function()
 	{
 		if (this.qualityPreference === undefined) {
 			this.qualityPreference = 0;
-			return "hd720"
 		}
 
-		switch(this.qualityPreference) {
+		switch (this.qualityPreference) {
+			case 0:
+				return "hd720";
+				break;
+			case 1:
+				return "medium";
+				break;
+			case 2:
+				return "small";
+				break;
 			default:
-			case 0 : return "hd720";
-			case 1 : return "medium"
-			case 2 : return "small";
+				return "hd720";
 		}
+		// To make Lint happy
+		return "hd720";
 	},
 
 	debugMsg: function(msg)
 	{
-		if (msg.toLowerCase().indexOf("assert") === 0)
+		if (msg.toLowerCase().indexOf("assert") === 0){
 			console.log(this.settings.name + msg);
-		else if (this.debugMode)
+		}
+		else if (this.debugMode){
 			Tomahawk.log(this.settings.name + "Debug: " + msg);
+		}
 	},
 
 	parseURLS: function(rawUrls)
@@ -187,16 +198,17 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			// split the decoded urls by matches[0] delimiter, separated by comma
 			var urlArray = urls.split(RegExp(","+matches[0], "i"));
 			for (var i = 0; i < urlArray.length; i++) {
+				var url;
 				if (matches[0] != "url=") {
 					// Delimiter isnt url=, we need to sort the params
-					var url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
+					url = (urlArray[i] != urlArray[0]) ? matches[0]+urlArray[i] : urlArray[i];
 					var urlMatch = url.match(/(.+?)(url=)(.+?)(\?)(.+)/);
 					// Base & Params
 					url = urlMatch[3]+urlMatch[4] + "&" + urlMatch[1]+urlMatch[5];
 				}
 				else {
 					// Just replace url=
-					var url = urlArray[i].replace('/^(url=)/', "");
+					url = urlArray[i].replace(/^url=/, "");
 				}
 
 				// itag is found twice, we need to remove that (last occurence)
@@ -205,17 +217,17 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 				// Sig needs to be sigature
 				url = url.replace(/sig=/, "signature=");
-
+				var type;
 				try {
 					// Parse out the type and codec, encode it
 					// May have an quality effect
-					var type = url.match(/(&type=)(.+?)(&)/i);
+					type = url.match(/(&type=)(.+?)(&)/i);
 					url = url.replace(/(&type=)(.+?)(&)/, type[1]+encodeURIComponent(type[2])+type[3]);
 				}
 				catch (e) {
 					try {
 						// Type is on the end of the url
-						var type = url.match(/(&type=)(.*?)/i);
+						type = url.match(/(&type=)(.*?)/i);
 						type = type[1]+encodeURIComponent(type[1])+type[2];
 						url = url.replace(/(&type=)(.*)/, type);
 					}
@@ -238,7 +250,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 
 			for (i = 0; i < parsedUrls.length; i++) {
-				if (this.hasPreferedQuality(parsedUrls[i])) {
+				if (this.hasPreferredQuality(parsedUrls[i])) {
 					finalUrl = parsedUrls[i];
 				}
 			}
@@ -259,6 +271,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		// First, lets try and find the stream_map at top of the page
 		// to save some time going to the end and do JSON.parse on the yt.config
 		var streamMatch = html.match(/(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i);
+		//Tomahawk.log(streamMatch);
 		if (streamMatch && streamMatch[2] !== undefined) {
 			var parsed = this.parseURLS(streamMatch[2]);
 			if (parsed) {
@@ -288,9 +301,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			try {
 				var jsonMap = JSON.parse(streamMatch[2].replace("};", "}"));
 				if (jsonMap.args.url_encoded_fmt_stream_map !== undefined) {
-					var parsed = this.parseURLS(jsonMap.args.url_encoded_fmt_stream_map);
-					if (parsed)
+					parsed = this.parseURLS(jsonMap.args.url_encoded_fmt_stream_map);
+					if (parsed){
 						return parsed;
+					}
 				}
 			}
 			catch (e) {
@@ -395,7 +409,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 									if (stop === 0) {
 										var best = i + 1;
 										for (var j = 0; j < results.length; j++) {
-											if (results[j].id < best || that.hasPreferedQuality(results[j].url)) {
+											if (results[j].id < best || that.hasPreferredQuality(results[j].url)) {
 												best = results[j].id;
 												var finalResult = results[j];
 											}
@@ -456,8 +470,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 		else {
 			result.parsed = this.parseCleanTrack(title);
-			if (result.parsed)
+			if (result.parsed){
 				return result.parsed;
+			}
 		}
 
 		// Still no luck, lets go deeper
@@ -470,18 +485,21 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				var tryMatch = searchString.replace(/(?:[-|:&])/g, " ");
 				if (title.toLowerCase().indexOf(tryMatch.toLowerCase()) !== -1) {
 					var replaceWith;
-					if (title.regexIndexOf(/(?:[-|:&])/g, 0) !== -1)
+					if (title.regexIndexOf(/(?:[-|:&])/g, 0) !== -1){
 						replaceWith = searchString;
-					else
+					}
+					else {
 						replaceWith = searchString.concat(" : ");
+					}
 					result.parsed = this.parseCleanTrack(title.replace(RegExp(tryMatch, "gi"), replaceWith));
 				}
 			}
 		}
 
 		if (result.fromQuote && result.fromQuote !== undefined) {
-			if (result.parsed)
+			if (result.parsed){
 				result.artist = result.parsed.artist;
+			}
 			result.track = result.fromQuote;
 		}
 		else if (result.parsed) {
@@ -506,8 +524,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					result.artist = param;
 				}
 				else {
-					if (result.track === undefined)
+					if (result.track === undefined){
 						result.track = param;
+					}
 				}
 			}
 		});
@@ -515,13 +534,15 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		result.query.replace(/(?=([-:|]\s)).*/g, function (param) {
 			if (param !== "") {
 				if (param.regexIndexOf(/([-|:]\s)/g, 0) === 0) {
-					if(result.track === undefined)
+					if(result.track === undefined){
 						result.track = param.replace(/([-|:]\s)/g, "");
+					}
 				}
 				else {
-					if(tyresult.artist === undefined)
+					if(tyresult.artist === undefined){
 						result.artist = param;
-					result.track = result.replace(/([-|:]\s)/g, "")
+					}
+					result.track = result.replace(/([-|:]\s)/g, "");
 				}
 			}
 		});
@@ -554,7 +575,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 				Tomahawk.log("Failed to do GET request: to: " + url);
 				Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
 			}
-		}
+		};
 		xmlHttpRequest.send(null);
 	},
 
@@ -577,8 +598,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		var artistLookupUrl = "http://ws.audioscrobbler.com/2.0/?method=artist.search&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=1&artist=";
 		var that = this;
 		var count = 0;
-		for (i = 0; i < data.totalItems; i++) {
-
+		for (i = 0; i < Math.min(data.totalItems, 50); i++) {
 			if (data.items[i] === undefined) {
 				continue;
 			}
@@ -641,16 +661,19 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 				// Lets just do one artist lookup query, instead of on all of them
 				var artist = result.artist.toLowerCase();
-				if (artists[artist])
+				if (artists[artist]){
 					artists[artist].push(count);
-				else
+				}
+				else {
 					artists[artist] = [count];
+				}
 
-				result.id = count++;
+				result.id = count;
+				count++;
 			}
 		}
 
-		if (count == 0)
+		if (count === 0)
 		{
 			this.debugMsg("Search results where empty for " + searchString);
 			this.sendEmptyResult(qid, searchString);
@@ -676,7 +699,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 								}
 								that.debugMsg("Added " + count + " " + userdata.results[userdata.id].url +  "\n");
 								finalResults.push(userdata.results[userdata.id]);
-								if (count-1 == 0) {
+								if (count-1 === 0) {
 									var return1 = {
 										results: finalResults,
 										qid: qid
@@ -693,11 +716,13 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					}
 				}
 				else {
-					if( response.results !== undefined )
+					if( response.results !== undefined ){
 						that.debugMsg("Bad name?" + JSON.stringify(response.results["opensearch:Query"], 4, null));
-					else
+					}
+					else {
 						that.debugMsg("Bad result from artist lookup?");
-					count = count-ids.length
+					}
+					count = count-ids.length;
 				}
 			});
 		}
@@ -706,7 +731,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	search: function(qid, searchString)
 	{
 		var limit = 50;
-		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality="+this.getPreferedQuality()+"&max-results=" +limit+"&category=Music";
+		var apiQuery = "http://gdata.youtube.com/feeds/api/videos?q=" + encodeURIComponent(searchString) + "&v=2&alt=jsonc&quality="+this.getPreferredQuality()+"&max-results=" +limit+"&category=Music";
 		apiQuery = apiQuery.replace(/\%20/g, '\+');
 		var that = this;
 		this.debugMsg("Searching for " + searchString);
