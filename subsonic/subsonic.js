@@ -20,7 +20,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             }, {
                 name: "subsonic_api",
                 widget: "api_version_combo",
-                property: "currentText"
+                property: "currentIndex"
             }, {
                 name: "max_songs",
                 widget: "max_songs_spinbox",
@@ -96,10 +96,12 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
     buildBaseUrl : function(subsonic_view)
     {
+        var supported_api_versions = [ "1.5.0", "1.6.0", "1.7.0" ];
+
         return this.subsonic_url + subsonic_view +
                 "?u=" + this.user +
                 "&p=" + this.password +
-                "&v=" + this.subsonic_api +
+                "&v=" + supported_api_versions[ this.subsonic_api ] +
                 "&c=tomahawk";
     },
 
