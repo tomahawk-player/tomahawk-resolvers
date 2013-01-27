@@ -161,7 +161,6 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("subsonic artists query:" + artists_url);
             Tomahawk.log("subsonic artists response:" + xhr.responseText);
             var artists = doc["subsonic-response"].artists.index;
-            Tomahawk.log(artists.length + " artist indexes returned.")
 
             for (var i = 0; i < artists.length; i++)
             {
@@ -200,10 +199,10 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("subsonic albums query:" + search_url);
             Tomahawk.log("subsonic albums response:" + xhr.responseText);
             var albums = doc["subsonic-response"].searchResult2.album;
-            Tomahawk.log(albums.length + " albums returned.")
 
             if (albums instanceof Array)
             {
+                Tomahawk.log(albums.length + " albums returned.")
                 for (var i = 0; i < albums.length; i++)
                 {
                     if (albums[i].artist === artist) //search2 does partial matches
@@ -231,6 +230,50 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
 
+    executeTracksQuery : function(qid, search_url, artist, album)
+    {
+        var results = [];
+        var that = this;
+        search_url += "&f=json"; //for large responses we surely want JSON
+
+        // Important to recognize this async request is doing a get and the user / password is passed in the search url
+        // TODO: should most likely just use the xhr object and doing basic authentication.
+        Tomahawk.asyncRequest(search_url, function(xhr) {
+            var doc = JSON.parse(xhr.responseText);
+            Tomahawk.log("subsonic tracks query:" + search_url);
+            Tomahawk.log("subsonic tracks response:" + xhr.responseText);
+            var tracks = doc["subsonic-response"].searchResult.match;
+
+            if (tracks instanceof Array)
+            {
+                Tomahawk.log(tracks.length + " tracks returned.")
+                for (var i = 0; i < tracks.length; i++ )
+                {
+                    if (tracks[i].artist === artist && tracks[i].album === album)
+                    {
+                        results.push(that.parseSongFromAttributes(tracks[i].attributes));
+                    }
+                }
+            }
+            else
+            {
+                if (tracks.artist === artist && tracks.album === album)
+                {
+                    results.push(that.parseSongFromAttributes(tracks.attributes));
+                }
+            }
+
+            var return_tracks = {
+                qid: qid,
+                artist: artist,
+                album: album,
+                results: results
+            };
+
+            Tomahawk.log("subsonic tracks about to return: " + JSON.stringify( return_tracks ) );
+            Tomahawk.addAlbumTrackResults(return_tracks);
+        });
+    },
 
     //! Please note i am using the deprecated search method in resolve
     //  The reason i am doing this is because it allows me to get a little more specific with the search
@@ -272,7 +315,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     albums: function( qid, artist )
     {
         if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
-            return { qid: qid, albums: [] };
+            return { qid: qid, artist: artist, albums: [] };
 
         var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=0&artistCount=0&albumCount=900" +
                 "&query=\"" + encodeURIComponent(artist) + "\"";
@@ -281,7 +324,15 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
     tracks: function( qid, artist, album )
     {
+        if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
+            return { qid: qid, artist: artist, album: album, tracks: [] };
 
+        // See note for resolve() about the search method
+        var search_url = this.buildBaseUrl("/rest/search.view") +
+                "&artist=\"" + encodeURIComponent(artist) +
+                "\"&album=\"" + encodeURIComponent(album) + "\"&count=200";
+
+        this.executeTracksQuery(qid, search_url, artist, album);
     }
 });
 
