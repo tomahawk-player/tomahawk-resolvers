@@ -152,35 +152,68 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
     executeIndexesQuery : function(qid, indexes_url)
     {
         var results = [];
-        var that = this; // needed so we can reference this from within the lambda
         indexes_url += "&f=json"; //for large responses we surely want JSON
 
-       // Important to recognize this async request is doing a get and the user / password is passed in the search url
-       // TODO: should most likely just use the xhr object and doing basic authentication.
-       Tomahawk.asyncRequest(indexes_url, function(xhr) {
-           var doc = JSON.parse(xhr.responseText);
-           Tomahawk.log("subsonic indexes query:" + indexes_url);
-           Tomahawk.log("subsonic indexes response:" + xhr.responseText);
-           var indexes = doc["subsonic-response"].indexes.index;
-           Tomahawk.log(indexes.length + " indexes returned.")
+        // Important to recognize this async request is doing a get and the user / password is passed in the search url
+        // TODO: should most likely just use the xhr object and doing basic authentication.
+        Tomahawk.asyncRequest(indexes_url, function(xhr) {
+            var doc = JSON.parse(xhr.responseText);
+            Tomahawk.log("subsonic indexes query:" + indexes_url);
+            Tomahawk.log("subsonic indexes response:" + xhr.responseText);
+            var indexes = doc["subsonic-response"].indexes.index;
+            Tomahawk.log(indexes.length + " indexes returned.")
 
-           for (var count = 0; count < indexes.length; count++)
-           {
+            for (var count = 0; count < indexes.length; count++)
+            {
                for (var countj = 0; countj < indexes[count].artist.length; countj++)
                {
                    results.push(indexes[count].artist[countj].name)
                }
-           }
+            }
 
-           var return_artists = {
+            var return_artists = {
                qid: qid,
                artists: results
-           };
+            };
 
-           Tomahawk.log("subsonic artists about to return: " + JSON.stringify( return_artists ) );
-           Tomahawk.addArtistResults(return_artists);
-       });
+            Tomahawk.log("subsonic artists about to return: " + JSON.stringify( return_artists ) );
+            Tomahawk.addArtistResults(return_artists);
+        });
     },
+
+    executeAlbumsQuery : function(qid, search_url, artist)
+    {
+        var results = [];
+        search_url += "&f=json"; //for large responses we surely want JSON
+
+        // Important to recognize this async request is doing a get and the user / password is passed in the search url
+        // TODO: should most likely just use the xhr object and doing basic authentication.
+        Tomahawk.asyncRequest(search_url, function(xhr) {
+            var doc = JSON.parse(xhr.responseText);
+            Tomahawk.log("subsonic albums query:" + search_url);
+            Tomahawk.log("subsonic albums response:" + xhr.responseText);
+            var albums = doc["subsonic-response"].searchResult2.album;
+            Tomahawk.log(albums.length + " albums returned.")
+
+            for (var count = 0; count < albums.length; count++)
+            {
+                if (albums[count].artist === artist) //search2 does partial matches
+                {
+                    results.push(albums[count].title)
+                }
+            }
+
+            var return_albums = {
+                qid: qid,
+                artist: artist,
+                albums: results
+            };
+
+            Tomahawk.log("subsonic albums about to return: " + JSON.stringify( return_albums ) );
+            Tomahawk.addAlbumResults(return_albums);
+        });
+    },
+
 
     //! Please note i am using the deprecated search method in resolve
     //  The reason i am doing this is because it allows me to get a little more specific with the search
@@ -201,7 +234,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
             return { qid: qid, results: [] };
 
-        var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=" + encodeURIComponent(searchString);
+        var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=\"" + encodeURIComponent(searchString) + "\"";
         this.executeSearchQuery(qid, search_url, "song", this.max_songs);
     },
 
@@ -217,6 +250,21 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
         var indexes_url = this.buildBaseUrl("/rest/getIndexes.view");
         this.executeIndexesQuery(qid, indexes_url);
+    },
+
+    albums: function( qid, artist )
+    {
+        if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
+            return { qid: qid, albums: [] };
+
+        var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=0&artistCount=0&albumCount=900" +
+                "&query=\"" + encodeURIComponent(artist) + "\"";
+        this.executeAlbumsQuery(qid, search_url, artist);
+    },
+
+    tracks: function( qid, artist, album )
+    {
+
     }
 });
 

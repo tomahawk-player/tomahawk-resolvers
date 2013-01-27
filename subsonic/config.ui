@@ -128,17 +128,17 @@
                   </property>
                   <item>
                     <property name="text">
-                      <string>1.5.0</string>
-                    </property>
-                  </item>
-                  <item>
-                    <property name="text">
                       <string>1.6.0</string>
                     </property>
                   </item>
                   <item>
                     <property name="text">
                       <string>1.7.0</string>
+                    </property>
+                  </item>
+                  <item>
+                    <property name="text">
+                      <string>1.8.0</string>
                     </property>
                   </item>
                 </widget>
