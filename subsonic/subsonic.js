@@ -105,7 +105,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 "&c=tomahawk";
     },
 
-    parseSongFromAttributes : function(song_attributes)
+    parseSongFromXmlAttributes : function(song_attributes)
     {
         return {
             artist: this.getXmlAttribute("artist", song_attributes),
@@ -119,6 +119,24 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             url: this.buildBaseUrl("/rest/stream.view") + "&id=" + this.getXmlAttribute("id", song_attributes),
             extension: this.getXmlAttribute("suffix", song_attributes),
             year: this.getXmlAttribute("year", song_attributes)
+        };
+    },
+
+
+    parseSongFromAttributes : function(song_attributes)
+    {
+        return {
+            artist:     song_attributes["artist"],
+            album:      song_attributes["album"],
+            track:      song_attributes["title"],
+            albumpos:   song_attributes["track"],
+            source:     this.settings.name,
+            size:       song_attributes["size"],
+            duration:   song_attributes["duration"],
+            bitrate:    song_attributes["bitRate"],
+            url:        this.buildBaseUrl("/rest/stream.view") + "&id=" + song_attributes["id"],
+            extension:  song_attributes["suffix"],
+            year:       song_attributes["year"],
         };
     },
 
@@ -137,7 +155,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log(search_results.length + " results returned.")
             for (var count = 0; count < Math.min(search_results.length, limit); count++)
             {
-                results.push(that.parseSongFromAttributes(search_results[count].attributes));
+                results.push(that.parseSongFromXmlAttributes(search_results[count].attributes));
             }
 
             var return_songs = {
@@ -251,7 +269,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 {
                     if (tracks[i].artist === artist && tracks[i].album === album)
                     {
-                        results.push(that.parseSongFromAttributes(tracks[i].attributes));
+                        results.push(that.parseSongFromAttributes(tracks[i]));
                     }
                 }
             }
@@ -259,7 +277,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             {
                 if (tracks.artist === artist && tracks.album === album)
                 {
-                    results.push(that.parseSongFromAttributes(tracks.attributes));
+                    results.push(that.parseSongFromAttributes(tracks));
                 }
             }
 
