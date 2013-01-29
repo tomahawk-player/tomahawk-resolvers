@@ -312,7 +312,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
             return { qid: qid, results: [] };
 
-        var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=" + encodeURIComponent(searchString);
+        var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=\"" + encodeURIComponent(searchString) + "\"";
         this.executeSearchQuery(qid, search_url, "song", this.max_songs);
     },
 
@@ -336,7 +336,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             return { qid: qid, artist: artist, albums: [] };
 
         var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=0&artistCount=0&albumCount=900" +
-                "&query=" + encodeURIComponent(artist);
+                "&query=\"" + encodeURIComponent(artist) + "\"";
         this.executeAlbumsQuery(qid, search_url, artist);
     },
 
@@ -347,8 +347,8 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
         // See note for resolve() about the search method
         var search_url = this.buildBaseUrl("/rest/search.view") +
-                "&artist=" + encodeURIComponent(artist) +
-                "&album=" + encodeURIComponent(album) + "&count=200";
+                "&artist=\"" + encodeURIComponent(artist) +
+                "\"&album=\"" + encodeURIComponent(album) + "\"&count=200";
 
         this.executeTracksQuery(qid, search_url, artist, album);
     }
