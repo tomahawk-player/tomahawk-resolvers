@@ -223,7 +223,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 Tomahawk.log(albums.length + " albums returned.")
                 for (var i = 0; i < albums.length; i++)
                 {
-                    if (albums[i].artist === artist) //search2 does partial matches
+                    if (albums[i].artist.toLowerCase() === artist.toLowerCase()) //search2 does partial matches
                     {
                         results.push(albums[i].title)
                     }
@@ -231,7 +231,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             }
             else
             {
-                if (albums.artist === artist)
+                if (albums.artist.toLowerCase() === artist.toLowerCase())
                 {
                     results.push(albums.title);
                 }
@@ -267,7 +267,12 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 Tomahawk.log(tracks.length + " tracks returned.")
                 for (var i = 0; i < tracks.length; i++ )
                 {
-                    if (tracks[i].artist === artist && tracks[i].album === album)
+                    Tomahawk.log("tracks[i].artist=" + tracks[i].artist);
+                    Tomahawk.log("artist=          " + artist);
+                    Tomahawk.log("tracks[i].album =" + tracks[i].album);
+                    Tomahawk.log("album=           " + album);
+
+                    if (tracks[i].artist.toLowerCase() === artist.toLowerCase() && tracks[i].album.toLowerCase() === album.toLowerCase())
                     {
                         results.push(that.parseSongFromAttributes(tracks[i]));
                     }
@@ -275,7 +280,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             }
             else
             {
-                if (tracks.artist === artist && tracks.album === album)
+                if (tracks.artist.toLowerCase() === artist.toLowerCase() && tracks.album.toLowerCase() === album.toLowerCase())
                 {
                     results.push(that.parseSongFromAttributes(tracks));
                 }
