@@ -82,6 +82,8 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
         this.subsonic_api = userConfig.subsonic_api;
         this.max_songs = userConfig.max_songs;
+
+        this.element = document.createElement('div');
     },
 
     getXmlAttribute: function(attrib_name, attributes)
@@ -122,13 +124,18 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         };
     },
 
+    decodeEntity : function(str)
+    {
+        this.element.innerHTML = str;
+        return this.element.textContent;
+    },
 
     parseSongFromAttributes : function(song_attributes)
     {
         return {
-            artist:     song_attributes["artist"],
-            album:      song_attributes["album"],
-            track:      song_attributes["title"],
+            artist:     this.decodeEntity(song_attributes["artist"]),
+            album:      this.decodeEntity(song_attributes["album"]),
+            track:      this.decodeEntity(song_attributes["title"]),
             albumpos:   song_attributes["track"],
             source:     this.settings.name,
             size:       song_attributes["size"],
