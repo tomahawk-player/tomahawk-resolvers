@@ -3,7 +3,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     artists: {},
     albums: {},
     settings: {
-        name: 'Ampache Resolver',
+        name: 'Ampache',
         icon: 'ampache-icon.png',
         weight: 85,
         timeout: 5,
@@ -108,6 +108,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Caught exception in Ampache resolver doing auth handshake request");
             return;
         }
+
+        this.element = document.createElement('div');
     },
     generateUrl: function (action, auth, params) {
         var ampacheUrl = this.ampache + "/server/xml.server.php?";
@@ -127,7 +129,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     apiCallSync: function (action, auth, params) {
         var ampacheUrl = this.generateUrl(action, auth, params);
 
-        return Tomahawk.syncRequest(ampacheUrl, callback);
+        return Tomahawk.syncRequest(ampacheUrl);
     },
 
     apiCall: function (action, auth, params, callback) {
@@ -140,7 +142,12 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         // this is called from window scope (setInterval), so we need to make methods and data accessible from there
         Tomahawk.log(AmpacheResolver.apiCall('ping', AmpacheResolver.auth, {}, function () {}));
     },
-    parseSongResponse: function (qid, responseString) {
+    decodeEntity : function(str)
+    {
+        this.element.innerHTML = str;
+        return this.element.textContent;
+    },
+    parseSongResponse: function(responseString) {
         // parse xml
         var domParser = new DOMParser();
         xmlDoc = domParser.parseFromString(responseString, "text/xml");
@@ -156,9 +163,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 var song = songs[i];
 
                 var result = {
-                    artist: Tomahawk.valueForSubNode(song, "artist"),
-                    album: Tomahawk.valueForSubNode(song, "album"),
-                    track: Tomahawk.valueForSubNode(song, "title"),
+                    artist: this.decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
+                    album: this.decodeEntity(Tomahawk.valueForSubNode(song, "album")),
+                    track: this.decodeEntity(Tomahawk.valueForSubNode(song, "title")),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
                     url: Tomahawk.valueForSubNode(song, "url"),
@@ -172,6 +179,10 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 results.push(result);
             }
         }
+        return results;
+    },
+    parseSearchResponse: function (qid, responseString) {
+        var results = this.parseSongResponse(responseString);
 
         // prepare the return
         var return1 = {
@@ -199,12 +210,17 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
         var that = this;
         this.apiCall("search_songs", AmpacheResolver.auth, params, function (xhr) {
-            that.parseSongResponse(qid, xhr.responseText);
+            that.parseSearchResponse(qid, xhr.responseText);
         });
 
         //Tomahawk.log( searchResult );
     },
-    getArtists: function (qid) {
+
+    // ScriptCollection support starts here
+    capabilities: function() {
+        return TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory;
+    },
+    artists: function (qid) {
         var searchResult = this.apiCallSync("artists", AmpacheResolver.auth);
 
         Tomahawk.log(searchResult);
@@ -223,14 +239,19 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 artistName = Tomahawk.valueForSubNode(artists[i], "name");
                 artistId = artists[i].getAttribute("id");
 
-                results.push(artistName);
+                results.push(this.decodeEntity(artistName));
                 this.artists[artistName] = artistId;
             }
         }
 
-        return results;
+        var return_artists = {
+            qid: qid,
+            artists: results
+        };
+        Tomahawk.log("Ampache artists about to return: " + JSON.stringify( return_artists ));
+        return return_artists;
     },
-    getAlbums: function (artist) {
+    albums: function (qid, artist) {
         var artistId = this.artists[artist];
 
         var params = {
@@ -254,7 +275,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 albumName = Tomahawk.valueForSubNode(albums[i], "name");
                 albumId = albums[i].getAttribute("id");
 
-                results.push(albumName);
+                results.push(this.decodeEntity(albumName));
 
                 artistObject = this.albums[artist];
                 if (artistObject === undefined) artistObject = {};
@@ -263,9 +284,15 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             }
         }
 
-        return results;
+        var return_albums = {
+            qid: qid,
+            artist: artist,
+            albums: results
+        };
+        Tomahawk.log("Ampache albums about to return: " + JSON.stringify( return_albums ));
+        return return_albums;
     },
-    getTracks: function (artist, album) {
+    tracks: function (qid, artist, album) {
         var artistObject = this.albums[artist];
         var albumId = artistObject[albumName];
         Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
@@ -279,7 +306,16 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
         //Tomahawk.log( searchResult );
 
-        return this.parseSongResponse(1337, searchResult);
+        var tracks_result = this.parseSongResponse(searchResult);
+
+        var return_tracks = {
+            qid: qid,
+            artist: artist,
+            album: album,
+            results: tracks_result
+        };
+        Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
+        return return_tracks;
     }
 });
 
