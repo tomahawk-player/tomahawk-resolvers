@@ -245,7 +245,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     artists: function (qid) {
         var that = this;
 
-        this.artistIds = [];
+        this.artistIds = {};
         this.apiCall("artists", AmpacheResolver.auth, [], function (xhr) {
             var searchResult = xhr.responseText;
 
@@ -280,7 +280,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     },
     albums: function (qid, artist) {
         var artistId = this.artistIds[artist];
-        this.albumArtists = [];
+        this.albumIdsForArtist = {};
         var that = this;
 
         var params = {
@@ -308,10 +308,10 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
                     results.push(that.decodeEntity(albumName));
 
-                    artistObject = that.albumArtists[artist];
+                    artistObject = that.albumIdsForArtist[artist];
                     if (artistObject === undefined) artistObject = {};
                     artistObject[albumName] = albumId;
-                    that.albumArtists[artist] = artistObject;
+                    that.albumIdsForArtist[artist] = artistObject;
                 }
             }
 
@@ -325,8 +325,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         } );
     },
     tracks: function (qid, artist, album) {
-        var artistObject = this.albumArtists[artist];
-        var albumId = artistObject[albumName];
+        var artistObject = this.albumIdsForArtist[artist];
+        var albumId = artistObject[album];
         var that = this;
 
         Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
