@@ -135,6 +135,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     apiCall: function (action, auth, params, callback) {
         var ampacheUrl = this.generateUrl(action, auth, params);
 
+        Tomahawk.log("Ampache API call: " + ampacheUrl );
         Tomahawk.asyncRequest(ampacheUrl, callback);
     },
 
@@ -221,101 +222,114 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         return TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory;
     },
     artists: function (qid) {
-        var searchResult = this.apiCallSync("artists", AmpacheResolver.auth);
+        var that = this;
 
-        Tomahawk.log(searchResult);
+        this.artistIds = [];
+        this.apiCall("artists", AmpacheResolver.auth, [], function (xhr) {
+            var searchResult = xhr.responseText;
 
-        // parse xml
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(searchResult, "text/xml");
+            Tomahawk.log(searchResult);
 
-        var results = [];
+            // parse xml
+            var domParser = new DOMParser();
+            xmlDoc = domParser.parseFromString(searchResult, "text/xml");
 
-        // check the repsonse
-        var root = xmlDoc.getElementsByTagName("root")[0];
-        if (root !== undefined && root.childNodes.length > 0) {
-            var artists = xmlDoc.getElementsByTagName("artist");
-            for (var i = 0; i < artists.length; i++) {
-                artistName = Tomahawk.valueForSubNode(artists[i], "name");
-                artistId = artists[i].getAttribute("id");
+            var results = [];
 
-                results.push(this.decodeEntity(artistName));
-                this.artists[artistName] = artistId;
+            // check the repsonse
+            var root = xmlDoc.getElementsByTagName("root")[0];
+            if (root !== undefined && root.childNodes.length > 0) {
+                var artists = xmlDoc.getElementsByTagName("artist");
+                for (var i = 0; i < artists.length; i++) {
+                    artistName = Tomahawk.valueForSubNode(artists[i], "name");
+                    artistId = artists[i].getAttribute("id");
+
+                    results.push(that.decodeEntity(artistName));
+                    that.artistIds[artistName] = artistId;
+                }
             }
-        }
 
-        var return_artists = {
-            qid: qid,
-            artists: results
-        };
-        Tomahawk.log("Ampache artists about to return: " + JSON.stringify( return_artists ));
-        return return_artists;
+            var return_artists = {
+                qid: qid,
+                artists: results
+            };
+            Tomahawk.log("Ampache artists about to return: " + JSON.stringify( return_artists ));
+            Tomahawk.addArtistResults( return_artists );
+        } );
     },
     albums: function (qid, artist) {
-        var artistId = this.artists[artist];
+        var artistId = this.artistIds[artist];
+        this.albumArtists = [];
+        var that = this;
 
         var params = {
             filter: artistId
         };
 
-        var searchResult = this.apiCallSync("artist_albums", AmpacheResolver.auth, params);
+        this.apiCall("artist_albums", AmpacheResolver.auth, params, function (xhr) {
+            var searchResult = xhr.responseText;
 
-        //Tomahawk.log( searchResult );
-        // parse xml
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(searchResult, "text/xml");
+            Tomahawk.log( searchResult );
 
-        var results = [];
+            // parse xml
+            var domParser = new DOMParser();
+            xmlDoc = domParser.parseFromString(searchResult, "text/xml");
 
-        // check the repsonse
-        var root = xmlDoc.getElementsByTagName("root")[0];
-        if (root !== undefined && root.childNodes.length > 0) {
-            var albums = xmlDoc.getElementsByTagName("album");
-            for (var i = 0; i < albums.length; i++) {
-                albumName = Tomahawk.valueForSubNode(albums[i], "name");
-                albumId = albums[i].getAttribute("id");
+            var results = [];
 
-                results.push(this.decodeEntity(albumName));
+            // check the repsonse
+            var root = xmlDoc.getElementsByTagName("root")[0];
+            if (root !== undefined && root.childNodes.length > 0) {
+                var albums = xmlDoc.getElementsByTagName("album");
+                for (var i = 0; i < albums.length; i++) {
+                    albumName = Tomahawk.valueForSubNode(albums[i], "name");
+                    albumId = albums[i].getAttribute("id");
 
-                artistObject = this.albums[artist];
-                if (artistObject === undefined) artistObject = {};
-                artistObject[albumName] = albumId;
-                this.albums[artist] = artistObject;
+                    results.push(that.decodeEntity(albumName));
+
+                    artistObject = that.albumArtists[artist];
+                    if (artistObject === undefined) artistObject = {};
+                    artistObject[albumName] = albumId;
+                    that.albumArtists[artist] = artistObject;
+                }
             }
-        }
 
-        var return_albums = {
-            qid: qid,
-            artist: artist,
-            albums: results
-        };
-        Tomahawk.log("Ampache albums about to return: " + JSON.stringify( return_albums ));
-        return return_albums;
+            var return_albums = {
+                qid: qid,
+                artist: artist,
+                albums: results
+            };
+            Tomahawk.log("Ampache albums about to return: " + JSON.stringify( return_albums ));
+            Tomahawk.addAlbumResults( return_albums );
+        } );
     },
     tracks: function (qid, artist, album) {
-        var artistObject = this.albums[artist];
+        var artistObject = this.albumArtists[artist];
         var albumId = artistObject[albumName];
-        Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
+        var that = this;
 
+        Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
 
         var params = {
             filter: albumId
         };
 
-        var searchResult = this.apiCallSync("album_songs", AmpacheResolver.auth, params);
+        this.apiCall("album_songs", AmpacheResolver.auth, params, function (xhr) {
+            var searchResult = xhr.responseText;
 
-        //Tomahawk.log( searchResult );
+            Tomahawk.log( searchResult );
 
-        var tracks_result = this.parseSongResponse(searchResult);
+            var tracks_result = that.parseSongResponse(searchResult);
 
-        var return_tracks = {
-            qid: qid,
-            artist: artist,
-            album: album,
-            results: tracks_result
-        };
-        Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
-        return return_tracks;
+            var return_tracks = {
+                qid: qid,
+                artist: artist,
+                album: album,
+                results: tracks_result
+            };
+            Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
+            Tomahawk.addAlbumTrackResults( return_tracks );
+        } );
     }
 });
 
