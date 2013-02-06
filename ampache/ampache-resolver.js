@@ -187,6 +187,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                     artist: this.decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
                     album: this.decodeEntity(Tomahawk.valueForSubNode(song, "album")),
                     track: this.decodeEntity(Tomahawk.valueForSubNode(song, "title")),
+                    albumpos: Tomahawk.valueForSubNode(song, "track"),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
                     url: Tomahawk.valueForSubNode(song, "url"),
@@ -340,6 +341,14 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log( searchResult );
 
             var tracks_result = that.parseSongResponse(searchResult);
+            tracks_result.sort( function(a,b) {
+                if ( a.albumpos < b.albumpos )
+                    return -1;
+                else if ( a.albumpos > b.albumpos )
+                    return 1;
+                else
+                    return 0;
+            } );
 
             var return_tracks = {
                 qid: qid,
