@@ -37,10 +37,6 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 widget: "subsonic_url_edit",
                 property: "text"
             }, {
-                name: "subsonic_api",
-                widget: "api_version_combo",
-                property: "currentIndex"
-            }, {
                 name: "max_songs",
                 widget: "max_songs_spinbox",
                 property: "value"
@@ -57,8 +53,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
         if (this.user !== userConfig.user ||
             this.password !== userConfig.password ||
-            this.subsonic_url !== userConfig.subsonice_url ||
-            this.subsonic_api !== userConfig.subsonic_api ||
+            this.subsonic_url !== userConfig.subsonic_url ||
             this.max_songs !== userConfig.max_songs)
         {
             this.init();
@@ -99,10 +94,43 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         var enc_password = this.encodePassword(userConfig.password);
         this.password = enc_password;
         this.subsonic_url = userConfig.subsonic_url.replace(/\/+$/, "");
-        this.subsonic_api = userConfig.subsonic_api;
         this.max_songs = userConfig.max_songs;
 
         this.element = document.createElement('div');
+
+        // We need at least 1.6.0 for resolve operations (JSON API support)
+        // and 1.8.0 for scriptcollection
+        this.supported_api_versions = [ "1.6.0", "1.7.0", "1.8.0" ];
+        this.subsonic_api = 0;
+
+        //let's ask the server which API version it actually supports.
+        if (this.user === undefined || this.password === undefined || this.subsonic_url === undefined)
+            return;
+
+        var that = this;
+        var ping_url = this.buildBaseUrl("/rest/ping.view") + "&f=json";
+        Tomahawk.asyncRequest(ping_url, function(xhr) {
+            var doc = JSON.parse(xhr.responseText);
+            if ( typeof doc["subsonic-response"].version === 'undefined' )
+                return;
+
+            var versionString = doc["subsonic-response"].version;
+
+            for ( var i = 0; i < that.supported_api_versions.length; ++i )
+            {
+                if ( that.supported_api_versions[i] === versionString )
+                {
+                    that.subsonic_api = i;
+                    break;
+                }
+            }
+
+            if ( that.subsonic_api != 2 ) //version 1.8.0, scriptcollection support
+                Tomahawk.reportCapabilities( TomahawkResolverCapability.AccountFactory );
+            else
+                Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
+        } );
+
     },
 
     getXmlAttribute: function(attrib_name, attributes)
@@ -117,12 +145,11 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
     buildBaseUrl : function(subsonic_view)
     {
-        var supported_api_versions = [ "1.6.0", "1.7.0", "1.8.0" ];
 
         return this.subsonic_url + subsonic_view +
                 "?u=" + this.user +
                 "&p=" + this.password +
-                "&v=" + supported_api_versions[ this.subsonic_api ] +
+                "&v=" + this.supported_api_versions[ this.subsonic_api ] +
                 "&c=tomahawk";
     },
 
@@ -345,11 +372,6 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
         var search_url = this.buildBaseUrl("/rest/search2.view") + "&songCount=" + this.max_songs + "&query=\"" + encodeURIComponent(searchString) + "\"";
         this.executeSearchQuery(qid, search_url, "song", this.max_songs);
-    },
-
-    capabilities: function()
-    {
-        return TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory;
     },
 
     artists: function( qid )
