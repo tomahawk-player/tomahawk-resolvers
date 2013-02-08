@@ -123,6 +123,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
                 Tomahawk.log("Ampache Resolver properly initialised!");
 
+                Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
             });
         } catch (e) {
             Tomahawk.log("Caught exception in Ampache resolver doing auth handshake request");
@@ -239,9 +240,6 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     // ScriptCollection support starts here
-    capabilities: function() {
-        return TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory;
-    },
     artists: function (qid) {
         var that = this;
 
