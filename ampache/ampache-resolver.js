@@ -1,9 +1,29 @@
+/* === This file is part of Tomahawk Player - <http://tomahawk-player.org> ===
+ *
+ *   Copyright 2011, Dominik Schmidt <domme@tomahawk-player.org>
+ *   Copyright 2011, Leo Franchi <lfranchi@kde.org>
+ *   Copyright 2013, Teo Mrnjavac <teo@kde.org>
+ *
+ *   Tomahawk is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   Tomahawk is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     ready: false,
     artists: {},
     albums: {},
     settings: {
-        name: 'Ampache Resolver',
+        name: 'Ampache',
         icon: 'ampache-icon.png',
         weight: 85,
         timeout: 5,
@@ -103,11 +123,14 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
                 Tomahawk.log("Ampache Resolver properly initialised!");
 
+                Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
             });
         } catch (e) {
             Tomahawk.log("Caught exception in Ampache resolver doing auth handshake request");
             return;
         }
+
+        this.element = document.createElement('div');
     },
     generateUrl: function (action, auth, params) {
         var ampacheUrl = this.ampache + "/server/xml.server.php?";
@@ -127,12 +150,13 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     apiCallSync: function (action, auth, params) {
         var ampacheUrl = this.generateUrl(action, auth, params);
 
-        return Tomahawk.syncRequest(ampacheUrl, callback);
+        return Tomahawk.syncRequest(ampacheUrl);
     },
 
     apiCall: function (action, auth, params, callback) {
         var ampacheUrl = this.generateUrl(action, auth, params);
 
+        Tomahawk.log("Ampache API call: " + ampacheUrl );
         Tomahawk.asyncRequest(ampacheUrl, callback);
     },
 
@@ -140,7 +164,12 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         // this is called from window scope (setInterval), so we need to make methods and data accessible from there
         Tomahawk.log(AmpacheResolver.apiCall('ping', AmpacheResolver.auth, {}, function () {}));
     },
-    parseSongResponse: function (qid, responseString) {
+    decodeEntity : function(str)
+    {
+        this.element.innerHTML = str;
+        return this.element.textContent;
+    },
+    parseSongResponse: function(responseString) {
         // parse xml
         var domParser = new DOMParser();
         xmlDoc = domParser.parseFromString(responseString, "text/xml");
@@ -156,9 +185,10 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 var song = songs[i];
 
                 var result = {
-                    artist: Tomahawk.valueForSubNode(song, "artist"),
-                    album: Tomahawk.valueForSubNode(song, "album"),
-                    track: Tomahawk.valueForSubNode(song, "title"),
+                    artist: this.decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
+                    album: this.decodeEntity(Tomahawk.valueForSubNode(song, "album")),
+                    track: this.decodeEntity(Tomahawk.valueForSubNode(song, "title")),
+                    albumpos: Tomahawk.valueForSubNode(song, "track"),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
                     url: Tomahawk.valueForSubNode(song, "url"),
@@ -172,6 +202,10 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 results.push(result);
             }
         }
+        return results;
+    },
+    parseSearchResponse: function (qid, responseString) {
+        var results = this.parseSongResponse(responseString);
 
         // prepare the return
         var return1 = {
@@ -199,87 +233,130 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
         var that = this;
         this.apiCall("search_songs", AmpacheResolver.auth, params, function (xhr) {
-            that.parseSongResponse(qid, xhr.responseText);
+            that.parseSearchResponse(qid, xhr.responseText);
         });
 
         //Tomahawk.log( searchResult );
     },
-    getArtists: function (qid) {
-        var searchResult = this.apiCallSync("artists", AmpacheResolver.auth);
 
-        Tomahawk.log(searchResult);
+    // ScriptCollection support starts here
+    artists: function (qid) {
+        var that = this;
 
-        // parse xml
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(searchResult, "text/xml");
+        this.artistIds = {};
+        this.apiCall("artists", AmpacheResolver.auth, [], function (xhr) {
+            var searchResult = xhr.responseText;
 
-        var results = [];
+            Tomahawk.log(searchResult);
 
-        // check the repsonse
-        var root = xmlDoc.getElementsByTagName("root")[0];
-        if (root !== undefined && root.childNodes.length > 0) {
-            var artists = xmlDoc.getElementsByTagName("artist");
-            for (var i = 0; i < artists.length; i++) {
-                artistName = Tomahawk.valueForSubNode(artists[i], "name");
-                artistId = artists[i].getAttribute("id");
+            // parse xml
+            var domParser = new DOMParser();
+            xmlDoc = domParser.parseFromString(searchResult, "text/xml");
 
-                results.push(artistName);
-                this.artists[artistName] = artistId;
+            var results = [];
+
+            // check the repsonse
+            var root = xmlDoc.getElementsByTagName("root")[0];
+            if (root !== undefined && root.childNodes.length > 0) {
+                var artists = xmlDoc.getElementsByTagName("artist");
+                for (var i = 0; i < artists.length; i++) {
+                    artistName = Tomahawk.valueForSubNode(artists[i], "name");
+                    artistId = artists[i].getAttribute("id");
+
+                    results.push(that.decodeEntity(artistName));
+                    that.artistIds[artistName] = artistId;
+                }
             }
-        }
 
-        return results;
+            var return_artists = {
+                qid: qid,
+                artists: results
+            };
+            Tomahawk.log("Ampache artists about to return: " + JSON.stringify( return_artists ));
+            Tomahawk.addArtistResults( return_artists );
+        } );
     },
-    getAlbums: function (artist) {
-        var artistId = this.artists[artist];
+    albums: function (qid, artist) {
+        var artistId = this.artistIds[artist];
+        this.albumIdsForArtist = {};
+        var that = this;
 
         var params = {
             filter: artistId
         };
 
-        var searchResult = this.apiCallSync("artist_albums", AmpacheResolver.auth, params);
+        this.apiCall("artist_albums", AmpacheResolver.auth, params, function (xhr) {
+            var searchResult = xhr.responseText;
 
-        //Tomahawk.log( searchResult );
-        // parse xml
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(searchResult, "text/xml");
+            Tomahawk.log( searchResult );
 
-        var results = [];
+            // parse xml
+            var domParser = new DOMParser();
+            xmlDoc = domParser.parseFromString(searchResult, "text/xml");
 
-        // check the repsonse
-        var root = xmlDoc.getElementsByTagName("root")[0];
-        if (root !== undefined && root.childNodes.length > 0) {
-            var albums = xmlDoc.getElementsByTagName("album");
-            for (var i = 0; i < albums.length; i++) {
-                albumName = Tomahawk.valueForSubNode(albums[i], "name");
-                albumId = albums[i].getAttribute("id");
+            var results = [];
 
-                results.push(albumName);
+            // check the repsonse
+            var root = xmlDoc.getElementsByTagName("root")[0];
+            if (root !== undefined && root.childNodes.length > 0) {
+                var albums = xmlDoc.getElementsByTagName("album");
+                for (var i = 0; i < albums.length; i++) {
+                    albumName = Tomahawk.valueForSubNode(albums[i], "name");
+                    albumId = albums[i].getAttribute("id");
 
-                artistObject = this.albums[artist];
-                if (artistObject === undefined) artistObject = {};
-                artistObject[albumName] = albumId;
-                this.albums[artist] = artistObject;
+                    results.push(that.decodeEntity(albumName));
+
+                    artistObject = that.albumIdsForArtist[artist];
+                    if (artistObject === undefined) artistObject = {};
+                    artistObject[albumName] = albumId;
+                    that.albumIdsForArtist[artist] = artistObject;
+                }
             }
-        }
 
-        return results;
+            var return_albums = {
+                qid: qid,
+                artist: artist,
+                albums: results
+            };
+            Tomahawk.log("Ampache albums about to return: " + JSON.stringify( return_albums ));
+            Tomahawk.addAlbumResults( return_albums );
+        } );
     },
-    getTracks: function (artist, album) {
-        var artistObject = this.albums[artist];
-        var albumId = artistObject[albumName];
-        Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
+    tracks: function (qid, artist, album) {
+        var artistObject = this.albumIdsForArtist[artist];
+        var albumId = artistObject[album];
+        var that = this;
 
+        Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
 
         var params = {
             filter: albumId
         };
 
-        var searchResult = this.apiCallSync("album_songs", AmpacheResolver.auth, params);
+        this.apiCall("album_songs", AmpacheResolver.auth, params, function (xhr) {
+            var searchResult = xhr.responseText;
 
-        //Tomahawk.log( searchResult );
+            Tomahawk.log( searchResult );
 
-        return this.parseSongResponse(1337, searchResult);
+            var tracks_result = that.parseSongResponse(searchResult);
+            tracks_result.sort( function(a,b) {
+                if ( a.albumpos < b.albumpos )
+                    return -1;
+                else if ( a.albumpos > b.albumpos )
+                    return 1;
+                else
+                    return 0;
+            } );
+
+            var return_tracks = {
+                qid: qid,
+                artist: artist,
+                album: album,
+                results: tracks_result
+            };
+            Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
+            Tomahawk.addAlbumTrackResults( return_tracks );
+        } );
     }
 });
 
