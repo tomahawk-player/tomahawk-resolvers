@@ -47,7 +47,7 @@
      </property>
      <property name="text">
       <string>For owncloud installs, server url is
-http://[owncloud url]/apps/media</string>
+http://[owncloud url]/remote.php/ampache</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
