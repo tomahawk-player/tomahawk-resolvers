@@ -49,6 +49,10 @@ void AudioHTTPServer::sid( QxtWebRequestEvent* event, QString a )
     qDebug() << QThread::currentThreadId() << "HTTP" << event->url.toString() << a;
     // byte range, if seek
     int m_savedByteRange = QString(event->headers.value( "Range" ) ).remove( "bytes=" ).remove( "-" ).toInt();
+
+    qDebug() << "Got savedByteRange?" << m_savedByteRange;
+    qDebug() << "sid Headers" << event->headers;
+
     // the requested track
     QString uid = a.replace( ".wav", "");
 
@@ -215,6 +219,8 @@ void AudioHTTPServer::startStreamingResponse( QxtWebRequestEvent* event, sp_trac
     m_savedDurationInBytes = duration * SpotifySession::getInstance()->Playback()->m_currSamples * 16 * SpotifySession::getInstance()->Playback()->m_currChannels / 8;
 
     qDebug() << "Getting iodevice...";
+    qDebug() << "Setting durationBytes" << m_savedByteRange;
+
     spotifyiodev_ptr iodev = SpotifySession::getInstance()->Playback()->getIODeviceForNewTrack( duration );
 //    qDebug()  << QThread::currentThreadId() << "Got iodevice to send:" << iodev << iodev.isNull() << iodev->isSequential() << iodev->isReadable();
     QxtWebPageEvent* wpe = new QxtWebPageEvent( event->sessionID, event->requestID, iodev );
