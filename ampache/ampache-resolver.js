@@ -29,6 +29,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5,
         limit: 10
     },
+
     getConfigUi: function () {
         var uiData = Tomahawk.readBase64("config.ui");
         return {
@@ -54,6 +55,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             }]
         };
     },
+
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
         if ((userConfig.username != this.username) || (userConfig.password != this.password) || (userConfig.ampache != this.ampache)) {
@@ -67,6 +69,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             this.init();
         }
     },
+
     init: function () {
         // check resolver is properly configured
         var userConfig = this.getUserConfig();
@@ -132,6 +135,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.element = document.createElement('div');
     },
+
     generateUrl: function (action, auth, params) {
         var ampacheUrl = this.ampache + "/server/xml.server.php?";
         if (params === undefined) params = [];
@@ -164,11 +168,13 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         // this is called from window scope (setInterval), so we need to make methods and data accessible from there
         Tomahawk.log(AmpacheResolver.apiCall('ping', AmpacheResolver.auth, {}, function () {}));
     },
+
     decodeEntity : function(str)
     {
         this.element.innerHTML = str;
         return this.element.textContent;
     },
+
     parseSongResponse: function(responseString) {
         // parse xml
         var domParser = new DOMParser();
@@ -204,6 +210,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         }
         return results;
     },
+
     parseSearchResponse: function (qid, responseString) {
         var results = this.parseSongResponse(responseString);
 
@@ -216,9 +223,11 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.addTrackResults(return1);
         //Tomahawk.dumpResult( return1 );
     },
+
     resolve: function (qid, artist, album, title) {
         return this.search(qid, title);
     },
+
     search: function (qid, searchString) {
         if (!this.ready) return {
             qid: qid
@@ -276,6 +285,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.addArtistResults( return_artists );
         } );
     },
+
     albums: function (qid, artist) {
         var artistId = this.artistIds[artist];
         this.albumIdsForArtist = {};
@@ -322,6 +332,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.addAlbumResults( return_albums );
         } );
     },
+
     tracks: function (qid, artist, album) {
         var artistObject = this.albumIdsForArtist[artist];
         var albumId = artistObject[album];
@@ -357,6 +368,18 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
             Tomahawk.addAlbumTrackResults( return_tracks );
         } );
+    },
+
+    collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = this.ampache.replace(/^http:\/\//,"")
+                               .replace(/\/$/, "")
+                               .replace(/\/remote.php\/ampache/, "");
+        return {
+            prettyname: "Ampache",
+            description: desc
+        };
     }
 });
 
