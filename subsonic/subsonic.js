@@ -404,6 +404,18 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 "\"&album=\"" + encodeURIComponent(album) + "\"&count=200";
 
         this.executeTracksQuery(qid, search_url, artist, album);
+    },
+
+    collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = this.subsonic_url.replace(/^http:\/\//,"")
+                                    .replace(/\/$/, "")
+                                    .replace(/\/remote.php\/submedia/, "");
+        return {
+            prettyname: "Subsonic",
+            description: desc
+        };
     }
 });
 
