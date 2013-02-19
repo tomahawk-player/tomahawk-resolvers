@@ -1,5 +1,4 @@
 var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
-	oauth: null,
 	uid: '',
 	cursor: '',
 	 
@@ -44,105 +43,43 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     
     associateClicked: function () {
        Tomahawk.log("Associate was clicked");
-       this.oauth.fetchRequestToken(this.openAcceptPage, this.queryFailure);
+       this.oauth.associate(this.updateDatabase);
     },
     
     deleteClicked: function () {
        Tomahawk.log("Delete was clicked");
+       this.oauth.deleteAssociation();
+       
     },
     
-    openAcceptPage: function(url) { 	
-    	Tomahawk.requestWebView("acceptPage", url);
-    	
-    	//acceptPage.setWindowModality(2);
-    	//acceptPage.resize(acceptPage.height(), 800);
-
-    	acceptPage.show();
-    	acceptPage.urlChanged.connect(Tomahawk.resolver.instance, function(url){
-										 					  		  this.onUrlChanged(url.toString());
-																  });
-    },
-    
-    onUrlChanged: function(url){
-    	Tomahawk.log("URL returned : \'" + url+"\'"); 
-    	
-    	if(url === 'https://www.dropbox.com/1/oauth/authorize'){
-    		this.oauth.fetchAccessToken(this.onAccessTokenReceived, this.queryFailure);
-		}
-		
-    	if(url === 'https://www.dropbox.com/home'){ 
-    		Tomahawk.log("Refused");
-    		//close webpage
-		}
-	},
-	
-	onAccessTokenReceived: function(data){	
-		//parse response
-        var i = 0, arr = data.text.split('&'), len = arr.length, obj = {};
-		for (; i < len; ++i) {
-		    var pair = arr[i].split('=');
-		    obj[OAuth.urlDecode(pair[0])] = OAuth.urlDecode(pair[1]);
-		}
-		
-		//TODO close webpage
-		Tomahawk.log("Setting DB");
-
- 		window.localStorage.setItem('accessTokenKey',obj.oauth_token);
-		window.localStorage.setItem('accessTokenSecret',obj.oauth_token_secret);
-		window.localStorage.setItem('cursor','');
-		
-		Tomahawk.log("DB setted");
-		this.updateDatabase();
-	},
-	
     queryFailure: function(data) {
-    	Tomahawk.log("Request Failed : " + data);
+    	Tomahawk.log("Request Failed : " + data.text);
     },
     
     init: function () {
         Tomahawk.log("Beginnning INIT of Dropbox resovler");
-        		Tomahawk.log(this.db.setItem);
         Tomahawk.addLocalJSFile('jsOAuth-1.3.6.min.js');
         //Tomahawk.addLocalJSFile("musicManager.js");
         
-        this.cursor = this.db.getItem('cursor','');
+        this.cursor = db.getItem('cursor','');
         
-        this.oauth = OAuth({
-                               consumerKey: '7scivkf1tstl8dl',
-                               consumerSecret: 'lu05s08m19h0dib',
-                               requestTokenUrl:	'https://api.dropbox.com/1/oauth/request_token',
-                               authorizationUrl: 'https://www.dropbox.com/1/oauth/authorize',
-                               accessTokenUrl: 'https://api.dropbox.com/1/oauth/access_token',
-                               accessTokenKey: this.db.getItem('accessTokenKey',''),
-                               accessTokenSecret: this.db.getItem('accessTokenSecret','')
-                          });
+        this.oauth.init();
 
 		//TODO updateDatabase every 30 min (and handle if a user asked for a DB refresh before)
+		//TODO update only if asscociated to an account
   		this.updateDatabase();
     },
     
     updateDatabase: function(){
     	Tomahawk.log("Sending Delta Query : ");
-		this.oauth.postJSON('https://api.dropbox.com/1/delta', {'cursor': ''}, this.deltaCallback, this.queryFailure);
+		this.oauth.opostJSON('https://api.dropbox.com/1/delta', {'cursor': ''}, this.deltaCallback, this.queryFailure);
     },
     
     deltaCallback: function(response){
     	//TODO set cursor in DB
-    	Tomahawk.log("Delta results : ");
-    	Tomahawk.log(response.text);
+    	Tomahawk.log("Delta returned!");
+    	Tomahawk.log("Cursor : " + response.cursor);
     },
-    
-    db: {
-			setItem: window.localStorage.setItem,
-			getItem: function (key, defaultResponse){
-			 			var result = window.localStorage.getItem(key);
-			 			result = (result == null)? defaultResponse : result;
-			 			
-			 			Tomahawk.log("DB: loaded "+key+" : '"+ result+"' ");
-			 			
-			 			return result; 
- 					}	
-	},
     
     resolve: function (qid, artist, album, title) {
        //this.doSearchOrResolve(qid, title, 1);
@@ -165,7 +102,141 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     tracks: function( qid, artist, album )
     {
 
+    },
+    
+    oauth: {
+    
+    	init: function(){
+    		this.oauthSettings.accessTokenKey = db.getItem('accessTokenKey','');
+    		this.oauthSettings.accessTokenSecret = db.getItem('accessTokenSecret','');
+    		
+    		this.oauthEngine = OAuth(this.oauthSettings);
+    	},
+    
+    	//associate a new User
+    	//If the association is succesfull the previous token is discarded
+    	associate: function(callback){
+    		this.oauthEngine.fetchRequestToken(function(data){
+													this.resolver.oauth.openAcceptPage(data, callback);
+											   }, this.queryFailure);
+    	},
+    	
+    	deleteAssociation: function(){
+	 		db.setItem('accessTokenKey','');
+			db.setItem('accessTokenSecret','');
+			db.setItem('cursor','');
+			
+			this.oauthSettings.accessTokenKey = '';
+			this.oauthSettings.accessTokenSecret = '';
+			
+			this.oauthEngine = OAuth(this.oauthSettings);
+			
+    	},
+    	
+    	isAssociated: function(){
+    		var accessKey = db.getItem('accessTokenKey','');
+    		var accessSecret = db.getItem('accessTokenSecret','');
+    		return( !(accessKey === '') &&  !(accessSecret === '') );
+    	},
+    	
+    	opostJSON: function(url, data, success, failure){
+    		if(!this.isAssociated()){
+    			//TODO throw error NoAccountAssociated ?
+    			Tomahawk.log("REFUSED Post to "+ url + " : No account associated");
+			}else{
+				this.oauthEngine.postJSON(url, data, success, failure);
+			}
+    	},
+    	
+    	ogetJSON: function(url, success, failure){
+    		if(!this.isAssociated()){
+    			//TODO throw error NoAccountAssociated ?
+    			Tomahawk.log("REFUSED Get to "+ url + " : No account associated");
+			}else{
+				this.oauthEngine.getJSON(url, success, failure);
+			}
+    	},
+    	
+    	//Private member
+    	oauthEngine: null,
+    	
+    	oauthSettings: {
+		                   consumerKey: '7scivkf1tstl8dl',
+		                   consumerSecret: 'lu05s08m19h0dib',
+		                   requestTokenUrl:	'https://api.dropbox.com/1/oauth/request_token',
+		                   authorizationUrl: 'https://www.dropbox.com/1/oauth/authorize',
+		                   accessTokenUrl: 'https://api.dropbox.com/1/oauth/access_token',
+		                   accessTokenKey: '',
+		                   accessTokenSecret: '' 
+        },
+        
+        openAcceptPage: function(url, callback) {
+			Tomahawk.requestWebView("acceptPage", url);
+			
+			//acceptPage.setWindowModality(2);
+			//acceptPage.resize(acceptPage.height(), 800);
+
+			acceptPage.show();
+			acceptPage.urlChanged.connect(Tomahawk.resolver.instance.oauth, function(url){
+												 					  		  this.onUrlChanged(url.toString(), callback);
+																		  });
+    	},
+    	
+	    onUrlChanged: function(url, callback){
+			Tomahawk.log("URL returned : \'" + url+"\'"); 
+			
+			if(url === 'https://www.dropbox.com/1/oauth/authorize'){
+				this.oauthEngine.fetchAccessToken(function(data){
+													this.resolver.oauth.onAccessTokenReceived(data, callback);
+											 	}, this.queryFailure);
+			}
+		
+			if(url === 'https://www.dropbox.com/home'){ 
+				Tomahawk.log("Refused");
+				//close webpage
+			}
+		},
+	
+		onAccessTokenReceived: function(data, callback){	
+			//parse response
+		    var i = 0, arr = data.text.split('&'), len = arr.length, obj = {};
+			for (; i < len; ++i) {
+				var pair = arr[i].split('=');
+				obj[OAuth.urlDecode(pair[0])] = OAuth.urlDecode(pair[1]);
+			}
+		
+			//TODO close webpage
+
+			this.oauthSettings.accessTokenKey = obj.oauth_token;
+			this.oauthSettings.accessTokenSecret = obj.oauth_token_secret;
+
+	 		db.setItem('accessTokenKey',obj.oauth_token);
+			db.setItem('accessTokenSecret',obj.oauth_token_secret);
+		
+			if(! (typeof callback === 'undefined')){
+				callback.call(Tomahawk.resolver.instance);
+			}
+		},
+        
+        queryFailure: function(data) {
+    		Tomahawk.log("Request Failed : " + data.text);
+    	}
+
     }
 });
+
+var db = {
+			setItem: function(a1, a2){
+						window.localStorage.setItem(a1,a2);
+					},
+			getItem: function (key, defaultResponse){
+			 			var result = window.localStorage.getItem(key);
+			 			result = (result == null)? defaultResponse : result;
+			 			
+			 			Tomahawk.log("DB: loaded "+key+" : '"+ result+"' ");
+			 			
+			 			return result; 
+					 }	
+};
 
 Tomahawk.resolver.instance = DropboxResolver;
