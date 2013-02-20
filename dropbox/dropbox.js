@@ -48,6 +48,10 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     
     deleteClicked: function () {
        Tomahawk.log("Delete was clicked");
+       
+       this.cursor = '';
+	   db.setItem('cursor','');
+       
        this.oauth.deleteAssociation();
        
     },
@@ -124,7 +128,6 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     	deleteAssociation: function(){
 	 		db.setItem('accessTokenKey','');
 			db.setItem('accessTokenSecret','');
-			db.setItem('cursor','');
 			
 			this.oauthSettings.accessTokenKey = '';
 			this.oauthSettings.accessTokenSecret = '';
