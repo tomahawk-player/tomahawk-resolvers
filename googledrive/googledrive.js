@@ -1,7 +1,7 @@
 var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	uid: '',
 	cursor: '',
-	maxResults: '150',
+	maxResults: '15000',
 	 
     settings: {
         name: 'Google Drive',
@@ -18,7 +18,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
             fields: [{
                 name: "associateButton",
                 widget: "associateButton",
-                property: "text",
+				property: "text",
                 connections : [ { 
                 		  signal: "clicked()", 
                 		  javascriptCallback: "resolver.associateClicked();" 
@@ -44,15 +44,17 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     
     associateClicked: function () {
        Tomahawk.log("Associate was clicked");
-       
-       this.oauth.associate(this.updateDatabase);
+       var that = this;
+       this.oauth.associate(function(){
+								that.updateDatabase();
+							});
     },
     
     deleteClicked: function () {
        Tomahawk.log("Delete was clicked");
        
        this.cursor = '';
-	   db.setItem('cursor','');
+	   dbLocal.setItem('cursor','');
 	   
        this.oauth.deleteAssociation();
        
@@ -64,30 +66,60 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");
-
+		dbLocal.setItem("expiresOn","1");
         //Tomahawk.addLocalJSFile("musicManager.js");
         
-        this.cursor = db.getItem('cursor','');
+        this.cursor = dbLocal.getItem('cursor','');
         
         this.oauth.init();
+        
+        Tomahawk.log(typeof this.expiresOn );
+        Tomahawk.log((Math.floor(Date.now()/1000) ).toString());
 
 		//TODO updateDatabase every 30 min (and handle if a user asked for a DB refresh before)
 		//TODO update only if asscociated to an account
+		
   		this.updateDatabase();
     },
     
     updateDatabase: function(){
+		var that = this;
     	Tomahawk.log("Sending Delta Query : ");
     	var url = 'https://www.googleapis.com/drive/v2/changes?'
     			  +'maxResults=' + this.maxResults
     			  +'&pageToken=1'; 
-		this.oauth.ogetJSON(url, this.deltaCallback);
+		this.oauth.ogetJSON(url, function(){that.deltaCallback;});
     },
     
     deltaCallback: function(response){
     	//TODO set cursor in DB
     	Tomahawk.log("Delta returned!");
-    	Tomahawk.log("Cursor : " + response.selfLink);
+    	Tomahawk.log("selfLink : " + response.selfLink);
+    	Tomahawk.log("nextPageToken : " + response.nextPageToken);
+    	//Tomahawk.log(DumpObjectIndented(response.items));
+    	
+    	for( var i = 0; i < response.items.length; i++){
+			var item = response.items[i];
+			//Tomahawk.log(DumpObjectIndented(item));
+			Tomahawk.log(item['file']['mimeType']);
+			Tomahawk.log(this.isMimeTypeSupported);
+			for(var p in this){
+				Tomahawk.log(p + " : "+ this[p]);
+			}
+			if(this.isMimeTypeSupported(item['file']['mimeType'])){
+				if(item.deleted === 'true'){
+					Tomahawk.log("Deleting : " + item['fileId']);
+					//dbSQL.deleteTrack(item.file.id);
+				}else{
+					//Get ID3 Tag
+					Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
+					//var that = this;
+					//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), function(tags){
+																								//that.onID3TagCallback(item['fileId'], tags);
+																							//});
+				}
+			}
+		}
     },
     
     resolve: function (qid, artist, album, title) {
@@ -113,12 +145,26 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 
     },
     
+    onID3TagCallback: function(fileId, tags)
+    {
+		//Add track to database
+		//var url = 'googledrive://' + fileId;
+		//dbSql.addTrack
+	},
+    
+    isMimeTypeSupported: function(mimeType)
+    {
+		Tomahawk.log("Checking : "+ mimeType);
+		var mimes =  [ "audio/mpeg" , "application/ogg" , "application/ogg" , "audio/x-musepack" , "audio/x-ms-wma" , "audio/mp4" , "audio/mp4" , "audio/mp4" , "audio/flac" , "audio/aiff" ,  "audio/aiff" , "audio/x-wavpack" ];
+		return (mimes.contains(mimeType));
+	},
+    
     oauth: {
     
     	init: function(){
-    		this.accessToken = db.getItem('accessToken','');
-    		this.refreshToken = db.getItem('refreshToken','');
-    		this.expiresOn = db.getItem('expiresOn','');
+    		this.accessToken = dbLocal.getItem('accessToken','');
+    		this.refreshToken = dbLocal.getItem('refreshToken','');
+    		this.expiresOn = dbLocal.getItem('expiresOn','');
     	},
     
     	//associate a new User
@@ -129,9 +175,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	deleteAssociation: function(){
-	 		db.setItem('accessToken','');
-			db.setItem('refreshToken','');
-			db.setItem('expiresOn','');
+	 		dbLocal.setItem('accessToken','');
+			dbLocal.setItem('refreshToken','');
+			dbLocal.setItem('expiresOn','');
 			
 			this.accessToken = '';
 			this.refreshToken = '';
@@ -139,22 +185,22 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	isAssociated: function(){
-    		var accessToken = db.getItem('accessToken','');
-    		var refreshToken = db.getItem('refreshToken','');
+    		var accessToken = dbLocal.getItem('accessToken','');
+    		var refreshToken = dbLocal.getItem('refreshToken','');
     		return( !(accessToken === '') &&  !(refreshToken === '') );
     	},
     	
     	opostJSON: function(url, data, success){
+			var that = this;
     		if(!this.isAssociated()){
     			//TODO throw error NoAccountAssociated ?
     			Tomahawk.log("REFUSED Post to "+ url + " : No account associated");
 			}else{
 				if(this.tokenExpired()){
-					Tomahawk.log("Token expiré");
-    				this.getRefreshedAccessToken();//this.opostJSON(url, data, success));
+					Tomahawk.log("Token expired");
+    				this.getRefreshedAccessToken(function (){that.opostJSON(url, data, success);});
 				}else{
 					//TODO treat case no parameters given
-					//data = data + '&access_token=' + this.accessToken;
 					Tomahawk.asyncPostRequest(url, data, function (data) {
 													success(JSON.parse(data.responseText));
 											   }, {'Authorization': 'Bearer '+ this.accessToken});
@@ -163,16 +209,16 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	ogetJSON: function(url, success){
+			var that = this;
     		if(!this.isAssociated()){
     			//TODO throw error NoAccountAssociated ?
     			Tomahawk.log("REFUSED Get to "+ url + " : No account associated");
 			}else{
 				if(this.tokenExpired()){
-					Tomahawk.log("Token expiré");
-    				this.getRefreshedAccessToken();//this.ogetJSON(url, success));
+					Tomahawk.log("Token expired");
+    				this.getRefreshedAccessToken(function (){that.ogetJSON(url, success);});
 				}else{
 					//TODO treat case no parameters given
-					//url = url + '&access_token=' + this.accessToken;
 					Tomahawk.asyncRequest(url, function (data) {
 													success(JSON.parse(data.responseText));
 											   }, {'Authorization': 'Bearer '+ this.accessToken});
@@ -209,9 +255,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	    onTitleChanged: function(title, callback){
 			Tomahawk.log("Title changed : \'" + title+"\'"); 
 			
-			//Success code=4/QcbxAjMwlkk56roXuLBM9nltk3ju 
-			//Denied error=access_denied
-			
 			var result = title.split('=');
 			
 			if(result[0] === 'Success code'){
@@ -222,7 +265,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						   + '&client_id=' + this.clientId 
 						   + '&client_secret='+ this.clientSecret 
 						   + '&redirect_uri=' + this.redirectUri;
-				Tomahawk.log("Sending post : "+ params);						   
+
 				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
 																		that.onAccessTokenReceived(data, callback);
 																 	});
@@ -244,12 +287,13 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			this.refreshToken = ret.refresh_token;
 			this.expiresOn = Math.floor(Date.now()/1000) + ret.expires_in;
 
-	 		db.setItem('accessToken',this.accessToken);
-			db.setItem('refreshToken',this.refreshToken);
-			db.setItem('expiresOn',this.expiresOn);
+	 		dbLocal.setItem('accessToken',this.accessToken);
+			dbLocal.setItem('refreshToken',this.refreshToken);
+			dbLocal.setItem('expiresOn',this.expiresOn);
 		
 			if(! (typeof callback === 'undefined')){
 				callback.call(Tomahawk.resolver.instance);
+				//callback();
 			}
 		},
 		
@@ -263,11 +307,13 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			this.accessToken = ret.access_token;
 			this.expiresOn = Math.floor(Date.now()/1000) + ret.expires_in;
 
-	 		db.setItem('accessToken',this.accessToken);
-			db.setItem('expiresOn',this.expiresOn);
+	 		dbLocal.setItem('accessToken',this.accessToken);
+			dbLocal.setItem('expiresOn',this.expiresOn);
 		
 			if(! (typeof callback === 'undefined')){
+				Tomahawk.log("Calling...");
 				callback.call(Tomahawk.resolver.instance);
+				//callback();
 			}
 		},
 		
@@ -276,7 +322,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		},
 		
 		getRefreshedAccessToken: function(callback){
-				Tomahawk.log("Refreshing token");
 				var that = this;
 				var params = 'grant_type=refresh_token'
 							 + '&refresh_token=' + this.refreshToken
@@ -295,7 +340,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     }
 });
 
-var db = {
+var dbLocal = {
 			setItem: function(a1, a2){
 						window.localStorage.setItem(a1,a2);
 					},
@@ -310,3 +355,36 @@ var db = {
 };
 
 Tomahawk.resolver.instance = GoogleDriveResolver;
+
+function DumpObjectIndented(obj, indent)
+{
+  var result = "";
+  if (indent == null) indent = "";
+
+  for (var property in obj)
+  {
+    var value = obj[property];
+    if (typeof value == 'string')
+      value = "'" + value + "'";
+    else if (typeof value == 'object')
+    {
+      if (value instanceof Array)
+      {
+        // Just let JS convert the Array to a string!
+        value = "[ " + value + " ]";
+      }
+      else
+      {
+        // Recursive dump
+        // (replace "  " by "\t" or something else if you prefer)
+        var od = DumpObjectIndented(value, indent + "  ");
+        // If you like { on the same line as the key
+        //value = "{\n" + od + "\n" + indent + "}";
+        // If you prefer { and } to be aligned
+        value = "\n" + indent + "{\n" + od + "\n" + indent + "}";
+      }
+    }
+    result += indent + "'" + property + "' : " + value + ",\n";
+  }
+  return result.replace(/,\n$/, "");
+}
