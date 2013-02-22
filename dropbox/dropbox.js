@@ -63,11 +63,13 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     init: function () {
         Tomahawk.log("Beginnning INIT of Dropbox resovler");
         Tomahawk.addLocalJSFile('jsOAuth-1.3.6.min.js');
-        //Tomahawk.addLocalJSFile("musicManager.js");
+        Tomahawk.addLocalJSFile("musicManager.js");
         
         this.cursor = db.getItem('cursor','');
+
         
         this.oauth.init();
+        musicManager.initDatabase() ;
 
 		//TODO updateDatabase every 30 min (and handle if a user asked for a DB refresh before)
 		//TODO update only if asscociated to an account
@@ -95,7 +97,13 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     
     artists: function( qid )
     {
-        
+        musicManager.initDatabase() ;
+        var results = this.musicManager.allArtistsQuery() ;
+        var return_artists = {
+            qid: qid,
+            artists: results
+        };
+   
     },
 
     albums: function( qid, artist )

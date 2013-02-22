@@ -18,118 +18,159 @@
  *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
  */
 
-    initDatabase : function(userAccountParameters)
+
+Tomahawk.log(" Music Manager begining");
+var musicManager = {
+
+
+    dbName : "MyDropBoxDB" ,
+    dbSQL: null ,//openDatabase(this.dbName, '1.0', 'DropBox Muic Database', 2 * 1024 * 1024) ,
+    searchLimitResults : 500 ,
+
+
+
+    initDatabase : function()
     {
-      // get db infos 
-      parse = JSON.parse(userAccountParameters) ;
-      var token = parse.token ; 
-      var username = parse.username;
-      
-      var db = openDatabase(username, '1.0', 'DropBox Muic Database', 2 * 1024 * 1024);
-      //  tx.executeSql('CREATE TABLE IF NOT EXISTS track (id integer primary key autoincrement, title , artist, album, year, genre, url)');
-      db.transaction(function (transaction) {
-	transaction.executeSql("CREATE TABLE IF NOT EXISTS track ("  + 
-	  "title VARCHAR(20) NOT NULL ," + 
-	  "artist VARCHAR(20) NOT NULL ,"+
-	  "album VARCHAR(20) NOT NULL ,"+
-	  "year VARCHAR(4) , "+
-	  "genre VARCHAR(15) ,"+
-	  "url VARCHAR(50) NOT NULL ,");
-      });
-	
-	db.transaction(function (tx) {
-	  tx.executeSql('CREATE TABLE IF NOT EXISTS dbinfo (token primary key, username )');
-	});
-	
-    },
-    
-    // delete the database ( token & username required ) 
-    deleteDatabase : function(userAccountParameters)
+     Tomahawk.log("Sending Delta Query : ");
+      this.dbSQL = openDatabase(this.dbName, '1.0', 'DropBox Muic Database', 2 * 1024 * 1024);
+      this.dbSQL.transaction(function (tx) {
+                        tx.executeSql('CREATE TABLE IF NOT EXISTS track (id integer primary key autoincrement, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url)');
+                    });
+     },
+  
+    // delete the database
+    flushDatabase : function()
     {
-        // TODO : erase dbinfo table ??
+        this.dbSQL.transaction(function (tx) {
+            tx.executeSql('DROP TABLE track');
+        });
     },
 	
-    
-    // Database content management 
- 
-    addTrack : function(JsonTrackDetails)
+    addTrack : function(tabTrackDetails)
     {
-      parse = JSON.parse(JsonTrackDetails) ;
-      var title = parse.title ;
-      var artists = parse.arist ; var concatartists ;
-      var albums = parse.album ;  var concatalbums ;
-      var years = parse.year ;    var concatyears ;
-      var genres = parse.genre ;  var concatgenres ; 
-      var url = parse.url ;
+      var title = tabTrackDetails["title"].trim().toLowerCase()   ;
+      var artist = tabTrackDetails["artist"].trim().toLowerCase() ;
+      var album = tabTrackDetails["album"].trim().toLowerCase()   ;
+      var albumpos = tabTrackDetails["albumpos"].trim().toLowerCase() ;
+      var year = tabTrackDetails["year"] ;
+      var genre = tabTrackDetails["genre"] ;
+      var size = tabTrackDetails["size"] ;
+      var duration = tabTrackDetails["duration"] ;
+      var mimetype = tabTrackDetails["mimetype"] ;
+      var bitrate = tabTrackDetails["bitrate"] ;
+      var url = tabTrackDetails["url"] ;
       
-      // Checking presence in the database before adding
+        // Checking presence in the database before adding
        // TODO : request :) 
-      
-      // Multiple artist 
-      if (artists.length > 1) {
-	var len = artists.length ;
-	for (var i = 0; i < len; i++) {
-	  concatartists = artists[i].artist.trim().toLowerCase() + ";" 
-	}
-	artists = concatartists ; 
-      }
-    
-      // Miltiple Album
-      if (albums.length > 1) {
-	var len = albums.length ;
-	for (var i = 0; i < len; i++) {
-	  concatalbums += albums[i].album.trim().toLowerCase() + ";" 
-	}
-	albums = concatalbums ; 
-      }
-      //Multiple Year
-      if (years.length > 1) {
-	var len = years.length
-	for (var i = 0; i < len; i++) {
-	  concatyears += years[i].year.trim().toLowerCase() + ";"
-	}
-	  years = concatyears ;
-      }
-      
-      //Multiple genre
-      if (var genres.length > 1) {
-	var len = genres.length ;
-	for (var i = 0; i < len; i++) {
-	  concatgenres += genres[i].genre.trim().toLowerCase() + ";"
-	}
-	  genres = concatgenres ;
-      }
-      
-	// Track Insertion
-	db.transaction(function (tx) {
-	  tx.executeSql('INSERT INTO track (title, artist, album, year, genre, url) VALUES (?, ?, ?, ?, ?, ?)', 
-			[title, artists, albums, years, genres, url]);
-	});
+
+        // Track Insertion
+      this.dbSQL.transaction(function (tx) {
+          tx.executeSql('INSERT INTO track (title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [title, artists, albums, albumpos, year, genre, size, duration, mimetype, bitrate, url]);
+      });
+    },
+
+    deleteTrack: function (tabTrackDetails)
+    {
+        this.dbSQL.transaction(function (tx) {
+        tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)',
+            [tabTrackDetails["title"].trim().toLowerCase(),
+             tabTrackDetails["artist"].trim().toLowerCase(),
+             tabTrackDetails["album"].trim().toLowerCase() ,
+             tabTrackDetails["url"]]);
+        });
     },
 
 
-    artistRequest : function(artist)
+    parseSongAttriutes: function (resultsQuery)
     {
-      artist = artist.trim().toLowerCase() ; 
-      db.transaction(function (tx) {
-	tx.executeSql('SELECT album FROM track WHERE artist LIKE % "'+ artist+ '"%' , [], function (tx, results ) {  
-	  // check :  results.rows.length, i;
-	  // TODO : if the track with the required artist has severals album : explode on the ";"
-	  // TODO : create a Json as return or string : check script Collection needs ?! 
-	});
+        var results = [] ;
+        var len = resultsQuery.rows.length
+        for (i = 0; i < len; i++) {
+            results[i] = [];
+            results[i]["title"] = resultsQuery.rows.item(i).title ;
+            results[i]["artist"] = resultsQuery.rows.item(i).artist ;
+            results[i]["album"] = resultsQuery.rows.item(i).album ;
+            results[i]["albumpos"] = resultsQuery.rows.item(i).albumpos ;
+            results[i]["year"] = resultsQuery.rows.item(i).year ;
+            results[i]["genre"] = resultsQuery.rows.item(i).genre ;
+            results[i]["size"] = resultsQuery.rows.item(i).size ;
+            results[i]["duration"] = resultsQuery.rows.item(i).duration ;
+            results[i]["mimetype"] = resultsQuery.rows.item(i).mimetype ;
+            results[i]["bitrate"] = resultsQuery.rows.item(i).bitrate;
+            results[i]["url"] = resultsQuery.rows.item(i).url ;
+        }
+        return results ;
+    },
+
+
+    // Return all the artists
+    allArtistsQuery : function()
+    {
+      var results = [];
+      this.dbSQL.transaction(function (tx) {
+        tx.executeSql('SELECT DISTINCT artist FROM track WHERE artist LIKE % "'+ artist+ '"%' , [], function (tx, resultsQuery ) {
+            var len = resultsQuery.rows.length, i;
+            for (i = 0; i < len; i++) {
+                results.push (resultsQuery.rows.item(i).artist) ;
+            }
+            return results ;
+        });
+      });
+    },
+
+    // return all the albums name for this artist
+    albumsQuery: function(artistName)
+    {
+      var results = [] ;
+      artistName = artistName.trim().toLowerCase() ;
+      this.dbSQL.transaction(function (tx) {
+        tx.executeSql('SELECT DISTINCT album FROM track WHERE artist LIKE % "'+ artistName+ '"%' , [], function (tx, resultsQuery ) {
+            var len = resultsQuery.rows.length, i;
+                for (i = 0; i < len; i++) {
+                    results.push (resultsQuery.rows.item(i).album) ;
+                }
+            return results ;
+        });
       });
     },
     
-    // search for the artist' album
-    albumRequest : function()
+
+    // return all the tracks of this album
+    tracksQuery: function(artistName , albumName)
     {
-      
-        
+        artistName = artistName.trim().toLowerCase() ; var results = [] ;
+        albumName = albumName.trim().toLowerCase() ;
+
+        this.dbSQL.transaction(function (tx) {
+            tx.executeSql('SELECT * FROM track WHERE album LIKE % "'+ albumName+ '"% and artist LIKE % "'+ artistName+ '"%', [],
+                function (tx, resultsQuery ) {
+                    return parseSongAttriutes(resultsQuery) ;
+                });
+        });
     },
-    
-    // search for the artist 
-    trackRequest : function()
+
+    // Parse Title, Album , Artist
+    searchQuery : function (searchString)
     {
-      
-	
+                      // TODO
     },
+
+    // Only one Track matching
+    resolve: function(artist, album, title)
+    {
+        artistName = artistName.trim().toLowerCase() ; var results ;
+        albumName = albumName.trim().toLowerCase() ;
+
+        this.dbSQL.transaction(function (tx) {
+            tx.executeSql('SELECT * FROM track WHERE album LIKE % "'+artist+ '"% and artist LIKE % "'+album+ '"% and title LIKE % "'+title+ '"% ', [],
+                function (tx, resultsQuery ) {
+                    results = parseSongAttriutes(resultsQuery) ; // Filtre to give only onre ROW !!!
+                    if (results.length > 0 ) return results[0]
+                    else return [];
+                });
+
+        });
+    },
+
+};
