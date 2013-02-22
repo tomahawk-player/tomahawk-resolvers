@@ -85,6 +85,11 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     	//TODO set cursor in DB
     	Tomahawk.log("Delta returned!");
     	Tomahawk.log("Cursor : " + response.cursor);
+    	Tomahawk.log("Hasmore : " + response.has_more);
+    	Tomahawk.log("Entries length : " + response.entries.length);
+    	for(var i = 0; i < 5; i++){
+			Tomahawk.log("Entry n°" + i + " : " + response.entries[i][0] + " : " + DumpObjectIndented(response.entries[i][1]));
+		}
     },
     
     resolve: function (qid, artist, album, title) {
@@ -251,3 +256,36 @@ var db = {
 };
 
 Tomahawk.resolver.instance = DropboxResolver;
+
+function DumpObjectIndented(obj, indent)
+{
+  var result = "";
+  if (indent == null) indent = "";
+
+  for (var property in obj)
+  {
+    var value = obj[property];
+    if (typeof value == 'string')
+      value = "'" + value + "'";
+    else if (typeof value == 'object')
+    {
+      if (value instanceof Array)
+      {
+        // Just let JS convert the Array to a string!
+        value = "[ " + value + " ]";
+      }
+      else
+      {
+        // Recursive dump
+        // (replace "  " by "\t" or something else if you prefer)
+        var od = DumpObjectIndented(value, indent + "  ");
+        // If you like { on the same line as the key
+        //value = "{\n" + od + "\n" + indent + "}";
+        // If you prefer { and } to be aligned
+        value = "\n" + indent + "{\n" + od + "\n" + indent + "}";
+      }
+    }
+    result += indent + "'" + property + "' : " + value + ",\n";
+  }
+  return result.replace(/,\n$/, "");
+}
