@@ -108,8 +108,6 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         try {
             var that = this;
             Tomahawk.asyncRequest(this.generateUrl('handshake', this.passphrase, this.params), function (xhr){
-            //this.apiCall('handshake', this.passphrase, this.params, function (xhr) {
-
                 Tomahawk.log(xhr.responseText);
 
                 // parse the result
