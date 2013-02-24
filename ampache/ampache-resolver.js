@@ -176,29 +176,35 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             xmlDoc = domParser.parseFromString(result, "text/xml");
 
             var error = xmlDoc.getElementsByTagName("error")[0];
+            if( 1 )
             if ( typeof error != 'undefined' &&
                  error.getAttribute("code") == "401" ) //session expired
             {
                 Tomahawk.log("Let's reauth!");
                 that.prepareHandshake();
-                var hsResponse = Tomahawk.syncRequest(that.generateUrl('handshake',that.passphrase,that.params));
-                Tomahawk.log(hsResponse);
-                xmlDoc = domParser.parseFromString(hsResponse, "text/xml");
-                var roots = xmlDoc.getElementsByTagName("root");
-                Tomahawk.log("Old auth token: " + that.auth);
-                that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
-                Tomahawk.log("New auth token: " + that.auth);
+                Tomahawk.asyncRequest(that.generateUrl('handshake',that.passphrase,that.params), function(xhr){
+                    var hsResponse = xhr.responseText;
+                    Tomahawk.log(hsResponse);
+                    xmlDoc = domParser.parseFromString(hsResponse, "text/xml");
+                    var roots = xmlDoc.getElementsByTagName("root");
+                    Tomahawk.log("Old auth token: " + that.auth);
+                    that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
+                    Tomahawk.log("New auth token: " + that.auth);
 
-                that.ready = true;
-                window.sessionStorage["ampacheAuth"] = that.auth;
+                    that.ready = true;
+                    window.sessionStorage["ampacheAuth"] = that.auth;
 
-                ampacheUrl = that.generateUrl(action,that.auth,params);
-                result = Tomahawk.syncRequest(ampacheUrl);
-                Tomahawk.log(result);
-
-                xmlDoc = domParser.parseFromString(result, "text/xml");
+                    ampacheUrl = that.generateUrl(action,that.auth,params);
+                    Tomahawk.asyncRequest(ampacheUrl, function(xhr){
+                        result = xhr.responseText;
+                        Tomahawk.log(result);
+                        xmlDoc = domParser.parseFromString(result, "text/xml");
+                        callback(xmlDoc);
+                    });
+                });
             }
-            callback(xmlDoc)
+            else
+                callback(xmlDoc)
         });
     },
 
