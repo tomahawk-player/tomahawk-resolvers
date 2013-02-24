@@ -23,7 +23,7 @@ Tomahawk.log(" Music Manager begining");
 
 var musicManager = {
 
-    dbName : "MyDropBoxDB" ,
+    dbName : "GoogleDriveDB" ,
     dbSQL: null ,
     //dbSQL: openDatabase(this.dbName, '1.0', 'DropBox Muic Database', 2 * 1024 * 1024),
     searchLimitResults : 500 ,

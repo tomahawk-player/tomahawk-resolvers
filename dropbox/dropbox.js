@@ -67,7 +67,6 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
         
         this.cursor = db.getItem('cursor','');
 
-        
         this.oauth.init();
         musicManager.initDatabase() ;
 
