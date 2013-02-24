@@ -44,10 +44,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     
     associateClicked: function () {
        Tomahawk.log("Associate was clicked");
-       var that = this;
-       this.oauth.associate(function(){
-								that.updateDatabase();
-							});
+       this.oauth.associate(this.updateDatabase.bind(this));
     },
     
     deleteClicked: function () {
@@ -67,8 +64,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");
 		//dbLocal.setItem("expiresOn","1");
+
         Tomahawk.addLocalJSFile("musicManager.js");
-        
+
         this.cursor = dbLocal.getItem('cursor','');
         
         this.oauth.init();
@@ -88,10 +86,11 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     updateDatabase: function(){
 		var that = this;
     	Tomahawk.log("Sending Delta Query : ");
+
     	var url = 'https://www.googleapis.com/drive/v2/changes?'
     			  +'maxResults=' + this.maxResults
     			  +'&pageToken=1'; 
-		this.oauth.ogetJSON(url, function(){that.deltaCallback;});
+		this.oauth.ogetJSON(url, this.deltaCallback.bind(this));
     },
     
     deltaCallback: function(response){
@@ -103,23 +102,20 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	
     	for( var i = 0; i < response.items.length; i++){
 			var item = response.items[i];
-			//Tomahawk.log(DumpObjectIndented(item));
-			//Tomahawk.log(item['file']['mimeType']);
-			//Tomahawk.log(this.isMimeTypeSupported);
-			for(var p in this){
-				Tomahawk.log(p + " : "+ this[p]);
-			}
-			if(this.isMimeTypeSupported(item['file']['mimeType'])){
-				if(item.deleted === 'true'){
+
+			if(item['deleted']){
 					Tomahawk.log("Deleting : " + item['fileId']);
 					//dbSQL.deleteTrack(item.file.id);
-				}else{
-					//Get ID3 Tag
-					Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
-					//var that = this;
-					//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), function(tags){
-																								//that.onID3TagCallback(item['fileId'], tags);
-																							//});
+			}else{		
+				//Tomahawk.log("File : " + item['file']['title']+ " is supported : " + this.isMimeTypeSupported(item['file']['mimeType']));
+				
+				if(this.isMimeTypeSupported(item['file']['mimeType'])){
+						Tomahawk.log(DumpObjectIndented(item));
+						//Get ID3 Tag
+						Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
+						//var that = this;
+						//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), this.onID3TagCallback(item['fileId'], tags).bind(this)
+																								//);
 				}
 			}
 		}
@@ -175,9 +171,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     
     isMimeTypeSupported: function(mimeType)
     {
-		Tomahawk.log("Checking : "+ mimeType);
+		//Tomahawk.log("Checking : "+ mimeType);
 		var mimes =  [ "audio/mpeg" , "application/ogg" , "application/ogg" , "audio/x-musepack" , "audio/x-ms-wma" , "audio/mp4" , "audio/mp4" , "audio/mp4" , "audio/flac" , "audio/aiff" ,  "audio/aiff" , "audio/x-wavpack" ];
-		return (mimes.contains(mimeType));
+		return (mimes.lastIndexOf(mimeType) != -1);
 	},
     
     oauth: {
@@ -191,7 +187,10 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	//associate a new User
     	//If the association is succesfull the previous token is discarded
     	associate: function(callback){
-    		var url = this.oauthUrl + '?response_type=code&client_id=' + this.clientId + '&redirect_uri=' + this.redirectUri + '&scope=' + this.scopes;
+    		var url = this.oauthUrl + '?response_type=code' 
+									 + '&client_id=' + this.clientId 
+									 + '&redirect_uri=' + this.redirectUri 
+									 + '&scope=' + this.scopes;
     		this.openAcceptPage(url, callback);						
     	},
     	
@@ -212,14 +211,14 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	opostJSON: function(url, data, success){
-			var that = this;
+			//var that = this;
     		if(!this.isAssociated()){
     			//TODO throw error NoAccountAssociated ?
     			Tomahawk.log("REFUSED Post to "+ url + " : No account associated");
 			}else{
 				if(this.tokenExpired()){
 					Tomahawk.log("Token expired");
-    				this.getRefreshedAccessToken(function (){that.opostJSON(url, data, success);});
+    				this.getRefreshedAccessToken(function (){this.opostJSON(url, data, success);}.bind(this));
 				}else{
 					//TODO treat case no parameters given
 					Tomahawk.asyncPostRequest(url, data, function (data) {
@@ -230,14 +229,14 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	ogetJSON: function(url, success){
-			var that = this;
+			//var that = this;
     		if(!this.isAssociated()){
     			//TODO throw error NoAccountAssociated ?
     			Tomahawk.log("REFUSED Get to "+ url + " : No account associated");
 			}else{
 				if(this.tokenExpired()){
 					Tomahawk.log("Token expired");
-    				this.getRefreshedAccessToken(function (){that.ogetJSON(url, success);});
+    				this.getRefreshedAccessToken(function (){this.ogetJSON(url, success);}.bind(this));
 				}else{
 					//TODO treat case no parameters given
 					Tomahawk.asyncRequest(url, function (data) {
@@ -288,8 +287,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						   + '&redirect_uri=' + this.redirectUri;
 
 				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
-																		that.onAccessTokenReceived(data, callback);
-																 	});
+																		this.onAccessTokenReceived(data, callback);
+																 	}.bind(this));
 			}
 		
 			if(result[0] === 'Denied error'){ 
@@ -313,8 +312,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			dbLocal.setItem('expiresOn',this.expiresOn);
 		
 			if(! (typeof callback === 'undefined')){
-				callback.call(Tomahawk.resolver.instance);
-				//callback();
+				callback();
 			}
 		},
 		
@@ -332,9 +330,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			dbLocal.setItem('expiresOn',this.expiresOn);
 		
 			if(! (typeof callback === 'undefined')){
-				Tomahawk.log("Calling...");
-				callback.call(Tomahawk.resolver.instance);
-				//callback();
+				callback();
 			}
 		},
 		
@@ -350,8 +346,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						     + '&client_secret=' + this.clientSecret;
 										   
 				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
-															 that.onRefreshedTokenReceived(data, callback);
-													     });
+															 this.onRefreshedTokenReceived(data, callback);
+													     }.bind(this));
 		},
         
         queryFailure: function(data) {
