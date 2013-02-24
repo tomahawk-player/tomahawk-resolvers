@@ -1,8 +1,6 @@
 /* === This file is part of Tomahawk Player - <http://tomahawk-player.org> ===
  *
- *   Copyright 2012, mack-t <no_register_no_volatile@ymail.com>
- *   Copyright 2012, Peter Loron <peterl@standingwave.org>
- *   Copyright 2013, Teo Mrnjavac <teo@kde.org>
+ *   Copyright 2013, Franck Arrecot <franck.arrecot@gmail.com>
  *
  *   Tomahawk is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
