@@ -84,6 +84,8 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.addLocalJSFile('jsOAuth-1.3.6.min.js');
         Tomahawk.addLocalJSFile("musicManager.js");
         
+		//dbLocal.setItem("dropbox.cursor","");
+        
         this.cursor = dbLocal.getItem('dropbox.cursor','');
 
         this.oauth.init();
@@ -125,7 +127,10 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 					//Tomahawk.log(DumpObjectIndented(meta));
 					//Get ID3 Tag
 					Tomahawk.log("Get ID3Tag for : " + path);
-					//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), this.onID3TagCallback(item['fileId'], tags).bind(this)
+					Tomahawk.log("size : " + meta['bytes']);
+					Tomahawk.log("mime : " + meta['mime_type']);
+					Tomahawk.log('request : ' + DumpObjectIndented( this.getStreamUrl(path) ));
+					//Tomahawk.getID3Tag(args, this.onID3TagCallback(item['fileId'], tags).bind(this)
 																								//);
 				}
 			}
@@ -139,6 +144,13 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 			this.updateDatabase();
 		}
     },
+    
+	onID3TagCallback: function(fileId, tags)
+    {
+		//Add track to database
+		//var url = 'googledrive://' + fileId;
+		//dbSql.addTrack
+	},
     
     resolve: function (qid, artist, album, title) {
        //this.doSearchOrResolve(qid, title, 1);

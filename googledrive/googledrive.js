@@ -119,7 +119,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     deltaCallback: function(response){
     	//TODO set cursor in DB
     	Tomahawk.log("Delta returned!");
-    	Tomahawk.log("selfLink : " + response.selfLink);
     	Tomahawk.log("nextPageToken : " + response.nextPageToken);
     	Tomahawk.log("largestChangeId : " + response.largestChangeId);
     	//Tomahawk.log(DumpObjectIndented(response));
@@ -137,6 +136,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						Tomahawk.log(DumpObjectIndented(item));
 						//Get ID3 Tag
 						Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
+						Tomahawk.log("size : " + item['file']['fileSize']);
+						Tomahawk.log("mime : " + item['file']['mimeType']);
+						Tomahawk.log('url : ' + this.getStreamUrl(item['file']['id']));
 						//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), this.onID3TagCallback(item['fileId'], tags).bind(this)
 																								//);
 				}
