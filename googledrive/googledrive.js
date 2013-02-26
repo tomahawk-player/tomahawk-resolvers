@@ -19,7 +19,7 @@
 var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	uid: '',
 	cursor: '',
-	maxResults: '15000',
+	maxResults: '15',
 	 
     settings: {
         name: 'Google Drive',
@@ -84,30 +84,31 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		//dbLocal.setItem("expiresOn","1");
 
         Tomahawk.addLocalJSFile("musicManager.js");
-
+        
         this.cursor = dbLocal.getItem('cursor','');
+        Tomahawk.log("That is cursor : "+ this.cursor);
         
         this.oauth.init();
-        
         musicManager.initDatabase() ;
+        
         this.googleDriveMusicManagerTests() ; 
         
-        Tomahawk.log(typeof this.expiresOn );
         Tomahawk.log((Math.floor(Date.now()/1000) ).toString());
 
-		//TODO updateDatabase every 30 min (and handle if a user asked for a DB refresh before)
-		//TODO update only if asscociated to an account
+		//TODO updateDatabase when?
 		
   		this.updateDatabase();
     },
         
-    updateDatabase: function(){
-		var that = this;
+    updateDatabase: function(pageToken){
     	Tomahawk.log("Sending Delta Query : ");
+    	pageToken = pageToken || (this.cursor === '' ? '1' : this.cursor);
 
     	var url = 'https://www.googleapis.com/drive/v2/changes?'
     			  +'maxResults=' + this.maxResults
-    			  +'&pageToken=1'; 
+    			  +'&pageToken=' + pageToken; 
+		
+	    Tomahawk.log("URL used : "+ url);
 		this.oauth.ogetJSON(url, this.deltaCallback.bind(this));
     },
     
@@ -116,11 +117,12 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	Tomahawk.log("Delta returned!");
     	Tomahawk.log("selfLink : " + response.selfLink);
     	Tomahawk.log("nextPageToken : " + response.nextPageToken);
-    	//Tomahawk.log(DumpObjectIndented(response.items));
+    	Tomahawk.log("largestChangeId : " + response.largestChangeId);
+    	//Tomahawk.log(DumpObjectIndented(response));
+
     	
     	for( var i = 0; i < response.items.length; i++){
 			var item = response.items[i];
-
 			if(item['deleted']){
 					Tomahawk.log("Deleting : " + item['fileId']);
 					//dbSQL.deleteTrack(item.file.id);
@@ -128,14 +130,20 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				//Tomahawk.log("File : " + item['file']['title']+ " is supported : " + this.isMimeTypeSupported(item['file']['mimeType']));
 				
 				if(this.isMimeTypeSupported(item['file']['mimeType'])){
-						Tomahawk.log(DumpObjectIndented(item));
+						//Tomahawk.log(DumpObjectIndented(item));
 						//Get ID3 Tag
 						Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
-						//var that = this;
 						//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), this.onID3TagCallback(item['fileId'], tags).bind(this)
 																								//);
 				}
 			}
+		}
+		
+		if(response.nextPageToken){
+			this.updateDatabase(response.nextPageToken);
+		}else{
+			this.cursor = parseInt(response.largestChangeId) + 1;
+			dbLocal.setItem('cursor', this.cursor);
 		}
     },
     
@@ -187,6 +195,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		//dbSql.addTrack
 	},
     
+    //TODO: put that in QTScriptResolverHelper
     isMimeTypeSupported: function(mimeType)
     {
 		//Tomahawk.log("Checking : "+ mimeType);
