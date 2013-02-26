@@ -81,7 +81,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
     
     init: function () {
-        Tomahawk.log("Beginnning INIT of Google Drive resovler");
+        Tomahawk.log("Beginnning INIT of Google Drive resovler");   
+        Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
 		//dbLocal.setItem("googledrive.expiresOn","1");
 		//dbLocal.setItem("googledrive.cursor","");
 
@@ -89,12 +90,12 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         
         this.cursor = dbLocal.getItem('googledrive.cursor','');
         
-        this.oauth.init();
-        musicManager.initDatabase() ;
+        this.oauth.init();   
+        musicManager.initDatabase() ;  
+              
+        this.googleDriveMusicManagerTests() ; 
         
         Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl" );
-        
-        this.googleDriveMusicManagerTests() ; 
         
         Tomahawk.log((Math.floor(Date.now()/1000) ).toString());
 
@@ -141,7 +142,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				}
 			}
 		}
-		
 		if(response.nextPageToken){
 			this.updateDatabase(response.nextPageToken);
 		}else{
@@ -149,28 +149,72 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			dbLocal.setItem('googledrive.cursor', this.cursor);
 		}
     },
-    
+  
     resolve: function (qid, artist, album, title) {
-       //this.doSearchOrResolve(qid, title, 1);
+       musicManager.resolve(artist, album, title, function(results) {
+		   var return_songs = {
+                qid: qid,
+                results: results
+            };
+            //Tomahawk.log("google drive resolved query returned: ");
+            Tomahawk.addTrackResults(return_songs);
+	   });
+	   
     },
 
     search: function (qid, searchString) {
-       //this.doSearchOrResolve(qid, searchString, 15);
+        // set up a limit for the musicManager search Query
+        Tomahawk.log("search query");
+		musicManager.searchQuery(searchString,function(results){
+		   var return_songs = {
+				qid: qid,
+				results: results
+			};
+			Tomahawk.log("google drive search query returned: ");
+			Tomahawk.addTrackResults(return_songs);
+	   });
     },
     
     artists: function( qid )
     {
-        
+		Tomahawk.log("artists query");
+		musicManager.allArtistsQuery(function(results){
+			var return_artists = {
+				qid: qid,
+				artists: results
+			};
+            Tomahawk.log("google drive artists returned: ");
+            //Tomahawk.addArtistResults(return_artists);
+		});
     },
 
     albums: function( qid, artist )
     {
-
+		Tomahawk.log("albums query");
+		musicManager.albumsQuery(artist, function(results){
+			var return_albums = {
+                qid: qid,
+                artist: artist,
+                albums: results
+            };
+            Tomahawk.log("google drive albums returned: ");
+            //Tomahawk.addAlbumResults(return_albums);
+        });         
     },
 
     tracks: function( qid, artist, album )
     {
-
+		Tomahawk.log("tracks query");
+		musicManager.tracksQuery(artist, album, function(results){
+			var return_tracks = {
+                qid: qid,
+                artist: artist,
+                album: album,
+                results: results
+            };
+            Tomahawk.log("Google Drive tracks returned:");
+            //Tomahawk.addAlbumTrackResults(return_tracks);
+		});
     },
     
     getStreamUrl: function (ourUrl) {
@@ -181,23 +225,18 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
 	
 	googleDriveMusicManagerTests: function() {	 
-		 //~ musicManagerTester.flushDatabaseTest() ;
-		 //~ musicManagerTester.init() ;
-		 //~ musicManagerTester.addTrackTest() ;
-		 //~ musicManagerTester.deleteTrackTest() ;
+		 musicManagerTester.flushDatabaseTest() ;
+		 musicManagerTester.init() ;
+		 //musicManagerTester.populateDatabase(9) ;
+		 //musicManagerTester.searchQueryTest() ;
 		 //~ musicManagerTester.resolveTest() ;
 		 //~ musicManagerTester.allArtistsQueryTest() ;
 		 //~ musicManagerTester.tracksQueryTest() ;
-		 //~ musicManagerTester.albumsQueryTest() ;
-		 //~ musicManagerTester.populateDatabase(9) ;
-		 //~ musicManagerTester.showDatabase() ;
+		 //~ musicManagerTester.albumsQueryTest() ;		 		 
+		 //musicManagerTester.searchQueryTest() ;
+		 //musicManagerTester.showDatabase() ;
 	},
-    
-    getID3Tag: function(fileUrl, callback)
-    {
-		
-	},
-    
+
     onID3TagCallback: function(fileId, tags)
     {
 		//Add track to database

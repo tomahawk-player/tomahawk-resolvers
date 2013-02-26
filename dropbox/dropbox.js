@@ -112,6 +112,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     	Tomahawk.log("Cursor : " + response.cursor);
     	Tomahawk.log("Hasmore : " + response.has_more);
     	Tomahawk.log("Entries length : " + response.entries.length);
+
     	for(var i = 0; i < response.entries.length; i++){
 			var path = response.entries[i][0];
 			var meta = response.entries[i][1];
