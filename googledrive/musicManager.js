@@ -39,13 +39,13 @@ var musicManager = {
      
      showDatabase: function()
      {
+		 Tomahawk.log("Displaying Content of Database");
 		 this.dbSQL.transaction(function (tx) {
 			  tx.executeSql('SELECT * FROM track', [],  function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					var len = results.length ; var i = 0 ;
-					for (i ; i < len ; i ++) {
-						Tomahawk.log("Displaying Content of Database");
-						Tomahawk.log("title: "+results[i].title+", artist: "+results[i].artist+", album: "+results[i].album+", url: "+results[i].url+"");
+					for (i ; i < len ; i ++) {						
+						Tomahawk.log("id:"+results[i].id+", title:"+results[i].title+", artist:"+results[i].artist+", album:"+results[i].album+", url:"+results[i].url+"");
 					}
                });
         });
@@ -95,10 +95,9 @@ var musicManager = {
 
     deleteTrack: function (tabTrackDetails)
     {
-		// just need the ID TODO
         this.dbSQL.transaction(function (tx) {
-			tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)', [tabTrackDetails["title"], tabTrackDetails["artist"], tabTrackDetails["album"] , tabTrackDetails["url"]]);
-			//tx.executeSql('DELETE FROM track WHERE id = ?', [id], function (tx,resultsQuery){}); 
+			//tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)', [tabTrackDetails["title"], tabTrackDetails["artist"], tabTrackDetails["album"] , tabTrackDetails["url"]]);
+			tx.executeSql('DELETE FROM track WHERE id = ?', [tabTrackDetails["id"]], function (tx,resultsQuery){}); 
         });       
         Tomahawk.log("Deletion inside "+this.dbName+"");
     },
@@ -110,7 +109,8 @@ var musicManager = {
         var results = [] ; var song ;
         var len = resultsQuery.rows.length
         for (i = 0; i < len; i++) {
-			song = {            
+			song = {
+				id: resultsQuery.rows.item(i).id ,             
 				title: resultsQuery.rows.item(i).title ,
 				artist: resultsQuery.rows.item(i).artist ,
 				album: resultsQuery.rows.item(i).album ,
@@ -174,9 +174,18 @@ var musicManager = {
     },
 
     // Parse Title, Album , Artist
-    searchQuery : function (searchString,callBack)
+    searchQuery: function (searchString,callBack)
     {
-                      // TODO
+		this.dbSQL.transaction(function (tx) {							
+			  // Select first or limit mechanisim ? 		  			  
+			  tx.executeSql("SELECT * FROM track WHERE (album LIKE ?) or (artist LIKE ?) or (title LIKE ?)", ["%"+searchString+"%","%"+searchString+"%","%"+searchString+"%"],
+				function (tx, resultsQuery ) {
+					var len = resultsQuery.rows.length, i;					
+					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
+					//Tomahawk.log("Number of track results for query : "+results.length);                  
+                    callBack(results) ;
+               });
+        });
     },
 
     // Only one Track matching
@@ -196,26 +205,16 @@ var musicManager = {
 };
 
  // Testing Object
- var musicManagerTester = {  tabTrackDetails: [] , 
+ var musicManagerTester = {  
+	tabTrackDetails: [] , 
+	
 	init: function() {
-		this.tabTrackDetails = ["title", "artist", "album", "albumpos","year","genre" ,"size","duration","mimetype","bitrate","url" ] ;
-		// OMG Javascript SUCKS ! ! ! 
-		this.tabTrackDetails["title"] = "title1" ;
-		this.tabTrackDetails["artist"] = "artist1" ;
-		this.tabTrackDetails["album"]  = "album1" ;
-		this.tabTrackDetails["albumpos"] = "Track1" ;
-		this.tabTrackDetails["year"]  = "1990" ;
-		this.tabTrackDetails["genre"]  = "Jazz" ;
-		this.tabTrackDetails["size"]  = "1024" ;
-		this.tabTrackDetails["duration"]  = "3:06" ;
-		this.tabTrackDetails["mimetype"]  = "mp3" ;
-		this.tabTrackDetails["bitrate"]  = "128 kps" ;
-		this.tabTrackDetails["url"]  = "http://dropbox.com/user/jimmy/music/mysong.mp3" ; 
+		// Example of structure 
+		this.tabTrackDetails = {"id": "22" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };		
 	},
 	
 	populateDatabase: function (rows){
 		musicManager.flushDatabase() ;
-		//this.tabTrackDetails = ["title", "artist", "album", "albumpos","year","genre" ,"size","duration","mimetype","bitrate","url" ] ;
 		var  i = 0 ;
 		for (i ; i < rows ; i++) {
 			for (index in this.tabTrackDetails){
@@ -279,5 +278,17 @@ var musicManager = {
 				Tomahawk.log("Return album title name num "+i+" : "+results[i]);		 
 			}
 		});
+	},
+	
+	searchQueryTest: function() {
+		var qString = "art";
+		musicManager.searchQuery(qString, function(results){
+			var len = results.length ;  var i = 0;
+			for (i  ; i < len ; i++) {
+				//Tomahawk.log("Return of a search query size : "+i+" : "+results[i]);	 
+			}
+		});
 	},	
+	
+	
 };
