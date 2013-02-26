@@ -19,7 +19,8 @@
 var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	uid: '',
 	cursor: '',
-	maxResults: '15',
+	maxResults: '150',
+	getFileUrl: '',
 	 
     settings: {
         name: 'Google Drive',
@@ -69,7 +70,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
        Tomahawk.log("Delete was clicked");
        
        this.cursor = '';
-	   dbLocal.setItem('cursor','');
+	   dbLocal.setItem('googledrive.cursor','');
 	   
        this.oauth.deleteAssociation();
        
@@ -81,15 +82,17 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");
-		//dbLocal.setItem("expiresOn","1");
+		//dbLocal.setItem("googledrive.expiresOn","1");
+		//dbLocal.setItem("googledrive.cursor","");
 
         Tomahawk.addLocalJSFile("musicManager.js");
         
-        this.cursor = dbLocal.getItem('cursor','');
-        Tomahawk.log("That is cursor : "+ this.cursor);
+        this.cursor = dbLocal.getItem('googledrive.cursor','');
         
         this.oauth.init();
         musicManager.initDatabase() ;
+        
+        Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl" );
         
         this.googleDriveMusicManagerTests() ; 
         
@@ -130,7 +133,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				//Tomahawk.log("File : " + item['file']['title']+ " is supported : " + this.isMimeTypeSupported(item['file']['mimeType']));
 				
 				if(this.isMimeTypeSupported(item['file']['mimeType'])){
-						//Tomahawk.log(DumpObjectIndented(item));
+						Tomahawk.log(DumpObjectIndented(item));
 						//Get ID3 Tag
 						Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
 						//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), this.onID3TagCallback(item['fileId'], tags).bind(this)
@@ -143,7 +146,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			this.updateDatabase(response.nextPageToken);
 		}else{
 			this.cursor = parseInt(response.largestChangeId) + 1;
-			dbLocal.setItem('cursor', this.cursor);
+			dbLocal.setItem('googledrive.cursor', this.cursor);
 		}
     },
     
@@ -168,6 +171,13 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     tracks: function( qid, artist, album )
     {
 
+    },
+    
+    getStreamUrl: function (ourUrl) {
+        var songId = ourUrl.replace("googledrive://", "");
+		
+		return(this.oauth.createOauthUrl('https://docs.google.com/uc?export=download&id=' + songId)) ;
+        
     },
 	
 	googleDriveMusicManagerTests: function() {	 
@@ -206,9 +216,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     oauth: {
     
     	init: function(){
-    		this.accessToken = dbLocal.getItem('accessToken','');
-    		this.refreshToken = dbLocal.getItem('refreshToken','');
-    		this.expiresOn = dbLocal.getItem('expiresOn','');
+    		this.accessToken = dbLocal.getItem('googledrive.accessToken','');
+    		this.refreshToken = dbLocal.getItem('googledrive.refreshToken','');
+    		this.expiresOn = dbLocal.getItem('googledrive.expiresOn','');
     	},
     
     	//associate a new User
@@ -222,9 +232,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	deleteAssociation: function(){
-	 		dbLocal.setItem('accessToken','');
-			dbLocal.setItem('refreshToken','');
-			dbLocal.setItem('expiresOn','');
+	 		dbLocal.setItem('googledrive.accessToken','');
+			dbLocal.setItem('googledrive.refreshToken','');
+			dbLocal.setItem('googledrive.expiresOn','');
 			
 			this.accessToken = '';
 			this.refreshToken = '';
@@ -232,8 +242,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	isAssociated: function(){
-    		var accessToken = dbLocal.getItem('accessToken','');
-    		var refreshToken = dbLocal.getItem('refreshToken','');
+    		var accessToken = dbLocal.getItem('googledrive.accessToken','');
+    		var refreshToken = dbLocal.getItem('googledrive.refreshToken','');
     		return( !(accessToken === '') &&  !(refreshToken === '') );
     	},
     	
@@ -272,6 +282,20 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				}
 			}
     	},
+    	
+    	createOauthUrl: function(url){
+			if(!this.isAssociated()){
+    			//TODO throw error NoAccountAssociated ?
+    			Tomahawk.log("REFUSED Creation to "+ url + " : No account associated");
+			}else{
+				if(this.tokenExpired()){
+					Tomahawk.log("Token expired");
+    				this.getRefreshedAccessToken(function (){this.createOauthUrl(url);}.bind(this));
+				}else{
+					return (url + '&access_token=' + this.accessToken);
+				}
+			}
+		},
     	
     	//Private member
     	
@@ -334,9 +358,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			this.refreshToken = ret.refresh_token;
 			this.expiresOn = Math.floor(Date.now()/1000) + ret.expires_in;
 
-	 		dbLocal.setItem('accessToken',this.accessToken);
-			dbLocal.setItem('refreshToken',this.refreshToken);
-			dbLocal.setItem('expiresOn',this.expiresOn);
+	 		dbLocal.setItem('googledrive.accessToken',this.accessToken);
+			dbLocal.setItem('googledrive.refreshToken',this.refreshToken);
+			dbLocal.setItem('googledrive.expiresOn',this.expiresOn);
 		
 			if(! (typeof callback === 'undefined')){
 				callback();
@@ -353,8 +377,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			this.accessToken = ret.access_token;
 			this.expiresOn = Math.floor(Date.now()/1000) + ret.expires_in;
 
-	 		dbLocal.setItem('accessToken',this.accessToken);
-			dbLocal.setItem('expiresOn',this.expiresOn);
+	 		dbLocal.setItem('googledrive.accessToken',this.accessToken);
+			dbLocal.setItem('googledrive.expiresOn',this.expiresOn);
 		
 			if(! (typeof callback === 'undefined')){
 				callback();
@@ -393,7 +417,7 @@ var dbLocal = {
 			 			result = (result == null)? defaultResponse : result;
 			 			
 			 			Tomahawk.log("DB: loaded "+key+" : '"+ result+"' ");
-
+			 			
 			 			return result; 
 					 }	
 };
