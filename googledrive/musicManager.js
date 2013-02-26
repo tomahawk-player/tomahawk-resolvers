@@ -290,5 +290,4 @@ var musicManager = {
 		});
 	},	
 	
-	
 };
