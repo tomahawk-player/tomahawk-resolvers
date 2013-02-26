@@ -82,7 +82,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");   
-        Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
 		//dbLocal.setItem("googledrive.expiresOn","1");
 		//dbLocal.setItem("googledrive.cursor","");
 
@@ -96,11 +95,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         this.googleDriveMusicManagerTests() ; 
         
         Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl" );
+        Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
         
-        Tomahawk.log((Math.floor(Date.now()/1000) ).toString());
-
 		//TODO updateDatabase when?
-		
   		this.updateDatabase();
     },
         

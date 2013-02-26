@@ -92,8 +92,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
         musicManager.initDatabase() ;
         
         Tomahawk.addCustomUrlHandler( "dropbox", "getStreamUrl" );
-
-        //Tomahawk.log(DumpObjectIndented(this.oauth.oAuthGetUrl('https://api-content.dropbox.com/1/files/dropbox/photos/sample album/boston city flow.jpg',function(){},function(){})));
+		Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
 
 		//TODO updateDatabase every 30 min (and handle if a user asked for a DB refresh before)
 		//TODO update only if asscociated to an account
