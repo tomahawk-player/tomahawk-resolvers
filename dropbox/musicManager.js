@@ -25,16 +25,15 @@ var musicManager = {
 
     dbName : "MyDropBoxDB" ,
     dbSQL: null ,
-    //dbSQL: openDatabase(this.dbName, '1.0', 'DropBox Muic Database', 2 * 1024 * 1024),
     searchLimitResults : 500 ,
   
     initDatabase : function() 
     {
 		// TODO : choose the id : url / device ID / combo of columns ? 
       Tomahawk.log("Init webSQL Db : ");
-      if (!this.dbSQL) this.dbSQL = openDatabase(this.dbName, '1.0', 'DropBox Muic Database', 2 * 1024 * 1024) ;
+      if (!this.dbSQL) this.dbSQL = openDatabase(this.dbName, '1.0', 'Muic Database', 2 * 1024 * 1024) ;
       this.dbSQL.transaction(function (tx) {
-                        tx.executeSql('CREATE TABLE IF NOT EXISTS track (id integer primary key autoincrement, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url)');
+                        tx.executeSql('CREATE TABLE IF NOT EXISTS track (id primary key, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url)');
                     });
      },
      
@@ -64,6 +63,7 @@ var musicManager = {
 	
     addTrack : function(tabTrackDetails)
     {
+	  var id = tabTrackDetails["id"];
       var title = tabTrackDetails["title"];
       var artist = tabTrackDetails["artist"];
       var album = tabTrackDetails["album"] ;
@@ -76,26 +76,30 @@ var musicManager = {
       var bitrate = tabTrackDetails["bitrate"] ;
       var url = tabTrackDetails["url"] ;
       
-        // Checking presence in the database before adding
-       // TODO : request :) 
-
+      // Check presence in the database before adding
+      this.dbSQL.transaction(function (tx) {
+          tx.executeSql('SELECT id FROM track where id=?', [id], function (tx, resultsQuery ) {
+			  if (resultsQuery.rows.length > 0) {
+				  Tomahawk.log("Insertion abort : data already inside the "+this.dbName+"");
+				  return ;
+			  }
+			});        
+      });
       // Track Insertion
       this.dbSQL.transaction(function (tx) {
-          tx.executeSql('INSERT INTO track (title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url]);
+          tx.executeSql('INSERT INTO track (id, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [id, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url]);
       });
       Tomahawk.log("Insertion inside "+this.dbName+"");
     },
 
     deleteTrack: function (tabTrackDetails)
     {
+		// just need the ID TODO
         this.dbSQL.transaction(function (tx) {
-        tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)',
-            [tabTrackDetails["title"],
-             tabTrackDetails["artist"],
-             tabTrackDetails["album"] ,
-             tabTrackDetails["url"]]);
-        });
+			tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)', [tabTrackDetails["title"], tabTrackDetails["artist"], tabTrackDetails["album"] , tabTrackDetails["url"]]);
+			//tx.executeSql('DELETE FROM track WHERE id = ?', [id], function (tx,resultsQuery){}); 
+        });       
         Tomahawk.log("Deletion inside "+this.dbName+"");
     },
 
@@ -180,7 +184,7 @@ var musicManager = {
     {    
 		var results = [] ;
         this.dbSQL.transaction(function (tx) {
-			  tx.executeSql('SELECT * FROM track WHERE album=? and artist=? and title=? ', [album,artist,title],  	 // Select first or limit mechanisim ? 		  			  
+			  tx.executeSql('SELECT * FROM track WHERE album=? and artist=? and title=? ', [album,artist,title],  // Select first or limit mechanisim ? 		  			  
 				function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					//Tomahawk.log("Number of track results for resolve : "+results.length);

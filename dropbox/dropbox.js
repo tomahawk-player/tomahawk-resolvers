@@ -86,9 +86,9 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     	Tomahawk.log("Cursor : " + response.cursor);
     	Tomahawk.log("Hasmore : " + response.has_more);
     	Tomahawk.log("Entries length : " + response.entries.length);
-    	for(var i = 0; i < 5; i++){
+    	/*for(var i = 0; i < 5; i++){
 			Tomahawk.log("Entry n°" + i + " : " + response.entries[i][0] + " : " + DumpObjectIndented(response.entries[i][1]));
-		}
+		}*/
     },
     
     resolve: function (qid, artist, album, title) {
