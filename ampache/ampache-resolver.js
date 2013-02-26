@@ -116,6 +116,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 var roots = xmlDoc.getElementsByTagName("root");
                 that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
                 var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0], "session_length")) * 1000;
+                var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
+                if ( trackCount > -1 )
+                    that.trackCount = parseInt(trackCount);
 
                 // inform the user if something went wrong
                 if (!that.auth) {
@@ -190,6 +193,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                     Tomahawk.log("Old auth token: " + that.auth);
                     that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
                     Tomahawk.log("New auth token: " + that.auth);
+                    var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
+                    if ( trackCount > -1 )
+                        that.trackCount = parseInt(trackCount);
 
                     that.ready = true;
                     window.sessionStorage["ampacheAuth"] = that.auth;
@@ -396,10 +402,16 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         var desc = this.ampache.replace(/^http:\/\//,"")
                                .replace(/\/$/, "")
                                .replace(/\/remote.php\/ampache/, "");
-        return {
+
+        var return_object = {
             prettyname: "Ampache",
-            description: desc
+            description: desc,
         };
+
+        if ( typeof( this.trackCount ) !== 'undefined' )
+            return_object["trackcount"] = this.trackCount;
+
+        return return_object;
     }
 });
 
