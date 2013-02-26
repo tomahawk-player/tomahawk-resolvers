@@ -85,6 +85,25 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
+    applyHandshake: function(xmlDoc)
+    {
+        var roots = xmlDoc.getElementsByTagName("root");
+        Tomahawk.log("Old auth token: " + this.auth);
+        this.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
+        Tomahawk.log("New auth token: " + this.auth);
+        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0], "session_length")) * 1000;
+        var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
+        if ( trackCount > -1 )
+            this.trackCount = parseInt(trackCount);
+
+        // all fine, set the resolver to ready state
+        this.ready = true;
+        window.sessionStorage["ampacheAuth"] = this.auth;
+
+        // setup pingTimer
+        if (pingInterval) window.setInterval(this.ping, pingInterval - 60);
+    },
+
     init: function () {
         // check resolver is properly configured
         var userConfig = this.getUserConfig();
@@ -113,24 +132,13 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                 // parse the result
                 var domParser = new DOMParser();
                 xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
-                var roots = xmlDoc.getElementsByTagName("root");
-                that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
-                var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0], "session_length")) * 1000;
-                var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
-                if ( trackCount > -1 )
-                    that.trackCount = parseInt(trackCount);
+
+                that.applyHandshake(xmlDoc);
 
                 // inform the user if something went wrong
                 if (!that.auth) {
                     Tomahawk.log("INVALID HANDSHAKE RESPONSE: " + xhr.responseText);
                 }
-
-                // all fine, set the resolver to ready state
-                that.ready = true;
-                window.sessionStorage["ampacheAuth"] = that.auth;
-
-                // setup pingTimer
-                if (pingInterval) window.setInterval(that.ping, pingInterval - 60);
 
                 Tomahawk.log("Ampache Resolver properly initialised!");
 
@@ -179,7 +187,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             xmlDoc = domParser.parseFromString(result, "text/xml");
 
             var error = xmlDoc.getElementsByTagName("error")[0];
-            if( 1 )
+
             if ( typeof error != 'undefined' &&
                  error.getAttribute("code") == "401" ) //session expired
             {
@@ -189,17 +197,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
                     var hsResponse = xhr.responseText;
                     Tomahawk.log(hsResponse);
                     xmlDoc = domParser.parseFromString(hsResponse, "text/xml");
-                    var roots = xmlDoc.getElementsByTagName("root");
-                    Tomahawk.log("Old auth token: " + that.auth);
-                    that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
-                    Tomahawk.log("New auth token: " + that.auth);
-                    var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
-                    if ( trackCount > -1 )
-                        that.trackCount = parseInt(trackCount);
+                    that.applyHandshake(xmlDoc);
 
-                    that.ready = true;
-                    window.sessionStorage["ampacheAuth"] = that.auth;
-
+                    //reauth done, let's retry the API call
                     ampacheUrl = that.generateUrl(action,that.auth,params);
                     Tomahawk.asyncRequest(ampacheUrl, function(xhr){
                         result = xhr.responseText;
