@@ -83,7 +83,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");   
 		//dbLocal.setItem("googledrive.expiresOn","1");
-		//dbLocal.setItem("googledrive.cursor","");
+		dbLocal.setItem("googledrive.cursor","");
 
         Tomahawk.addLocalJSFile("musicManager.js");
         
@@ -127,17 +127,18 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 					Tomahawk.log("Deleting : " + item['fileId']);
 					//dbSQL.deleteTrack(item.file.id);
 			}else{		
+				var file = item['file'];
 				//Tomahawk.log("File : " + item['file']['title']+ " is supported : " + this.isMimeTypeSupported(item['file']['mimeType']));
 				
-				if(this.isMimeTypeSupported(item['file']['mimeType'])){
-						Tomahawk.log(DumpObjectIndented(item));
+				if(this.isMimeTypeSupported(file['mimeType'])){
+						//Tomahawk.log(DumpObjectIndented(item));
 						//Get ID3 Tag
-						Tomahawk.log("Get ID3Tag from : " + item['file']['originalFilename']);
-						Tomahawk.log("size : " + item['file']['fileSize']);
-						Tomahawk.log("mime : " + item['file']['mimeType']);
-						Tomahawk.log('url : ' + this.getStreamUrl(item['file']['id']));
-						//Tomahawk.getID3Tag(this.oauth.createOauthUrl(item['file']['downloadUrl']), this.onID3TagCallback(item['fileId'], tags).bind(this)
-																								//);
+						Tomahawk.log("Get ID3Tag from : " + file['originalFilename']);
+						//Tomahawk.log("size : " + item['file']['fileSize']);
+						//Tomahawk.log("mime : " + item['file']['mimeType']);
+						//Tomahawk.log('url : ' + this.getStreamUrl(item['file']['id']));
+						Tomahawk.ReadCloudFile(file['originalFilename'], file['fileSize'], file['mimeType'], this.getStreamUrl(file['id']), "onID3TagCallback"
+																											);
 				}
 			}
 		}
@@ -236,11 +237,14 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		 //musicManagerTester.showDatabase() ;
 	},
 
-    onID3TagCallback: function(fileId, tags)
+    onID3TagCallback: function(tags)
     {
 		//Add track to database
 		//var url = 'googledrive://' + fileId;
 		//dbSql.addTrack
+		Tomahawk.log("Tags : ");
+		Tomahawk.log(DumpObjectIndented(tags));
+		
 	},
     
     //TODO: put that in QTScriptResolverHelper
