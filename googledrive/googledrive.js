@@ -83,7 +83,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");   
 		//dbLocal.setItem("googledrive.expiresOn","1");
-		dbLocal.setItem("googledrive.cursor","");
+		//dbLocal.setItem("googledrive.cursor","");
 
         Tomahawk.addLocalJSFile("musicManager.js");
         
@@ -409,8 +409,22 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		},
 		
-		onRefreshedTokenReceived: function(data, callback){	
+		tokenExpired: function(){
+			return (Math.floor(Date.now()/1000) > this.expiresOn);
+		},
+		
+		getRefreshedAccessToken: function(callback){
+			var that = this;
+			var params = 'grant_type=refresh_token'
+						 + '&refresh_token=' + this.refreshToken
+						 + '&client_id='     + this.clientId 
+						 + '&client_secret=' + this.clientSecret;
+				
 			//parse response
+			var data = Tomahawk.syncPostRequest(this.tokenUrl, params);
+			
+			//Tomahawk.log(DumpObjectIndented(data.responseText));
+			
 		    var ret = JSON.parse(data.responseText);
 			
 			Tomahawk.log('Old access token : ' + this.accessToken);
@@ -425,22 +439,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			if(! (typeof callback === 'undefined')){
 				callback();
 			}
-		},
-		
-		tokenExpired: function(){
-			return (Math.floor(Date.now()/1000) > this.expiresOn);
-		},
-		
-		getRefreshedAccessToken: function(callback){
-				var that = this;
-				var params = 'grant_type=refresh_token'
-							 + '&refresh_token=' + this.refreshToken
-						     + '&client_id='     + this.clientId 
-						     + '&client_secret=' + this.clientSecret;
-										   
-				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
-															 this.onRefreshedTokenReceived(data, callback);
-													     }.bind(this));
 		},
         
         queryFailure: function(data) {
