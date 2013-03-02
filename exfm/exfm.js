@@ -16,7 +16,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 		url += encodeURIComponent(title);
 
 		url += "?start=0&results=20&client_id=tomahawk";
-		
+
 		// send request and parse it into javascript
 		var that = this;
 		var xmlString = Tomahawk.asyncRequest(url, function(xhr) {
@@ -24,7 +24,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 			var response = JSON.parse(xhr.responseText);
 
 			var results = new Array();
-			
+
 			// check the response
 			if (response.results > 0) {
 				var songs = response.songs;
@@ -36,11 +36,11 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 					if(song.url.indexOf("http://api.soundcloud") === 0){ // unauthorised, use soundcloud resolver instead
 						continue;
 					}
-					
+
 					if (song.artist !== null){
-						
+
 						if (song.title !== null){
-							
+
 							var dTitle = "";
 							if (song.title.indexOf("\n") !== -1){
 								var stringArray = song.title.split("\n");
@@ -53,7 +53,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 							else {
 								dTitle = song.title;
 							}
-							
+
 							dTitle = dTitle.replace("\u2013","").replace("  ", " ").replace("\u201c","").replace("\u201d","");
 							if (dTitle.toLowerCase().indexOf(song.artist.toLowerCase() + " -") === 0){
 								dTitle = dTitle.slice(song.artist.length + 2).trim();
@@ -74,7 +74,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 						continue;
 					}
 					if (song.album !== null){
-						var dAlbum = song.album;     
+						var dAlbum = song.album;
 					}
 					if (dTitle.toLowerCase().indexOf(title.toLowerCase()) !== -1 && dArtist.toLowerCase().indexOf(artist.toLowerCase()) !== -1 || artist === "" && album === ""){
 						result.artist = ((dArtist !== "")? dArtist:artist);
