@@ -70,7 +70,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 					if (song.album !== null) {
 						var dAlbum = song.album;
 					}
-					if (dTitle.toLowerCase().indexOf(title.toLowerCase()) !== -1 && dArtist.toLowerCase().indexOf(artist.toLowerCase()) !== -1 || artist === "" && album === ""){
+					if (dTitle.toLowerCase().indexOf(title.toLowerCase()) !== -1 && dArtist.toLowerCase().indexOf(artist.toLowerCase()) !== -1 || (artist === "" && album === "")) {
 						result.artist = ((dArtist !== "")? dArtist:artist);
 						result.album = ((dAlbum !== "")? dAlbum:album);
 						result.track = ((dTitle !== "")? dTitle:title);
@@ -80,7 +80,8 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 						result.score = 0.80;
 						results.push(result);
 					}
-					if (artist !== "") { // resolve, return only one result
+					if (artist !== "") {
+                        // We are in resolve mode, so return only one result
 						break;
 					}
 				}
