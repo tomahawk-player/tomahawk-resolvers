@@ -9,6 +9,32 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 		timeout: 5
 	},
 
+    cleanTitle: function (title, artist) {
+        // If the title contains a newline character, strip them off and remove additional spacing
+        var newTitle = "";
+        if (title.indexOf("\n") !== -1) {
+            var stringArray = title.split("\n");
+            for (var j = 0; j < stringArray.length; j++) {
+                newTitle += stringArray[j].trim() + " ";
+            }
+            newTitle = newTitle.trim();
+        } else {
+            newTitle = title;
+        }
+        // Remove dash and quotation characters.
+		newTitle = newTitle.replace("\u2013","").replace("  ", " ").replace("\u201c","").replace("\u201d","");
+        // If the artist is included in the song title, cut it
+        if (newTitle.toLowerCase().indexOf(artist.toLowerCase() + " -") === 0) {
+            newTitle = newTitle.slice(artist.length + 2).trim();
+        } else if (newTitle.toLowerCase().indexOf(artist.toLowerCase() + "-") === 0) {
+            newTitle = newTitle.slice(artist.length + 1).trim();
+        } else if (newTitle.toLowerCase().indexOf(artist.toLowerCase()) === 0){
+            // FIXME: This might break results where the artist name is a substring of the song title.
+            newTitle = newTitle.slice(artist.length).trim();
+        }
+        return newTitle;
+    },
+
 	resolve: function (qid, artist, album, title) {
 		// Build search query for ex.fm
 		var url = "http://ex.fm/api/v3/song/search/";
@@ -35,43 +61,13 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 						continue;
 					}
 
-					if (song.artist !== null){
-
-						if (song.title !== null){
-
-							var dTitle = "";
-							if (song.title.indexOf("\n") !== -1){
-								var stringArray = song.title.split("\n");
-								var newTitle = "";
-								for (var j = 0; j < stringArray.length; j++){
-									newTitle += stringArray[j].trim() + " ";
-								}
-								dTitle = newTitle.trim();
-							}
-							else {
-								dTitle = song.title;
-							}
-
-							dTitle = dTitle.replace("\u2013","").replace("  ", " ").replace("\u201c","").replace("\u201d","");
-							if (dTitle.toLowerCase().indexOf(song.artist.toLowerCase() + " -") === 0){
-								dTitle = dTitle.slice(song.artist.length + 2).trim();
-							}
-							else if (dTitle.toLowerCase().indexOf(song.artist.toLowerCase() + "-") === 0){
-								dTitle = dTitle.slice(song.artist.length + 1).trim();
-							}
-							else if (dTitle.toLowerCase() === song.artist.toLowerCase()){
-								continue;
-							}
-							else if (dTitle.toLowerCase().indexOf(song.artist.toLowerCase()) === 0){
-								dTitle = dTitle.slice(song.artist.length).trim();
-							}
-							var dArtist = song.artist;
-						}
-					}
-					else {
-						continue;
-					}
-					if (song.album !== null){
+                    if (song.artist === null || song.title === null) {
+                        // This track misses relevant information, so we are going to ignore it.
+                        continue;
+                    }
+                    var dTitle = that.cleanTitle(song.title, song.artist)
+					var dArtist = song.artist;
+					if (song.album !== null) {
 						var dAlbum = song.album;
 					}
 					if (dTitle.toLowerCase().indexOf(title.toLowerCase()) !== -1 && dArtist.toLowerCase().indexOf(artist.toLowerCase()) !== -1 || artist === "" && album === ""){
