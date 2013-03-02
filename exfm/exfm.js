@@ -10,11 +10,9 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 
 	resolve: function (qid, artist, album, title) {
-		// build query to 4shared
+		// Build search query for ex.fm
 		var url = "http://ex.fm/api/v3/song/search/";
-
 		url += encodeURIComponent(title);
-
 		url += "?start=0&results=20&client_id=tomahawk";
 
 		// send request and parse it into javascript
