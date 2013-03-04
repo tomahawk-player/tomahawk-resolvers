@@ -412,8 +412,17 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         var desc = this.subsonic_url.replace(/^http:\/\//,"")
                                     .replace(/\/$/, "")
                                     .replace(/\/remote.php\/submedia/, "");
+
+        var collectionName = "Subsonic";
+
+        if (desc.indexOf("runners-id.com") !== -1 ||
+            desc.indexOf("runners-id.org") !== -1 )
+        {
+            collectionName = "Runners-ID";
+        }
+
         return {
-            prettyname: "Subsonic",
+            prettyname: collectionName,
             description: desc
         };
     }
