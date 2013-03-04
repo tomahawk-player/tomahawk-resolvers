@@ -84,6 +84,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");   
 		//dbLocal.setItem("googledrive.expiresOn","1");
 		//dbLocal.setItem("googledrive.cursor","");
+		
+		//Tomahawk.showWebInspector();
 
         Tomahawk.addLocalJSFile("musicManager.js");
         
@@ -137,8 +139,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						//Tomahawk.log("size : " + item['file']['fileSize']);
 						//Tomahawk.log("mime : " + item['file']['mimeType']);
 						//Tomahawk.log('url : ' + this.getStreamUrl(item['file']['id']));
-						Tomahawk.ReadCloudFile(file['originalFilename'], file['id'], file['fileSize'], file['mimeType'], this.oauth.createOauthUrl(file['downloadUrl']), "onID3TagCallback"
-																											);
+						//Tomahawk.ReadCloudFile(file['originalFilename'], file['id'], file['fileSize'], file['mimeType'], this.oauth.createOauthUrl(file['downloadUrl']), "onID3TagCallback");
 				}
 			}
 		}
@@ -261,6 +262,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     		this.accessToken = dbLocal.getItem('googledrive.accessToken','');
     		this.refreshToken = dbLocal.getItem('googledrive.refreshToken','');
     		this.expiresOn = dbLocal.getItem('googledrive.expiresOn','');
+
+    		this.setupAutoRefreshToken();
     	},
     
     	//associate a new User
@@ -331,8 +334,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     			Tomahawk.log("REFUSED Creation to "+ url + " : No account associated");
 			}else{
 				if(this.tokenExpired()){
-					Tomahawk.log("Token expired");
-    				this.getRefreshedAccessToken(function (){this.createOauthUrl(url);}.bind(this));
+					Tomahawk.log("REFUSED Creation to "+ url + " : token expired");
+    				this.getRefreshedAccessToken();
 				}else{
 					return (url + '&access_token=' + this.accessToken);
 				}
@@ -366,7 +369,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		},
     	
 	    onTitleChanged: function(title, callback){
-			Tomahawk.log("Title changed : \'" + title+"\'"); 
+			//Tomahawk.log("Title changed : \'" + title+"\'"); 
 			
 			var result = title.split('=');
 			
@@ -390,54 +393,57 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		},
 	
-		onAccessTokenReceived: function(data, callback){	
+		onAccessTokenReceived: function(data, callback){
 			//parse response
 		    var ret = JSON.parse(data.responseText);
 		
-			//TODO close webpage
+			//TODO close webpage, or not?
 
 			this.accessToken = ret.access_token;
-			this.refreshToken = ret.refresh_token;
-			this.expiresOn = Math.floor(Date.now()/1000) + ret.expires_in;
+			this.expiresOn = Date.now() + (ret.expires_in*1000);
 
 	 		dbLocal.setItem('googledrive.accessToken',this.accessToken);
-			dbLocal.setItem('googledrive.refreshToken',this.refreshToken);
 			dbLocal.setItem('googledrive.expiresOn',this.expiresOn);
+			
+			if(typeof ret.refresh_token !=='undefined'){
+				Tomahawk.log("Setting refresh token : " + ret.refresh_token);
+				this.refreshToken = ret.refresh_token;
+				dbLocal.setItem('googledrive.refreshToken',this.refreshToken);
+			}
+			
+			this.setupAutoRefreshToken();
 		
-			if(! (typeof callback === 'undefined')){
+			if(typeof callback !== 'undefined'){
 				callback();
 			}
 		},
 		
 		tokenExpired: function(){
-			return (Math.floor(Date.now()/1000) > this.expiresOn);
+			return (Date.now() > this.expiresOn);
 		},
 		
 		getRefreshedAccessToken: function(callback){
-			var that = this;
-			var params = 'grant_type=refresh_token'
-						 + '&refresh_token=' + this.refreshToken
-						 + '&client_id='     + this.clientId 
-						 + '&client_secret=' + this.clientSecret;
-				
-			//parse response
-			var data = Tomahawk.syncPostRequest(this.tokenUrl, params);
-			
-			//Tomahawk.log(DumpObjectIndented(data.responseText));
-			
-		    var ret = JSON.parse(data.responseText);
-			
-			Tomahawk.log('Old access token : ' + this.accessToken);
-			Tomahawk.log('New access token : ' + ret.access_token);
-
-			this.accessToken = ret.access_token;
-			this.expiresOn = Math.floor(Date.now()/1000) + ret.expires_in;
-
-	 		dbLocal.setItem('googledrive.accessToken',this.accessToken);
-			dbLocal.setItem('googledrive.expiresOn',this.expiresOn);
+				Tomahawk.log("Refrshing access token.");
+				var params = 'grant_type=refresh_token'
+							 + '&refresh_token=' + this.refreshToken
+						     + '&client_id='     + this.clientId 
+						     + '&client_secret=' + this.clientSecret;
+										   
+				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
+															 this.onAccessTokenReceived(data, callback);
+													     }.bind(this));
+		},
 		
-			if(! (typeof callback === 'undefined')){
-				callback();
+		setupAutoRefreshToken : function(){
+			if(this.isAssociated()){
+				if(this.tokenExpired()){
+					Tomahawk.log("Token expired on auto");
+    				this.getRefreshedAccessToken();
+				}else{
+					Tomahawk.log("Setting timeout in " + (this.expiresOn - Date.now() - 2000) + "ms to getRefreshToken from init");
+					//Tomahawk.log(this.getRefreshedAccessToken.bind(this));
+					window.setTimeout(this.getRefreshedAccessToken.bind(this), (this.expiresOn - Date.now() - 2000));
+				}
 			}
 		},
         
