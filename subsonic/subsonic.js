@@ -413,18 +413,21 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                                     .replace(/\/$/, "")
                                     .replace(/\/remote.php\/submedia/, "");
 
-        var collectionName = "Subsonic";
+        var return_object = {
+            prettyname: "Subsonic",
+            description: desc,
+            iconfile: "subsonic-icon.png"
+        };
 
+        //Icon and text specific for Runners-ID
         if (desc.indexOf("runners-id.com") !== -1 ||
             desc.indexOf("runners-id.org") !== -1 )
         {
-            collectionName = "Runners-ID";
+            return_object["prettyname"] = "Runners-ID";
+            return_object["iconfile"] = "runnersid-icon.png";
         }
 
-        return {
-            prettyname: collectionName,
-            description: desc
-        };
+        return return_object;
     }
 });
 
