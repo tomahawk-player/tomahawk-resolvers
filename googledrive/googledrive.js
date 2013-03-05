@@ -159,7 +159,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 qid: qid,
                 results: results
             };
-            //Tomahawk.log("google drive resolved query returned: ");
+            Tomahawk.log("google drive resolved query : " + artist + ", "+ album+ ", "+ title+" returned: " + DumpObjectIndented(return_songs.results));
             Tomahawk.addTrackResults(return_songs);
 	   });
 	   
@@ -173,8 +173,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				qid: qid,
 				results: results
 			};
-			Tomahawk.log("google drive search query returned: ");
-			Tomahawk.addTrackResults(return_songs);
+			Tomahawk.log("google drive search query : " + searchString +" , result: " + DumpObjectIndented(return_songs.results));
+			Tomahawk.addTrackResults(return_songs); 
 	   });
     },
     
@@ -221,8 +221,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
     
     getStreamUrl: function (ourUrl) {
-        var songId = ourUrl.replace("googledrive://", "");
-		
+        var songId = ourUrl.replace("googledrive://id/", "");
+        
 		return(this.oauth.createOauthUrl('https://docs.google.com/uc?export=download&id=' + songId)) ;
         
     },
@@ -244,13 +244,14 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     {	
 		var trackInfo = {
 			'id' : tags['fileId'],
-			'url' : 'googledrive://' + tags['fileId'],
+			'url' : 'googledrive://id/' + tags['fileId'],
 			'title' : tags['track'],
 			'artist' : tags['artist'],
 			'album' : tags['album'],
 			'albumpos' : tags['albumpos'],
 			'year' : tags['year'],
 			'bitrate' : tags['bitrate'],
+			'mimetype' : tags['mimetype'],
 			'size' : tags['size'],
 			'duration' : tags['duration'],	
 		};
