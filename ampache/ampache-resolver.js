@@ -406,10 +406,18 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         var return_object = {
             prettyname: "Ampache",
             description: desc,
+            iconfile: "ampache-icon.png"
         };
 
         if ( typeof( this.trackCount ) !== 'undefined' )
             return_object["trackcount"] = this.trackCount;
+
+        //stupid check if it's an ownCloud instance
+        if (this.ampache.indexOf("/remote.php/ampache") !== -1)
+        {
+            return_object["prettyname"] = "ownCloud";
+            return_object["iconfile"] = "owncloud-icon.png";
+        }
 
         return return_object;
     }
