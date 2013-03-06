@@ -222,6 +222,28 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		});
     },
     
+	collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = "cloud de google drive";
+
+        var return_object = {
+            prettyname: "Google Drive",
+            description: desc,
+            iconfile: "googledrive.png"
+        };
+
+        //Icon and text specific for Runners-ID
+        if (desc.indexOf("runners-id.com") !== -1 ||
+            desc.indexOf("runners-id.org") !== -1 )
+        {
+            return_object["prettyname"] = "Runners-ID";
+            return_object["iconfile"] = "runnersid-icon.png";
+        }
+
+        return return_object;
+    },
+
     getStreamUrl: function (ourUrl) {
         var songId = ourUrl.replace("googledrive://id/", "");
         var meta = JSON.parse(this.oauth.ogetSyncJSON('https://www.googleapis.com/drive/v2/files/' + songId));
