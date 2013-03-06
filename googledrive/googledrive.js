@@ -230,7 +230,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	googleDriveMusicManagerTests: function() {	 
 		 //musicManagerTester.flushDatabaseTest() ;
-		 musicManagerTester.init() ;
+		 //musicManagerTester.init() ;
 		 //musicManagerTester.addTrackTest() ;
 		 //musicManager.deletionWithoutKeyTest();
 		 //musicManagerTester.populateDatabase(1) ;
@@ -244,6 +244,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		 //musicManagerTester.insertionDuplicateTest() ;
 		 //musicManagerTester.retrieveRowEmptyGenreTest() ;
 		 //musicManagerTester.insertionWithoutCoreTest() ;
+		 //musicManagerTester.insertionWithoutCoreTest() ;
+		 //musicManagerTester.deletionWithoutKeyTest() ;
 		 //musicManagerTester.showDatabase() ;
 	},
 

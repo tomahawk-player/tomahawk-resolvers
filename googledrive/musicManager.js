@@ -79,8 +79,7 @@ var musicManager = {
       var mimetype = tabTrackDetails["mimetype"] || '' ;
       var bitrate = tabTrackDetails["bitrate"] || '' ;
       var url = tabTrackDetails["url"] || '' ;
-      
-      
+     
       // check core information provided
       if (id == "" || track == "" || album=="" || artist =="" || url=="") {
 		  Tomahawk.log("Insertion Failed : core information track isn't provided to "+this.dbName);
@@ -109,9 +108,10 @@ var musicManager = {
 
     deleteTrack: function (tabTrackDetails)
     {
+		var id = tabTrackDetails["id"] || '';
 		if (id == "" || !id) { Tomahawk.log("Deletion intented without an id key");  return ; }
         this.dbSQL.transaction(function (tx) {
-			tx.executeSql('DELETE FROM track WHERE id = ?', [tabTrackDetails["id"]], function (tx,resultsQuery){}); 
+			tx.executeSql('DELETE FROM track WHERE id = ?', [id], function (tx,resultsQuery){}); 
         });       
         Tomahawk.log("Deletion inside "+this.dbName+"");
     },
@@ -320,14 +320,13 @@ var musicManager = {
 		this.tabTrackDetails = {"id":null , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
 	},
-	/*
+	
 	deletionWithoutKeyTest:function() {
 		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.deleteTrack(this.tabTrackDetails) ;
 		this.tabTrackDetails = {"track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.deleteTrack(this.tabTrackDetails) ;		
 	},
-	*/
 	
 	retrieveRowEmptyGenreTest:function() {
 		
