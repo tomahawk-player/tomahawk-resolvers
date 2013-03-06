@@ -173,6 +173,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				qid: qid,
 				results: results
 			};
+
 			Tomahawk.log("google drive search query : " + searchString +" , result: " + DumpObjectIndented(return_songs.results));
 			Tomahawk.addTrackResults(return_songs); 
 	   });
@@ -186,7 +187,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				qid: qid,
 				artists: results
 			};
-            Tomahawk.log("google drive artists returned: ");
+            //Tomahawk.log("google drive artists returned: ");
             //Tomahawk.addArtistResults(return_artists);
 		});
     },
@@ -200,7 +201,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 artist: artist,
                 albums: results
             };
-            Tomahawk.log("google drive albums returned: ");
+            //Tomahawk.log("google drive albums returned: ");
             //Tomahawk.addAlbumResults(return_albums);
         });         
     },
@@ -215,7 +216,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 album: album,
                 results: results
             };
-            Tomahawk.log("Google Drive tracks returned:");
+            //Tomahawk.log("Google Drive tracks returned:");
             //Tomahawk.addAlbumTrackResults(return_tracks);
 		});
     },
@@ -230,14 +231,16 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	googleDriveMusicManagerTests: function() {	 
 		 musicManagerTester.flushDatabaseTest() ;
 		 musicManagerTester.init() ;
-		 //musicManagerTester.populateDatabase(9) ;
+		 //musicManagerTester.addTrackTest() ;
+		// musicManager.deletionWithoutKeyTest();
+		 musicManagerTester.populateDatabase(9) ;
 		 //musicManagerTester.searchQueryTest() ;
 		 //~ musicManagerTester.resolveTest() ;
 		 //~ musicManagerTester.allArtistsQueryTest() ;
 		 //~ musicManagerTester.tracksQueryTest() ;
 		 //~ musicManagerTester.albumsQueryTest() ;		 		 
 		 //musicManagerTester.searchQueryTest() ;
-		 //musicManagerTester.showDatabase() ;
+		 musicManagerTester.showDatabase() ;
 	},
 
     onID3TagCallback: function(tags)

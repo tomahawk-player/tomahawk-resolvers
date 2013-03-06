@@ -77,13 +77,14 @@ var musicManager = {
       var url = tabTrackDetails["url"] || '' ;
       
       // Check presence in the database before adding
+      if (id == "" || !id) { Tomahawk.log("Insertion intented without an id key");  return ; }
       this.dbSQL.transaction(function (tx) {
           tx.executeSql('SELECT id FROM track where id=?', [id], function (tx, resultsQuery ) {
 			  if (resultsQuery.rows.length > 0) {
 				  Tomahawk.log("Insertion abort : data already inside the "+this.dbName+"");
 				  return ;
 			  }
-			});        
+		  });        
       });
       // Track Insertion
       this.dbSQL.transaction(function (tx) {
@@ -95,6 +96,7 @@ var musicManager = {
 
     deleteTrack: function (tabTrackDetails)
     {
+		if (id == "" || !id) { Tomahawk.log("Deletion intented without an id key");  return ; }
         this.dbSQL.transaction(function (tx) {
 			//tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)', [tabTrackDetails["title"], tabTrackDetails["artist"], tabTrackDetails["album"] , tabTrackDetails["url"]]);
 			tx.executeSql('DELETE FROM track WHERE id = ?', [tabTrackDetails["id"]], function (tx,resultsQuery){}); 
@@ -209,8 +211,7 @@ var musicManager = {
 	tabTrackDetails: [] , 
 	
 	init: function() {
-		// Example of structure 
-		this.tabTrackDetails = {"id": "22" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };		
+		this.tabTrackDetails = {"id":"22" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };		
 	},
 	
 	populateDatabase: function (rows){
@@ -289,5 +290,29 @@ var musicManager = {
 			}
 		});
 	},	
+
+/*	
+	// Test Scenario 
+	insertionDuplicateTest() {		
+		this.tabTrackDetails = {"id":"22" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		var test = this.tabTrackDetails ;
+		musicManager.addTrack(test) ;
+		//musicManager.addTrack(this.tabTrackDetails) ;
+	},
+
+	insertionWithoutKeyTest() {		
+		this.tabTrackDetails = {"id":"" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ;
+		this.tabTrackDetails = {"id":null , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ;
+	},
+	
+	deletionWithoutKeyTest() {
+		this.tabTrackDetails = {"id":"" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.deleteTrack(this.tabTrackDetails) ;
+		this.tabTrackDetails = {"id":null , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.deleteTrack(this.tabTrackDetails) ;		
+	},
+* */
 	
 };
