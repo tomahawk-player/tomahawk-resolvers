@@ -313,14 +313,14 @@ var musicManager = {
 		musicManager.addTrack(this.tabTrackDetails) ;
 	},
 
-/*
+
 	insertionWithoutCoreTest:function() {		
 		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
-		musicManager.addTrack(this.tabTrackDetails) ;
+		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
 		this.tabTrackDetails = {"id":null , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
-		musicManager.addTrack(this.tabTrackDetails) ;
+		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
 	},
-	
+	/*
 	deletionWithoutKeyTest:function() {
 		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.deleteTrack(this.tabTrackDetails) ;
