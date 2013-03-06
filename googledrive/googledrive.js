@@ -187,8 +187,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				qid: qid,
 				artists: results
 			};
-            //Tomahawk.log("google drive artists returned: ");
-            //Tomahawk.addArtistResults(return_artists);
+            Tomahawk.log("google drive artists returned: ");
+            Tomahawk.addArtistResults(return_artists);
 		});
     },
 
@@ -201,8 +201,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 artist: artist,
                 albums: results
             };
-            //Tomahawk.log("google drive albums returned: ");
-            //Tomahawk.addAlbumResults(return_albums);
+            Tomahawk.log("google drive albums returned: ");
+            Tomahawk.addAlbumResults(return_albums);
         });         
     },
 
@@ -216,8 +216,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 album: album,
                 results: results
             };
-            //Tomahawk.log("Google Drive tracks returned:");
-            //Tomahawk.addAlbumTrackResults(return_tracks);
+            Tomahawk.log("Google Drive tracks returned:");
+            Tomahawk.addAlbumTrackResults(return_tracks);
 		});
     },
     
@@ -240,7 +240,9 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		 //~ musicManagerTester.tracksQueryTest() ;
 		 //~ musicManagerTester.albumsQueryTest() ;		 		 
 		 //musicManagerTester.searchQueryTest() ;
-		 musicManagerTester.retrieveRowEmptyGenreTest() ;
+		 //musicManagerTester.retrieveRowEmptyGenreTest() ;
+		 //musicManagerTester.insertionDuplicateTest() ;
+		 //musicManagerTester.retrieveRowEmptyGenreTest() ;
 		 //musicManagerTester.showDatabase() ;
 	},
 

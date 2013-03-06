@@ -89,10 +89,11 @@ var musicManager = {
 	  else 
 	  {
 		  // Check presence in the database before adding
+		  var db = this.dbName ;
 		  this.dbSQL.transaction(function (tx) {
 			  tx.executeSql('SELECT id FROM track where id=?', [id], function (tx, resultsQuery ) {
 				  if (resultsQuery.rows.length > 0) {
-					  Tomahawk.log("Insertion abort : data already inside the "+this.dbName+"");
+					  Tomahawk.log("Insertion abort : data already inside the "+db+"");
 					  return ;
 				  }
 			  });        
@@ -303,23 +304,24 @@ var musicManager = {
 		});
 	},	
 
-/*	
+
 	// Test Scenario 
-	insertionDuplicateTest() {		
+	insertionDuplicateTest:function() {	
+		Tomahawk.log("Test Scenario : duplicate insertion");		 	
 		this.tabTrackDetails = {"id":"22" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
-		var test = this.tabTrackDetails ;
-		musicManager.addTrack(test) ;
-		//musicManager.addTrack(this.tabTrackDetails) ;
+		musicManager.addTrack(this.tabTrackDetails) ; // should log a duplicate error
+		musicManager.addTrack(this.tabTrackDetails) ;
 	},
 
-	insertionWithoutCoreTest() {		
+/*
+	insertionWithoutCoreTest:function() {		
 		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.addTrack(this.tabTrackDetails) ;
 		this.tabTrackDetails = {"id":null , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.addTrack(this.tabTrackDetails) ;
 	},
 	
-	deletionWithoutKeyTest() {
+	deletionWithoutKeyTest:function() {
 		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.deleteTrack(this.tabTrackDetails) ;
 		this.tabTrackDetails = {"track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
