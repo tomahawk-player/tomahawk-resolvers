@@ -189,7 +189,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				artists: results
 			};
             //Tomahawk.log("google drive artists returned: ");
-            //Tomahawk.addArtistResults(return_artists);
+            Tomahawk.addArtistResults(return_artists);
 		});
     },
 
@@ -203,7 +203,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 albums: results
             };
             //Tomahawk.log("google drive albums returned: ");
-            //Tomahawk.addAlbumResults(return_albums);
+            Tomahawk.addAlbumResults(return_albums);
         });         
     },
 
@@ -218,7 +218,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 results: results
             };
             //Tomahawk.log("Google Drive tracks returned:");
-            //Tomahawk.addAlbumTrackResults(return_tracks);
+            Tomahawk.addAlbumTrackResults(return_tracks);
 		});
     },
     
