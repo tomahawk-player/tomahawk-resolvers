@@ -15,7 +15,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
 
 		url += encodeURIComponent(title);
 
-		url += "?start=0&results=20";
+		url += "?start=0&results=20&client_id=tomahawk";
 		
 		// send request and parse it into javascript
 		var that = this;

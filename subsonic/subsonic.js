@@ -278,7 +278,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 {
                     if (albums[i].artist.toLowerCase() === artist.toLowerCase()) //search2 does partial matches
                     {
-                        results.push(albums[i].album)
+                        results.push(albums[i].title)
                     }
                 }
             }
@@ -286,7 +286,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             {
                 if (albums.artist.toLowerCase() === artist.toLowerCase())
                 {
-                    results.push(albums.album);
+                    results.push(albums.title);
                 }
             }
 
@@ -404,6 +404,30 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 "\"&album=\"" + encodeURIComponent(album) + "\"&count=200";
 
         this.executeTracksQuery(qid, search_url, artist, album);
+    },
+
+    collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = this.subsonic_url.replace(/^http:\/\//,"")
+                                    .replace(/\/$/, "")
+                                    .replace(/\/remote.php\/submedia/, "");
+
+        var return_object = {
+            prettyname: "Subsonic",
+            description: desc,
+            iconfile: "subsonic-icon.png"
+        };
+
+        //Icon and text specific for Runners-ID
+        if (desc.indexOf("runners-id.com") !== -1 ||
+            desc.indexOf("runners-id.org") !== -1 )
+        {
+            return_object["prettyname"] = "Runners-ID";
+            return_object["iconfile"] = "runnersid-icon.png";
+        }
+
+        return return_object;
     }
 });
 

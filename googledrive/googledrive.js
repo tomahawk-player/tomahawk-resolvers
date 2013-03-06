@@ -96,7 +96,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         
         //musicManager.showDatabase();
               
-        this.googleDriveMusicManagerTests() ; 
+        //this.googleDriveMusicManagerTests() ; 
         
         Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl" );
         Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
@@ -130,6 +130,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 			if(item['deleted']){
 					Tomahawk.log("Deleting : " + item['fileId']);
 					//dbSQL.deleteTrack(item.file.id);
+					musicManager.deleteTrack({'id' : item['fileId']});
 			}else{		
 				var file = item['file'];
 				//Tomahawk.log("File : " + item['file']['title']+ " is supported : " + this.isMimeTypeSupported(item['file']['mimeType']));
@@ -201,6 +202,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 artist: artist,
                 albums: results
             };
+
             Tomahawk.log("google drive albums returned: ");
             Tomahawk.addAlbumResults(return_albums);
         });         
@@ -221,10 +223,33 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		});
     },
     
+	collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = "cloud de google drive";
+
+        var return_object = {
+            prettyname: "Google Drive",
+            description: desc,
+            iconfile: "googledrive.png"
+        };
+
+        //Icon and text specific for Runners-ID
+        if (desc.indexOf("runners-id.com") !== -1 ||
+            desc.indexOf("runners-id.org") !== -1 )
+        {
+            return_object["prettyname"] = "Runners-ID";
+            return_object["iconfile"] = "runnersid-icon.png";
+        }
+
+        return return_object;
+    },
+
     getStreamUrl: function (ourUrl) {
         var songId = ourUrl.replace("googledrive://id/", "");
+        var meta = JSON.parse(this.oauth.ogetSyncJSON('https://www.googleapis.com/drive/v2/files/' + songId));
         
-		return(this.oauth.createOauthUrl('https://docs.google.com/uc?export=download&id=' + songId)) ;
+		return(this.oauth.createOauthUrl(meta['downloadUrl'])) ;
         
     },
 	
@@ -332,7 +357,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	},
     	
     	ogetJSON: function(url, success){
-			//var that = this;
     		if(!this.isAssociated()){
     			//TODO throw error NoAccountAssociated ?
     			Tomahawk.log("REFUSED Get to "+ url + " : No account associated");
@@ -345,6 +369,21 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 					Tomahawk.asyncRequest(url, function (data) {
 													success(JSON.parse(data.responseText));
 											   }, {'Authorization': 'Bearer '+ this.accessToken});
+				}
+			}
+    	},
+    	
+		ogetSyncJSON: function(url){
+    		if(!this.isAssociated()){
+    			//TODO throw error NoAccountAssociated ?
+    			Tomahawk.log("REFUSED Get to "+ url + " : No account associated");
+			}else{
+				if(this.tokenExpired()){
+					Tomahawk.log("Token expired");
+    				this.getRefreshedAccessToken();
+				}else{
+					//TODO treat case no parameters given
+					return Tomahawk.syncRequest(url, {'Authorization': 'Bearer '+ this.accessToken});
 				}
 			}
     	},

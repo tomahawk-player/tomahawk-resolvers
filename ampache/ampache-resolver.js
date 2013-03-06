@@ -29,6 +29,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5,
         limit: 10
     },
+
     getConfigUi: function () {
         var uiData = Tomahawk.readBase64("config.ui");
         return {
@@ -54,6 +55,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             }]
         };
     },
+
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
         if ((userConfig.username != this.username) || (userConfig.password != this.password) || (userConfig.ampache != this.ampache)) {
@@ -67,6 +69,41 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             this.init();
         }
     },
+
+    prepareHandshake: function()
+    {
+        // prepare handshake arguments
+        var time = Tomahawk.timestamp();
+        var key = Tomahawk.sha256(this.password);
+        this.passphrase = Tomahawk.sha256(time + key);
+
+        // do the handshake
+        this.params = {
+            timestamp: time,
+            version: 350001,
+            user: this.username
+        }
+    },
+
+    applyHandshake: function(xmlDoc)
+    {
+        var roots = xmlDoc.getElementsByTagName("root");
+        Tomahawk.log("Old auth token: " + this.auth);
+        this.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
+        Tomahawk.log("New auth token: " + this.auth);
+        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0], "session_length")) * 1000;
+        var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
+        if ( trackCount > -1 )
+            this.trackCount = parseInt(trackCount);
+
+        // all fine, set the resolver to ready state
+        this.ready = true;
+        window.sessionStorage["ampacheAuth"] = this.auth;
+
+        // setup pingTimer
+        if (pingInterval) window.setInterval(this.ping, pingInterval - 60);
+    },
+
     init: function () {
         // check resolver is properly configured
         var userConfig = this.getUserConfig();
@@ -85,41 +122,23 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         this.password = userConfig.password;
         this.ampache = userConfig.ampache;
 
-        // prepare handshake arguments
-        var time = Tomahawk.timestamp();
-        var key = Tomahawk.sha256(this.password);
-        var passphrase = Tomahawk.sha256(time + key);
+        this.prepareHandshake();
 
-        // do the handshake
-        var params = {
-            timestamp: time,
-            version: 350001,
-            user: this.username
-        }
         try {
             var that = this;
-            this.apiCall('handshake', passphrase, params, function (xhr) {
-
+            Tomahawk.asyncRequest(this.generateUrl('handshake', this.passphrase, this.params), function (xhr){
                 Tomahawk.log(xhr.responseText);
 
                 // parse the result
                 var domParser = new DOMParser();
                 xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
-                var roots = xmlDoc.getElementsByTagName("root");
-                that.auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
-                var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0], "session_length")) * 1000;
+
+                that.applyHandshake(xmlDoc);
 
                 // inform the user if something went wrong
                 if (!that.auth) {
                     Tomahawk.log("INVALID HANDSHAKE RESPONSE: " + xhr.responseText);
                 }
-
-                // all fine, set the resolver to ready state
-                that.ready = true;
-                window.sessionStorage["ampacheAuth"] = that.auth;
-
-                // setup pingTimer
-                if (pingInterval) window.setInterval(that.ping, pingInterval - 60);
 
                 Tomahawk.log("Ampache Resolver properly initialised!");
 
@@ -132,6 +151,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.element = document.createElement('div');
     },
+
     generateUrl: function (action, auth, params) {
         var ampacheUrl = this.ampache + "/server/xml.server.php?";
         if (params === undefined) params = [];
@@ -147,7 +167,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         return ampacheUrl;
     },
 
-    apiCallSync: function (action, auth, params) {
+    apiCallSync: function (action, auth, params) { //do not use this because it doesn't do re-auth
         var ampacheUrl = this.generateUrl(action, auth, params);
 
         return Tomahawk.syncRequest(ampacheUrl);
@@ -157,23 +177,55 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         var ampacheUrl = this.generateUrl(action, auth, params);
 
         Tomahawk.log("Ampache API call: " + ampacheUrl );
-        Tomahawk.asyncRequest(ampacheUrl, callback);
+
+        var that = this;
+        Tomahawk.asyncRequest(ampacheUrl, function(xhr) {
+            var result = xhr.responseText;
+            Tomahawk.log(result);
+
+            var domParser = new DOMParser();
+            xmlDoc = domParser.parseFromString(result, "text/xml");
+
+            var error = xmlDoc.getElementsByTagName("error")[0];
+
+            if ( typeof error != 'undefined' &&
+                 error.getAttribute("code") == "401" ) //session expired
+            {
+                Tomahawk.log("Let's reauth!");
+                that.prepareHandshake();
+                Tomahawk.asyncRequest(that.generateUrl('handshake',that.passphrase,that.params), function(xhr){
+                    var hsResponse = xhr.responseText;
+                    Tomahawk.log(hsResponse);
+                    xmlDoc = domParser.parseFromString(hsResponse, "text/xml");
+                    that.applyHandshake(xmlDoc);
+
+                    //reauth done, let's retry the API call
+                    ampacheUrl = that.generateUrl(action,that.auth,params);
+                    Tomahawk.asyncRequest(ampacheUrl, function(xhr){
+                        result = xhr.responseText;
+                        Tomahawk.log(result);
+                        xmlDoc = domParser.parseFromString(result, "text/xml");
+                        callback(xmlDoc);
+                    });
+                });
+            }
+            else
+                callback(xmlDoc)
+        });
     },
 
     ping: function () {
         // this is called from window scope (setInterval), so we need to make methods and data accessible from there
         Tomahawk.log(AmpacheResolver.apiCall('ping', AmpacheResolver.auth, {}, function () {}));
     },
+
     decodeEntity : function(str)
     {
         this.element.innerHTML = str;
         return this.element.textContent;
     },
-    parseSongResponse: function(responseString) {
-        // parse xml
-        var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(responseString, "text/xml");
 
+    parseSongResponse: function(xmlDoc) {
         var results = new Array();
         // check the repsonse
         var songElements = xmlDoc.getElementsByTagName("song")[0];
@@ -204,8 +256,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         }
         return results;
     },
-    parseSearchResponse: function (qid, responseString) {
-        var results = this.parseSongResponse(responseString);
+
+    parseSearchResponse: function (qid, xmlDoc) {
+        var results = this.parseSongResponse(xmlDoc);
 
         // prepare the return
         var return1 = {
@@ -216,9 +269,11 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.addTrackResults(return1);
         //Tomahawk.dumpResult( return1 );
     },
+
     resolve: function (qid, artist, album, title) {
         return this.search(qid, title);
     },
+
     search: function (qid, searchString) {
         if (!this.ready) return {
             qid: qid
@@ -232,8 +287,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         };
 
         var that = this;
-        this.apiCall("search_songs", AmpacheResolver.auth, params, function (xhr) {
-            that.parseSearchResponse(qid, xhr.responseText);
+        this.apiCall("search_songs", AmpacheResolver.auth, params, function (xmlDoc) {
+            that.parseSearchResponse(qid, xmlDoc);
         });
 
         //Tomahawk.log( searchResult );
@@ -244,15 +299,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         var that = this;
 
         this.artistIds = {};
-        this.apiCall("artists", AmpacheResolver.auth, [], function (xhr) {
-            var searchResult = xhr.responseText;
-
-            Tomahawk.log(searchResult);
-
-            // parse xml
-            var domParser = new DOMParser();
-            xmlDoc = domParser.parseFromString(searchResult, "text/xml");
-
+        this.apiCall("artists", AmpacheResolver.auth, [], function (xmlDoc) {
             var results = [];
 
             // check the repsonse
@@ -276,6 +323,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.addArtistResults( return_artists );
         } );
     },
+
     albums: function (qid, artist) {
         var artistId = this.artistIds[artist];
         this.albumIdsForArtist = {};
@@ -285,15 +333,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             filter: artistId
         };
 
-        this.apiCall("artist_albums", AmpacheResolver.auth, params, function (xhr) {
-            var searchResult = xhr.responseText;
-
-            Tomahawk.log( searchResult );
-
-            // parse xml
-            var domParser = new DOMParser();
-            xmlDoc = domParser.parseFromString(searchResult, "text/xml");
-
+        this.apiCall("artist_albums", AmpacheResolver.auth, params, function (xmlDoc) {
             var results = [];
 
             // check the repsonse
@@ -322,6 +362,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.addAlbumResults( return_albums );
         } );
     },
+
     tracks: function (qid, artist, album) {
         var artistObject = this.albumIdsForArtist[artist];
         var albumId = artistObject[album];
@@ -333,12 +374,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             filter: albumId
         };
 
-        this.apiCall("album_songs", AmpacheResolver.auth, params, function (xhr) {
-            var searchResult = xhr.responseText;
-
-            Tomahawk.log( searchResult );
-
-            var tracks_result = that.parseSongResponse(searchResult);
+        this.apiCall("album_songs", AmpacheResolver.auth, params, function (xmlDoc) {
+            var tracks_result = that.parseSongResponse(xmlDoc);
             tracks_result.sort( function(a,b) {
                 if ( a.albumpos < b.albumpos )
                     return -1;
@@ -357,6 +394,32 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
             Tomahawk.addAlbumTrackResults( return_tracks );
         } );
+    },
+
+    collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = this.ampache.replace(/^http:\/\//,"")
+                               .replace(/\/$/, "")
+                               .replace(/\/remote.php\/ampache/, "");
+
+        var return_object = {
+            prettyname: "Ampache",
+            description: desc,
+            iconfile: "ampache-icon.png"
+        };
+
+        if ( typeof( this.trackCount ) !== 'undefined' )
+            return_object["trackcount"] = this.trackCount;
+
+        //stupid check if it's an ownCloud instance
+        if (this.ampache.indexOf("/remote.php/ampache") !== -1)
+        {
+            return_object["prettyname"] = "ownCloud";
+            return_object["iconfile"] = "owncloud-icon.png";
+        }
+
+        return return_object;
     }
 });
 
