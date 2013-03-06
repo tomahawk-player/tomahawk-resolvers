@@ -44,7 +44,7 @@ var musicManager = {
 			  tx.executeSql('SELECT * FROM track', [],  function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					var len = results.length ; var i = 0 ;
-					for (i ; i < len ; i ++) {						
+					for (i ; i < len ; i ++) {
 						Tomahawk.log("id:"+results[i].id+", title:"+results[i].title+", artist:"+results[i].artist+", album:"+results[i].album+", url:"+results[i].url+"");
 					}
                });
@@ -63,19 +63,19 @@ var musicManager = {
 	
     addTrack : function(tabTrackDetails)
     {
-	  var id = tabTrackDetails["id"];
-      var title = tabTrackDetails["title"];
-      var artist = tabTrackDetails["artist"];
-      var album = tabTrackDetails["album"] ;
-      var albumpos = tabTrackDetails["albumpos"];
-      var year = tabTrackDetails["year"] ;
-      var genre = tabTrackDetails["genre"] ;
-      var size = tabTrackDetails["size"] ;
-      var duration = tabTrackDetails["duration"] ;
-      var mimetype = tabTrackDetails["mimetype"] ;
-      var bitrate = tabTrackDetails["bitrate"] ;
-      var url = tabTrackDetails["url"] ;
-           
+	  var id = tabTrackDetails["id"] || '';
+      var title = tabTrackDetails["title"] || '';
+      var artist = tabTrackDetails["artist"] || '';
+      var album = tabTrackDetails["album"] || '';
+      var albumpos = tabTrackDetails["albumpos"] || '';
+      var year = tabTrackDetails["year"] || '';
+      var genre = tabTrackDetails["genre"] || '' ;
+      var size = tabTrackDetails["size"] || '' ;
+      var duration = tabTrackDetails["duration"] || '' ;
+      var mimetype = tabTrackDetails["mimetype"] || '' ;
+      var bitrate = tabTrackDetails["bitrate"] || '' ;
+      var url = tabTrackDetails["url"] || '' ;
+      
       // Check presence in the database before adding
       if (id == "" || !id) { Tomahawk.log("Insertion intented without an id key");  return ; }
       this.dbSQL.transaction(function (tx) {
@@ -113,7 +113,7 @@ var musicManager = {
         for (i = 0; i < len; i++) {
 			song = {
 				id: resultsQuery.rows.item(i).id ,             
-				title: resultsQuery.rows.item(i).title ,
+				track: resultsQuery.rows.item(i).title ,
 				artist: resultsQuery.rows.item(i).artist ,
 				album: resultsQuery.rows.item(i).album ,
 				albumpos: resultsQuery.rows.item(i).albumpos ,
