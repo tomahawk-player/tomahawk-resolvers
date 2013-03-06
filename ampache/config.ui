@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>447</width>
-    <height>300</height>
+    <height>318</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,13 +41,11 @@
     <widget class="QLabel" name="label_3">
      <property name="font">
       <font>
-       <pointsize>12</pointsize>
-       <italic>true</italic>
+       <italic>false</italic>
       </font>
      </property>
      <property name="text">
-      <string>For owncloud installs, server url is
-http://[owncloud url]/remote.php/ampache</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For ownCloud instances, the Server URL is&lt;br/&gt;http://&lt;span style=&quot; color:#585858;&quot;&gt;ownCloud base url&lt;/span&gt;/remote.php/ampache&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
