@@ -94,9 +94,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         this.oauth.init();   
         musicManager.initDatabase() ;  
         
-        //musicManager.showDatabase();
-              
-        //this.googleDriveMusicManagerTests() ; 
+        //musicManager.showDatabase();              
+        this.googleDriveMusicManagerTests() ; 
         
         Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl" );
         Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
@@ -271,7 +270,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		 //musicManagerTester.insertionWithoutCoreTest() ;
 		 //musicManagerTester.insertionWithoutCoreTest() ;
 		 //musicManagerTester.deletionWithoutKeyTest() ;
-		 //musicManagerTester.showDatabase() ;
+		 musicManagerTester.showDatabase() ;
 	},
 
     onID3TagCallback: function(tags)
@@ -279,7 +278,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		var trackInfo = {
 			'id' : tags['fileId'],
 			'url' : 'googledrive://id/' + tags['fileId'],
-			'title' : tags['track'],
+			'track' : tags['track'],
 			'artist' : tags['artist'],
 			'album' : tags['album'],
 			'albumpos' : tags['albumpos'],
