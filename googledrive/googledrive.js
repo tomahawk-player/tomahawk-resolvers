@@ -83,7 +83,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     init: function () {
         Tomahawk.log("Beginnning INIT of Google Drive resovler");   
 		//dbLocal.setItem("googledrive.expiresOn","1");
-		//dbLocal.setItem("googledrive.cursor","");
+		//dbLocal.setItem("googledrive.cursor",""); 
 		
 		//Tomahawk.showWebInspector();
 
@@ -94,8 +94,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         this.oauth.init();   
         musicManager.initDatabase() ;  
         
-        musicManager.showDatabase();
-              
+        //musicManager.showDatabase();              
         //this.googleDriveMusicManagerTests() ; 
         
         Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl" );
@@ -174,7 +173,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				qid: qid,
 				results: results
 			};
-
 			Tomahawk.log("google drive search query : " + searchString +" , result: " + DumpObjectIndented(return_songs.results));
 			Tomahawk.addTrackResults(return_songs); 
 	   });
@@ -188,7 +186,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 				qid: qid,
 				artists: results
 			};
-            //Tomahawk.log("google drive artists returned: ");
+            Tomahawk.log("google drive artists returned: ");
             Tomahawk.addArtistResults(return_artists);
 		});
     },
@@ -202,7 +200,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 artist: artist,
                 albums: results
             };
-            //Tomahawk.log("google drive albums returned: ");
+            Tomahawk.log("google drive albums returned: ");
             Tomahawk.addAlbumResults(return_albums);
         });         
     },
@@ -217,7 +215,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 album: album,
                 results: results
             };
-            //Tomahawk.log("Google Drive tracks returned:");
+            Tomahawk.log("google drive tracks returned: "); 
+            //Tomahawk.log("Google Drive tracks for ("+artist + " , "+ album +") returned:"+ DumpObjectIndented(return_tracks.results));
             Tomahawk.addAlbumTrackResults(return_tracks);
 		});
     },
@@ -253,26 +252,32 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
 	
 	googleDriveMusicManagerTests: function() {	 
-		 musicManagerTester.flushDatabaseTest() ;
-		 musicManagerTester.init() ;
+		 //musicManagerTester.flushDatabaseTest() ;
+		 //musicManagerTester.init() ;
 		 //musicManagerTester.addTrackTest() ;
-		// musicManager.deletionWithoutKeyTest();
-		 musicManagerTester.populateDatabase(9) ;
+		 //musicManager.deletionWithoutKeyTest();
+		 //musicManagerTester.populateDatabase(1) ;
 		 //musicManagerTester.searchQueryTest() ;
 		 //~ musicManagerTester.resolveTest() ;
 		 //~ musicManagerTester.allArtistsQueryTest() ;
 		 //~ musicManagerTester.tracksQueryTest() ;
 		 //~ musicManagerTester.albumsQueryTest() ;		 		 
 		 //musicManagerTester.searchQueryTest() ;
-		 musicManagerTester.showDatabase() ;
+		 //musicManagerTester.retrieveRowEmptyGenreTest() ;
+		 //musicManagerTester.insertionDuplicateTest() ;
+		 //musicManagerTester.retrieveRowEmptyGenreTest() ;
+		 //musicManagerTester.insertionWithoutCoreTest() ;
+		 //musicManagerTester.insertionWithoutCoreTest() ;
+		 //musicManagerTester.deletionWithoutKeyTest() ;
+		 //musicManagerTester.showDatabase() ;
 	},
-
+	
     onID3TagCallback: function(tags)
     {	
 		var trackInfo = {
 			'id' : tags['fileId'],
 			'url' : 'googledrive://id/' + tags['fileId'],
-			'title' : tags['track'],
+			'track' : tags['track'],
 			'artist' : tags['artist'],
 			'album' : tags['album'],
 			'albumpos' : tags['albumpos'],
@@ -503,7 +508,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         queryFailure: function(data) {
     		Tomahawk.log("Request Failed : " + data.text);
     	}
-
     }
 });
 

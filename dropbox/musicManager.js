@@ -28,23 +28,26 @@ var musicManager = {
   
     initDatabase : function() 
     {
-		// TODO : choose the id : url / device ID / combo of columns ? 
       Tomahawk.log("Init webSQL Db : ");
       if (!this.dbSQL) this.dbSQL = openDatabase(this.dbName, '1.0', 'Muic Database', 2 * 1024 * 1024) ;
       this.dbSQL.transaction(function (tx) {
-                        tx.executeSql('CREATE TABLE IF NOT EXISTS track (id primary key, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url)');
-                    });
+			tx.executeSql('CREATE TABLE IF NOT EXISTS track (id primary key, track, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url)');
+      });
      },
      
      showDatabase: function()
      {
-		 Tomahawk.log("Displaying Content of Database");
+		 Tomahawk.log("Displaying Content of Database"); var log = "" ;
 		 this.dbSQL.transaction(function (tx) {
 			  tx.executeSql('SELECT * FROM track', [],  function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
+					// Parsing to display information on each music 
 					var len = results.length ; var i = 0 ;
-					for (i ; i < len ; i ++) {						
-						Tomahawk.log("id:"+results[i].id+", title:"+results[i].title+", artist:"+results[i].artist+", album:"+results[i].album+", url:"+results[i].url+"");
+					for (i ; i < len ; i ++) {
+						for (row in results[i]) {
+							log += ""+row+": "+ results[i][row] +"," ;
+						}
+						Tomahawk.log (log) ;				
 					}
                });
         });
@@ -62,41 +65,51 @@ var musicManager = {
 	
     addTrack : function(tabTrackDetails)
     {
-	  var id = tabTrackDetails["id"];
-      var title = tabTrackDetails["title"];
-      var artist = tabTrackDetails["artist"];
-      var album = tabTrackDetails["album"] ;
-      var albumpos = tabTrackDetails["albumpos"];
-      var year = tabTrackDetails["year"] ;
-      var genre = tabTrackDetails["genre"] ;
-      var size = tabTrackDetails["size"] ;
-      var duration = tabTrackDetails["duration"] ;
-      var mimetype = tabTrackDetails["mimetype"] ;
-      var bitrate = tabTrackDetails["bitrate"] ;
-      var url = tabTrackDetails["url"] ;
-      
-      // Check presence in the database before adding
-      this.dbSQL.transaction(function (tx) {
-          tx.executeSql('SELECT id FROM track where id=?', [id], function (tx, resultsQuery ) {
-			  if (resultsQuery.rows.length > 0) {
-				  Tomahawk.log("Insertion abort : data already inside the "+this.dbName+"");
-				  return ;
-			  }
-			});        
-      });
+	  var id = tabTrackDetails["id"] || '';
+      var track = tabTrackDetails["track"] || '';
+      var artist = tabTrackDetails["artist"] || '';
+      var album = tabTrackDetails["album"] || '';
+      var albumpos = tabTrackDetails["albumpos"] || '';
+      var year = tabTrackDetails["year"] || '';
+      var genre = tabTrackDetails["genre"] || '' ;
+      var size = tabTrackDetails["size"] || '' ;
+      var duration = tabTrackDetails["duration"] || '' ;
+      var mimetype = tabTrackDetails["mimetype"] || '' ;
+      var bitrate = tabTrackDetails["bitrate"] || '' ;
+      var url = tabTrackDetails["url"] || '' ;
+     
+      // check core information provided
+      if (id == "" || track == "" || album=="" || artist =="" || url=="") {
+		  Tomahawk.log("Insertion Failed : core information track isn't provided to "+this.dbName);
+		  return ;
+	  }
+	  else 
+	  {
+		  // Check presence in the database before adding
+		  var db = this.dbName ;
+		  this.dbSQL.transaction(function (tx) {
+			  tx.executeSql('SELECT id FROM track where id=?', [id], function (tx, resultsQuery ) {
+				  if (resultsQuery.rows.length > 0) {
+					  Tomahawk.log("Insertion abort : data already inside the "+db+"");
+					  return ;
+				  }
+			  });        
+		  });
+      }
       // Track Insertion
       this.dbSQL.transaction(function (tx) {
-          tx.executeSql('INSERT INTO track (id, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [id, title, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url]);
+          tx.executeSql('INSERT INTO track (id, track, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [id, track, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url]);
       });
       Tomahawk.log("Insertion inside "+this.dbName+"");
     },
 
     deleteTrack: function (tabTrackDetails)
     {
+		var id = tabTrackDetails["id"] || '';
+		if (id == "" || !id) { Tomahawk.log("Deletion intented without an id key");  return ; }
         this.dbSQL.transaction(function (tx) {
-			//tx.executeSql('DELETE FROM track (title, artist, album, url) VALUES (?, ?, ?, ?)', [tabTrackDetails["title"], tabTrackDetails["artist"], tabTrackDetails["album"] , tabTrackDetails["url"]]);
-			tx.executeSql('DELETE FROM track WHERE id = ?', [tabTrackDetails["id"]], function (tx,resultsQuery){}); 
+			tx.executeSql('DELETE FROM track WHERE id = ?', [id], function (tx,resultsQuery){}); 
         });       
         Tomahawk.log("Deletion inside "+this.dbName+"");
     },
@@ -110,7 +123,7 @@ var musicManager = {
         for (i = 0; i < len; i++) {
 			song = {
 				id: resultsQuery.rows.item(i).id ,             
-				title: resultsQuery.rows.item(i).title ,
+				track: resultsQuery.rows.item(i).track ,
 				artist: resultsQuery.rows.item(i).artist ,
 				album: resultsQuery.rows.item(i).album ,
 				albumpos: resultsQuery.rows.item(i).albumpos ,
@@ -166,18 +179,18 @@ var musicManager = {
             tx.executeSql('SELECT * FROM track WHERE artist=? and album=?', [artist,album],  	
                 function (tx, resultsQuery ) {
                     var results = musicManager.parseSongAttriutes(resultsQuery) ;
-                    //Tomahawk.log("Number of results : "+results.length);
+                    Tomahawk.log("Number of results : "+results.length+ "  "+ DumpObjectIndented(results));                    
                     callBack(results) ;
                 });
         });
     },
 
-    // Parse Title, Album , Artist
+    // Parse track, Album , Artist
     searchQuery: function (searchString,callBack)
     {
 		this.dbSQL.transaction(function (tx) {							
 			  // Select first or limit mechanisim ? 		  			  
-			  tx.executeSql("SELECT * FROM track WHERE (album LIKE ?) or (artist LIKE ?) or (title LIKE ?)", ["%"+searchString+"%","%"+searchString+"%","%"+searchString+"%"],
+			  tx.executeSql("SELECT * FROM track WHERE (album LIKE ?) or (artist LIKE ?) or (track LIKE ?)", ["%"+searchString+"%","%"+searchString+"%","%"+searchString+"%"],
 				function (tx, resultsQuery ) {
 					var len = resultsQuery.rows.length, i;					
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
@@ -188,15 +201,15 @@ var musicManager = {
     },
 
     // Only one Track matching
-    resolve: function(artist, album, title, callBack)
+    resolve: function(artist, album, track, callBack)
     {    
 		var results = [] ;
         this.dbSQL.transaction(function (tx) {
-			  tx.executeSql('SELECT * FROM track WHERE album=? and artist=? and title=? ', [album,artist,title],  // Select first or limit mechanisim ? 		  			  
+			  tx.executeSql('SELECT * FROM track WHERE album=? and artist=? and track=? ', [album,artist,track],  // Select first or limit mechanisim ? 		  			  
 				function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					//Tomahawk.log("Number of track results for resolve : "+results.length);
-                    // Filter to give only ONE row 
+                    // Filter to give only ONE row : improvement possible : set up a limit ( even if tomahawk is already doing it )
                     callBack(results[0]) ;
                 });
         });
@@ -208,8 +221,8 @@ var musicManager = {
 	tabTrackDetails: [] , 
 	
 	init: function() {
-		// Example of structure 
-		this.tabTrackDetails = {"id": "22" , "title": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };		
+		this.tabTrackDetails = {"id":"22" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };		
+		//musicManager.addTrack(this.tabTrackDetails) ; 
 	},
 	
 	populateDatabase: function (rows){
@@ -239,12 +252,21 @@ var musicManager = {
 		musicManager.flushDatabase() ;
 	},
 	
+	flushDatabaseAndWaitTest: function() {
+		musicManager.dbSQL.transaction(function (tx) {
+            tx.executeSql('DROP TABLE track');
+        });
+        musicManager.initDatabase() ;
+        Tomahawk.log("webSQL db cleaned out");
+		return true ;
+	},
+	
 	resolveTest: function() {
 		var artist = this.tabTrackDetails["artist"];
 		var album = this.tabTrackDetails["album"];
-		var title = this.tabTrackDetails["title"];
-		musicManager.resolve(artist,album,title, function(results){
-				Tomahawk.log("Return songs title "+results.title);		
+		var track = this.tabTrackDetails["track"];
+		musicManager.resolve(artist,album,track, function(results){
+				Tomahawk.log("Return songs track "+results.track);		
 		});
 	},
 		
@@ -264,7 +286,7 @@ var musicManager = {
 		musicManager.tracksQuery(artist, album , function(results){
 			var len = results.length ;  var i = 0;
 			for (i  ; i < len ; i++) {
-				Tomahawk.log("Return track title name num "+i+" : "+results[i].title);		 
+				Tomahawk.log("Return track track name num "+i+" : "+results[i].track);		 
 			}
 		});
 	},
@@ -274,7 +296,7 @@ var musicManager = {
 		musicManager.albumsQuery(artist, function(results){
 			var len = results.length ;  var i = 0;
 			for (i  ; i < len ; i++) {
-				Tomahawk.log("Return album title name num "+i+" : "+results[i]);		 
+				Tomahawk.log("Return album track name num "+i+" : "+results[i]);		 
 			}
 		});
 	},
@@ -284,9 +306,52 @@ var musicManager = {
 		musicManager.searchQuery(qString, function(results){
 			var len = results.length ;  var i = 0;
 			for (i  ; i < len ; i++) {
-				//Tomahawk.log("Return of a search query size : "+i+" : "+results[i]);	 
+				Tomahawk.log("Return of a search query size : "+i+" : "+results[i]);	 
 			}
 		});
 	},	
+
+	// Test Scenario 
+	insertionDuplicateTest:function() {	
+		Tomahawk.log("Test Scenario : duplicate insertion");		 	
+		this.tabTrackDetails = {"id":"22" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ; // should log a duplicate error
+		musicManager.addTrack(this.tabTrackDetails) ;
+	},
+
+
+	insertionWithoutCoreTest:function() {		
+		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
+		this.tabTrackDetails = {"id":null , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
+	},
 	
+	deletionWithoutKeyTest:function() {
+		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.deleteTrack(this.tabTrackDetails) ;
+		this.tabTrackDetails = {"track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.deleteTrack(this.tabTrackDetails) ;		
+	},
+	
+	retrieveRowEmptyGenreTest:function() {
+		
+		this.tabTrackDetails = {"id":"23" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ;
+		
+		this.tabTrackDetails = {"id":"24" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ;
+
+		var qString = "Division" ; var log ;
+		musicManager.searchQuery(qString, function(results){			
+			var len = results.length ;  var i = 0;
+			for (i ; i < len ; i++) {
+				for (row in results[i]){
+					log += ""+row+": "+ results[i][row] +"," ;
+				}
+			}	
+			Tomahawk.log(log);				
+		});
+	},
 };
+

@@ -143,43 +143,93 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 			this.updateDatabase();
 		}
     },
-    
+	
 	onID3TagCallback: function(tags)
-    {
-		//Add track to database
-		//var url = 'googledrive://' + fileId;
-		//dbSql.addTrack
-		Tomahawk.log("Tags : ");
-		Tomahawk.log(DumpObjectIndented(tags));
+    {	
+		var trackInfo = {
+			'id' : tags['fileId'],
+			'url' : 'dropbox://path/' + tags['fileId'],
+			'track' : tags['track'],
+			'artist' : tags['artist'],
+			'album' : tags['album'],
+			'albumpos' : tags['albumpos'],
+			'year' : tags['year'],
+			'bitrate' : tags['bitrate'],
+			'mimetype' : tags['mimetype'],
+			'size' : tags['size'],
+			'duration' : tags['duration'],	
+		};
+		
+		Tomahawk.log("Adding : " + DumpObjectIndented(trackInfo));
+		musicManager.addTrack(trackInfo);		
 	},
     
     resolve: function (qid, artist, album, title) {
-       //this.doSearchOrResolve(qid, title, 1);
+       musicManager.resolve(artist, album, title, function(results) {
+		   var return_songs = {
+                qid: qid,
+                results: results
+            };
+            Tomahawk.log("Resolved query : " + artist + ", "+ album+ ", "+ title+" returned: " + DumpObjectIndented(return_songs.results));
+            Tomahawk.addTrackResults(return_songs);
+	   });
+	   
     },
 
     search: function (qid, searchString) {
-       //this.doSearchOrResolve(qid, searchString, 15);
+        // set up a limit for the musicManager search Query
+        Tomahawk.log("search query");
+		musicManager.searchQuery(searchString,function(results){
+		   var return_songs = {
+				qid: qid,
+				results: results
+			};
+
+			Tomahawk.log("Search query : " + searchString +" , result: " + DumpObjectIndented(return_songs.results));
+			Tomahawk.addTrackResults(return_songs); 
+	   });
     },
     
     artists: function( qid )
     {
-        musicManager.initDatabase() ;
-        var results = this.musicManager.allArtistsQuery() ;
-        var return_artists = {
-            qid: qid,
-            artists: results
-        };
-   
+		Tomahawk.log("artists query");
+		musicManager.allArtistsQuery(function(results){
+			var return_artists = {
+				qid: qid,
+				artists: results
+			};
+            Tomahawk.log("google drive artists returned: ");
+            Tomahawk.addArtistResults(return_artists);
+		});
     },
 
     albums: function( qid, artist )
     {
-
+		Tomahawk.log("albums query");
+		musicManager.albumsQuery(artist, function(results){
+			var return_albums = {
+                qid: qid,
+                artist: artist,
+                albums: results
+            };
+            Tomahawk.log("google drive albums returned: ");
+            Tomahawk.addAlbumResults(return_albums);
+        });         
     },
 
     tracks: function( qid, artist, album )
     {
-
+		Tomahawk.log("tracks query");
+		musicManager.tracksQuery(artist, album, function(results){
+			var return_tracks = {
+                qid: qid,
+                artist: artist,
+                album: album,
+                results: results
+            };
+            Tomahawk.log("Google Drive tracks returned:");
+            Tomahawk.addAlbumTrackResults(return_tracks);
+		});
     },
 
 	collection: function()
@@ -212,7 +262,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 	},
 	
 	getStreamUrl: function (ourUrl) {
-        var path = ourUrl.replace("dropbox://", "");
+        var path = ourUrl.replace("dropbox://path/", "");
 
         return this.oauth.oAuthGetUrl(this.getFileUrl + path);
     },
