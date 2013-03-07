@@ -29,7 +29,6 @@ var musicManager = {
   
     initDatabase : function() 
     {
-		// TODO : choose the id : url / device ID / combo of columns ? 
       Tomahawk.log("Init webSQL Db : ");
       if (!this.dbSQL) this.dbSQL = openDatabase(this.dbName, '1.0', 'Muic Database', 2 * 1024 * 1024) ;
       this.dbSQL.transaction(function (tx) {
@@ -181,7 +180,7 @@ var musicManager = {
             tx.executeSql('SELECT * FROM track WHERE artist=? and album=?', [artist,album],  	
                 function (tx, resultsQuery ) {
                     var results = musicManager.parseSongAttriutes(resultsQuery) ;
-                    //Tomahawk.log("Number of results : "+results.length+ "  "+ DumpObjectIndented(results));
+                    Tomahawk.log("Number of results : "+results.length+ "  "+ DumpObjectIndented(results));                    
                     callBack(results) ;
                 });
         });
@@ -211,7 +210,7 @@ var musicManager = {
 				function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					//Tomahawk.log("Number of track results for resolve : "+results.length);
-                    // Filter to give only ONE row 
+                    // Filter to give only ONE row : improvement possible : set up a limit ( even if tomahawk is already doing it )
                     callBack(results[0]) ;
                 });
         });
@@ -253,7 +252,7 @@ var musicManager = {
 	flushDatabaseTest: function() {
 		musicManager.flushDatabase() ;
 	},
-	
+		
 	resolveTest: function() {
 		var artist = this.tabTrackDetails["artist"];
 		var album = this.tabTrackDetails["album"];
@@ -299,11 +298,10 @@ var musicManager = {
 		musicManager.searchQuery(qString, function(results){
 			var len = results.length ;  var i = 0;
 			for (i  ; i < len ; i++) {
-				//Tomahawk.log("Return of a search query size : "+i+" : "+results[i]);	 
+				Tomahawk.log("Return of a search query size : "+i+" : "+results[i]);	 
 			}
 		});
 	},	
-
 
 	// Test Scenario 
 	insertionDuplicateTest:function() {	
@@ -312,7 +310,6 @@ var musicManager = {
 		musicManager.addTrack(this.tabTrackDetails) ; // should log a duplicate error
 		musicManager.addTrack(this.tabTrackDetails) ;
 	},
-
 
 	insertionWithoutCoreTest:function() {		
 		this.tabTrackDetails = {"id":"" , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
@@ -347,5 +344,4 @@ var musicManager = {
 			Tomahawk.log(log);				
 		});
 	},
-	
 };
