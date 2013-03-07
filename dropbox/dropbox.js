@@ -181,6 +181,28 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     {
 
     },
+
+	collection: function()
+    {
+        //strip http:// and trailing slash
+        var desc = "cloud de dropbox";
+
+        var return_object = {
+            prettyname: "Dropbox",
+            description: desc,
+            iconfile: "dropbox.png"
+        };
+
+        //Icon and text specific for Runners-ID
+        if (desc.indexOf("runners-id.com") !== -1 ||
+            desc.indexOf("runners-id.org") !== -1 )
+        {
+            return_object["prettyname"] = "Runners-ID";
+            return_object["iconfile"] = "runnersid-icon.png";
+        }
+
+        return return_object;
+    },
     
 	isMimeTypeSupported: function(mimeType)
     {
