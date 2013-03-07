@@ -181,7 +181,8 @@ var musicManager = {
             tx.executeSql('SELECT * FROM track WHERE artist=? and album=?', [artist,album],  	
                 function (tx, resultsQuery ) {
                     var results = musicManager.parseSongAttriutes(resultsQuery) ;
-                    //Tomahawk.log("Number of results : "+results.length);
+                    Tomahawk.log("Number of results : "+results.length+ "  "+ DumpObjectIndented(results));
+                    Tomahawk.log("Number of resultsQuery : "+resultsQuery.length+ "  "+ DumpObjectIndented(resultsQuery));
                     callBack(results) ;
                 });
         });
