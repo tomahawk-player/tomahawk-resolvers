@@ -217,7 +217,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 album: album,
                 results: results
             };
-            Tomahawk.log("Google Drive tracks returned:");
+            Tomahawk.log("Google Drive tracks for ("+artist + " , "+ album +") returned:" + + DumpObjectIndented(return_tracks.results));
             Tomahawk.addAlbumTrackResults(return_tracks);
 		});
     },
