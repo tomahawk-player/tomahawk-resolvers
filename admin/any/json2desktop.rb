@@ -103,6 +103,4 @@ File.open( outputPath, 'w' ) do |f|
     unless input["website"].nil? || input["website"].empty?
         f.write "X-KDE-PluginInfo-Website=#{input["website"]}\n"
     end
-
-
 end
