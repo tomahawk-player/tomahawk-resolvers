@@ -54,7 +54,7 @@ File.open( outputPath, 'w' ) do |f|
 ############################################################################
 ## Desktop file generated from JSON file '#{File.basename( inputPath )}' 
 ##
-## Created: #{Time.now.to_s}
+## Created: #{Time.now.utc.to_s}
 ##      by: json2desktop.rb, https://github.com/tomahawk-player
 ##
 ##                         #### WARNING! ####
