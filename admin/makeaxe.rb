@@ -110,16 +110,6 @@ if not File.exists?( _metadataPath ) or File.writable?( _metadataPath )
         
         metadata["bundleVersion"] = BUNDLEVERSION
         
-        f.write "\
-############################################################################
-## Metadata file generated from unpackaged '#{metadataRelPath}' 
-##
-## Created: #{Time.now.utc.to_s}
-##      by: makeaxe.rb, https://github.com/tomahawk-player
-##
-##                         #### WARNING! ####
-##              All changes made to this file will be lost!
-############################################################################\n\n"
         f.write( JSON.pretty_generate( metadata ) )
     end
 end
