@@ -26,7 +26,6 @@ require 'json'
 if ARGV.length < 1
     puts "This script converts a Tomahawk resolver's metadata/manifest JSON file"
     puts "into a desktop file for Synchrotron."
-    puts "\nMake sure you have the gems json and zipruby."
     puts "Usage: ruby json2desktop.rb path_to_metadata_file.json"
     exit
 end
