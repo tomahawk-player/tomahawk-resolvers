@@ -108,7 +108,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
             }
 
             if (artist !== "") {
-                require(['async-0.2.5'], function (async) {
+                // require(['async-0.2.5'], function (async) {
                     // We are in resolve mode, so return only the first correct result.
                     async.reduce(results, null, function (memo, item, callback) {
                         if (memo === null) {
@@ -128,7 +128,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
                             Tomahawk.addTrackResults({qid: qid, results: [result]});
                         }
                     });
-                });
+                // });
             } else {
                 // TODO: Check all results
                 Tomahawk.addTrackResults({qid: qid, results: results});
