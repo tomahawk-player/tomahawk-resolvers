@@ -108,27 +108,25 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
             }
 
             if (artist !== "") {
-                // require(['async-0.2.5'], function (async) {
-                    // We are in resolve mode, so return only the first correct result.
-                    async.reduce(results, null, function (memo, item, callback) {
-                        if (memo === null) {
-                            that.checkUrl(item, function (success) {
-                                if (success) {
-                                    callback(null, item);
-                                } else {
-                                    callback(null, memo);
-                                }
-                            });
-                        } else {
-                            callback(null, memo);
-                        }
-                    }, function (err, result) {
-                        if (result !== null) {
-                            // In resolve mode the first best result is returned.
-                            Tomahawk.addTrackResults({qid: qid, results: [result]});
-                        }
-                    });
-                // });
+                // We are in resolve mode, so return only the first correct result.
+                async.reduce(results, null, function (memo, item, callback) {
+                    if (memo === null) {
+                        that.checkUrl(item, function (success) {
+                            if (success) {
+                                callback(null, item);
+                            } else {
+                                callback(null, memo);
+                            }
+                        });
+                    } else {
+                        callback(null, memo);
+                    }
+                }, function (err, result) {
+                    if (result !== null) {
+                        // In resolve mode the first best result is returned.
+                        Tomahawk.addTrackResults({qid: qid, results: [result]});
+                    }
+                });
             } else {
                 // TODO: Check all results
                 Tomahawk.addTrackResults({qid: qid, results: results});
