@@ -44,11 +44,23 @@ require 'digest/md5'
 
 BUNDLEVERSION = 1 #might never be used but best to plan ahead
 
-if ARGV.length < 1
+def usage
     puts "This script creates a Tomahawk resolver bundle."
     puts "\nMake sure you have the zip gem."
-    puts "Usage: ruby makeaxe.rb path_to_resolver_directory"
+    puts "\nUsage: ruby makeaxe.rb path_to_resolver_directory [options]"
+    puts " --release\tskip trying to add the git revision hash to the bundle"
+    puts " --help\t\tthis help message"
+end
+
+if ARGV.length < 1 or not ARGV.delete( "--help" ).nil?
+    usage
     exit
+end
+
+if not ARGV.delete( "--release" ).nil?
+    release = true
+else
+    release = false
 end
 
 inputPath = File.absolute_path( ARGV[0] )
@@ -100,13 +112,14 @@ if not File.exists?( _metadataPath ) or File.writable?( _metadataPath )
     File.open( _metadataPath, 'w' ) do |f|
         metadata["timestamp"] = Time.now.utc.to_i
         
-        gitCmd = "git rev-parse --short HEAD 2>&1"
-        inGit = system( gitCmd + "&>/dev/null" ) #will return true only if we're in a repo
-        if inGit
-            revision = %x[ #{gitCmd} ].sub( "\n", "" )
-            metadata["revision"] = revision
+        unless release
+            gitCmd = "git rev-parse --short HEAD 2>&1"
+            inGit = system( gitCmd + "&>/dev/null" ) #will return true only if we're in a repo
+            if inGit
+                revision = %x[ #{gitCmd} ].sub( "\n", "" )
+                metadata["revision"] = revision
+            end
         end
-        #TODO: maybe add a --release switch to disable filling in the revision?
         
         metadata["bundleVersion"] = BUNDLEVERSION
         
