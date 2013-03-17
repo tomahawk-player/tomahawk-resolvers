@@ -93,23 +93,16 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver,
         };
     },
     newConfigSaved: function () {
-        var userConfig = this.getUserConfig();
-
-        this.host = userConfig.host || 'localhost';
-
-        var port = userConfig.port;
-        port = parseInt(port);
-        if (isNaN(port) || !port) {
-            port = 8337;
-        }
-        userConfig.port = port;
-
-        this.port = port;
+        this.init();
     },
-
-    // Defaults.
-    host: 'localhost',
-    port: 8337
+    init: function () {
+        var userConfig = this.getUserConfig();
+        this.host = userConfig.host || 'localhost';
+        this.port = parseInt(userConfig.port);
+        if (isNaN(this.port) || !this.port) {
+            this.port = 8337;
+        }
+    },
 });
 
 Tomahawk.resolver.instance = BeetsResolver;
