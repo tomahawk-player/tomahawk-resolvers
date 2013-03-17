@@ -15,6 +15,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver,
     settings:
     {
         name: 'beets',
+        icon: 'beets-icon.png',
         weight: 95,
         timeout: 5
     },
