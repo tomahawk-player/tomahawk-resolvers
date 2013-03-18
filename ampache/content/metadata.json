@@ -9,14 +9,14 @@
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/ampache-resolver.js",
-	"scripts": [],
-	"icon": "contents/images/icon.png",
-	"resources": [
-	    "contents/code/config.ui",
-	    "contents/code/ampache-icon.png",
-	    "contents/code/ampache.png",
-	    "contents/code/owncloud-icon.png",
-	    "contents/code/owncloud.png"
-	]
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/ampache-icon.png",
+            "contents/code/ampache.png",
+            "contents/code/owncloud-icon.png",
+            "contents/code/owncloud.png"
+        ]
     }
 }

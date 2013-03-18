@@ -9,13 +9,13 @@
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/grooveshark.js",
-	"scripts": [],
-	"icon": "contents/images/icon.png",
-	"resources": [
-        "contents/code/config.ui",
-        "contents/code/grooveshark.png",
-        "contents/code/grooveshark.svg",
-	    "contents/code/grooveshark-icon.png"
-	]
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/grooveshark.png",
+            "contents/code/grooveshark.svg",
+            "contents/code/grooveshark-icon.png"
+        ]
     }
 }
