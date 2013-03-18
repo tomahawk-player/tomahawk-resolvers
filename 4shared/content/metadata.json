@@ -9,10 +9,10 @@
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/4shared-resolver.js",
-	"scripts": [],
-	"icon": "contents/images/icon.png",
-	"resources": [
-	    "contents/code/4shared-icon.png"
-	]
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/4shared-icon.png"
+        ]
     }
 }
