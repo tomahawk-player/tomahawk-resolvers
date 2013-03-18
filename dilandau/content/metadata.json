@@ -9,10 +9,10 @@
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/dilandau.js",
-	"scripts": [],
-	"icon": "contents/images/icon.png",
-	"resources": [
-	    "contents/code/dilandau-icon.png"
-	]
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/dilandau-icon.png"
+        ]
     }
 }
