@@ -1,0 +1,18 @@
+{
+    "name": "4Shared",
+    "pluginName": "4shared",
+    "author": "lasconic",
+    "email": "lasconic@gmail.com",
+    "version": "0.1.5",
+    "website": "http://gettomahawk.com",
+    "description": "Looks for tracks to play from www.4shared.com",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/4shared-resolver.js",
+	"scripts": [],
+	"icon": "contents/images/icon.png",
+	"resources": [
+	    "contents/code/4shared-icon.png"
+	]
+    }
+}
