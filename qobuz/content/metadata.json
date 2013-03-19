@@ -1,0 +1,19 @@
+{
+    "name": "Qobuz",
+    "pluginName": "qobuz",
+    "author": "Qobuz Sarl",
+    "email": "regbasket@gmail.com",
+    "version": "0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Searches Qobuz for playable tracks",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/qobuz.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/qobuz.png",
+            "contents/code/config.ui"
+        ]
+    }
+}
