@@ -18,6 +18,7 @@
  *
  * NOTICE: This resolver and its intent, is for demonstrational purposes only
  **/
+
 var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	getConfigUi: function ()

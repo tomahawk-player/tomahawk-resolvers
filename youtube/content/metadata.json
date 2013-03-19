@@ -1,0 +1,20 @@
+{
+    "name": "YouTube",
+    "pluginName": "youtube",
+    "author": "Hugo, Leo and Thierry",
+    "email": "lfranchi@kde.org",
+    "version": "0.9.7",
+    "website": "http://gettomahawk.com",
+    "description": "Searches YouTube for audio content",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/youtube.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/youtube-icon.png",
+            "contents/code/youtube.png"
+        ]
+    }
+}
