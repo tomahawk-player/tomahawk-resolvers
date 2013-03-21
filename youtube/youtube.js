@@ -184,7 +184,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			console.log(this.settings.name + msg);
 		}
 		else if (this.debugMode){
-			Tomahawk.log(this.settings.name + "Debug: " + msg);
+			Tomahawk.log(this.settings.name + " debug: " + msg);
 		}
 	},
 
@@ -271,7 +271,6 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		// First, lets try and find the stream_map at top of the page
 		// to save some time going to the end and do JSON.parse on the yt.config
 		var streamMatch = html.match(/(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i);
-		//Tomahawk.log(streamMatch);
 		if (streamMatch && streamMatch[2] !== undefined) {
 			var parsed = this.parseURLS(streamMatch[2]);
 			if (parsed) {
@@ -282,8 +281,8 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		}
 
-		// Now we can go further down, and check the yt.config map
-		streamMatch = html.match(/(yt\.playerConfig =)([^\r\n]+)/);
+		// Now we can go further down, and check the ytplayer.config map
+		streamMatch = html.match(/(ytplayer\.config =)([^\r\n]+);/);
 
 		if (!streamMatch) {
 			// Todo: Open window for user input?
@@ -299,7 +298,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 
 		if (streamMatch && streamMatch[2] !== undefined) {
 			try {
-				var jsonMap = JSON.parse(streamMatch[2].replace("};", "}"));
+				var jsonMap = JSON.parse(streamMatch[2]);
 				if (jsonMap.args.url_encoded_fmt_stream_map !== undefined) {
 					parsed = this.parseURLS(jsonMap.args.url_encoded_fmt_stream_map);
 					if (parsed){
