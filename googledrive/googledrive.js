@@ -25,7 +25,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Google Drive',
         weight: 60,
-        icon : 'googledrive.png',
+        icon : 'googledrive.svg',
         timeout: 15
     },
     
@@ -53,7 +53,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 		}]                
             },],
             images: [{
-                "googledrive.png": Tomahawk.readBase64("googledrive.png")
+                'googledrive.svg': Tomahawk.readBase64(this.settings.icon)
             }, ]
         };
     },
@@ -229,16 +229,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
         var return_object = {
             prettyname: "Google Drive",
             description: desc,
-            iconfile: "googledrive.png"
+            iconfile: this.settings.icon
         };
-
-        //Icon and text specific for Runners-ID
-        if (desc.indexOf("runners-id.com") !== -1 ||
-            desc.indexOf("runners-id.org") !== -1 )
-        {
-            return_object["prettyname"] = "Runners-ID";
-            return_object["iconfile"] = "runnersid-icon.png";
-        }
 
         return return_object;
     },
