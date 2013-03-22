@@ -14,12 +14,11 @@ RegExp.prototype.execAll = function(string) {
     return matches;
 }
 
-var MuzebraResolver = Tomahawk.extend(TomahawkResolver,
-{
+var MuzebraResolver = Tomahawk.extend(TomahawkResolver, {
     
     asyncRequest: function(url, method, success) {
-	var r = new XMLHttpRequest();
-	
+	    var r = new XMLHttpRequest();
+	    
         var headers = {
             "Accept" : "application/json, text/javascript, */*; q=0.01",
             "Accept-Language" : "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3",
@@ -32,30 +31,30 @@ var MuzebraResolver = Tomahawk.extend(TomahawkResolver,
             "X-Requested-With" : "XMLHttpRequest"
         }
 
-	r.open(method, url, true);
+	    r.open(method, url, true);
         
         for(var i in headers) {
             r.setRequestHeader(i, headers[i]);
         }
 
-	r.onreadystatechange = function() {
-	    if(r.readyState == 4 &&
-	       r.status == 200) {
-		success(r);
-	    } else if(r.readyState == 4) {
-		Tomahawk.log("asyncRequest error " + r.status);
+	    r.onreadystatechange = function() {
+	        if(r.readyState == 4 &&
+	           r.status == 200) {
+		        success(r);
+	        } else if(r.readyState == 4) {
+		        Tomahawk.log("asyncRequest error " + r.status);
+	        }
 	    }
-	}
 
-	r.send(null);
+	    r.send(null);
     },
 
     settings: {
-	name: 'Muzebra resolver'
+	    name: 'Muzebra resolver'
     },
 
     resolve: function(qid, artist, album, title) {
-	return Tomahawk.addTrackResults(this.internalSearch(qid));
+	    return Tomahawk.addTrackResults(this.internalSearch(qid));
     },
 
     search: function(qid, searchString) {        
@@ -88,8 +87,8 @@ var MuzebraResolver = Tomahawk.extend(TomahawkResolver,
                         that.results[i] = res;
                     }
                     
-	            Tomahawk.addTrackResults(that.internalSearch(qid));
-	        });
+	                Tomahawk.addTrackResults(that.internalSearch(qid));
+	            });
         });
 
 
@@ -98,10 +97,10 @@ var MuzebraResolver = Tomahawk.extend(TomahawkResolver,
     results: [],
 
     internalSearch: function(qid) {
-	return {
-	    qid: qid,
-	    results: this.results
-	}
+	    return {
+	        qid: qid,
+	        results: this.results
+	    }
     },
     
 });
