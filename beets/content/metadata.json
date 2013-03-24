@@ -10,9 +10,10 @@
     "manifest": {
         "main": "contents/code/beets-resolver.js",
         "scripts": [],
-        "icon": "contents/code/beets-icon.png",
+        "icon": "contents/images/icon.png",
         "resources": [
             "contents/code/config.ui"
+            "contents/code/beets-icon.png"
         ]
     }
 }
