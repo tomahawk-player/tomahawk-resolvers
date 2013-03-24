@@ -1,3 +1,0 @@
-To manually intstall a resolver: either 1) clone this repo, or 2) download the .zip, or 3) download the individual files within the individual resolver folder you are installing.
-
-After you have the files installed locally, open Tomahawk's preferences and from the "Services" tab click "Install from File" and select the .js file for the resolver you are installing.
