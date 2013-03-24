@@ -1,0 +1,19 @@
+{
+    "name": "Google Drive",
+    "pluginName": "googledrive",
+    "author": "ISI-Peasy team",
+    "email": "isi-peasy@googlegroups.com",
+    "version": "0.2",
+    "website": "http://gettomahawk.com",
+    "description": "Browse your music files on Google Drive",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/googledrive.js",
+        "scripts": ["contents/code/musicManager.js"],
+        "icon": "contents/images/icon.svg",
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/googledrive.svg"
+        ]
+    }
+}
