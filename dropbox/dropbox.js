@@ -129,7 +129,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 					//Tomahawk.log("size : " + meta['bytes']);
 					//Tomahawk.log("mime : " + meta['mime_type']);
 					//Tomahawk.log('request : ' + DumpObjectIndented( this.getStreamUrl(path) ));
-					Tomahawk.ReadCloudFile(path, path, meta['bytes'], meta['mime_type'], this.getStreamUrl(path), "onID3TagCallback"
+					Tomahawk.ReadCloudFile(path, path, meta['bytes'], meta['mime_type'], this.getStreamUrl(path), "onID3TagCallback", "getStreamUrl"
 																											);
 				}
 			}
@@ -263,8 +263,10 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	getStreamUrl: function (ourUrl) {
         var path = ourUrl.replace("dropbox://path/", "");
-
-        return this.oauth.oAuthGetUrl(this.getFileUrl + path);
+        Tomahawk.log(">>>>> file+path : " + this.getFileUrl + path);
+		var url = this.oauth.oAuthGetUrl(this.getFileUrl + path);
+		Tomahawk.log(">>>>> streamUrl : " + url);
+        return url;
     },
     
     oauth: {
