@@ -23,8 +23,6 @@
 #include <QMutex>
 #include <QThread>
 
-#include <stdint.h>
-
 SpotifyPlayback::SpotifyPlayback(QObject *parent) :
     QObject(parent),
     m_trackEnded( false )

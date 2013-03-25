@@ -24,7 +24,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Dropbox',
         weight: 60,
-        icon : 'dropbox.png',
+        icon : 'dropbox.svg',
         timeout: 15
     },
     
@@ -52,7 +52,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
                 		}]                
             },],
             images: [{
-                "dropbox.png": Tomahawk.readBase64("dropbox.png")
+                "dropbox.svg": Tomahawk.readBase64(this.settings.icon)
             }, ]
         };
     },
@@ -240,16 +240,8 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
         var return_object = {
             prettyname: "Dropbox",
             description: desc,
-            iconfile: "dropbox.png"
+            iconfile: this.settings.icon
         };
-
-        //Icon and text specific for Runners-ID
-        if (desc.indexOf("runners-id.com") !== -1 ||
-            desc.indexOf("runners-id.org") !== -1 )
-        {
-            return_object["prettyname"] = "Runners-ID";
-            return_object["iconfile"] = "runnersid-icon.png";
-        }
 
         return return_object;
     },

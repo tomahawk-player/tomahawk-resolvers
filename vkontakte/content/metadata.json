@@ -1,0 +1,16 @@
+{
+    "name": "VKontakte",
+    "pluginName": "vkontakte",
+    "author": "Krzysztof Klinikowski",
+    "email": "kkszysiu@gmail.com",
+    "version": "0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Searches VKontakte (vk.com) for music to play",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/vkontakte-resolver.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": []
+    }
+}

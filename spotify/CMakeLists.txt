@@ -7,11 +7,16 @@ find_package(Qt4 REQUIRED)
 find_package(QJSON REQUIRED)
 find_package(libspotify REQUIRED)
 
-find_package(Boost)
+find_package(Boost REQUIRED)
 
 add_subdirectory(qxtweb-standalone)
 
-include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ ${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/
+                                              ${QT_INCLUDES}
+                                              ${LIBSPOTIFY_INCLUDE_DIR}
+                                              ${QJSON_INCLUDE_DIR}
+                                              ${Boost_INCLUDE_DIRS}
+                                              ${CMAKE_CURRENT_BINARY_DIR})
 
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/spotify-sourceicon.png")
     message("Copying spotify source icon to binary dir")
