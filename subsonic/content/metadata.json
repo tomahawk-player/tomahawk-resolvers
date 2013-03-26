@@ -6,6 +6,8 @@
     "version": "0.5",
     "website": "http://gettomahawk.com",
     "description": "Searches your Subsonic server for music to play",
+    "platform": "any",
+    "tomahawkVersion": "0.6.99",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/subsonic.js",
