@@ -73,6 +73,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	   dbLocal.setItem('googledrive.cursor','');
 	   
        this.oauth.deleteAssociation();
+       musicManager.flushDatabase();
        
     },
     
