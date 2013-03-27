@@ -101,7 +101,7 @@ var musicManager = {
           tx.executeSql('INSERT INTO track (id, track, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [id, track, artist, album, albumpos, year, genre, size, duration, mimetype, bitrate, url]);
       });
-      Tomahawk.log("Insertion inside "+this.dbName+"");
+      Tomahawk.log("Insertion inside "+this.dbName+" : " + id);
     },
 
     deleteTrack: function (tabTrackDetails)
@@ -161,7 +161,7 @@ var musicManager = {
     {
 		var results = [] ;
 		this.dbSQL.transaction(function (tx) {
-		tx.executeSql('SELECT DISTINCT album FROM track WHERE artist=?', [artist], function (tx, resultsQuery ) {
+		tx.executeSql('SELECT DISTINCT album FROM track WHERE LOWER(artist)=LOWER(?)', [artist], function (tx, resultsQuery ) {
 				var len = resultsQuery.rows.length, i;
 				//Tomahawk.log("Number of albums results : "+ len);
 					for (i = 0; i < len; i++) {
@@ -176,7 +176,7 @@ var musicManager = {
     tracksQuery: function(artist , album, callBack)
     {
         this.dbSQL.transaction(function (tx) {
-            tx.executeSql('SELECT * FROM track WHERE artist=? and album=?', [artist,album],  	
+            tx.executeSql('SELECT * FROM track WHERE LOWER(artist)=LOWER(?) and LOWER(album)=LOWER(?)', [artist,album],  	
                 function (tx, resultsQuery ) {
                     var results = musicManager.parseSongAttriutes(resultsQuery) ;
                     Tomahawk.log("Number of results : "+results.length+ "  "+ DumpObjectIndented(results));                    
@@ -190,7 +190,7 @@ var musicManager = {
     {
 		this.dbSQL.transaction(function (tx) {							
 			  // Select first or limit mechanisim ? 		  			  
-			  tx.executeSql("SELECT * FROM track WHERE (album LIKE ?) or (artist LIKE ?) or (track LIKE ?)", ["%"+searchString+"%","%"+searchString+"%","%"+searchString+"%"],
+			  tx.executeSql("SELECT * FROM track WHERE (LOWER(artist) LIKE LOWER(?)) or (LOWER(album) LIKE LOWER(?)) or (LOWER(track) LIKE LOWER(?))", ["%"+searchString+"%","%"+searchString+"%","%"+searchString+"%"],
 				function (tx, resultsQuery ) {
 					var len = resultsQuery.rows.length, i;					
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
@@ -205,7 +205,7 @@ var musicManager = {
     {    
 		var results = [] ;
         this.dbSQL.transaction(function (tx) {
-			  tx.executeSql('SELECT * FROM track WHERE album=? and artist=? and track=? ', [album,artist,track],  // Select first or limit mechanisim ? 		  			  
+			  tx.executeSql('SELECT * FROM track WHERE LOWER(artist)=LOWER(?) and LOWER(album)=LOWER(?) and LOWER(track)=LOWER(?) ', [artist,album,track],  // Select first or limit mechanisim ? 		  			  
 				function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					//Tomahawk.log("Number of track results for resolve : "+results.length);
