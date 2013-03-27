@@ -72,6 +72,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 	   dbLocal.setItem('dropbox.cursor','');
        
        this.oauth.deleteAssociation();
+       musicManager.flushDatabase();
        
     },
     
