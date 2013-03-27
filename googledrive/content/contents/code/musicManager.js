@@ -206,12 +206,12 @@ var musicManager = {
     {    
 		var results = [] ;
         this.dbSQL.transaction(function (tx) {
-			  tx.executeSql('SELECT * FROM track WHERE LOWER(artist)=LOWER(?) and LOWER(album)=LOWER(?) and LOWER(track)=LOWER(?) ', [artist,album,track],  // Select first or limit mechanisim ? 		  			  
+			  tx.executeSql('SELECT * FROM track WHERE (LOWER(artist)=LOWER(?) and LOWER(album)=LOWER(?) and LOWER(track)=LOWER(?)) OR (LOWER(artist)=LOWER(?) and LOWER(track)=LOWER(?)) ', [artist,album,track,artist,track],  // Select first or limit mechanisim ? 		  			  
 				function (tx, resultsQuery ) {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					//Tomahawk.log("Number of track results for resolve : "+results.length);
                     // Filter to give only ONE row : improvement possible : set up a limit ( even if tomahawk is already doing it )
-                    callBack(results[0]) ;
+                    callBack(results) ;
                 });
         });
     },
