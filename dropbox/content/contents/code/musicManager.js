@@ -152,7 +152,7 @@ var musicManager = {
 					results.push(resultsQuery.rows.item(i).artist) ;                
 				}
 				callBack(results);
-		});
+		}, function(tx, error){ Tomahawk.log(error.message); });
       });
     },
 
@@ -168,7 +168,7 @@ var musicManager = {
 						results.push (resultsQuery.rows.item(i).album) ;
 					}
 				callBack(results);
-		});
+		}, function(tx, error){ Tomahawk.log(error.message); });
       });
     },
     
@@ -181,7 +181,7 @@ var musicManager = {
                     var results = musicManager.parseSongAttriutes(resultsQuery) ;
                     Tomahawk.log("Number of results : "+results.length+ "  "+ DumpObjectIndented(results));                    
                     callBack(results) ;
-                });
+                }, function(tx, error){ Tomahawk.log(error.message); });
         });
     },
 
@@ -196,7 +196,7 @@ var musicManager = {
 					var results = musicManager.parseSongAttriutes(resultsQuery) ; 
 					//Tomahawk.log("Number of track results for query : "+results.length);                  
                     callBack(results) ;
-               });
+               }, function(tx, error){ Tomahawk.log(error.message); });
         });
     },
 
@@ -211,7 +211,7 @@ var musicManager = {
 					//Tomahawk.log("Number of track results for resolve : "+results.length);
                     // Filter to give only ONE row : improvement possible : set up a limit ( even if tomahawk is already doing it )
                     callBack(results) ;
-                });
+                }, function(tx, error){ Tomahawk.log(error.message); });
         });
     },
 };
