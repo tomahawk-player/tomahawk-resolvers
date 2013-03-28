@@ -130,7 +130,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 					//Tomahawk.log("size : " + meta['bytes']);
 					//Tomahawk.log("mime : " + meta['mime_type']);
 					//Tomahawk.log('request : ' + DumpObjectIndented( this.getStreamUrl(path) ));
-					Tomahawk.ReadCloudFile(path, path, meta['bytes'], meta['mime_type'], this.getStreamUrl(path), "onID3TagCallback", "getStreamUrl"
+					Tomahawk.readCloudFile(path, path, meta['bytes'], meta['mime_type'], this.getStreamUrl(path), "onID3TagCallback", "getStreamUrl"
 																											);
 				}
 			}

@@ -142,7 +142,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						//Tomahawk.log("size : " + item['file']['fileSize']);
 						//Tomahawk.log("mime : " + item['file']['mimeType']);
 						//Tomahawk.log('url : ' + this.getStreamUrl(item['file']['id']));
-						Tomahawk.ReadCloudFile(file['originalFilename'], file['id'], file['fileSize'], file['mimeType'], this.oauth.createOauthUrl(file['downloadUrl']), "onID3TagCallback", "");
+						Tomahawk.readCloudFile(file['originalFilename'], file['id'], file['fileSize'], file['mimeType'], this.oauth.createOauthUrl(file['downloadUrl']), "onID3TagCallback", "");
 				}
 			}
 		}
