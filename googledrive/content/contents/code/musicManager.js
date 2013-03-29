@@ -69,7 +69,7 @@ var musicManager = {
 	  var id = tabTrackDetails["id"] || '';
       var track = tabTrackDetails["track"] || '';
       var artist = tabTrackDetails["artist"] || '';
-      var album = tabTrackDetails["album"] || '';
+      var album = tabTrackDetails["album"] || 'undefined'; 
       var albumpos = tabTrackDetails["albumpos"] || '';
       var year = tabTrackDetails["year"] || '';
       var genre = tabTrackDetails["genre"] || '' ;
@@ -79,8 +79,8 @@ var musicManager = {
       var bitrate = tabTrackDetails["bitrate"] || '' ;
       var url = tabTrackDetails["url"] || '' ;
      
-      // check core information provided
-      if (id == "" || track == "" || album=="" || artist =="" || url=="") {
+      // check core information provided  
+      if (id == "" || track == "" || artist =="" || url=="") {
 		  Tomahawk.log("Insertion Failed : core information track isn't provided to "+this.dbName);
 		  return ;
 	  }
@@ -316,6 +316,12 @@ var musicManager = {
 		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
 		this.tabTrackDetails = {"id":null , "track": "Division Bell", "artist": "PinkFloyd", "album": "Division Bell", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
 		musicManager.addTrack(this.tabTrackDetails) ; // should log a core unprovided error
+	},
+	
+	insertionUndefinedAlbumTest:function() {		
+		this.tabTrackDetails = {"id":"22" , "track": "Division Bell", "artist": "PinkFloyd", "album": "", "albumpos": "Track1" ,"year": "1980","genre": "Divin" ,"size": "3000","duration":"3:06","mimetype":"flac","bitrate":"256mps","url":"www.pinkFloyd.com/DivisionBell" };			
+		musicManager.addTrack(this.tabTrackDetails) ; // should add album undefined row
+		
 	},
 	
 	deletionWithoutKeyTest:function() {

@@ -245,7 +245,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 	
 	googleDriveMusicManagerTests: function() {	 
 		 //musicManagerTester.flushDatabaseTest() ;
-		 //musicManagerTester.init() ;
+		 musicManagerTester.init() ;
+		 //musicManagerTester.insertionUndefinedAlbumTest() ;
 		 //musicManagerTester.addTrackTest() ;
 		 //musicManager.deletionWithoutKeyTest();
 		 //musicManagerTester.populateDatabase(1) ;
