@@ -50,6 +50,16 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
                 		  signal: "clicked()", 
                 		  javascriptCallback: "resolver.deleteClicked();" 
                 		}]                
+            },
+                        {
+                name: "consumerKey",
+                widget: "appKeyLineEdit",
+                property: "text"               
+            },
+            {
+                name: "consumerSecret",
+                widget: "appSecretLineEdit",
+                property: "text"               
             },],
             images: [{
                 "dropbox.svg": Tomahawk.readBase64(this.settings.icon)
@@ -58,6 +68,19 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     },
         
     newConfigSaved: function () {
+		var userConfig = this.getUserConfig();
+		
+        if (this.oauth.oauthSettings.consumerKey !== userConfig.consumerKey ||
+            this.oauth.oauthSettings.consumerSecret !== userConfig.consumerSecret)
+        {
+			this.oauth.oauthSettings.consumerKey = userConfig.consumerKey.trim();
+			this.oauth.oauthSettings.consumerSecret = userConfig.consumerSecret.trim();
+			
+			dbLocal.setItem('dropbox.consumerKey', this.oauth.oauthSettings.consumerKey); 
+			dbLocal.setItem('dropbox.consumerSecret', this.oauth.oauthSettings.consumerSecret); 
+			
+			this.oauth.init();
+		}
     },
     
     associateClicked: function () {
@@ -265,6 +288,8 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     oauth: {
     
     	init: function(){
+			this.oauthSettings.consumerKey = dbLocal.getItem('dropbox.consumerKey', ''); 
+			this.oauthSettings.consumerSecret = dbLocal.getItem('dropbox.consumerSecret', ''); 
     		this.oauthSettings.accessTokenKey = dbLocal.getItem('dropbox.accessTokenKey','');
     		this.oauthSettings.accessTokenSecret = dbLocal.getItem('dropbox.accessTokenSecret','');
     		
@@ -322,8 +347,8 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     	oauthEngine: null,
     	
     	oauthSettings: {
-		                   consumerKey: '7scivkf1tstl8dl',
-		                   consumerSecret: 'lu05s08m19h0dib',
+		                   consumerKey: '',
+		                   consumerSecret: '',
 		                   requestTokenUrl:	'https://api.dropbox.com/1/oauth/request_token',
 		                   authorizationUrl: 'https://www.dropbox.com/1/oauth/authorize',
 		                   accessTokenUrl: 'https://api.dropbox.com/1/oauth/access_token',

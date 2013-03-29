@@ -51,6 +51,16 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
                 		  signal: "clicked()", 
                 		  javascriptCallback: "resolver.deleteClicked();" 
                 		}]                
+            },
+            {
+                name: "clientId",
+                widget: "appKeyLineEdit",
+                property: "text"               
+            },
+            {
+                name: "clientSecret",
+                widget: "appSecretLineEdit",
+                property: "text"               
             },],
             images: [{
                 'googledrive.svg': Tomahawk.readBase64(this.settings.icon)
@@ -59,6 +69,18 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
         
     newConfigSaved: function () {
+		var userConfig = this.getUserConfig();
+		
+        if (this.oauth.clientId !== userConfig.clientId ||
+            this.oauth.clientSecret !== userConfig.clientSecret)
+        {
+			this.oauth.clientId = userConfig.clientId.trim();
+			this.oauth.clientSecret = userConfig.clientSecret.trim();
+			
+			dbLocal.setItem('googledrive.clientId', this.oauth.clientId); 
+			dbLocal.setItem('googledrive.clientSecret', this.oauth.clientSecret); 
+			
+        }
     },
     
     associateClicked: function () {
@@ -296,6 +318,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     oauth: {
     
     	init: function(){
+			this.clientId = dbLocal.getItem('googledrive.clientId','');
+			this.clientSecret = dbLocal.getItem('googledrive.clientSecret','');
     		this.accessToken = dbLocal.getItem('googledrive.accessToken','');
     		this.refreshToken = dbLocal.getItem('googledrive.refreshToken','');
     		this.expiresOn = dbLocal.getItem('googledrive.expiresOn','');
@@ -395,8 +419,8 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     	
     	//Private member
     	
-       clientId: '440397511251.apps.googleusercontent.com',
-       clientSecret: 'Y2ucuavLH6HN4CmlPGhdHuxu',
+       clientId: '',
+       clientSecret: '',
        oauthUrl:	'https://accounts.google.com/o/oauth2/auth',
        tokenUrl: 'https://accounts.google.com/o/oauth2/token',
        scopes: 'https://www.googleapis.com/auth/drive.readonly',

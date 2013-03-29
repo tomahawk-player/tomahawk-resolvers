@@ -55,6 +55,33 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>OAuth developer key : </string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>App Key</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>App Secret</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="appKeyLineEdit"/>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="appSecretLineEdit"/>
+     </item>
     </layout>
    </item>
   </layout>
