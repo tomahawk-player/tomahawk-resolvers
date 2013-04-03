@@ -120,7 +120,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
                 Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
             } else if (xmlHttpRequest.readyState === 4) {
-                Tomahawk.reportCapabilities();
+                Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
             }
         }
         xmlHttpRequest.send(null);
