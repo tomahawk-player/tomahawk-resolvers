@@ -140,7 +140,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     albums: function (qid, artist) {
-        var url = this.baseUrl() + '/album/artist/' + encodeURIComponent(artist);
+        var url = this.baseUrl() + '/album/query/albumartist:' + encodeURIComponent(artist);
         Tomahawk.asyncRequest(url, function (xhr) {
             var response = JSON.parse(xhr.responseText),
                 results = [];
