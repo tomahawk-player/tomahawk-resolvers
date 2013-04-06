@@ -125,10 +125,13 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 }
             }
 
-            if ( that.subsonic_api != 2 ) //version 1.8.0, scriptcollection support
-                Tomahawk.reportCapabilities( TomahawkResolverCapability.AccountFactory );
-            else
-                Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
+            if ( typeof Tomahawk.reportCapabilities == 'function' )
+            {
+                if ( that.subsonic_api != 2 ) //version 1.8.0, scriptcollection support
+                    Tomahawk.reportCapabilities( TomahawkResolverCapability.AccountFactory );
+                else
+                    Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
+            }
         } );
 
     },
