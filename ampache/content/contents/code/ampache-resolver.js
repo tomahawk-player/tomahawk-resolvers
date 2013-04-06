@@ -142,7 +142,8 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
                 Tomahawk.log("Ampache Resolver properly initialised!");
 
-                Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
+                if ( typeof Tomahawk.reportCapabilities == 'function' )
+                    Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
             });
         } catch (e) {
             Tomahawk.log("Caught exception in Ampache resolver doing auth handshake request");
