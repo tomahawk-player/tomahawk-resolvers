@@ -78,7 +78,14 @@ File.open( outputPath, 'w' ) do |f|
             f.write "X-Synchrotron-MainScript=#{input["manifest"]["main"]}\n"
         end
     end
-    
+
+    unless input["platform"].nil? || input["platform"].empty? || input["platform"] == "any"
+        f.write "X-Synchrotron-Type=#{input["platform"]}\n"
+    end
+
+    unless input["tomahawkVersion"].nil? || input["tomahawkVersion"].empty?
+        f.write "X-Synchrotron-Requires-Tomahawk-Version=#{input["tomahawkVersion"]}\n"
+    end
     f.write "\n"
     
     unless input["pluginName"].nil? || input["pluginName"].empty?
