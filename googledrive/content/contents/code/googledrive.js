@@ -109,8 +109,6 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 		//dbLocal.setItem("googledrive.cursor",""); 
 		
 		//Tomahawk.showWebInspector();
-
-        Tomahawk.addLocalJSFile("musicManager.js");
         
         this.cursor = dbLocal.getItem('googledrive.cursor','');
         

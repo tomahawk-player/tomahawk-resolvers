@@ -105,10 +105,8 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
     
     init: function () {
         Tomahawk.log("Beginnning INIT of Dropbox resovler");
-        Tomahawk.addLocalJSFile('jsOAuth-1.3.6.min.js');
-        Tomahawk.addLocalJSFile("musicManager.js");
         
-		dbLocal.setItem("dropbox.cursor","");
+		//dbLocal.setItem("dropbox.cursor","");
         
         this.cursor = dbLocal.getItem('dropbox.cursor','');
 
