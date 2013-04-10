@@ -278,7 +278,7 @@ var DropboxResolver = Tomahawk.extend(TomahawkResolver, {
 	getStreamUrl: function (ourUrl) {
         var path = ourUrl.replace("dropbox://path/", "");
         Tomahawk.log(">>>>> file+path : " + this.getFileUrl + path);
-		var url = this.oauth.oAuthGetUrl(this.getFileUrl + path);
+		var url = this.oauth.oAuthGetUrl(encodeURI(this.getFileUrl + path));
 		Tomahawk.log(">>>>> streamUrl : " + url);
         return url;
     },
