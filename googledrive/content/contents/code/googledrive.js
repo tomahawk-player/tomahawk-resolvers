@@ -363,7 +363,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     				this.getRefreshedAccessToken(function (){this.opostJSON(url, data, success);}.bind(this));
 				}else{
 					//TODO treat case no parameters given
-					Tomahawk.asyncPostRequest(url, data, function (data) {
+					Tomahawk.asyncFormPostRequest(url, data, function (data) {
 													success(JSON.parse(data.responseText));
 											   }, {'Authorization': 'Bearer '+ this.accessToken});
 				}
@@ -456,7 +456,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						   + '&client_secret='+ this.clientSecret 
 						   + '&redirect_uri=' + this.redirectUri;
 
-				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
+				Tomahawk.asyncFormPostRequest(this.tokenUrl, params, function(data){
 																		this.onAccessTokenReceived(data, callback);
 																 	}.bind(this));
 			}
@@ -503,7 +503,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 						     + '&client_id='     + this.clientId 
 						     + '&client_secret=' + this.clientSecret;
 										   
-				Tomahawk.asyncPostRequest(this.tokenUrl, params, function(data){
+				Tomahawk.asyncFormPostRequest(this.tokenUrl, params, function(data){
 															 this.onAccessTokenReceived(data, callback);
 													     }.bind(this));
 		},
