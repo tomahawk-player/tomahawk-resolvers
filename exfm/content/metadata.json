@@ -1,0 +1,20 @@
+{
+    "name": "ex.fm",
+    "pluginName": "ex.fm",
+    "author": "Nicolas and Uwe",
+    "email": "uwelk@xhochy.com",
+    "version": "0.3",
+    "website": "http://gettomahawk.com",
+    "description": "Resolves tracks via the ex.fm API",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/exfm-resolver.js",
+    	"scripts": [
+            "contents/code/async-0.2.5.js"
+        ],
+	"icon": "contents/images/icon.png",
+	"resources": [
+        "contents/code/exfm-icon.png"
+	]
+    }
+}
