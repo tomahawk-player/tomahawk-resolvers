@@ -79,7 +79,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
             // check the response
             if (response.results > 0) {
                 response.songs.forEach(function (song) {
-                    if (song.url.indexOf("http://api.soundcloud") === 0) { // unauthorised, use soundcloud resolver instead
+                    if ((song.url.indexOf("http://api.soundcloud") === 0) || (song.url.indexOf("https://api.soundcloud") === 0)) { // unauthorised, use soundcloud resolver instead
                         return;
                     }
 
