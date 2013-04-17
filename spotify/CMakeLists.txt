@@ -48,6 +48,11 @@ set( tomahawkspotify_SRCS
 )
 
 IF( WITH_BREAKPAD )  
+    message(STATUS "Build with support for breakpad.")
+    if( APPLE )
+        FIND_LIBRARY( COREFOUNDATION_LIBRARY CoreFoundation )
+
+    ENDIF( APPLE )
     LIST( APPEND tomahawkspotify_SRCS BreakPad.cpp )
 ENDIF()
 
@@ -63,7 +68,7 @@ ENDIF()
 
 
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_NOMOC_HDRS} )
-target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${BREAKPAD_LIBRARIES} ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
+target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${COREFOUNDATION_LIBRARY} ${BREAKPAD_LIBRARIES} ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
 
 SET_TARGET_PROPERTIES(spotify_tomahawkresolver PROPERTIES AUTOMOC TRUE)
 
