@@ -11,7 +11,11 @@ find_package(Boost REQUIRED)
 
 add_subdirectory(qxtweb-standalone)
 
-include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/
+IF( WITH_BREAKPAD )  
+    add_subdirectory(breakpad)    
+ENDIF()
+
+include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ breakpad/
                                               ${QT_INCLUDES}
                                               ${LIBSPOTIFY_INCLUDE_DIR}
                                               ${QJSON_INCLUDE_DIR}
@@ -25,8 +29,7 @@ else()
     message("Found existing spotify source icon, not copying")
 endif()
 
-set(tomahawkspotify_SRCS
-
+set( tomahawkspotify_SRCS
     kdsingleapplicationguard/kdsingleapplicationguard.cpp
     kdsingleapplicationguard/kdsharedmemorylocker.cpp
     kdsingleapplicationguard/kdtoolsglobal.cpp
@@ -44,15 +47,23 @@ set(tomahawkspotify_SRCS
     main.cpp
 )
 
+IF( WITH_BREAKPAD )  
+    LIST( APPEND tomahawkspotify_SRCS BreakPad.cpp )
+ENDIF()
+
 set( tomahawkspotify_NOMOC_HDRS
     kdsingleapplicationguard/kdsharedmemorylocker.h
     kdsingleapplicationguard/kdtoolsglobal.h
     kdsingleapplicationguard/kdlockedsharedmemorypointer.h
 )
 
+IF(WITH_BREAKPAD)
+    SET( BREAKPAD_LIBRARIES tomahawk_breakpad )
+ENDIF()
+
 
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_NOMOC_HDRS} )
-target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
+target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${BREAKPAD_LIBRARIES} ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
 
 SET_TARGET_PROPERTIES(spotify_tomahawkresolver PROPERTIES AUTOMOC TRUE)
 

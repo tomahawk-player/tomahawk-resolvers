@@ -24,10 +24,16 @@
 */
 
 #include <QtCore/QCoreApplication>
+#include <QtCore/QDir>
+
 #include "spotifysession.h"
 #include "main.h"
 #include "spotifyresolver.h"
+#ifdef WITH_BREAKPAD
+    #include "BreakPad.h"
+#endif
 //#include "appkey.h"
+
 int main(int argc, char *argv[])
 {
 
@@ -37,6 +43,10 @@ int main(int argc, char *argv[])
     */
 
     SpotifyResolver app( argc, argv );
+#ifdef WITH_BREAKPAD    
+    new BreakPad( QDir::tempPath(), true );
+#endif
+
     KDSingleApplicationGuard guard( KDSingleApplicationGuard::NoPolicy );
     QObject::connect( &guard, SIGNAL( instanceStarted( KDSingleApplicationGuard::Instance ) ), &app, SLOT( instanceStarted( KDSingleApplicationGuard::Instance )  ) );
 
