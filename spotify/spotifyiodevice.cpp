@@ -32,14 +32,17 @@ SpotifyIODevice::SpotifyIODevice( QObject* parent )
 {
 }
 
+
 SpotifyIODevice::~SpotifyIODevice()
 {
 //    qDebug() << Q_FUNC_INFO << "Destroying SpotifyIODevice:" << this;
-    if( isOpen() )
+    if ( isOpen() )
         close();
 }
 
-    void SpotifyIODevice::setDurationMSec( quint32 msec )
+
+void
+SpotifyIODevice::setDurationMSec( quint32 msec )
 {
     quint32 numSamples = ( (quint64)msec * Q_UINT64_C(44100) ) / (quint64)1000;
     quint32 dataChunkSize = numSamples * 2 * 2;
@@ -74,17 +77,20 @@ SpotifyIODevice::~SpotifyIODevice()
 void
 SpotifyIODevice::clear()
 {
+    QMutexLocker l( &m_mutex );
+
     m_audioData.clear();
 }
 
 
-qint64 SpotifyIODevice::readData( char* data, qint64 maxlen )
+qint64
+SpotifyIODevice::readData( char* data, qint64 maxlen )
 {
     QMutexLocker l( &m_mutex );
 
     qint64 written = 0;
 
-    if( !m_header.isEmpty() && m_header.size() < maxlen ) {
+    if ( !m_header.isEmpty() && m_header.size() < maxlen ) {
         qMemCopy( data, m_header.constData(), m_header.size() );
         qDebug() << "wrote header:" << m_header.toHex();
         written += m_header.size();
@@ -108,30 +114,41 @@ qint64 SpotifyIODevice::readData( char* data, qint64 maxlen )
     return written;
 }
 
-qint64 SpotifyIODevice::writeData( const char* data, qint64 len )
+
+qint64
+SpotifyIODevice::writeData( const char* data, qint64 len )
 {
-    if( m_done ) {
+    if ( m_done )
+    {
         // do nothing
         return -1;
     }
 
     QMutexLocker l( &m_mutex );
-    m_audioData.append( data, len );
 
+    m_audioData.append( data, len );
     emit readyRead();
 
     return len;
 }
 
-qint64 SpotifyIODevice::bytesAvailable() const
+
+qint64
+SpotifyIODevice::bytesAvailable() const
 {
+    QMutexLocker l( &m_mutex );
+
     return m_header.size() + m_audioData.size();
 }
 
-void SpotifyIODevice::disconnected()
+
+void
+SpotifyIODevice::disconnected()
 {
+    QMutexLocker l( &m_mutex );
+
     m_done = true;
-    qDebug() << "spotifyiodevice disconnected -.-";
+    qDebug() << "spotifyiodevice disconnected";
     m_audioData.clear();
 }
 
