@@ -8,6 +8,8 @@ pushd static
 cp ../libdl.a .
 cp ../libspotify.so.12 .
 ln -s libspotify.so.12 libspotify.so
-cmake -DQJSON_INCLUDE_DIR=/home/leo/kde-static/include/ -DQJSON_LIBRARIES=/home/leo/kde-static/lib/libqjson.a ..
+cmake -DQJSON_INCLUDE_DIR=/home/spotify/qjson-install/include/ -DQJSON_LIBRARIES=/home/spotify/qjson-install/lib/libqjson.a \
+-DLIBSPOTIFY_INCLUDE_DIR=/home/spotify/libspotify-12.1.51-Linux-x86_64-release/include -DLIBSPOTIFY_LIBRARIES=/home/spotify/libspotify-12.1.51-Linux-x86_64-release/lib \
+-DWITH_BREAKPAD=OFF ..
 make -j10
 popd
