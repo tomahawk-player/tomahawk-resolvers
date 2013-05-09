@@ -47,14 +47,7 @@ SpotifyPlaylists::SpotifyPlaylists( QObject *parent )
     m_checkPlaylistsTimer->setSingleShot( true );
     connect( m_checkPlaylistsTimer, SIGNAL( timeout() ), this, SLOT( ensurePlaylistsLoadedTimerFired() ) );
 
-    // See comments on pruneCacheAndReload
-    /*m_loadTimer->setInterval( 60000 ); // 60s
-    m_loadTimer->setSingleShot( true );
-    connect( m_loadTimer, SIGNAL( timeout() ), this, SLOT( pruneCacheAndReload() ) );
-    m_loadTimer->start();
-    */
-
-    m_periodicTimer->setInterval( 5000 );
+    m_periodicTimer->setInterval( 500 );
     connect( m_periodicTimer, SIGNAL( timeout() ), this, SLOT( checkWaitingForLoads() ) );
     m_periodicTimer->start();
 
@@ -148,62 +141,6 @@ SpotifyPlaylists::~SpotifyPlaylists()
 
 
 /**
-  remove dir contents
-  */
-bool SpotifyPlaylists::removeDirContent(const QString &dirName)
-{
-    bool result = true;
-    QDir dir( dirName );
-    if ( dir.exists( dirName ) )
-    {
-        foreach(QFileInfo info, dir.entryInfoList( QDir::NoDotAndDotDot | QDir::System | QDir::Hidden  | QDir::AllDirs | QDir::Files, QDir::DirsFirst) )
-        {
-            if ( info.isDir() )
-                result = removeDirContent( info.absoluteFilePath() );
-            else
-                result = QFile::remove( info.absoluteFilePath() );
-
-            if ( !result )
-                return result;
-        }
-    }
-    return result;
-}
-
-/** pruneCacheAndReload
-
-    Sometimes we get spotify cache miss, and playlists will not load.
-    The behaviour is hard to reproduce, but often spotify fixes it self. ( try rm cache during load to reproduce )
-    However, it may take up to serveral minutes to get fixed. SO lets fix that when it happens
-    @note WIP
-    @note Very bad practice... issue seem to stem from not exiting correctly and thus writing cache
-**/
-void
-SpotifyPlaylists::pruneCacheAndReload()
-{
-
-    if( !m_allLoaded )
-    {
-        qDebug() << "====== PRUNE CACHE!!!!";
-        sp_session_config config = SpotifySession::getInstance()->getSessionConfig();
-        if( config.cache_location != NULL )
-        {
-            QString cacheDir = config.cache_location;
-            if( !cacheDir.isEmpty() )
-            {
-               // Remove cache and clear old
-               removeDirContent( cacheDir );
-               // emit signal to force relogin
-               emit forcePruneCache();
-            }
-        }else
-            qDebug() << "Tried to prune chache, but no cache dir! Hm.... something is fucked up";
-    }
-
-
-}
-
-/**
   Callback
     State changed
     Called from libspotify when state changed on playlist
@@ -224,6 +161,7 @@ SpotifyPlaylists::stateChanged( sp_playlist* pl, void* userdata )
         // if it was just loaded and we don't have it yet, add it
         LoadedPlaylist playlist;
         playlist.playlist_ = pl;
+        sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), pl );
         const int index = _playlists->m_playlists.indexOf( playlist );
         if ( index == -1 )
         {
@@ -253,6 +191,49 @@ SpotifyPlaylists::syncStateChanged( sp_playlist* pl, void* userdata )
       return;
     }
 
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    LoadedPlaylist playlist;
+    playlist.playlist_ = pl;
+    const int index = _playlists->m_playlists.indexOf( playlist );
+    if ( index == -1 )
+    {
+        qWarning() << "Got stateChanged for syncplaylist, but isnt in our list!";
+        return;
+    }
+
+    sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), pl );
+
+    bool collab = sp_playlist_is_collaborative( pl );
+
+    if( collab != _playlists->m_playlists[ index ].isCollaborative )
+    {
+        qDebug() << "Collaborative changed, sending";
+        _playlists->m_playlists[ index ].isCollaborative = collab;
+        emit _playlists->notifyCollaborativeChanged( _playlists->m_playlists[ index ] );
+    }
+
+}
+
+void
+SpotifyPlaylists::subscribersChanged( sp_playlist *pl, void *userdata )
+{
+    SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    LoadedPlaylist playlist;
+    playlist.playlist_ = pl;
+    const int index = _playlists->m_playlists.indexOf( playlist );
+    if ( index == -1 )
+    {
+        qWarning() << "Got subscribersChanged for syncplaylist, but isnt in our list!";
+        return;
+    }
+
+    int subCount = sp_playlist_num_subscribers( pl );
+    if( subCount != _playlists->m_playlists[ index ].numSubscribers )
+    {
+        qDebug() << "Number of subscribers changed, sending!";
+        _playlists->m_playlists[ index ].numSubscribers = sp_playlist_num_subscribers( pl );
+        emit _playlists->notifySubscriberCountChanged( _playlists->m_playlists[ index ] );
+    }
 }
 
 void
@@ -267,6 +248,7 @@ void
 SpotifyPlaylists::playlistMetadataUpdated( sp_playlist *pl, void *userdata )
 {
     SpotifyPlaylists* _playlists = reinterpret_cast<SpotifyPlaylists*>( userdata );
+    sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), pl );
     _playlists->checkForPlaylistCallbacks( pl, userdata );
 }
 
@@ -332,18 +314,16 @@ sp_playlist * SpotifyPlaylists::getPlaylistFromUri(const QString &uri)
 }
 
 /**
-  addSubscribedPlaylist
-  Takes QString uri, to add a subscribed playlist to container
-  this user will have permission to alter it in tomahawk, but changes will only be
-  added in spotify if collaborative
+  setSubscribedPlaylist
+  Takes QString uri, to add a subscribed playlist to container.
   it will be added to synclist + subscribedlist
   **/
-void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
+void SpotifyPlaylists::setSubscribedPlaylist(const QString &playlistUri, bool subscribe )
 {
     sp_playlist *playlist = getPlaylistFromUri( playlistUri );
     if( !sp_playlist_is_loaded( playlist ) )
     {
-        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( addSubscribedPlaylist( const QString&) ), playlistUri) );
+        addStateChangedCallback( NewPlaylistClosure( boost::bind(checkPlaylistIsLoaded, playlist), this, SLOT( setSubscribedPlaylist(const QString&, bool) ), playlistUri, subscribe) );
         return;
     }
 
@@ -356,25 +336,34 @@ void SpotifyPlaylists::addSubscribedPlaylist(const QString &playlistUri )
         int index = m_playlists.indexOf( lpl );
         if( index != -1 )
         {
-            if( m_playlists[ index ].isSubscribed )
+            if( m_playlists[ index ].isSubscribed && !subscribe )
             {
                 qDebug() << "Removing subscription!";
                 removeSubscribedPlaylist( m_playlists[ index ].playlist_ );
             }
             else
-                qDebug() << "Playlist isnt subscribed!" <<  m_playlists[ index ].id_ <<  m_playlists[ index ].isCollaborative <<  m_playlists[ index ].isLoaded <<  m_playlists[ index ].isSubscribed
-                            <<  m_playlists[ index ].name_;
+            {
+                qDebug() << "Playlist isnt subscribed but in our list?!"
+                         << subscribe <<  m_playlists[ index ].id_ <<  m_playlists[ index ].isCollaborative
+                         <<  m_playlists[ index ].isLoaded <<  m_playlists[ index ].isSubscribed
+                         <<  m_playlists[ index ].name_;
+            }
         }
         return;
     }
 
-    // Hard to set isSubscribed through playlist_added callback, as it doesnt except userdata from here
-    addPlaylist( playlist, true, true );
-    /// @note we can subscribe on a non collaborative pl as well
-    sp_playlistcontainer_add_playlist( SpotifySession::getInstance()->PlaylistContainer(), sp_link_create_from_string( playlistUri.toUtf8() ) );
-    sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), playlist );
-
-
+    if( subscribe )
+    {
+        // Hard to set isSubscribed through playlist_added callback, as it doesnt accept userdata from here
+        addPlaylist( playlist, true, true );
+        /// @note we can subscribe on a non collaborative pl as well
+        sp_playlistcontainer_add_playlist( SpotifySession::getInstance()->PlaylistContainer(), sp_link_create_from_string( playlistUri.toUtf8() ) );
+        sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), playlist );
+    }
+    else
+    {
+        qWarning() << "Asked to unsubscribe a playlist we don't know about!" << playlistUri;
+    }
 }
 
 
@@ -432,7 +421,6 @@ void SpotifyPlaylists::setCollaborative(const QString &playlistUri, bool collab 
             {
                 qDebug() << "Setting collab!" << collab;
                 sp_playlist_set_collaborative(lpl.playlist_, collab );
-                m_playlists[ index ].isCollaborative = collab;
 
             }else
                 qDebug() << "ERROR: This user doesnt have access to modify this playlist";
@@ -571,7 +559,7 @@ SpotifyPlaylists::playlistNameChange(sp_playlist *pl )
     }
 
     qDebug() << "Renamning " << m_playlists[index].name_ << " to " << sp_playlist_name( pl );
-    m_playlists[index].name_ = sp_playlist_name( pl );
+    m_playlists[index].name_ = QString::fromUtf8( sp_playlist_name( pl ) );
 
     // container update, send signal, notify name change
     emit notifyContainerLoadedSignal();
@@ -598,7 +586,8 @@ SpotifyPlaylists::addStarredTracksToContainer()
         qDebug() << "Starred tracks loaded!";
         addPlaylist( starredTracks );
 
-    }else
+    }
+    else
     {
         qDebug() << "Starred not loaded, adding to wait";
         m_waitingToLoad << starredTracks;
@@ -619,7 +608,8 @@ SpotifyPlaylists::waitForLoad( sp_playlist *playlist )
         qDebug() << "WaitForLoaded is loaded" << sp_playlist_name( playlist );
         addPlaylist( playlist );
 
-    }else
+    }
+    else
     {
         qDebug() << "WaitForLoaded not loaded, adding to wait";
         m_waitingToLoad << playlist;
@@ -831,6 +821,12 @@ SpotifyPlaylists::addTracksFromSpotify(sp_playlist* pl, QList<sp_track*> tracks,
         return;
     }
 
+    if( m_playlists[index].starContainer_ )
+    {
+        qDebug() << "Tracks where added to starContainer!";
+        emit sendStarredChanged(pl, tracks, true);
+        //sApp->setIgnoreNextUpdate( true );
+    }
 
     emit sendTracksAdded(pl, tracks, trackPosition);
 }
@@ -972,6 +968,14 @@ SpotifyPlaylists::removeTracksFromSpotify(sp_playlist* pl, QList<int> tracks)
         sApp->setIgnoreNextUpdate( false );
         return;
     }
+
+    if( m_playlists[index].starContainer_ )
+    {
+        qDebug() << "Tracks where removed to starContainer!";
+        emit sendStarredChanged(pl, toRemove, false);
+        //sApp->setIgnoreNextUpdate( true );
+    }
+
     emit sendTracksRemoved(pl, trackIds);
 }
 
@@ -994,9 +998,18 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     }
 
     sp_track* beforeinsert = 0;
-    if ( new_position > 0 && new_position <= m_playlists.size() )
-        beforeinsert = m_playlists[index].tracks_.at( new_position - 1 );
-
+    if ( new_position > 0 )
+    {
+        if ( new_position <= m_playlists[index].tracks_.size() )
+        {
+            beforeinsert = m_playlists[index].tracks_.at( new_position-1 );
+        }
+        else
+        {
+            qWarning() << "Bad insert position??" << "pos: " << new_position << " size: " <<  m_playlists[index].tracks_.size();
+            return;
+        }
+    }
     qDebug() << "Moving tracks in a synced spotify playlist, from indexes:" << tracks << "to new position:" << new_position;
 
     // find the spotify track of the song before the newly inserted one
@@ -1006,9 +1019,22 @@ SpotifyPlaylists::moveTracks(sp_playlist* pl, QList<int> tracks, int new_positio
     QStringList moveIds;
     foreach( int fromPos, tracks )
     {
-        toInsert << m_playlists[index].tracks_[fromPos];
-        moveIds << trackId( m_playlists[index].tracks_[fromPos] );
+        int realIdx = fromPos;
+        if ( fromPos == m_playlists[index].tracks_.size() )
+            realIdx--;
+
+        if ( realIdx < 0 || realIdx >= m_playlists[index].tracks_.size() )
+        {
+            qWarning() << "Tried to move tracks at index:" << realIdx << "(originally" << fromPos
+                       << ") from tracks list that is out of bounds!! We have size:" << m_playlists[index].tracks_.size();
+            continue;
+        }
+
+        toInsert << m_playlists[index].tracks_[realIdx];
+        moveIds << trackId( m_playlists[index].tracks_[realIdx] );
+
     }
+
     foreach( sp_track* removing, toInsert )
         m_playlists[index].tracks_.removeAll( removing );
 
@@ -1104,11 +1130,13 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
         // The playlist isnt in syncmode yet, set it
         if( sync )
         {
+
             // We might be setting an (already synced previously) playlist to sync
             // during the initial load. in that case loadSettings() loaded it in m_syncPlaylists
             // but we just now loaded the real playlist from spotify, so sync it up
             if ( !m_syncPlaylists.contains( syncThis ) )
                 m_syncPlaylists.append( syncThis );
+
 
             m_playlists[ index ].sync_ = true;
             // Playlist contents may have changed since we originally loaded it, so we refresh it now
@@ -1116,9 +1144,14 @@ SpotifyPlaylists::setSyncPlaylist( const QString id, bool sync )
             for( int i = 0; i < sp_playlist_num_tracks( m_playlists[ index ].playlist_ ); i++ )
                 m_playlists[ index ].tracks_ << sp_playlist_track( m_playlists[ index ].playlist_, i );
 
+            // We dont need to listen for regular changes
             sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::playlistCallbacks, this);
             qDebug() << "ADDING SYNC CALLBACKS FOR PLAYLIST:" << sp_playlist_name( m_playlists[ index ].playlist_ );
-
+            if ( m_playlists[ index ].sync_ )
+            {
+                qDebug() << "ASKING TO SYNC A ALREADY SYNCED PLAYLIST";
+                sp_playlist_remove_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
+            }
             sp_playlist_add_callbacks( m_playlists[ index ].playlist_, &SpotifyCallbacks::syncPlaylistCallbacks, this);
         }
         // The playlist is in syncmode, but user wants to remove it
@@ -1476,7 +1509,7 @@ SpotifyPlaylists::renamePlaylist( const QVariantMap& data )
     {
         const QString newTitle = data.value( "newTitle").toString();
         qDebug() << "Renameing playlist with name " << playlist.name_ << " to " << newTitle;
-        sp_playlist_rename( playlist.playlist_, newTitle.toLatin1() );
+        sp_playlist_rename( playlist.playlist_, newTitle.toUtf8() );
 
     }
 
@@ -1913,17 +1946,23 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
         return;
     }
 
+    // Ensure we dont get multiple callbacks registered, gets readded further down
+    sp_playlist_remove_callbacks( pl, &SpotifyCallbacks::playlistCallbacks, this );
+    sp_playlist_remove_callbacks( pl, &SpotifyCallbacks::syncPlaylistCallbacks, this );
+
     // if it's already loaded, ignore it!
     if ( m_playlists.indexOf( playlist ) >= 0 && m_playlists[ m_playlists.indexOf( playlist ) ].isLoaded )
         return;
 
-    if( isSubscribed )
-        qDebug() << "ADDDING SUBSCRIBED!!";
-
     playlist.playlist_ = pl;
-    playlist.name_ = sp_playlist_name(pl);
+    playlist.name_ = QString::fromUtf8( sp_playlist_name( pl ) );
     playlist.owner_ = sp_user_canonical_name( sp_playlist_owner( pl ) );
     playlist.isCollaborative = sp_playlist_is_collaborative( pl );
+
+    QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
+    if( username != playlist.owner_ )
+        isSubscribed = true;
+
     playlist.isSubscribed = isSubscribed;
     playlist.starContainer_ = false;
     playlist.sync_ = false;
@@ -1933,7 +1972,6 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
     sp_playlist_add_ref( pl );
 
     // Precaution, to prevent mixing up the starred tracks container and user playlistnameings.
-    QString username = sp_user_canonical_name( sp_session_user( SpotifySession::getInstance()->Session() ) );
 #if SPOTIFY_API_VERSION >= 11
     if( playlist.id_.contains( username + ":starred" ) )
 #else
@@ -1988,6 +2026,7 @@ SpotifyPlaylists::addPlaylist( sp_playlist *pl, bool forceSync, bool isSubscribe
 
     // We need to add the callbacks for normal playlist, to keep listening on changes.
     sp_playlist_add_callbacks( playlist.playlist_, &SpotifyCallbacks::playlistCallbacks, this);
+    sp_playlist_update_subscribers( SpotifySession::getInstance()->Session(), pl );
     // emit starred playlist is loaded
     if( playlist.starContainer_ )
         emit notifyStarredTracksLoadedSignal();

@@ -56,7 +56,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
     else
     {
         int cur = 0;
-        int max = sp_search_num_tracks(result);
+        int max = sp_search_num_tracks( result );
         while( cur < max )
         {
             // Find a loaded track to add to the list
@@ -99,7 +99,7 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 
                 sp_link* l = sp_link_create_from_track( data->finaltracks[i], 0 );
                 char urlStr[256];
-                sp_link_as_string( l, urlStr, sizeof(urlStr) );
+                sp_link_as_string( l, urlStr, sizeof( urlStr ) );
                 insertedIds << QString::fromUtf8( urlStr );
                 sp_link_release( l );
             }
@@ -119,9 +119,10 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
         }
 
         sApp->setIgnoreNextUpdate( true );
-        sp_error err = sp_playlist_add_tracks(data->playlist, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session());
+        sp_error err = sp_playlist_add_tracks( data->playlist, data->finaltracks.constBegin(), data->finaltracks.count(), data->pos, sApp->session()->Session() );
 
-        switch(err) {
+        switch( err )
+        {
             case SP_ERROR_OK:
                 qDebug() << "Added tracks to pos" << data->pos;
                 break;
@@ -141,6 +142,34 @@ SpotifySearch::addSearchedTrack( sp_search *result, void *userdata)
 
         // Only free once
         delete data;
+    }
+}
+
+
+void
+SpotifySearch::searchStarredComplete(sp_search *result, void *userdata)
+{
+    StarData* data = reinterpret_cast<StarData*>( userdata );
+    if( sp_search_num_tracks( result ) > 0 )
+    {
+        QVector<sp_track*> tracks;
+        for( int i = 0; i < sp_search_num_tracks( result ); i++ )
+        {
+            sp_track* track = sp_search_track(result, i);
+            if ( !sp_track_is_loaded( track ) )
+            {
+                qDebug() << "Track not loaded yet!";
+            }
+            QString tArtist = QString::fromUtf8( sp_artist_name( sp_track_artist( track, 0 ) ) );
+            QString tTrack = QString::fromUtf8( sp_track_name( track ) );
+            if( tArtist == data->artist && tTrack == data->track )
+            {
+                tracks << track;
+                break;
+            }
+
+        }
+        sp_track_set_starred(SpotifySession::getInstance()->Session(), const_cast<sp_track* const*>(tracks.data()), tracks.count(), data->starred);
     }
 }
 
@@ -164,42 +193,30 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
 
     // TODO search by popularity!
     qDebug() << "Got num results:" << sp_search_num_tracks( result ) << " for query " << sp_search_query( result );
-    if( sp_search_num_tracks( result ) > 0 ) {// we have a result
+
+    if( sp_search_num_tracks( result ) > 0 )
+    {
+        // we have a result
         int num = qMin( sp_search_num_tracks( result ), data->fulltext ? 50 : 3 );
-        for( int i = 0; i < num; i++ ) {
+        for( int i = 0; i < num; i++ )
+        {
             // get playable track
             // note: if track is local, its added within the lib, and is playable
             sp_track *const tr = sp_track_get_playable( SpotifySession::getInstance()->Session(), sp_search_track( result, i ) );
-            if( !tr || !sp_track_is_loaded( tr ) ) {
+
+            if( !tr || !sp_track_is_loaded( tr ) )
+            {
                 qDebug() << "Got still loading track, skipping";
                 continue;
             }
 
-            sp_link* link  = sp_link_create_from_track( tr, 0 );
-            QString uid = data->resolver->addToTrackLinkMap( link );
-            sp_link_release( link );
+            if( sp_track_get_availability( SpotifySession::getInstance()->Session(), tr) != SP_TRACK_AVAILABILITY_AVAILABLE )
+            {
+                qDebug() << "Track isnt available for this user/region";
+                continue;
+            }
 
-            int duration = sp_track_duration( tr ) / 1000;
-            QVariantMap track;
-            track[ "track" ] = QString::fromUtf8( sp_track_name( tr ) );
-            track[ "artist" ] = QString::fromUtf8( sp_artist_name( sp_track_artist( tr, 0 ) ) );
-            track[ "album" ] = QString::fromUtf8( sp_album_name( sp_track_album( tr ) ) );
-            track[ "albumpos" ] = sp_track_index( tr );
-            track[ "discnumber"] = sp_track_disc( tr );
-            track[ "year" ] = sp_album_year( sp_track_album( tr ) );
-            track[ "mimetype" ] = "audio/basic";
-            track[ "source" ] = "Spotify";
-            track[ "url" ] = QString( "http://localhost:%1/sid/%2.wav" ).arg( data->resolver->port() ).arg( uid );
-            track[ "duration" ] = duration;
-            track[ "score" ] = .95; // TODO
-            track[ "bitrate" ] = data->resolver->highQuality() ? 320 : 160; // TODO
-            // Persistant url, never expire
-            track[ "expires" ] = 0;
-
-            // 8 is "magic" number. we don't know how much spotify compresses or in which format (mp3 or ogg) from their server, but 1/8th is approximately how ogg -q6 behaves, so use that for better displaying
-            quint32 bytes = ( duration * 44100 * 2 * 2 ) / 8;
-            track[ "size" ] = bytes;
-            results << track;
+            results << data->resolver->spTrackToVariant( tr );
             data->searchCount = 0;
 //            qDebug() << "Found Track:" << sp_track_name( tr ) << "\n\tReporting:" << track["url"];
         }
@@ -207,8 +224,10 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     }else
     {
         QString didYouMean = QString::fromUtf8(sp_search_did_you_mean(	result ) );
-        QString queryString = QString::fromUtf8(sp_search_query(	result ) );
-        if(data->searchCount < 1 ){
+        QString queryString = QString::fromUtf8(sp_search_query( result ) );
+
+        if( data->searchCount < 1 )
+        {
             if( didYouMean.isEmpty() )
             {
                 //qDebug() << "Tried DidYouMean, but no suggestions available for " << queryString;
@@ -216,8 +235,6 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             else
             {
                  qDebug() << "Try nr." << data->searchCount << " Searched for" << queryString << "Did you mean?"<< didYouMean;
-                //int distance = QString::compare(queryString, didYouMean, Qt::CaseInsensitive);
-                //qDebug() << "Distance for query is " << distance;//if( distance < 4)
 #if SPOTIFY_API_VERSION >= 11
                 sp_search_create( SpotifySession::getInstance()->Session(), sp_search_did_you_mean(result), 0, data->fulltext ? 50 : 3, 0, 0, 0, 0, 0, 0, SP_SEARCH_STANDARD, &SpotifySearch::searchComplete, data );
 #else
@@ -226,7 +243,8 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
             }
             data->searchCount++;
             return;
-        }else
+        }
+        else
             qDebug() << "Tried to find suggestion to many times";
     }
 
@@ -236,3 +254,68 @@ SpotifySearch::searchComplete( sp_search *result, void *userdata )
     delete data;
 }
 
+void
+SpotifySearch::albumSearchComplete( sp_search *result, void *userdata )
+{
+    UserData* data = static_cast<UserData*>( userdata );
+    if ( sp_search_num_albums( result ) < 1 )
+    {
+        qDebug() << "No album results for search:" << QString::fromUtf8( sp_search_query( result ) );
+
+        sp_search_release( result );
+        delete data;
+        return;
+    }
+
+    sp_album* album = sp_search_album(result, 0);
+    sp_albumbrowse_create( data->resolver->session()->Session(), album, &SpotifySearch::albumBrowseLoaded, data );
+
+    sp_search_release( result );
+}
+
+void
+SpotifySearch::albumBrowseLoaded( sp_albumbrowse *album, void *userdata )
+{
+    UserData* data = static_cast<UserData*>( userdata );
+    Q_ASSERT( data->resolver );
+
+    if ( !sp_albumbrowse_is_loaded( album ) || sp_albumbrowse_error( album ) != SP_ERROR_OK ) {
+        qDebug() << "Got failed to load album in albumBrowseLoaded or otherwise non-OK error state:" << sp_albumbrowse_error( album ) << sp_album_name( sp_albumbrowse_album( album ) );
+        sp_albumbrowse_release( album );
+        delete data;
+
+        return;
+    }
+
+    const QString albumName = sp_album_name( sp_albumbrowse_album( album) );
+
+    QString artistName;
+    if (sp_artist* artist = sp_albumbrowse_artist( album ) )
+        artistName = sp_artist_name( artist );
+
+    qDebug() << "Got successfully album  browse request for:" << albumName << artistName;
+    bool needToWait = false;
+    QList<sp_track*> tracks;
+
+    for ( int i = 0; i < sp_albumbrowse_num_tracks( album ); i++ )
+    {
+        sp_track* track = sp_albumbrowse_track( album, i );
+        sp_track_add_ref( track );
+
+        tracks << track;
+
+        if ( !sp_track_is_loaded( track ) )
+            needToWait = true;
+    }
+
+    if ( needToWait ) {
+
+    }
+    else
+    {
+        data->resolver->sendAlbumSearchResult( data->qid, albumName, artistName, tracks );
+    }
+
+    delete data;
+    sp_albumbrowse_release( album );
+}

@@ -1,6 +1,3 @@
-#include <stdint.h>
-#include <stdlib.h>
-
 // The Spotify terms of service require that application keys are not
 // accessible to third parties.  Therefore this application key is heavily
 // encrypted here in the source to prevent third parties from viewing it.

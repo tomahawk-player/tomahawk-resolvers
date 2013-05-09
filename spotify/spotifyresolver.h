@@ -1,5 +1,6 @@
 /*
     Copyright (c) 2011-2012 Leo Franchi <lfranchi@kde.org>
+    Copyright (c) 2012 Hugo Lindström <hugolm84@gmail.com>
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -31,7 +32,7 @@
 #include "kdsingleapplicationguard/kdsingleapplicationguard.h"
 
 #include <libspotify/api.h>
-
+#include "spotifyplaylists.h"
 #include <QCoreApplication>
 #include <QTimer>
 #include <QThread>
@@ -61,6 +62,14 @@ struct UserData
     {}
 };
 
+struct StarData
+{
+    QString artist, track;
+    bool starred;
+
+    StarData( const QString& _artist, const QString& _track, bool _starred )
+        : artist(_artist), track(_track), starred(_starred) {}
+};
 
 class SpotifyResolver : public QCoreApplication
 {
@@ -70,7 +79,8 @@ public:
     explicit SpotifyResolver( int& argc, char** argv );
     virtual ~SpotifyResolver();
 
-    void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText );
+    void search( const QString& qid, const QString& artist, const QString& track, const QString& fullText, const QString& resultHint = QString() );
+    void albumSearch( const QString& album, const QString& artist, const QString& qid );
 
     // adds a track to the link map, returns a unique ID for identifying it
     QString addToTrackLinkMap( sp_link* link );
@@ -87,7 +97,8 @@ public:
     bool highQuality() const { return m_highQuality; }
 
     void sendAddTracksResult( const QString& spotifyId, QList<int> tracksInserted, QList<QString> insertedIds, bool result );
-
+    QVariantMap spTrackToVariant(sp_track* track );
+    void sendAlbumSearchResult( const QString& qid, const QString& albumName, const QString& artistName, const QList<sp_track*> tracks);
     bool ignoreNextUpdate() const { return m_ignoreNextUpdate; }
     void setIgnoreNextUpdate( bool ignore ) { m_ignoreNextUpdate = ignore; }
 
@@ -95,7 +106,6 @@ public:
 
 public slots:
     void setup();
-
     void instanceStarted( KDSingleApplicationGuard::Instance );
 
 private slots:
@@ -107,24 +117,25 @@ private slots:
     void errorMsgReceived( sp_error );
     void errorMsgReceived( const QString &msg, bool isDebug );
     void sendPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
-    void sendPlaylistNameChanged( const SpotifyPlaylists::LoadedPlaylist& );
+    void sendPlaylistMetadataChanged( const SpotifyPlaylists::LoadedPlaylist& );
     void sendTracksAdded( sp_playlist* pl, const QList< sp_track* >& tracks, const QString& positionId );
+    void sendStarredChanged( sp_playlist* pl, const QList< sp_track* >& tracks, const bool starred );
     void sendTracksRemoved( sp_playlist* pl, const QStringList& tracks );
     void sendTracksMoved( sp_playlist* pl, const QStringList& tracks, const QString& positionId );
     void sendPlaylistDeleted( const QString& playlist );
+    void sendPlaylistListing( sp_playlist* pl, const QString& plid  );
+    bool useResultHint(const QString& qid, sp_link *resultHintLink );
     void userChangedReceived();
     void updateBlob( const QByteArray& username, const QByteArray& blob );
     void getStatus();
 
 private:
-    QVariantMap spTrackToVariant( sp_track* track );
-
     void sendSettingsMessage();
     void loadSettings();
     void saveSettings() const;
     void login();
     void clearTrackLinkMap();
-
+    void searchAndStarrTrack(const QString& artist, const QString& track, const bool starred);
     void gotStatus();
 
     // Session
@@ -146,7 +157,7 @@ private:
     // Spotify
     QByteArray m_apiKey;
     QByteArray m_configWidget;
-
+    QList< QVariantMap > m_savedTracks;
     // Callback QIDs
     QHash< QString, QString > m_playlistToQid;
 
@@ -163,9 +174,12 @@ private:
     bool m_haveSentStatus;
 };
 
+bool checkTrackIsLoaded( sp_track* track );
 Q_DECLARE_METATYPE( CacheEntry )
 Q_DECLARE_METATYPE( sp_search* )
+Q_DECLARE_METATYPE( sp_track* )
 Q_DECLARE_METATYPE( void* )
-
+Q_DECLARE_METATYPE( SpotifyPlaylists::LoadedPlaylist )
+Q_DECLARE_METATYPE( sp_link* )
 #endif // tomahawkspotify_H
 

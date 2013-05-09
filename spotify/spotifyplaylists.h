@@ -61,6 +61,7 @@ public:
       // Revision timestamp
       int newTimestamp;
       int oldTimestamp;
+      int numSubscribers;
       QString owner_;
       QString name_;
       QString id_;
@@ -69,7 +70,7 @@ public:
       QList<RevisionChanges> revisions;
 
       LoadedPlaylist() : starContainer_( false ), isSubscribed( false ), isCollaborative( false ), sync_( false ), isLoaded( false )
-                       , newTimestamp( -1 ), oldTimestamp( -1 ), playlist_( 0 ) {}
+                       , newTimestamp( -1 ), oldTimestamp( -1 ), numSubscribers( 0 ), playlist_( 0 ) {}
 
     };
     struct Sync {
@@ -108,13 +109,11 @@ public:
     void addNewPlaylist( const QVariantMap& data );
     sp_error moveTracksInSpotifyPlaylist( const QString& playlistId, const QVariantList& tracks, const QString& newStartPositionId );
 
-
-
     void setCollaborative(const QString &playlistUri, bool collab );
-
+    
     // Mixed
     sp_playlist *getPlaylistFromUri( const QString &uri );
-    bool removeDirContent(const QString &dirName);
+
     // Spotify playlist container callbacks.
     static void SP_CALLCONV playlistAddedCallback( sp_playlistcontainer* pc, sp_playlist* playlist,  int position, void* userdata );
     static void SP_CALLCONV playlistRemovedCallback( sp_playlistcontainer* pc, sp_playlist* playlist, int position, void* userdata );
@@ -128,7 +127,7 @@ public:
     static void SP_CALLCONV stateChanged(sp_playlist* pl, void* userdata);
     static void SP_CALLCONV tracksAdded(sp_playlist *pl, sp_track * const *tracks, int num_tracks, int position, void *userdata);
     static void SP_CALLCONV playlistMetadataUpdated(sp_playlist *pl, void *userdata);
-
+    static void SP_CALLCONV subscribersChanged( sp_playlist *pl, void *userdata);
     static void SP_CALLCONV playlistUpdateInProgress(sp_playlist *pl, bool done, void *userdata);
     static void SP_CALLCONV playlistRenamed(sp_playlist *pl, void *userdata);
     static void SP_CALLCONV tracksMoved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata);
@@ -158,8 +157,8 @@ public slots:
     void doRemovePlaylist( sp_playlist* playlist );
     // slot that calls our SpotifySearch::addSearchedTrack callback
     void addSearchedTrack( sp_search*, void * );
-    void addSubscribedPlaylist( const QString &uri );
-    void removeSubscribedPlaylist(sp_playlist *playlist );
+    
+    void setSubscribedPlaylist( const QString &uri, bool doSubscribe );
 signals:
     void sendLoadedPlaylist( const SpotifyPlaylists::LoadedPlaylist& );
     void notifyContainerLoadedSignal();
@@ -169,13 +168,14 @@ signals:
     void sendTracksRemoved( sp_playlist* pl, const QStringList& trackIds );
     void sendTracksMoved( sp_playlist* pl, const QStringList& trackids, const QString& trackPosition );
     void sendPlaylistDeleted( const QString& playlistId );
-    void forcePruneCache();
+    void sendStarredChanged( sp_playlist* pl, const QList< sp_track* >& tracks, const bool starred );
+
+    void notifyCollaborativeChanged( const SpotifyPlaylists::LoadedPlaylist& );
+    void notifySubscriberCountChanged( const SpotifyPlaylists::LoadedPlaylist& );
 
 private slots:
-
     void ensurePlaylistsLoadedTimerFired();
     void checkWaitingForLoads();
-    void pruneCacheAndReload();
     void doAddNewPlaylist( sp_playlist* pl, const QVariantList& tracks, bool sync, const QString& qid );
     void doAddTracksToSpotifyPlaylist( const QVariantList& tracks, sp_playlist* playlist, const QString& playlistId, const int startPosition );
 
@@ -188,6 +188,7 @@ private:
     void playlistNameChange( sp_playlist * pl );
     void checkForPlaylistsLoaded();
     void checkForPlaylistCallbacks( sp_playlist *pl, void *userdata );
+    void removeSubscribedPlaylist(sp_playlist *playlist );
 
     int findTrackPosition( const QList< sp_track* > tracks, const QString& trackId );
 

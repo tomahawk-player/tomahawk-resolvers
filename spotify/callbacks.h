@@ -91,12 +91,12 @@ static sp_playlist_callbacks syncPlaylistCallbacks = {
         &SpotifyPlaylists::syncStateChanged,
         &SpotifyPlaylists::playlistUpdateInProgress,
         &SpotifyPlaylists::playlistMetadataUpdated,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
+        NULL, //trackCreatedChanged
+        NULL, //trackSeenChanged
+        NULL, //descriptionChanged
+        NULL, //imageChanged
+        NULL, //trackMessageChanged
+        &SpotifyPlaylists::subscribersChanged, //subscribersChanged
 };
 
 

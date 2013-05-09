@@ -31,14 +31,14 @@ SpotifySession::SpotifySession( sessionConfig config, QObject *parent )
     // Friends
     m_SpotifyPlaylists = new SpotifyPlaylists( this );
     connect( m_SpotifyPlaylists, SIGNAL( sendLoadedPlaylist( SpotifyPlaylists::LoadedPlaylist ) ), this, SLOT(playlistReceived(SpotifyPlaylists::LoadedPlaylist) ) );
-    // Playlist cachemiss fix
-    connect( m_SpotifyPlaylists, SIGNAL( forcePruneCache() ), this, SLOT( relogin() ) );
+
     m_SpotifyPlayback = new SpotifyPlayback( this );
 
     // Connect to signals
     connect( this, SIGNAL( notifyMainThreadSignal() ), this, SLOT( notifyMainThread() ), Qt::QueuedConnection );
     qDebug() << " === Using LibVersion " << SPOTIFY_API_VERSION << " ===";
-    createSession();
+    // User needs to create session himself, that way, config
+    //createSession();
 }
 /**
   getInstance
@@ -63,13 +63,28 @@ SpotifySession::~SpotifySession(){
 }
 
 /**
+ * @brief SpotifySession::setProxySettings
+ * @param settings
+ * Url to the proxy server that should be used.
+ * The format is protocol://<host>:port (where protocal is http/https/socks4/socks5)
+ */
+void SpotifySession::setProxySettings( QVariantMap& settings )
+{
+
+    m_sessionConfig.proxyString = settings[ "proxy" ].toString().toUtf8();
+    m_sessionConfig.proxy_user = settings[ "proxy_user" ].toString().toUtf8();
+    m_sessionConfig.proxy_pass = settings[ "proxy_pass" ].toString().toUtf8();
+}
+
+/**
   createSession
   spotifyWebApi uses custom sessionConfig to
   not mess with callbacks that are defined.
   Initilize them as sp_config and create session
   **/
-void SpotifySession::createSession()
+bool SpotifySession::createSession()
 {
+
     m_config = sp_session_config();
 
     if(!m_sessionConfig.application_key.isEmpty() || m_sessionConfig.g_app_key != NULL) {
@@ -81,11 +96,20 @@ void SpotifySession::createSession()
         m_config.application_key_size = m_sessionConfig.application_key_size;
         m_config.user_agent = m_sessionConfig.user_agent;
         m_config.callbacks = &SpotifyCallbacks::callbacks;
-        m_config.tracefile = m_sessionConfig.tracefile;
+        // Tracefiles can grow big and we dont actually use them
+        m_config.tracefile = NULL; //m_sessionConfig.tracefile;
         m_config.device_id = m_sessionConfig.device_id;
         m_config.compress_playlists = false;
         m_config.dont_save_metadata_for_playlists = false;
         m_config.initially_unload_playlists = false;
+
+        if( !m_sessionConfig.proxyString.isEmpty() )
+            m_config.proxy = m_sessionConfig.proxyString;
+        if( !m_sessionConfig.proxy_user.isEmpty() )
+            m_config.proxy_username = m_sessionConfig.proxy_user;
+        if( !m_sessionConfig.proxy_pass.isEmpty() )
+            m_config.proxy_password = m_sessionConfig.proxy_pass;
+
 
     }
     m_config.userdata = this;
@@ -94,7 +118,9 @@ void SpotifySession::createSession()
     if ( SP_ERROR_OK != err )
     {
         qDebug() << "Failed to create spotify session: " << sp_error_message( err );
+        return false;
     }
+    return true;
 }
 
 /**
@@ -111,13 +137,12 @@ void SpotifySession::loggedIn(sp_session *session, sp_error error)
 
         _session->setSession(session);
         _session->setLoggedIn(true);
-
-//       qDebug() << "Container called from thread" << _session->thread()->currentThreadId();
-
         _session->setPlaylistContainer( sp_session_playlistcontainer(session) );
+
         sp_playlistcontainer_add_ref( _session->PlaylistContainer() );
         sp_playlistcontainer_add_callbacks(_session->PlaylistContainer(), &SpotifyCallbacks::containerCallbacks, _session);
     }
+
     qDebug() << Q_FUNC_INFO << "==== " << sp_error_message( error ) << " ====";
     const QString msg = QString::fromUtf8( sp_error_message( error ) );
     emit _session->loginResponse( error == SP_ERROR_OK, msg );
@@ -136,7 +161,7 @@ void SpotifySession::logout(bool clearPlaylists )
 
         sp_playlistcontainer_remove_callbacks( m_container, &SpotifyCallbacks::containerCallbacks, this);
         sp_playlistcontainer_release( m_container );
-        sp_session_logout(m_session);
+        sp_session_logout( m_session );
     }
 
 }
@@ -170,16 +195,15 @@ void SpotifySession::relogin()
 void SpotifySession::credentialsBlobUpdated(sp_session *session, const char *blob)
 {
 
-    QByteArray username;
     SpotifySession* _session = reinterpret_cast<SpotifySession*>(sp_session_userdata(session));
 #if SPOTIFY_API_VERSION >= 12
-    username = QByteArray( sp_session_user_name( session ) );
+    const char* username = sp_session_user_name( session );
 #else
-    username = QByteArray( sp_user_canonical_name( sp_session_user( session ) ) );
+    const char* username = sp_user_canonical_name( sp_session_user( session ) );
 #endif
     _session->m_blob = QByteArray(blob);
-    qDebug() << " ==== Got blob update for " << username << " ==== ";
-    emit _session->blobUpdated( username.constData(), QByteArray(blob).constData() );
+    qDebug() << " ==== Got blob update for " << QString::fromUtf8(username, strlen(username) ) << " ==== ";
+    emit _session->blobUpdated( username, QByteArray(blob).constData() );
 }
 
 /**
@@ -212,9 +236,9 @@ void SpotifySession::login( const QString& username, const QString& password, co
     m_password = password;
     char reloginname[256];
     sp_error error;
-    sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
+    int ok = sp_session_remembered_user( m_session, reloginname, sizeof(reloginname) );
 
-    if( QString::fromLatin1( reloginname ) == m_username )
+    if( ok != -1 && QString::fromUtf8( reloginname, strlen(reloginname) ) == m_username.toUtf8() )
     {
         if ( sp_session_relogin(m_session) == SP_ERROR_NO_CREDENTIALS)
         {
@@ -223,8 +247,20 @@ void SpotifySession::login( const QString& username, const QString& password, co
         else
         {
             qDebug() << "Logging in as remembered user";
+            return;
         }
     }
+    else
+    {
+        // Forget last user
+        if( ok == -1 )
+            qDebug() << " Relogin username was truncated or an error occured... Logging in with credentials";
+        else
+            qDebug() << "Forgetting last user!" << QString::fromUtf8( reloginname, strlen( reloginname ) ) << m_username;
+
+        sp_session_forget_me(m_session);
+    }
+
     if( !m_username.isEmpty() && ( !m_password.isEmpty() || !blob.isEmpty() )  )
     {
         /// @note:  If current state is not logged out, logout this session
@@ -239,17 +275,16 @@ void SpotifySession::login( const QString& username, const QString& password, co
             logout( true );
             return;
         }
-        // Forget last user
-        sp_session_forget_me(m_session);
-        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "using" ) << "blob";
+
+        qDebug() << Q_FUNC_INFO << "Logging in with username:" << m_username << " and is " << ( blob.isEmpty() ? "not" : "" ) << "using blob";
 #if SPOTIFY_API_VERSION >= 12
-        error = sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+        error = sp_session_login(m_session, m_username.toUtf8(), m_password.toUtf8(), 1, blob.isEmpty() ? NULL : blob.constData()  );
         if( error != SP_ERROR_OK )
             emit loginResponse( false, sp_error_message( error ) );
 #elif SPOTIFY_API_VERSION >= 11
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1, blob.isEmpty() ? NULL : blob.constData() );
+        sp_session_login(m_session, m_username.toUtf8(), m_password.toUtf8(), 1, blob.isEmpty() ? NULL : blob.constData() );
 #else
-        sp_session_login(m_session, m_username.toLatin1(), m_password.toLatin1(), 1);
+        sp_session_login(m_session, m_username.toUtf8(), m_password.toUtf8(), 1);
 #endif
 
 
@@ -260,7 +295,6 @@ void SpotifySession::login( const QString& username, const QString& password, co
         /// TODO: need a way to prompt for password if fail to login as remebered on startup
         /// If auth widget is not visual, we should promt user for re-entering creds
         emit loginResponse( false, "Failed to authenticate credentials." );
-
     }
 
 
