@@ -1,18 +1,14 @@
 project(tomahawkspotify)
 cmake_minimum_required(VERSION 2.8.6)
-<<<<<<< HEAD
 
 SET(ZLIB_LIBRARY "/usr/lib/libz.a")
 
-=======
->>>>>>> master
 add_definitions(-fexceptions)
 SET( CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/cmake/" )
 
 find_package(Qt4 REQUIRED)
 find_package(QJSON REQUIRED)
 find_package(libspotify REQUIRED)
-<<<<<<< HEAD
 find_package(Boost)
 
 add_subdirectory(qxtweb-standalone)
@@ -20,39 +16,16 @@ add_subdirectory(qxtweb-standalone)
 include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ ${QT_INCLUDES} ${LIBSPOTIFY_INCLUDE_DIR} ${QJSON_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${Boost_INCLUDE_DIRS})
 
 # Static helpers :)
-SET(CMAKE_C_FLAGS "-pthread -static-libgcc -static-libstdc++ ${CMAKE_C_FLAGS}")
-SET(CMAKE_CXX_FLAGS "-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2 -Wl,--no-undefined -static-libgcc -static-libstdc++ -L. -lspotify ${CMAKE_CXX_FLAGS} -pthread")
+SET(CMAKE_C_FLAGS "-pthread -static-libgcc ${CMAKE_C_FLAGS}")
+SET(CMAKE_CXX_FLAGS "-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2 -Wl,--no-undefined -static-libgcc -L. -lspotify ${CMAKE_CXX_FLAGS} -pthread")
 
 SET(CMAKE_SKIP_BUILD_RPATH FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 SET(CMAKE_INSTALL_RPATH ".")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-=======
 
-find_package(Boost REQUIRED)
+set(tomahawkspotify_SRCS
 
-add_subdirectory(qxtweb-standalone)
-
-IF( WITH_BREAKPAD )  
-    add_subdirectory(breakpad)    
-ENDIF()
->>>>>>> master
-
-include_directories( qxtweb-standalone/qxtweb kdsingleapplicationguard/ breakpad/
-                                              ${QT_INCLUDES}
-                                              ${LIBSPOTIFY_INCLUDE_DIR}
-                                              ${QJSON_INCLUDE_DIR}
-                                              ${Boost_INCLUDE_DIRS}
-                                              ${CMAKE_CURRENT_BINARY_DIR})
-
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/spotify-sourceicon.png")
-    message("Copying spotify source icon to binary dir")
-    file(COPY "${CMAKE_SOURCE_DIR}/spotify-sourceicon.png" DESTINATION ${CMAKE_BINARY_DIR})
-else()
-    message("Found existing spotify source icon, not copying")
-endif()
-
-set( tomahawkspotify_SRCS
     kdsingleapplicationguard/kdsingleapplicationguard.cpp
     kdsingleapplicationguard/kdsharedmemorylocker.cpp
     kdsingleapplicationguard/kdtoolsglobal.cpp
@@ -70,32 +43,15 @@ set( tomahawkspotify_SRCS
     main.cpp
 )
 
-IF( WITH_BREAKPAD )  
-    message(STATUS "Build with support for breakpad.")
-    if( APPLE )
-        FIND_LIBRARY( COREFOUNDATION_LIBRARY CoreFoundation )
-
-    ENDIF( APPLE )
-    LIST( APPEND tomahawkspotify_SRCS BreakPad.cpp )
-ENDIF()
-
 set( tomahawkspotify_NOMOC_HDRS
     kdsingleapplicationguard/kdsharedmemorylocker.h
     kdsingleapplicationguard/kdtoolsglobal.h
     kdsingleapplicationguard/kdlockedsharedmemorypointer.h
 )
 
-IF(WITH_BREAKPAD)
-    SET( BREAKPAD_LIBRARIES tomahawk_breakpad )
-ENDIF()
-
 
 add_executable(spotify_tomahawkresolver ${tomahawkspotify_SRCS} ${RC_SRCS} ${tomahawkspotify_NOMOC_HDRS} )
-<<<<<<< HEAD
 target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${QT_QTNETWORK_LIBRARY} ${QT_QTCORE_LIBRARY} ${QJSON_LIBRARIES})
-=======
-target_link_libraries(spotify_tomahawkresolver qxtweb-standalone ${COREFOUNDATION_LIBRARY} ${BREAKPAD_LIBRARIES} ${QT_QTCORE_LIBRARY} ${LIBSPOTIFY_LIBRARIES} ${QT_QTNETWORK_LIBRARY} ${QJSON_LIBRARIES})
->>>>>>> master
 
 SET_TARGET_PROPERTIES(spotify_tomahawkresolver PROPERTIES AUTOMOC TRUE)
 
