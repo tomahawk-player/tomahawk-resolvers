@@ -100,7 +100,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
         // We need at least 1.6.0 for resolve operations (JSON API support)
         // and 1.8.0 for scriptcollection
-        this.supported_api_versions = [ "1.6.0", "1.7.0", "1.8.0" ];
+        this.supported_api_versions = [ "1.6.0", "1.7.0", "1.8.0", "1.9.0" ];
         this.subsonic_api = 0;
 
         //let's ask the server which API version it actually supports.
@@ -127,7 +127,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
 
             if ( typeof Tomahawk.reportCapabilities == 'function' )
             {
-                if ( that.subsonic_api != 2 ) //version 1.8.0, scriptcollection support
+                if ( that.subsonic_api < 2 ) //version 1.8.0 & 1.9.0, scriptcollection support
                     Tomahawk.reportCapabilities( TomahawkResolverCapability.AccountFactory );
                 else
                     Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
