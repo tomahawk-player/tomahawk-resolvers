@@ -234,23 +234,24 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             var doc = JSON.parse(xhr.responseText);
             Tomahawk.log("subsonic artists query:" + artists_url);
             Tomahawk.log("subsonic artists response:" + xhr.responseText);
-            var artists = doc["subsonic-response"].artists.index;
+            if (!!doc["subsonic-response"].artists) { // No search results yields empty string in 1.9.0 at least.
+                var artists = doc["subsonic-response"].artists.index;
 
-            for (var i = 0; i < artists.length; i++)
-            {
-                if ( artists[i].artist instanceof Array )
+                for (var i = 0; i < artists.length; i++)
                 {
-                    for (var j = 0; j < artists[i].artist.length; j++)
+                    if ( artists[i].artist instanceof Array )
                     {
-                        results.push( artists[i].artist[j].name)
+                        for (var j = 0; j < artists[i].artist.length; j++)
+                        {
+                            results.push( artists[i].artist[j].name)
+                        }
+                    }
+                    else
+                    {
+                        results.push( artists[i].artist.name )
                     }
                 }
-                else
-                {
-                    results.push( artists[i].artist.name )
-                }
             }
-
             var return_artists = {
                qid: qid,
                artists: results
