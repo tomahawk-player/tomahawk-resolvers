@@ -281,7 +281,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
                 {
                     if (albums[i].artist.toLowerCase() === artist.toLowerCase()) //search2 does partial matches
                     {
-                        results.push(albums[i].title)
+                        results.push(albums[i].album)
                     }
                 }
             }
@@ -289,7 +289,7 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
             {
                 if (albums.artist.toLowerCase() === artist.toLowerCase())
                 {
-                    results.push(albums.title);
+                    results.push(albums.album);
                 }
             }
 
