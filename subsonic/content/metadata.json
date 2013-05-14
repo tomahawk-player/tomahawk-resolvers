@@ -3,7 +3,7 @@
     "pluginName": "subsonic",
     "author": "mack_t and Teo",
     "email": "teo@kde.org",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "website": "http://gettomahawk.com",
     "description": "Searches your Subsonic server for music to play",
     "platform": "any",
