@@ -24,13 +24,13 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
         weight: 70,
         timeout: 5
     },
-    
+
     spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
     init: function () {
         this.secret = this.spell("yptuKlFHC3azLLcBNYoCHW6t30I1M5uy");
     },
-    
+
     asyncRequest: function (url, callback) {
         var xmlHttpRequest = new XMLHttpRequest();
         xmlHttpRequest.open('GET', url, true);
@@ -86,6 +86,7 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
                     result.duration = track.duration;
                     result.score = 0.85;
                     result.url = track.streaming.http;
+                    result.checked = true;
 
                     resultObj.results.push(result);
                 }
@@ -127,6 +128,7 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
                     result.duration = track.duration;
                     result.score = 0.85;
                     result.url = track.streaming.http;
+                    result.checked = true;
 
                     resultObj.results.push(result);
                 }
