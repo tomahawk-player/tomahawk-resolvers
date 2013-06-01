@@ -50,7 +50,7 @@ var MuzebraResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     settings: {
-	    name: 'Muzebra resolver'
+	    name: 'Muzebra'
     },
 
     resolve: function(qid, artist, album, title) {
