@@ -98,6 +98,7 @@ SpotifyResolver::SpotifyResolver( int& argc, char** argv )
     , m_statusTimer( new QTimer( this ) )
     , m_foundTomahawkInstance( false )
     , m_haveSentStatus( false )
+    , m_privateSession( false )
 {
     setOrganizationName( QLatin1String( "TomahawkSpotify" ) );
     setOrganizationDomain( QLatin1String( "tomahawk-player.org" ) );
@@ -795,6 +796,7 @@ SpotifyResolver::loginResponse( bool success , const QString& msg )
 
     sendSettingsMessage();
     sp_session_preferred_bitrate( m_session->Session(), m_highQuality ? SP_BITRATE_320k : SP_BITRATE_160k );
+    updatePrivacy();
 }
 
 
@@ -809,6 +811,21 @@ SpotifyResolver::sendSettingsMessage()
     m[ "icon" ] = "spotify-sourceicon.png";
 
     sendMessage( m );
+}
+
+
+/**
+ * @brief SpotifyResolver::updatePrivacy
+ * @wierd doc: This disables sharing what the user is listening to to services such as Spotify Social,
+ *             Facebook and LastFM. The private session will last for a time, and then libspotify will
+ *             revert to the normal state. The private session is prolonged by user activity.
+ */
+void
+SpotifyResolver::updatePrivacy()
+{
+    qDebug() << "Updating privacy!";
+    sp_error err = sp_session_set_private_session( m_session->Session(), m_privateSession );
+    qDebug() << "Updated privacy mode. Private?" << sp_session_is_private_session( m_session->Session()) << m_privateSession << sp_error_message(err);
 }
 
 
@@ -831,6 +848,7 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
         QSettings s;
         m_blob = s.value( "blob", QByteArray() ).toByteArray();
         m_highQuality = m[ "highQuality" ].toBool();
+        m_privateSession = m[ "privateSession" ].toBool();
         login();
         saveSettings();
 
@@ -849,6 +867,11 @@ SpotifyResolver::playdarMessage( const QVariant& msg )
     else if ( m.value( "_msgtype" ) == "status" )
     {
         gotStatus();
+    }
+    else if ( m.value( "_msgtype" ) == "setPrivacyMode" )
+    {
+        m_privateSession = m[ "private" ].toBool();
+        updatePrivacy();
     }
     else if ( m.value( "_msgtype" ) == "quit" )
     {

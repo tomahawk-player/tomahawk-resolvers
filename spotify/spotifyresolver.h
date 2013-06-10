@@ -137,6 +137,7 @@ private:
     void clearTrackLinkMap();
     void searchAndStarrTrack(const QString& artist, const QString& track, const bool starred);
     void gotStatus();
+    void updatePrivacy();
 
     // Session
     SpotifySession *m_session;
@@ -172,6 +173,7 @@ private:
     QTimer* m_statusTimer;
     bool m_foundTomahawkInstance;
     bool m_haveSentStatus;
+    bool m_privateSession;
 };
 
 bool checkTrackIsLoaded( sp_track* track );
