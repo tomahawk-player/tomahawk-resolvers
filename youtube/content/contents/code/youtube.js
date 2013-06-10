@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012 Hugo Lindström <hugolm84@gmail.com>
- * Copyright (C) 2012 Thierry Göckel <thierry@strayrayday.lu>
+ * Copyright (C) 2013 Thierry Göckel <thierry@strayrayday.lu>
  * Copyright (C) 2012 Leo Franchi <lfranchi@kde.org>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -503,10 +503,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			result.track = result.fromQuote;
 		}
 		else if (result.parsed) {
-			if (result.parsed.artist !== undefined) {
+			if (result.parsed.artist !== undefined && result.parsed.artist.trim() !== "") {
 				result.artist = result.parsed.artist;
 			}
-			if (result.parsed.track !== undefined) {
+			if (result.parsed.track !== undefined && result.parsed.track.trim() !== "") {
 				result.track = result.parsed.track;
 			}
 		}
@@ -518,8 +518,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	{
 		var result = {};
 		result.query = track;
+		that = this;
 		result.query.replace(/.*?(?=([-:|]\s))/g, function (param) {
-			if (param !== "") {
+			if (param.trim() !== "") {
 				if (result.artist === undefined) {
 					result.artist = param;
 				}
@@ -532,14 +533,14 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		});
 
 		result.query.replace(/(?=([-:|]\s)).*/g, function (param) {
-			if (param !== "") {
+			if (param.trim() !== "") {
 				if (param.regexIndexOf(/([-|:]\s)/g, 0) === 0) {
-					if(result.track === undefined){
+					if (result.track === undefined){
 						result.track = param.replace(/([-|:]\s)/g, "");
 					}
 				}
 				else {
-					if(tyresult.artist === undefined){
+					if (result.artist === undefined){
 						result.artist = param;
 					}
 					result.track = result.replace(/([-|:]\s)/g, "");
@@ -638,7 +639,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			var track = data.items[i].title;
 			var parsedTrack = this.cleanupAndParseTrack(track, searchString);
 
-			if (!parsedTrack || parsedTrack.artist === undefined || parsedTrack.artist === undefined) {
+			if (!parsedTrack || parsedTrack.artist === undefined || parsedTrack.track === undefined) {
 				this.debugMsg("Failed to get a possitive match for : " + track);
 				continue;
 			}
