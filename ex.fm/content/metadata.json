@@ -8,7 +8,7 @@
     "description": "Resolves tracks via the ex.fm API",
     "type": "resolver/javascript",
     "manifest": {
-        "main": "contents/code/exfm.js",
+        "main": "contents/code/ex.fm.js",
     	"scripts": [
         ],
 	"icon": "contents/images/icon.png",
