@@ -8,7 +8,7 @@
     "description": "Looks for tracks to play from www.4shared.com",
     "type": "resolver/javascript",
     "manifest": {
-        "main": "contents/code/4shared-resolver.js",
+        "main": "contents/code/4shared.js",
         "scripts": [],
         "icon": "contents/images/icon.png",
         "resources": [
