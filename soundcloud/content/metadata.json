@@ -1,20 +1,20 @@
 {
-    "name": "SoundCloud",
-    "pluginName": "soundcloud",
-    "author": "Thierry Göckel",
-    "email": "thierry@strayrayday.lu",
-    "version": "0.9.1",
-    "website": "http://gettomahawk.com",
-    "description": "Resolves to playable tracks on SoundCloud, including live, cover and remixed versions if specified",
-    "type": "resolver/javascript",
-    "manifest": {
-        "main": "contents/code/soundcloud.js",
-        "scripts": [],
-        "icon": "contents/images/icon.png",
-        "resources": [
-            "contents/code/soundcloud.png",
-            "contents/code/soundcloud-icon.png",
-            "contents/code/config.ui"
-        ]
-    }
+	"name": "SoundCloud",
+	"pluginName": "soundcloud",
+	"author": "Thierry Göckel",
+	"email": "thierry@strayrayday.lu",
+	"version": "0.9.2",
+	"website": "http://gettomahawk.com",
+	"description": "Resolves to playable tracks on SoundCloud, including live, cover and remixed versions if specified",
+	"type": "resolver/javascript",
+	"manifest": {
+		"main": "contents/code/soundcloud.js",
+		"scripts": [],
+		"icon": "contents/images/icon.png",
+		"resources": [
+			"contents/code/soundcloud.png",
+			"contents/code/soundcloud-icon.png",
+			"contents/code/config.ui"
+		]
+	}
 }
