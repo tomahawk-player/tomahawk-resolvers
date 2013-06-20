@@ -8,7 +8,7 @@
     "description": "Searches VKontakte (vk.com) for music to play",
     "type": "resolver/javascript",
     "manifest": {
-        "main": "contents/code/vkontakte-resolver.js",
+        "main": "contents/code/vkontakte.js",
         "scripts": [],
         "icon": "contents/images/icon.png",
         "resources": []
