@@ -8,7 +8,7 @@
     "description": "Searches Jamendo's free music database",
     "type": "resolver/javascript",
     "manifest": {
-        "main": "contents/code/jamendo.js",
+        "main": "contents/code/jamendo-resolver.js",
         "scripts": [],
         "icon": "contents/images/icon.png",
         "resources": [
