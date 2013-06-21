@@ -38,15 +38,14 @@
 #
 
 require 'json'
-require 'rubygems'
-require 'zip/zip'
+require 'zipruby'
 require 'digest/md5'
 
 BUNDLEVERSION = 1 #might never be used but best to plan ahead
 
 def usage
     puts "This script creates a Tomahawk resolver bundle."
-    puts "\nMake sure you have the zip gem."
+    puts "\nMake sure you have the zipruby gem."
     puts "\nUsage: ruby makeaxe.rb path_to_resolver_directory [options]"
     puts " --release\tskip trying to add the git revision hash to the bundle"
     puts " --help\t\tthis help message"
@@ -147,11 +146,11 @@ if File.exists?( outputPath )
     File.delete( outputPath )
 end
 
-Zip::ZipFile.open( outputPath, Zip::ZipFile::CREATE ) do |z|
+Zip::Archive.open( outputPath, Zip::CREATE | Zip::TRUNC ) do |z|
     filesToZip.each do |relPath|
-        z.add( relPath, File.join( inputPath, relPath ) )
+        z.add_file( relPath, File.join( inputPath, relPath ) )
     end
-    z.add( metadataRelPath, _metadataPath )
+    z.add_file( metadataRelPath, _metadataPath )
 end
 
 puts "Cleaning up."
