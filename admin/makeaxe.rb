@@ -37,8 +37,8 @@
 #       + icon.png
 #
 
-require 'json'
 require 'rubygems'
+require 'json'
 require 'zip/zip'
 require 'digest/md5'
 
