@@ -29,6 +29,7 @@ var AUDIO_TYPES = {
 };
 
 var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
+    trackCount: -1,
     settings: {
         name: 'beets',
         icon: 'beets-icon.png',
@@ -108,19 +109,36 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
     init: function () {
         var userConfig = this.getUserConfig(),
+            that = this,
             xmlHttpRequest = new XMLHttpRequest();
         this.host = userConfig.host || 'localhost';
         this.port = parseInt(userConfig.port, 10);
         if (isNaN(this.port) || !this.port) {
             this.port = 8337;
         }
-        // Check if /artist/ is available and we can get enough information for ScriptCollection support
-        xmlHttpRequest.open('GET', this.baseUrl() + '/artist/', true);
+        // Invalidate trackCount
+        // Check if /stats is available and we can get enough information for ScriptCollection support and track count
+        // (this works for beets 1.2.1+)
+        xmlHttpRequest.open('GET', this.baseUrl() + '/stats', true);
         xmlHttpRequest.onreadystatechange = function() {
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                that.trackCount = parseInt(JSON.parse(xmlHttpRequest.responseText).items);
                 Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
             } else if (xmlHttpRequest.readyState === 4) {
-                Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
+                that.trackCount = -1;
+                // Check if /artist/ is available and we can get enough information for ScriptCollection support
+                // (this is needed for beets 1.1.0-1.2.0)
+                // Use new XMLHttpRequest instance
+                xmlHttpRequest = new XMLHttpRequest();
+                xmlHttpRequest.open('GET', that.baseUrl() + '/artist/', true);
+                xmlHttpRequest.onreadystatechange = function() {
+                    if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                        Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
+                    } else if (xmlHttpRequest.readyState === 4) {
+                        Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
+                    }
+                };
+                xmlHttpRequest.send(null);
             }
         }
         xmlHttpRequest.send(null);
@@ -199,19 +217,12 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     collection: function () {
-        // Check if /item/count is available so that we get information about the number of available tracks
-        var xmlHttpRequest = new XMLHttpRequest();
-        xmlHttpRequest.open('GET', this.baseUrl() + '/item/count', false);
-        xmlHttpRequest.send(null);
-        Tomahawk.log(xmlHttpRequest.status);
-        if (xmlHttpRequest.status == 200) {
-            Tomahawk.log(xmlHttpRequest.response);
-            Tomahawk.log(JSON.parse(xmlHttpRequest.responseText).itemcount);
+        if (this.trackCount > -1) {
             return {
                 prettyname: "Beets",
                 description: this.host,
                 iconfile: 'beets-icon.png',
-                trackcount: parseInt(JSON.parse(xmlHttpRequest.responseText).itemcount)
+                trackcount: this.trackCount
             };
         } else {
             // We cannot get the trackcout for this collection
