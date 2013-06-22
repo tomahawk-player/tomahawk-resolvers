@@ -158,6 +158,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     tracks: function (qid, artist, album) {
         var url = this.baseUrl() + '/item/query/' + encodeURIComponent('artist:' + artist) + '/' + encodeURIComponent('album:' + album),
             baseUrl = this.baseUrl();
+        Tomahawk.log(url);
         Tomahawk.asyncRequest(url, function (xhr) {
             var response = JSON.parse(xhr.responseText),
                 searchResults = [];
@@ -198,12 +199,28 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     collection: function () {
-        // TODO: trackcount
-        return {
-            prettyname: "Beets",
-            description: this.host,
-            iconfile: 'beets-icon.png'
-        };
+        // Check if /item/count is available so that we get information about the number of available tracks
+        var xmlHttpRequest = new XMLHttpRequest();
+        xmlHttpRequest.open('GET', this.baseUrl() + '/item/count', false);
+        xmlHttpRequest.send(null);
+        Tomahawk.log(xmlHttpRequest.status);
+        if (xmlHttpRequest.status == 200) {
+            Tomahawk.log(xmlHttpRequest.response);
+            Tomahawk.log(JSON.parse(xmlHttpRequest.responseText).itemcount);
+            return {
+                prettyname: "Beets",
+                description: this.host,
+                iconfile: 'beets-icon.png',
+                trackcount: parseInt(JSON.parse(xmlHttpRequest.responseText).itemcount)
+            };
+        } else {
+            // We cannot get the trackcout for this collection
+            return {
+                prettyname: "Beets",
+                description: this.host,
+                iconfile: 'beets-icon.png'
+            };
+        }
     }
 });
 
