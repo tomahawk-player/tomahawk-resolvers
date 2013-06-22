@@ -3,7 +3,7 @@
     "pluginName": "beets",
     "author": "Adrian and Uwe",
     "email": "uwelk@xhochy.com",
-    "version": "0.5",
+    "version": "0.5.1",
     "website": "http://gettomahawk.com",
     "description": "Connects to a beets server and resolves tracks",
     "type": "resolver/javascript",
