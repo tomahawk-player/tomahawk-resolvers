@@ -17,7 +17,7 @@
  */
 
 var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
-	
+
 	getConfigUi: function () {
 		var uiData = Tomahawk.readBase64("config.ui");
 		return {
@@ -50,14 +50,14 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 			this.saveUserConfig();
 		}
 	},
-	
+
 	settings: {
 		name: 'SoundCloud',
 		icon: 'soundcloud-icon.png',
 		weight: 85,
 		timeout: 15
 	},
-	
+
 	init: function() {
 		// Set userConfig here
 		var userConfig = this.getUserConfig();
@@ -71,12 +71,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 			this.includeRemixes = false;
 			this.includeLive = false;
 		}
-	
-	
+
+
 		String.prototype.capitalize = function(){
 			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
 		};
-	},	
+	},
 
 	getTrack: function (trackTitle, origTitle) {
 		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1){
@@ -157,7 +157,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 			}
 		});
 	},
-	
+
 	search: function (qid, searchString)
 	{
 		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + encodeURIComponent(searchString.replace('"', '').replace("'", ""));
@@ -227,7 +227,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 					result.year = resp[i].release_year;
 					result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
 					if (resp[i].permalink_url !== undefined) result.linkUrl = resp[i].permalink_url;
-					
+
 					(function (i, result) {
 						var artist = encodeURIComponent(result.artist.capitalize());
 						var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + artist;
@@ -269,7 +269,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 								}
 						};
 						xhr.send(null);
-					})(i, result);	
+					})(i, result);
 				}
 				if (stop === 0){
 					Tomahawk.addTrackResults(empty);
