@@ -47,7 +47,11 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     baseUrl: function () {
-        return 'http://' + this.host + ':' + this.port;
+        if (this.useTLS) {
+            return 'https://' + this.host + ':' + this.port;
+        } else {
+            return 'http://' + this.host + ':' + this.port;
+        }
     },
 
     beetsQuery: function (qid, queryParts) {
@@ -106,6 +110,10 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
                 name: "port",
                 widget: "portField",
                 property: "text"
+            }, {
+                name: "useTLS",
+                widget: "tlsCheckBox",
+                property: "checked"
             },{
                 name: "useAuth",
                 widget: "useAuthCheckBox",
@@ -130,6 +138,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
             xmlHttpRequest = new XMLHttpRequest();
         this.host = userConfig.host || 'localhost';
         this.port = parseInt(userConfig.port, 10);
+        this.useTLS = userConfig.useTLS;
         this.useAuth = userConfig.useAuth;
         if (this.useAuth) {
             this.username = userConfig.username;
