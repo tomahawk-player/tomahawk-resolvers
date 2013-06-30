@@ -52,40 +52,45 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
 
     beetsQuery: function (qid, queryParts) {
         var baseUrl = this.baseUrl(),
-            url = this.baseUrl() + '/item/query/';
+            url = this.baseUrl() + '/item/query/',
+            xhr = xmlHttpRequest = new XMLHttpRequest();
         queryParts.forEach(function (item) {
             url += encodeURIComponent(item);
             url += '/';
         });
         url = url.substring(0, url.length - 1);  // Remove last /.
 
-        Tomahawk.asyncRequest(url, function (xhr) {
-            var resp = JSON.parse(xhr.responseText),
-                items = resp.results,
-                searchResults = [];
-            items.forEach(function (item) {
-                var type_info = AUDIO_TYPES[item.format];
-                searchResults.push({
-                    artist: item.artist,
-                    album: item.album,
-                    track: item.title,
-                    albumpos: item.track,
-                    source: "beets",
-                    url: baseUrl + '/item/' + item.id + '/file',
-                    bitrate: Math.floor(item.bitrate / 1024),
-                    duration: Math.floor(item.length),
-                    size: (item.size || 0),
-                    score: 1.0,
-                    extension: type_info[0],
-                    mimetype: type_info[1],
-                    year: item.year
+        xmlHttpRequest.open('GET', url, true, this.username, this.password);
+        xmlHttpRequest.onreadystatechange = function() {
+            if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                var resp = JSON.parse(xhr.responseText),
+                    items = resp.results,
+                    searchResults = [];
+                items.forEach(function (item) {
+                    var type_info = AUDIO_TYPES[item.format];
+                    searchResults.push({
+                        artist: item.artist,
+                        album: item.album,
+                        track: item.title,
+                        albumpos: item.track,
+                        source: "beets",
+                        url: baseUrl + '/item/' + item.id + '/file',
+                        bitrate: Math.floor(item.bitrate / 1024),
+                        duration: Math.floor(item.length),
+                        size: (item.size || 0),
+                        score: 1.0,
+                        extension: type_info[0],
+                        mimetype: type_info[1],
+                        year: item.year
+                    });
                 });
-            });
-            Tomahawk.addTrackResults({
-                qid: qid,
-                results: searchResults
-            });
-        });
+                Tomahawk.addTrackResults({
+                    qid: qid,
+                    results: searchResults
+                });
+            }
+        };
+        xmlHttpRequest.send(null);
     },
 
     // Configuration.
@@ -101,6 +106,18 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
                 name: "port",
                 widget: "portField",
                 property: "text"
+            },{
+                name: "useAuth",
+                widget: "useAuthCheckBox",
+                property: "checked"
+            }, {
+                name: "username",
+                widget: "usernameField",
+                property: "text"
+            }, {
+                name: "password",
+                widget: "passwordField",
+                property: "text"
             }]
         };
     },
@@ -113,13 +130,21 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
             xmlHttpRequest = new XMLHttpRequest();
         this.host = userConfig.host || 'localhost';
         this.port = parseInt(userConfig.port, 10);
+        this.useAuth = userConfig.useAuth;
+        if (this.useAuth) {
+            this.username = userConfig.username;
+            this.password = userConfig.password;
+        } else {
+            this.username = null;
+            this.password = null;
+        }
         if (isNaN(this.port) || !this.port) {
             this.port = 8337;
         }
         // Invalidate trackCount
         // Check if /stats is available and we can get enough information for ScriptCollection support and track count
         // (this works for beets 1.2.1+)
-        xmlHttpRequest.open('GET', this.baseUrl() + '/stats', true);
+        xmlHttpRequest.open('GET', this.baseUrl() + '/stats', true, this.username, this.password);
         xmlHttpRequest.onreadystatechange = function() {
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
                 that.trackCount = parseInt(JSON.parse(xmlHttpRequest.responseText).items);
@@ -130,7 +155,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
                 // (this is needed for beets 1.1.0-1.2.0)
                 // Use new XMLHttpRequest instance
                 xmlHttpRequest = new XMLHttpRequest();
-                xmlHttpRequest.open('GET', that.baseUrl() + '/artist/', true);
+                xmlHttpRequest.open('GET', that.baseUrl() + '/artist/', true, that.username, that.password);
                 xmlHttpRequest.onreadystatechange = function() {
                     if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
                         Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
@@ -148,72 +173,85 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
 
     artists: function (qid) {
         var url = this.baseUrl() + '/artist/';
-        Tomahawk.asyncRequest(url, function (xhr) {
-            var response = JSON.parse(xhr.responseText);
-            Tomahawk.addArtistResults({
-                qid: qid,
-                artists: response.artist_names
-            });
-        });
+        var xhr = xmlHttpRequest = new XMLHttpRequest();
+        xmlHttpRequest.open('GET', url, true, this.username, this.password);
+        xmlHttpRequest.onreadystatechange = function() {
+            if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                var response = JSON.parse(xhr.responseText);
+                Tomahawk.addArtistResults({
+                    qid: qid,
+                    artists: response.artist_names
+                });
+            }
+        };
     },
 
     albums: function (qid, artist) {
         var url = this.baseUrl() + '/album/query/albumartist:' + encodeURIComponent(artist);
-        Tomahawk.asyncRequest(url, function (xhr) {
-            var response = JSON.parse(xhr.responseText),
-                results = [];
-            response.results.forEach(function (item) {
-                results.push(item.album);
-            });
-            Tomahawk.addAlbumResults({
-                qid: qid,
-                artist: artist,
-                albums: results
-            });
-        });
+        var xhr = xmlHttpRequest = new XMLHttpRequest();
+        xmlHttpRequest.open('GET', url, true, this.username, this.password);
+        xmlHttpRequest.onreadystatechange = function() {
+            if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                var response = JSON.parse(xhr.responseText),
+                    results = [];
+                response.results.forEach(function (item) {
+                    results.push(item.album);
+                });
+                Tomahawk.addAlbumResults({
+                    qid: qid,
+                    artist: artist,
+                    albums: results
+                });
+            }
+        };
+        xhr.send(null);
     },
 
     tracks: function (qid, artist, album) {
         var url = this.baseUrl() + '/item/query/' + encodeURIComponent('artist:' + artist) + '/' + encodeURIComponent('album:' + album),
             baseUrl = this.baseUrl();
-        Tomahawk.log(url);
-        Tomahawk.asyncRequest(url, function (xhr) {
-            var response = JSON.parse(xhr.responseText),
-                searchResults = [];
-            response.results.forEach(function (item) {
-                var type_info = AUDIO_TYPES[item.format];
-                searchResults.push({
-                    artist: item.artist,
-                    album: item.album,
-                    track: item.title,
-                    albumpos: item.track,
-                    source: "beets",
-                    url: baseUrl + '/item/' + item.id + '/file',
-                    bitrate: Math.floor(item.bitrate / 1024),
-                    duration: Math.floor(item.length),
-                    size: (item.size || 0),
-                    score: 1.0,
-                    extension: type_info[0],
-                    mimetype: type_info[1],
-                    year: item.year
+        var xhr = xmlHttpRequest = new XMLHttpRequest();
+        xmlHttpRequest.open('GET', url, true, this.username, this.password);
+        xmlHttpRequest.onreadystatechange = function() {
+            if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
+                var response = JSON.parse(xhr.responseText),
+                    searchResults = [];
+                response.results.forEach(function (item) {
+                    var type_info = AUDIO_TYPES[item.format];
+                    searchResults.push({
+                        artist: item.artist,
+                        album: item.album,
+                        track: item.title,
+                        albumpos: item.track,
+                        source: "beets",
+                        url: baseUrl + '/item/' + item.id + '/file',
+                        bitrate: Math.floor(item.bitrate / 1024),
+                        duration: Math.floor(item.length),
+                        size: (item.size || 0),
+                        score: 1.0,
+                        extension: type_info[0],
+                        mimetype: type_info[1],
+                        year: item.year
+                    });
                 });
-            });
-            searchResults.sort(function (a, b) {
-                if (a.albumpos < b.albumpos) {
-                    return -1;
-                } else if (a.albumpos > b.albumpos) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            });
-            Tomahawk.addAlbumTrackResults({
-                qid: qid,
-                artist: artist,
-                album: album,
-                results: searchResults
-            });
-        });
+                searchResults.sort(function (a, b) {
+                    if (a.albumpos < b.albumpos) {
+                        return -1;
+                    } else if (a.albumpos > b.albumpos) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                });
+                Tomahawk.addAlbumTrackResults({
+                    qid: qid,
+                    artist: artist,
+                    album: album,
+                    results: searchResults
+                });
+            }
+        };
+        xhr.send(null);
     },
 
     collection: function () {
