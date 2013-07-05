@@ -401,6 +401,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     {
         //strip http:// and trailing slash
         var desc = this.ampache.replace(/^http:\/\//,"")
+                               .replace(/^https:\/\//,"")
                                .replace(/\/$/, "")
                                .replace(/\/remote.php\/ampache/, "");
 
