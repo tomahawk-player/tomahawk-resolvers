@@ -154,7 +154,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     generateUrl: function (action, auth, params) {
-        var ampacheUrl = this.ampache + "/server/xml.server.php?";
+        var ampacheUrl = this.ampache.replace(/\/$/, "") + "/server/xml.server.php?";
         if (params === undefined) params = [];
         params['action'] = action;
         params['auth'] = auth;
