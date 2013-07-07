@@ -296,13 +296,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
         if (!(track.stream_url == null || typeof track.stream_url === "undefined")) {
             result.hint = track.stream_url + "?client_id=" + this.clientId;
-            Tomahawk.log(result.hint);
         }
         return result;
     },
 
     lookupUrl: function (url) {
-		var query = "https://api.soundcloud.com/resolve.json?client_id=" + this.clientId + "&url=" + encodeURIComponent(url);
+		var query = "https://api.soundcloud.com/resolve.json?client_id=" + this.clientId + "&url=" + encodeURIComponent(url.replace(/\/likes$/, ''));
 		var that = this;
 		Tomahawk.asyncRequest(query, function (xhr) {
 			var res = JSON.parse(xhr.responseText);
@@ -310,7 +309,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
                 var result = {
                     type: "playlist",
                     title: res.title,
-                    guid: 'soundcloud-' + res.id.toString(),
+                    guid: 'soundcloud-playlist-' + res.id.toString(),
                     info: res.description,
                     creator: res.user.username,
                     url: res.permalink_url,
@@ -323,7 +322,34 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
             } else if (res.kind == "track") {
                 Tomahawk.addUrlResult(url, that.track2Result(res));
             } else if (res.kind == "user") {
-                Tomahawk.addUrlResult(url, {})
+                var url2 = res.uri;
+                var prefix = 'soundcloud-';
+                var title = res.full_name + "'s ";
+                if (url.indexOf("/likes") === -1) {
+                    url2 += "/tracks.json?client_id=" + that.clientId;
+                    prefix += 'user-';
+                    title += "Tracks";
+                } else {
+                    url2 += "/favorites.json?client_id=" + that.clientId;
+                    prefix += 'favortites-';
+                    title += "Favorites";
+                }
+                Tomahawk.asyncRequest(url2, function (xhr2) {
+                    var res2 = JSON.parse(xhr2.responseText);
+                    var result = {
+                        type: "playlist",
+                        title: title,
+                        guid: prefix + res.id.toString(),
+                        info: title,
+                        creator: res.username,
+                        url: res2.permalink_url,
+                        tracks: []
+                    };
+                    res2.forEach(function (item) {
+                        result.tracks.push(that.track2Result(item));
+                    });
+                    Tomahawk.addUrlResult(url, result);
+                });
                 return;
             } else {
                 Tomahawk.log("Could not parse SoundCloud URL: " + url);
