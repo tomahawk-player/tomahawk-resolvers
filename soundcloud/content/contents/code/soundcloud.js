@@ -283,8 +283,19 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		});
 	},
 
-    canParseUrl: function (url) {
-        return /https?:\/\/(www\.)?soundcloud.com\//.test(url);
+    canParseUrl: function (url, type) {
+        // Soundcloud only returns tracks and playlists
+        switch (type) {
+        case TomahawkUrlType.Album:
+            return false;
+        case TomahawkUrlType.Artist:
+            return false;
+        // case TomahawkUrlType.Playlist:
+        // case TomahawkUrlType.Track:
+        // case TomahawkUrlType.Any:
+        default:
+            return /https?:\/\/(www\.)?soundcloud.com\//.test(url);
+        }
     },
 
     track2Result: function (track) {
