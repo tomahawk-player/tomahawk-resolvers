@@ -287,25 +287,41 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
         return /https?:\/\/(www\.)?soundcloud.com\//.test(url);
     },
 
+    track2Result: function (track) {
+        var result = {
+            type: "track",
+            title: track.title,
+            artist: track.user.username
+        };
+
+        if (!(track.stream_url == null || typeof track.stream_url === "undefined")) {
+            result.hint = track.stream_url + "?client_id=" + this.clientId;
+            Tomahawk.log(result.hint);
+        }
+        return result;
+    },
+
     lookupUrl: function (url) {
 		var query = "https://api.soundcloud.com/resolve.json?client_id=" + this.clientId + "&url=" + encodeURIComponent(url);
 		var that = this;
 		Tomahawk.asyncRequest(query, function (xhr) {
 			var res = JSON.parse(xhr.responseText);
             if (res.kind == "playlist") {
-                Tomahawk.addUrlResult(url, {})
-                return;
-            } else if (res.kind == "track") {
                 var result = {
-                    type: "track",
+                    type: "playlist",
                     title: res.title,
-                    artist: res.user.username
+                    guid: 'soundcloud-' + res.id.toString(),
+                    info: res.description,
+                    creator: res.user.username,
+                    url: res.permalink_url,
+                    tracks: []
                 };
-
-                if (!(res.stream_url == null || typeof res.stream_url === "undefined")) {
-                    result.hint = res.stream_url + "?client_id=" + that.clientId;
-                }
+                res.tracks.forEach(function (item) {
+                    result.tracks.push(that.track2Result(item));
+                });
                 Tomahawk.addUrlResult(url, result);
+            } else if (res.kind == "track") {
+                Tomahawk.addUrlResult(url, that.track2Result(res));
             } else if (res.kind == "user") {
                 Tomahawk.addUrlResult(url, {})
                 return;
