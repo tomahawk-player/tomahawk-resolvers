@@ -2,7 +2,7 @@
 
 ## Developing resolvers
 
-The Tomahawk resolver API is currently still in flux. It is probably a good idea to use the existing resolvers as example.
+The Tomahawk resolver API is currently still in flux. You can use some of the existing resolvers as inspiration, especially Subsonic and Ex.fm.
 
 The API you should develop against is defined in [`tomahawk.js`](https://github.com/tomahawk-player/tomahawk/blob/master/data/js/tomahawk.js) and [`JSResolverHelper`](https://github.com/tomahawk-player/tomahawk/blob/master/src/libtomahawk/resolvers/JSResolverHelper.h) in the Tomahawk main repo.
 
@@ -10,13 +10,9 @@ If you have questions, look for us in #tomahawk on irc.freenode.net.
 
 ### Licensing
 
-Tomahawk resolvers are considered derivative works of Tomahawk, specifically through the previously mentioned `tomahawk.js` and `QtScriptResolver.h` files. These files are released under a GNU General Public License, version 3 or later.
+Tomahawk resolvers are _not_ considered derivative works of Tomahawk. The resolver API is public, and resolvers could potentially be used without Tomahawk. The previously mentioned `tomahawk.js` file is non-copyleft open source, released under a permissive X11-style license.
 
-Thus, developers who release a resolver are expected to
-* release the resolver code they produce under a license compatible with Tomahawk, and specifically with Tomahawk's resolver interface, and
-* add a copyright and licensing statement at the beginning of those resolver file(s) that interface with Tomahawk, with a wording that makes their licensing (and compatibility) clear.
-
-Exceptions to this requirement can be evaluated upon request by the Tomahawk team.
+Developers who create and release a resolver have no further obligation as far as licensing and distribution is concerned.
 
 ## Packaging resolvers
 
