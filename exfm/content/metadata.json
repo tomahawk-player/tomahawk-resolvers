@@ -3,7 +3,7 @@
     "pluginName": "ex.fm",
     "author": "Nicolas and Uwe",
     "email": "uwelk@xhochy.com",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "website": "http://gettomahawk.com",
     "description": "Resolves tracks via the ex.fm API",
     "type": "resolver/javascript",
