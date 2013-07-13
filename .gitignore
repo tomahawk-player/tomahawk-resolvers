@@ -8,3 +8,5 @@ moc_*
 *~
 .DS_Store
 build
+*.axe
+*.md5
