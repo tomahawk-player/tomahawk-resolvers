@@ -25,6 +25,10 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5
     },
 
+    init: function () {
+        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+    },
+
     cleanTitle: function (title, artist) {
         // If the title contains a newline character, strip them off and remove additional spacing
         var newTitle = "",
@@ -89,6 +93,106 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
             }
 
             Tomahawk.addTrackResults({qid: qid, results: results});
+        });
+    },
+
+    canParseUrl: function (url, type) {
+        // Ex.fm does not support artists and only lists the album of the week as an album
+        switch (type) {
+        case TomahawkUrlType.Album:
+            return /https?:\/\/(www\.)?ex.fm\/explore\/album-of-the-week/.test(url);
+        case TomahawkUrlType.Artist:
+            return false;
+        case TomahawkUrlType.Track:
+            return /https?:\/\/(www\.)?ex.fm\/song\//.test(url)
+        // case TomahawkUrlType.Playlist:
+        // case TomahawkUrlType.Any:
+        default:
+            return /https?:\/\/(www\.)?ex.fm\//.test(url);
+        }
+    },
+
+    track2Result: function (item) {
+        var result = {
+            type: "track",
+            title: item.title,
+            artist: item.artist,
+            album: item.album
+        };
+        return result;
+    },
+
+    lookupUrl: function (url) {
+        var urlParts = url.split('/').filter(function (item) { return item !== "" });
+        var query = "https://ex.fm/api/v3";
+        var that = this;
+        if (urlParts.length === 3) {
+            // Url matches a user, e.g. https://ex.fm/xhochy
+            query +=  "/user/" + urlParts[2] + "/trending";
+            query += "?client_id=tomahawk";
+        } else if (/\/explore\/site-of-the-day/.test(url)) {
+            // Site of the day
+            query += "/sotd?results=1";
+            query += "&client_id=tomahawk";
+        } else if (urlParts[2] == 'explore' && urlParts[3] == 'album-of-the-week') {
+            query += '/atow?results=1';
+            query += "&client_id=tomahawk";
+        } else if (urlParts[2] == 'explore' && urlParts[3] == 'mixtape-of-the-month') {
+            query += '/motm?results=1';
+            query += "&client_id=tomahawk";
+        } else if (/\/song\//.test(url)) {
+            // Just one simple song
+            query += "/song/" + urlParts[3];
+            query += "?client_id=tomahawk";
+        } else if (/https?:\/\/(www\.)?ex.fm\/site\//.test(url)) {
+            query += url.replace(/https?:\/\/(www\.)?ex.fm/, '');
+            query += "?client_id=tomahawk";
+        } else if (urlParts[2] == "search") {
+            query += "/song/search/" + urlParts[3];
+            query += "?client_id=tomahawk";
+        } else {
+            query += url.replace(/https?:\/\/(www\.)?ex.fm/, '');
+            query += "?client_id=tomahawk";
+        }
+        Tomahawk.asyncRequest(query, function (xhr) {
+            var res = JSON.parse(xhr.responseText);
+            if (res.hasOwnProperty("song")) {
+                // One single song
+                return that.track2Result(res.song);
+            } else if (res.hasOwnProperty("site") && res.site.hasOwnProperty("songs")) {
+                // A site with songs
+                var result = {
+                    type: "playlist",
+                    title: res.site.title,
+                    guid: 'exfm-site-' + Tomahawk.sha256(query),
+                    info: "ex.fm parse of : " + res.site.url,
+                    creator: "exfm",
+                    url: url,
+                    tracks: []
+                };
+                res.site.songs.forEach(function (item) {
+                    result.tracks.push(that.track2Result(item));
+                });
+                Tomahawk.addUrlResult(url, result);
+            } else if (res.hasOwnProperty("songs")) {
+                // A list of songs
+                var result = {
+                    type: "playlist",
+                    title: "ex.fm" + url.replace(/https?:\/\/(www\.)?ex.fm/, ''),
+                    guid: 'exfm-playlist-' + Tomahawk.sha256(query),
+                    info: "A playlist imported from ex.fm: " + url,
+                    creator: "exfm",
+                    url: url,
+                    tracks: []
+                };
+                res.songs.forEach(function (item) {
+                    result.tracks.push(that.track2Result(item));
+                });
+                Tomahawk.addUrlResult(url, result);
+            } else {
+                Tomahawk.log("Could not parse ex.fm URL: " + url);
+                Tomahawk.addUrlResult(url, {})
+            };
         });
     },
 
