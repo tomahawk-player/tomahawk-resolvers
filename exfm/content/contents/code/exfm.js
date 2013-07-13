@@ -25,25 +25,6 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5
     },
 
-    checkUrl: function (item, callback) {
-        Tomahawk.log("Checking " + item.url);
-        var xhr = new XMLHttpRequest();
-        xhr.open('HEAD', item.url, true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    // TODO: Should we accept more response codes?
-                    Tomahawk.log("Accepted " + item.url + " as a valid result");
-                    callback(true);
-                } else {
-                    Tomahawk.log("Denied " + item.url + "as a result because of " + xhr.statusText);
-                    callback(false);
-                }
-            }
-        };
-        xhr.send();
-    },
-
     cleanTitle: function (title, artist) {
         // If the title contains a newline character, strip them off and remove additional spacing
         var newTitle = "",
