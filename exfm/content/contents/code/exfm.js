@@ -49,7 +49,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
     resolve: function (qid, artist, album, title) {
         var that = this,
         // Build search query for ex.fm
-            url = "http://ex.fm/api/v3/song/search/" + encodeURIComponent(title) + "?start=0&results=20&client_id=tomahawk";
+            url = "https://ex.fm/api/v3/song/search/" + encodeURIComponent(title) + "?start=0&results=20&client_id=tomahawk";
 
         // send request and parse it into javascript
         Tomahawk.asyncRequest(url, function (xhr) {
