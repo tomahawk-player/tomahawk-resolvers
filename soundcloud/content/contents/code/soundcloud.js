@@ -233,44 +233,33 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 					(function (i, result) {
 						var artist = encodeURIComponent(result.artist.capitalize());
 						var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + artist;
-						var xhr = new XMLHttpRequest();
-						xhr.open('GET', url, true);
-						xhr.onreadystatechange = function() {
-								if (xhr.readyState === 4){
-									if (xhr.status === 200) {
-										var response = JSON.parse(xhr.responseText).response;
-										if (response && response.artists && response.artists.length > 0) {
-											artist = response.artists[0].name;
-											result.artist = artist;
-											result.id = i;
-											results.push(result);
-											stop = stop - 1;
-										}
-										else {
-											stop = stop - 1;
-										}
-										if (stop === 0) {
-											function sortResults(a, b){
-												return a.id - b.id;
-											}
-											results = results.sort(sortResults);
-											for (var j = 0; j < results.length; j++){
-												delete results[j].id;
-											}
-											var toReturn = {
-												results: results,
-												qid: qid
-											};
-											Tomahawk.addTrackResults(toReturn);
-										}
-									}
-									else {
-										Tomahawk.log("Failed to do GET request to: " + url);
-										Tomahawk.log("Error: " + xhr.status + " " + xhr.statusText);
-									}
-								}
-						};
-						xhr.send(null);
+                        Tomahawk.asyncRequest(url, function (xhr) {
+                            var response = JSON.parse(xhr.responseText).response;
+                            if (response && response.artists && response.artists.length > 0) {
+                                artist = response.artists[0].name;
+                                result.artist = artist;
+                                result.id = i;
+                                results.push(result);
+                                stop = stop - 1;
+                            }
+                            else {
+                                stop = stop - 1;
+                            }
+                            if (stop === 0) {
+                                function sortResults(a, b){
+                                    return a.id - b.id;
+                                }
+                                results = results.sort(sortResults);
+                                for (var j = 0; j < results.length; j++){
+                                    delete results[j].id;
+                                }
+                                var toReturn = {
+                                    results: results,
+                                    qid: qid
+                                };
+                                Tomahawk.addTrackResults(toReturn);
+                            }
+                        });
 					})(i, result);
 				}
 				if (stop === 0){
