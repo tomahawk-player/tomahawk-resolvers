@@ -20,7 +20,7 @@
  **/
 
 var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
-	
+
 	getConfigUi: function ()
 	{
 		var uiData = Tomahawk.readBase64("config.ui");
@@ -566,18 +566,9 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 	// Allows async requests being made with userdata
 	asyncRequest: function (url, userdata, callback)
 	{
-		var xmlHttpRequest = new XMLHttpRequest();
-		xmlHttpRequest.open('GET', url, true);
-		xmlHttpRequest.onreadystatechange = function() {
-			if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
-				callback.call(window, xmlHttpRequest, userdata);
-			}
-			else if (xmlHttpRequest.readyState === 4) {
-				Tomahawk.log("Failed to do GET request: to: " + url);
-				Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
-			}
-		};
-		xmlHttpRequest.send(null);
+        Tomahawk.asyncRequest(url, function (xhr) {
+            callback.call(window, xhr, userdata);
+        });
 	},
 
 	sendEmptyResult: function(qid, searchString)
