@@ -149,8 +149,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
     init: function () {
         var userConfig = this.getUserConfig(),
-            that = this,
-            xmlHttpRequest = new XMLHttpRequest();
+            that = this;
         this.host = userConfig.host || 'localhost';
         this.port = parseInt(userConfig.port, 10);
         this.useTLS = userConfig.useTLS;
