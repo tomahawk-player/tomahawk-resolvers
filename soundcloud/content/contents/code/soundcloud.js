@@ -19,35 +19,41 @@
 
 var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
     clientId: "TiNg2DRYhBnp01DA3zNag",
-	settings: {
-		name: 'SoundCloud',
-		icon: 'soundcloud-icon.png',
-		weight: 85,
-		timeout: 15
-	},
+    settings: {
+        name: 'SoundCloud',
+        icon: 'soundcloud-icon.png',
+        weight: 85,
+        timeout: 15
+    },
 
-	getConfigUi: function () {
-		var uiData = Tomahawk.readBase64("config.ui");
-		return {
-			"widget": uiData,
-			fields: [{
-				name: "includeCovers",
-				widget: "covers",
-				property: "checked"
-			}, {
-				name: "includeRemixes",
-				widget: "remixes",
-				property: "checked"
-			}, {
-				name: "includeLive",
-				widget: "live",
-				property: "checked"
-			}],
-			images: [{
-				"soundcloud.png" : Tomahawk.readBase64("soundcloud.png")
-			}]
-		};
-	},
+    getConfigUi: function () {
+        var uiData = Tomahawk.readBase64("config.ui");
+        return {
+            "widget": uiData,
+            fields: [
+                {
+                    name: "includeCovers",
+                    widget: "covers",
+                    property: "checked"
+                },
+                {
+                    name: "includeRemixes",
+                    widget: "remixes",
+                    property: "checked"
+                },
+                {
+                    name: "includeLive",
+                    widget: "live",
+                    property: "checked"
+                }
+            ],
+            images: [
+                {
+                    "soundcloud.png" : Tomahawk.readBase64("soundcloud.png")
+                }
+            ]
+        };
+    },
 
 	newConfigSaved: function () {
 		var userConfig = this.getUserConfig();
