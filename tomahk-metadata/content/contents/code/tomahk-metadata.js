@@ -67,8 +67,10 @@ var TomaHKMetadataResolver = Tomahawk.extend(TomahawkResolver, {
             });
         } else if (/https?:\/\/(www\.)?toma.hk\/p\//.test(url)) {
             // We have a playlist
-            // TODO
-            Tomahawk.addUrlResult(url, {});
+            Tomahawk.addUrlResult(url, {
+                type: 'xspf-url',
+                url: url.replace('toma.hk/p/', 'toma.hk/xspf/')
+            });
         } else if (/https?:\/\/(www\.)?toma.hk\/\?(artist=)[^&]*(&title=)/.test(url)) {
             // We search for a track
             Tomahawk.addUrlResult(url, {
