@@ -35,7 +35,6 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
         var xmlHttpRequest = new XMLHttpRequest();
         xmlHttpRequest.open('GET', url, true);
         xmlHttpRequest.setRequestHeader('X-Api-Version', 2.0);
-	Tomahawk.log("Doing API call: " + url);
         xmlHttpRequest.onreadystatechange = function () {
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
                 callback.call(window, xmlHttpRequest);
@@ -69,8 +68,8 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
                     }
                     var track = resp.tracks[i].track;
 
-                    Tomahawk.log("Result: " + JSON.stringify(track));
                     if (track.streaming === undefined || track.streaming.http === undefined) {
+                        Tomahawk.log("Result: " + JSON.stringify(track));
                         Tomahawk.log("Found result from Official.fm but no streaming url...");
                         continue;
                     }
@@ -111,8 +110,8 @@ var OfficialfmResolver = Tomahawk.extend(TomahawkResolver, {
                     }
                     var track = resp.tracks[i].track;
 
-                    Tomahawk.log("Result: " + JSON.stringify(track));
                     if (track.streaming === undefined || track.streaming.http === undefined) {
+                        Tomahawk.log("Result: " + JSON.stringify(track));
                         Tomahawk.log("Found result from Official.fm but no streaming url...");
                         continue;
                     }
