@@ -1,7 +1,7 @@
 /*
  * (c) 2011 Dominik Schmidt <domme@tomahawk-player.org>
  */
-
+ 
 var DummyResolver = Tomahawk.extend(TomahawkResolver,
 {
     settings:
@@ -12,13 +12,14 @@ var DummyResolver = Tomahawk.extend(TomahawkResolver,
     },
     resolve: function( qid, artist, album, title )
     {
-        return Tomahawk.addTrackResults( this.internalSearch( qid ) );
+        var searchString = artist+" "+title";
+        return Tomahawk.addTrackResults( this.internalSearch( qid, searchString) );
     },
     search: function( qid, searchString )
     {
-        Tomahawk.addTrackResults( this.internalSearch( qid ) );
+        Tomahawk.addTrackResults( this.internalSearch( qid, searchString ) );
     },
-    internalSearch: function( qid )
+    internalSearch: function( qid, searchString )
     {
         return {
             qid: qid,
@@ -37,9 +38,9 @@ var DummyResolver = Tomahawk.extend(TomahawkResolver,
                     mimetype: "audio/mpeg"
                 }
             ]
-
+ 
         };
     }
 });
-
+ 
 Tomahawk.resolver.instance = DummyResolver;
