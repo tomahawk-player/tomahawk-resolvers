@@ -109,7 +109,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		if (title !== "") {
 			query += encodeURIComponent(title);
 		}
-		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + query;
+		var apiQuery = "https://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + query;
 		var that = this;
 		var empty = {
 			results: [],
@@ -168,7 +168,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
 	search: function (qid, searchString)
 	{
-		var apiQuery = "http://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + encodeURIComponent(searchString.replace('"', '').replace("'", ""));
+		var apiQuery = "https://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q=" + encodeURIComponent(searchString.replace('"', '').replace("'", ""));
 		var that = this;
 		var empty = {
 			results: [],
