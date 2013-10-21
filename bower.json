@@ -1,0 +1,18 @@
+{
+  "name": "tomahawk-resolvers",
+  "version": "0.0.0",
+  "authors": [
+    "Team Tomahawk <welisten@tomahawk-player.org>"
+  ],
+  "description": "Resolvers for the Tomahawk Music Player",
+  "license": "GPL-3",
+  "homepage": "http://tomahawk-player.org",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
