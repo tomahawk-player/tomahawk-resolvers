@@ -32,11 +32,14 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
             if (responseString.track.album != undefined) {
                 result.album = responseString.track.album.title;
             } else {
-                result.album = "";
+		result.album = "";
             }
             if (responseString.track.year != undefined) {
                 result.year = responseString.track.year;
             }
+            if (responseString.track.url != undefined) {
+		result.linkUrl = responseString.track.url;
+	    }
             result.source = this.settings.name;
             result.url = responseString.track.freedownload;
             result.mimetype = "audio/mpeg";
