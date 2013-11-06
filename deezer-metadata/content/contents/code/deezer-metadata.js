@@ -36,23 +36,23 @@ var DeezerMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     canParseUrl: function (url, type) {
         switch (type) {
         case TomahawkUrlType.Album:
-            return /https?:\/\/(www\.)?deezer.com\/[^\/]*\/album\//.test(url);
+            return /https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)album\//.test(url);
         case TomahawkUrlType.Artist:
-            return /https?:\/\/(www\.)?deezer.com\/[^\/]*\/artist\//.test(url);
+            return /https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)artist\//.test(url);
         case TomahawkUrlType.Playlist:
-            return /https?:\/\/(www\.)?deezer.com\/[^\/]*\/playlist\//.test(url);
+            return /https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)playlist\//.test(url);
         case TomahawkUrlType.Track:
-            return /https?:\/\/(www\.)?deezer.com\/[^\/]*\/track\//.test(url);
+            return /https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)track\//.test(url);
         // case TomahawkUrlType.Any:
         default:
-            return /https?:\/\/(www\.)?deezer.com\/[^\/]*\//.test(url);
+            return /https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)/.test(url);
         }
     },
 
     lookupUrl: function (url) {
 		var that = this;
         var urlParts = url.split('/').filter(function (item) { return item.length != 0; }).map(decodeURIComponent);
-        if (/https?:\/\/(www\.)?deezer.com\/[^\/]*\/artist\//.test(url)) {
+        if (/https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)artist\//.test(url)) {
             // We have to deal with an artist
             var query = 'https://api.deezer.com/2.0/artist/' + urlParts[urlParts.length - 1];
             Tomahawk.asyncRequest(query, function (xhr) {
@@ -62,7 +62,7 @@ var DeezerMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                     name: res.name
                 });
             });
-        } else if (/https?:\/\/(www\.)?deezer.com\/[^\/]*\/playlist\//.test(url)) {
+        } else if (/https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)playlist\//.test(url)) {
             // We have to deal with an album.
             var query = 'https://api.deezer.com/2.0/playlist/' + urlParts[urlParts.length - 1];
             Tomahawk.log(query);
@@ -85,7 +85,7 @@ var DeezerMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                     Tomahawk.addUrlResult(url, result);
                 });
             });
-        } else if (/https?:\/\/(www\.)?deezer.com\/[^\/]*\/track\//.test(url)) {
+        } else if (/https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)track\//.test(url)) {
             // We have to deal with an album.
             var query = 'https://api.deezer.com/2.0/track/' + urlParts[urlParts.length - 1];
             Tomahawk.asyncRequest(query, function (xhr) {
@@ -96,7 +96,7 @@ var DeezerMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                     artist: res.artist.name,
                 });
             });
-        } else if (/https?:\/\/(www\.)?deezer.com\/[^\/]*\/album\//.test(url)) {
+        } else if (/https?:\/\/(www\.)?deezer.com\/([^\/]*\/|)album\//.test(url)) {
             // We have to deal with an album.
             var query = 'https://api.deezer.com/2.0/album/' + urlParts[urlParts.length - 1];
             Tomahawk.asyncRequest(query, function (xhr) {
