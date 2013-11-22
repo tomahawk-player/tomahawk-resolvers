@@ -1,0 +1,20 @@
+{
+    "name": "Synology AudioStation",
+    "pluginName": "synology",
+    "author": "Ron Jaegers",
+    "email": "ron.jaegers@gmail.com",
+    "version": "0.0.5",
+    "website": "http://gettomahawk.com",
+    "description": "Resolves tracks from Synology AudioStation",
+    "platform": "any",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/synology-audiostation.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/audiostation-icon.png"
+        ]
+    }
+}
