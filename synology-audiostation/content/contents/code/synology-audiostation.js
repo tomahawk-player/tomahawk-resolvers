@@ -67,7 +67,7 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
             this.password !== userConfig.password ||
             this.dsm_url !== userConfig.dsm_url)
         {
-		    this.user = userConfig.username;
+            this.user = userConfig.username;
             this.password = userConfig.password;
             this.dsm_url = userConfig.dsm_url.replace(/\/+$/, "");
             this.dsm_port = userConfig.dsm_port || 5000
@@ -80,15 +80,15 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
         this.max_songs = userConfig.max_songs;
     },
     retrieveApiInfo: function() {
-	    // This is the only time we need to construct a API URI ourselves.
-		// SYNO.API.Info has a fixed path that will never change. We use
-		// this to find the location of the other services.
+        // This is the only time we need to construct a API URI ourselves.
+        // SYNO.API.Info has a fixed path that will never change. We use
+        // this to find the location of the other services.
         var info_url = this.apiBaseUrl() +
-		               "query.cgi" +
-					   "?api=SYNO.API.Info&version=1&method=query&query=ALL";
+                       "query.cgi" +
+                       "?api=SYNO.API.Info&version=1&method=query&query=ALL";
 
         var result = JSON.parse(Tomahawk.syncRequest(info_url));
-		return result.data;
+        return result.data;
     },
     authenticate: function() {
         var auth_url = this.buildApiUrl("SYNO.API.Auth", 2, "login",
@@ -98,9 +98,9 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
         this.doApiRequest(auth_url, function(jsonResponse) {
             if (typeof(jsonResponse.data.sid) === "undefined") {
                 Tomahawk.log("No session identifier (sid) received. Future api calls will fail.");
-				Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
+                Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
 
-				return;
+                return;
             }
 
             that.sid = jsonResponse.data.sid;
@@ -119,7 +119,7 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
 
-	// Resolve and search support.
+    // Resolve and search support.
     resolve: function(qid, artist, album, title) {
         var resolve_url = this.apiBaseUrl().replace("/webapi/", "") +
                           "/webman/3rdparty/AudioStation/webUI/audio_browse.cgi" +
@@ -241,21 +241,21 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     // Helper methods.
-	apiBaseUrl: function() {
+    apiBaseUrl: function() {
         return (this.use_tls ? "https://" : "http://") + this.dsm_url + ":" + this.dsm_port + "/webapi/";
     },
-	buildApiUrl: function(api, version, method, urlParameters) {
-	    if (typeof(this.api_info[api]) === "undefined") {
+    buildApiUrl: function(api, version, method, urlParameters) {
+        if (typeof(this.api_info[api]) === "undefined") {
             Tomahawk.log("Requested unknown API[" + api + "] request will fail.");
-		}
+        }
 
         return this.apiBaseUrl() +
-		       this.api_info[api].path +
-		       "?api=" + api +
-			   "&version=" + version +
-			   "&method=" + method +
-			   this.buildUrlParameters(urlParameters) +
-			   "&sid=" + this.sid;
+               this.api_info[api].path +
+               "?api=" + api +
+               "&version=" + version +
+               "&method=" + method +
+               this.buildUrlParameters(urlParameters) +
+               "&sid=" + this.sid;
     },
     buildUrlParameters: function(parameters) {
         var url = "";
@@ -264,18 +264,18 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
         }
         return url;
     },
-	buildStreamUrl: function(resourceLocation) {
+    buildStreamUrl: function(resourceLocation) {
         return this.apiBaseUrl().replace("/webapi/", "") +
-		       "/webman/3rdparty/AudioStation/webUI/audio_stream.cgi/0.mp3" +
+               "/webman/3rdparty/AudioStation/webUI/audio_stream.cgi/0.mp3" +
                "?sid=" + this.sid +
                "&action=streaming" +
                "&songpath=" + encodeURIComponent(resourceLocation).replace("+", "%20").replace("&", "%26");
     },
-	createSessionId: function() {
+    createSessionId: function() {
         return "Tomahawk" + Math.floor((Math.random() * 10000) + 1);
     },
-	doApiRequest: function(url, onSuccess) {
-		var that = this;
+    doApiRequest: function(url, onSuccess) {
+        var that = this;
 
         Tomahawk.asyncRequest(url, function(xhr) {
             var jsonResponse = JSON.parse(xhr.responseText);
