@@ -238,7 +238,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
 					(function (i, result) {
 						var artist = encodeURIComponent(result.artist.capitalize());
-						var url = "http://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + artist;
+						var url = "https://developer.echonest.com/api/v4/artist/extract?api_key=JRIHWEP6GPOER2QQ6&format=json&results=1&sort=hotttnesss-desc&text=" + artist;
                         Tomahawk.asyncRequest(url, function (xhr) {
                             var response = JSON.parse(xhr.responseText).response;
                             if (response && response.artists && response.artists.length > 0) {
