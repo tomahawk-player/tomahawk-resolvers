@@ -40,18 +40,19 @@ var SpotifyMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         case TomahawkUrlType.Artist:
             return /spotify:artist:/.test(url) || /https?:\/\/(play|open)\.spotify\.[^\/]+\/artist\//.test(url);
         case TomahawkUrlType.Playlist:
-            return false;
+            return /spotify:user:[0-9]*:playlist:/.test(url);
         case TomahawkUrlType.Track:
             return /spotify:track:/.test(url) || /https?:\/\/(play|open)\.spotify\.[^\/]+\/track\//.test(url);
         // case TomahawkUrlType.Any:
         default:
-            return /spotify:(album|artist|track):/.test(url) || /https?:\/\/(play|open)\.spotify\.[^\/]+\/(album|artist|track)\//.test(url);
+            return /spotify:(album|artist|track|user):/.test(url) || /https?:\/\/(play|open)\.spotify\.[^\/]+\/(album|artist|track)\//.test(url);
         }
     },
 
     lookupUrl: function (url) {
         var that = this;
         var match = url.match(/spotify:(album|artist|track):(.*)/);
+        var playlistmatch = url.match(/spotify:user:[0-9]*:playlist:(.*)/);
         if (match == null) {
             match = url.match(/https?:\/\/(play|open)\.spotify\.[^\/]+\/(album|artist|track)\/([^\/]*)/);
             if (match != null) match.splice(1, 1);
@@ -78,6 +79,22 @@ var SpotifyMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                         artist: res.track.artists.map(function (item) { return item.name; }).join(" & ")
                     });
                 }
+            });
+        } else if (playlistmatch != null) {
+            var query = 'http://spotikea.tomahawk-player.org/browse/' + url;
+            Tomahawk.asyncRequest(query, function (xhr) {
+                var res = JSON.parse(xhr.responseText);
+                var result = {
+                    type: "playlist",
+                    title: res.playlist.name,
+                    guid: "spotify-playlist-" + url,
+                    info: "A playlist on Spotify.",
+                    creator: res.playlist.creator,
+                    url: url,
+                    tracks: []
+                };
+                result.tracks = res.playlist.result.map(function (item) { return { type: "track", title: item.title, artist: item.artist }; });
+                Tomahawk.addUrlResult(url, result);
             });
         }
     }
