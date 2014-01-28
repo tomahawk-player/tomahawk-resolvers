@@ -118,49 +118,52 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		Tomahawk.asyncRequest(apiQuery, function (xhr) {
 			var resp = JSON.parse(xhr.responseText);
 			if (resp.length !== 0){
-				var results = [];
-				for (i = 0; i < resp.length; i++) {
-					// Need some more validation here
-					// This doesnt help it seems, or it just throws the error anyhow, and skips?
-					if (resp[i] === undefined){
+                var results = [];
+                for (i = 0; i < resp.length; i++) {
+                    // Need some more validation here
+                    // This doesnt help it seems, or it just throws the error anyhow, and skips?
+                    if (typeof(resp[i]) == 'undefined' || resp[i] == null) {
+                        continue;
+                    }
+
+                    // Check for streamable tracks only
+					if (!resp[i].streamable) {
 						continue;
 					}
 
-					if (!resp[i].streamable){ // Check for streamable tracks only
-						continue;
-					}
+                    if (typeof(resp[i].title) != 'undefined' && resp[i].title != null) {
+                        // Check whether the artist and title (if set) are in the returned title, discard otherwise
+                        // But also, the artist could be the username
+                        if (resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1) continue;
+                        if (resp[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1) continue;
 
-					// Check whether the artist and title (if set) are in the returned title, discard otherwise
-					// But also, the artist could be the username
-					if (resp[i].title !== undefined && (resp[i].title.toLowerCase().indexOf(artist.toLowerCase()) === -1 || resp[i].title.toLowerCase().indexOf(title.toLowerCase()) === -1)) {
-						continue;
-					}
-					var result = new Object();
-					result.artist = artist;
-					if (that.getTrack(resp[i].title, title)){
-						result.track = title;
-					}
-					else {
-						continue;
-					}
+                        var result = {
+                            artist: artist,
+                            bitrate: 128,
+                            mimetype: "audio/mpeg",
+                            score: 0.85,
+                            source: that.settings.name
+                        };
+                        if (that.getTrack(resp[i].title, title)) {
+                            result.track = title;
+                        } else {
+                            continue;
+                        }
 
-					result.source = that.settings.name;
-					result.mimetype = "audio/mpeg";
-					result.bitrate = 128;
-					result.duration = resp[i].duration / 1000;
-					result.score = 0.85;
-					result.year = resp[i].release_year;
-					result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
-					if (resp[i].permalink_url !== undefined) result.linkUrl = resp[i].permalink_url;
-					results.push(result);
+                        result.duration = resp[i].duration / 1000;
+                        result.year = resp[i].release_year;
+                        result.url = resp[i].stream_url + ".json?client_id=TiNg2DRYhBnp01DA3zNag";
+                        if (typeof(resp[i].permalink_url) != 'undefined' && resp[i].permalink_url != null) {
+                            result.linkUrl = resp[i].permalink_url;
+                        }
+                        results.push(result);
+                    }
 				}
-				var return1 = {
-					qid: qid,
-					results: [results[0]]
-				};
-				Tomahawk.addTrackResults(return1);
-			}
-			else {
+				Tomahawk.addTrackResults({
+                    qid: qid,
+                    results: [results[0]]
+                });
+			} else {
 				Tomahawk.addTrackResults(empty);
 			}
 		});
