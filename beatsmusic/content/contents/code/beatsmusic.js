@@ -22,7 +22,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
     // Production
     app_token: "<-- INSERT TOKEN HERE -->",
-    endpoint: "https://partner.api.beatsmusic.com/v1/",
+    endpoint: "https://partner.api.beatsmusic.com/v1",
 
     getConfigUi: function () {
         var uiData = Tomahawk.readBase64("config.ui");
