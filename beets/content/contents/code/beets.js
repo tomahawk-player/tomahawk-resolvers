@@ -59,7 +59,11 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
 
     // Resolution.
     resolve: function (qid, artist, album, title) {
-        this.beetsQuery(qid, ['artist:' + artist, 'album:' + album, 'title:' + title]);
+        if (album == '') {
+            this.beetsQuery(qid, ['artist:' + artist, 'title:' + title]);
+        } else {
+            this.beetsQuery(qid, ['artist:' + artist, 'album:' + album, 'title:' + title]);
+        }
     },
 
     search: function (qid, searchString) {
