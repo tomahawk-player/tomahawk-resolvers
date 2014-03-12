@@ -102,31 +102,31 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         if (!this.loggedIn) return;
 
         // TODO: Add album to search
-        var headers = {
-            "Authorization": "Bearer " + this.app_token,
-        };
         var that = this;
-        Tomahawk.asyncRequest(this.endpoint + "/api/search?type=track&filters=streamable:true&limit=1&q=" + encodeURIComponent(artist + " " + title) , function (xhr) {
+        Tomahawk.asyncRequest(this.endpoint + "/api/search?type=track&filters=streamable:true&limit=1&q=" + encodeURIComponent(artist + " " + title) + "&client_id=" + this.app_token, function (xhr) {
             var res = JSON.parse(xhr.responseText);
             if (res.code == "OK" && res.info.count > 0) {
                 // For the moment we just use the first result
-                Tomahawk.asyncRequest(that.endpoint + "/api/tracks/" + res.data[0].id, function (xhr2) {
+                Tomahawk.asyncRequest(that.endpoint + "/api/tracks/" + res.data[0].id + "?client_id=" + that.app_token, function (xhr2) {
                     var res2 = JSON.parse(xhr2.responseText);
-                    Tomahawk.addTrackResults({
-                        qid: qid,
-                        results: [{
-                            artist: res2.data.artist_display_name,
-                            duration: res2.data.duration,
-                            source: that.settings.name,
-                            track: res2.data.title,
-                            url: "beatsmusic://track/" + res2.data.id
-                        }]
+                        Tomahawk.asyncRequest(that.endpoint + "/api/tracks/" + res2.data.id + "/audio?access_token=" + that.accessToken, function (xhr3) {
+                        var res3 = JSON.parse(xhr3.responseText);
+                        Tomahawk.addTrackResults({
+                            qid: qid,
+                            results: [{
+                                artist: res2.data.artist_display_name,
+                                duration: res2.data.duration,
+                                source: that.settings.name,
+                                track: res2.data.title,
+                                url: res3.data.location + "/?slist=" + res3.data.resource
+                            }]
+                        });
                     });
-                }, headers);
+                });
             } else {
                 Tomahawk.addTrackResults({ results: [], qid: qid });
             }
-        }, headers);
+        });
     },
 
     getStreamUrl: function (qid, url) {
