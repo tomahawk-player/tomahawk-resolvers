@@ -17,3 +17,6 @@ handlers:
 
 - url: /callback
   script: _go_app
+
+- url: /json
+  script: _go_app
