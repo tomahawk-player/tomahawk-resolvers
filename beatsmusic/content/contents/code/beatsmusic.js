@@ -130,14 +130,12 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     getStreamUrl: function (qid, url) {
-        var headers = {
-            "Authorization": "Bearer " + this.accessToken,
-        };
         var trackId = url.replace("beatsmusic://track/", "");
-        Tomahawk.asyncRequest(this.endpoint + "/api/tracks/" + trackId + "/audio?protocol=httpd&acquire=1" , function (xhr) {
+        Tomahawk.asyncRequest(this.endpoint + "/api/tracks/" + trackId + "/audio?acquire=1&access_token=" + this.accessToken, function (xhr) {
+            Tomahawk.log(xhr.responseText);
             var res = JSON.parse(xhr.responseText);
             Tomahawk.reportStreamUrl(qid, res.data.location);
-        }, headers);
+        });
     },
 
 	search: function (qid, searchString) {
