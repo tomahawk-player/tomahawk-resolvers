@@ -23,6 +23,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     // Production
     app_token: "<-- INSERT TOKEN HERE -->",
     endpoint: "https://partner.api.beatsmusic.com/v1",
+    redirect_uri: "https://tomahawk-beatslogin.appspot.com/json",
 
     getConfigUi: function () {
         var uiData = Tomahawk.readBase64("config.ui");
@@ -54,6 +55,37 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
 
+    login: function() {
+        this.user = userConfig.user;
+        this.password = userConfig.password;
+
+        var referer = "https://partner.api.beatsmusic.com/oauth2/authorize?response_type=token";
+        referer += "&redirect_uri=" + encodeURIComponent(this.redirect_uri);
+        referer += "&client_id=" + encodeURIComponent(this.app_token);
+
+        var headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": referer
+        };
+
+        // Keep empty arguments!
+        var data = "login=" + encodeURIComponent(this.user);
+        data += "&password=" + encodeURIComponent(this.password);
+        data += "&redirect_uri=" + encodeURIComponent(this.redirect_uri);
+        data += "&response_type=token&scope=&state=&user_id=";
+        data += "&client_id=" + encodeURIComponent(this.app_token);
+
+        var that = this;
+        Tomahawk.asyncRequest("https://partner.api.beatsmusic.com/api/o/oauth2/approval", function (xhr) {
+            var res = JSON.parse(xhr.responseText);
+            that.accessToken = res.access_token;
+            that.loggedIn = true;
+        }, headers, {
+            method: "POST",
+            data: data
+        });
+    }
+
 	init: function() {
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
 
@@ -62,39 +94,11 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         var userConfig = this.getUserConfig();
         if (!userConfig.user || !userConfig.password) {
             Tomahawk.log("Beats Music Resolver not properly configured!");
+            this.loggedIn = false;
             return;
         }
 
-        this.user = userConfig.user;
-        this.password = userConfig.password;
-        this.loggedIn = false;
-        var headers = {
-            "Authorization": "Bearer " + this.app_token,
-            "Content-type": "application/x-www-form-urlencoded"
-        };
-
-        var data =  "uuid=" + encodeURIComponent(Tomahawk.instanceUUID())
-                + "&device_name=Tomahawk%20Player"
-                + "&client_app_version=" + Tomahawk.apiVersion;
-        var data2 = "login=" + encodeURIComponent(this.user)
-                + "&password=" + encodeURIComponent(this.password)
-                + "&uuid=" + encodeURIComponent(Tomahawk.instanceUUID());
-        var that = this;
-        Tomahawk.asyncRequest(this.endpoint + "/api/sessions", function (xhr) {
-            var resp = JSON.parse(xhr.responseText);
-            if (resp.code == "OK") {
-                Tomahawk.asyncRequest(that.endpoint + "/api/auth/tokens", function (xhr2) {
-                    that.loggedIn = true;
-                    that.accessToken = JSON.parse(xhr2.responseText).data.access_token;
-                }, headers, {
-                    method: "POST",
-                    data: data2
-                });
-            }
-        }, headers, {
-            method: "POST",
-            data: data
-        });
+        this.login();
 	},
 
 
