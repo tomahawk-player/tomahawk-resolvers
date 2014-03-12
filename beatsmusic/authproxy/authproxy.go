@@ -6,6 +6,7 @@ import (
 )
 
 func init() {
+    http.HandleFunc("/json", jsonHandler)
     http.HandleFunc("/callback", handler)
 }
 
@@ -60,4 +61,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
+}
+
+func jsonHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    w.Write([]byte("{ \"access_token\": \"" + r.FormValue("access_token") + "\" }"))
 }
