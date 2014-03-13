@@ -98,6 +98,9 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
         Tomahawk.addCustomUrlTranslator("beatsmusic", "getStreamUrl", true);
 
+        // re-login every 50 minutes
+        setInterval((function(self) { return function() { self.login(); }; })(this), 1000*60*50);
+
         this.login();
 	},
 
