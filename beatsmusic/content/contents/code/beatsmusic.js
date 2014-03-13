@@ -96,6 +96,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 	init: function() {
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
 
+        Tomahawk.addCustomUrlTranslator("beatsmusic", "getStreamUrl", true);
 
         this.login();
 	},
@@ -112,18 +113,15 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                 // For the moment we just use the first result
                 Tomahawk.asyncRequest(that.endpoint + "/api/tracks/" + res.data[0].id + "?client_id=" + that.app_token, function (xhr2) {
                     var res2 = JSON.parse(xhr2.responseText);
-                        Tomahawk.asyncRequest(that.endpoint + "/api/tracks/" + res2.data.id + "/audio?access_token=" + that.accessToken, function (xhr3) {
-                        var res3 = JSON.parse(xhr3.responseText);
-                        Tomahawk.addTrackResults({
-                            qid: qid,
-                            results: [{
-                                artist: res2.data.artist_display_name,
-                                duration: res2.data.duration,
-                                source: that.settings.name,
-                                track: res2.data.title,
-                                url: res3.data.location + "/?slist=" + res3.data.resource
-                            }]
-                        });
+                    Tomahawk.addTrackResults({
+                        qid: qid,
+                        results: [{
+                            artist: res2.data.artist_display_name,
+                            duration: res2.data.duration,
+                            source: that.settings.name,
+                            track: res2.data.title,
+                            url: "beatsmusic://track/" + res.data[0].id
+                        }]
                     });
                 });
             } else {
@@ -137,7 +135,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.asyncRequest(this.endpoint + "/api/tracks/" + trackId + "/audio?acquire=1&access_token=" + this.accessToken, function (xhr) {
             Tomahawk.log(xhr.responseText);
             var res = JSON.parse(xhr.responseText);
-            Tomahawk.reportStreamUrl(qid, res.data.location);
+            Tomahawk.reportUrlTranslation(qid, res.data.location + "/?slist=" + res.data.resource);
         });
     },
 
