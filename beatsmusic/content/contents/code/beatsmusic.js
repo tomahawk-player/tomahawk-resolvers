@@ -56,6 +56,13 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
 
     login: function() {
+        var userConfig = this.getUserConfig();
+        if (!userConfig.user || !userConfig.password) {
+            Tomahawk.log("Beats Music Resolver not properly configured!");
+            this.loggedIn = false;
+            return;
+        }
+
         this.user = userConfig.user;
         this.password = userConfig.password;
 
@@ -84,19 +91,11 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
             method: "POST",
             data: data
         });
-    }
+    },
 
 	init: function() {
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
 
-        Tomahawk.addCustomUrlHandler("beatsmusic", "getStreamUrl", true);
-
-        var userConfig = this.getUserConfig();
-        if (!userConfig.user || !userConfig.password) {
-            Tomahawk.log("Beats Music Resolver not properly configured!");
-            this.loggedIn = false;
-            return;
-        }
 
         this.login();
 	},
