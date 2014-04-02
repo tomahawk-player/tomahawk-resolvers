@@ -143,12 +143,9 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
 	search: function (qid, searchString) {
-        var headers = {
-            "Authorization": "Bearer " + this.accessToken,
-        };
         var that = this;
         // TODO: Search for albums and artists, too.
-        Tomahawk.asyncRequest(this.endpoint + "/api/search?filter=streamable:true&limit=200&type=track&q=" + encodeURIComponent(searchString), function (xhr) {
+        Tomahawk.asyncRequest(this.endpoint + "/api/search?type=track&filters=streamable:true&limit=200&q=" + encodeURIComponent(searchString) + "&client_id=" + this.app_token, function (xhr) {
             var res = JSON.parse(xhr.responseText);
             if (res.code == "OK") {
                 // TODO: Load more metatdata
@@ -162,7 +159,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                 });
                 Tomahawk.addTrackResults({ results: results, qid: qid });
             }
-        }, headers);
+        });
 	},
 
     canParseUrl: function (url, type) {
