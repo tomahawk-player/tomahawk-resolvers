@@ -192,7 +192,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                     Tomahawk.addUrlResult(url, {
                         type: "album",
                         name: res.data.title,
-                        artist: res.data.artist_display_name,
+                        artist: res.data.artist_display_name
                     })
                 }
             });
