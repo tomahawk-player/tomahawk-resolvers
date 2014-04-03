@@ -172,7 +172,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         case TomahawkUrlType.Artist:
             return /https?:\/\/((on|listen)\.)?beatsmusic.com\/artists\/([^\/]*)\/?$/.test(url);
         case TomahawkUrlType.Playlist:
-            return /https?:\/\/((on|listen)\.)?beatsmusic.com\/playlists\/([^\/]*)\/?$/.test(url);
+            return this.loggedIn && /https?:\/\/((on|listen)\.)?beatsmusic.com\/playlists\/([^\/]*)\/?$/.test(url);
         case TomahawkUrlType.Track:
             return /https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/tracks\//.test(url);
         // case TomahawkUrlType.Any:
