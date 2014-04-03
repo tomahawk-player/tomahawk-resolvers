@@ -191,7 +191,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/?$/.test(url)) {
             // Found an album URL
             var match = url.match(/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/?$/);
-            var query = this.endpoint + "/api/albums/" + encodeURIComponent(match[3]);
+            var query = this.endpoint + "/api/albums/" + encodeURIComponent(match[3]) + "?client_id=" + this.app_token;
             Tomahawk.asyncRequest(query, function (xhr) {
                 var res = JSON.parse(xhr.responseText);
                 if (res.code == "OK") {
@@ -201,7 +201,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                         artist: res.data.artist_display_name,
                     })
                 }
-            }, headers);
+            });
         } else if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/artists\/([^\/]*)\/?$/.test(url)) {
             var match = url.match(/https?:\/\/((on|listen)\.)?beatsmusic.com\/artists\/([^\/]*)\/?$/);
             var query = this.endpoint + "/api/artists/" + encodeURIComponent(match[3]) + "?client_id=" + this.app_token;
