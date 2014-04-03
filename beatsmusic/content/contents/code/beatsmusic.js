@@ -46,7 +46,6 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
-        Tomahawk.log("newConfigSaved User: " + userConfig.user);
 
         if (this.user !== userConfig.user || this.password !== userConfig.password)
         {
@@ -136,7 +135,6 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     getStreamUrl: function (qid, url) {
         var trackId = url.replace("beatsmusic://track/", "");
         Tomahawk.asyncRequest(this.endpoint + "/api/tracks/" + trackId + "/audio?acquire=1&bitrate=highest&access_token=" + this.accessToken, function (xhr) {
-            Tomahawk.log(xhr.responseText);
             var res = JSON.parse(xhr.responseText);
             Tomahawk.reportUrlTranslation(qid, res.data.location + "/?slist=" + res.data.resource);
         });
