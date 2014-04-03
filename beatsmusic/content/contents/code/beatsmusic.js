@@ -184,10 +184,6 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     lookupUrl: function (url) {
         // Todo: unshorten beats.mu
 
-        var headers = {
-            "Authorization": "Bearer " + this.app_token,
-            "Content-type": "application/x-www-form-urlencoded"
-        };
         if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/?$/.test(url)) {
             // Found an album URL
             var match = url.match(/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/?$/);
@@ -228,9 +224,8 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                 }
             });
         } else if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/playlists\/([^\/]*)\/?$/.test(url)) {
-            // TODO: Use user's access token if we have one to retrieve private playlists
             var match = url.match(/https?:\/\/((on|listen)\.)?beatsmusic.com\/playlists\/([^\/]*)\/?$/);
-            var query = this.endpoint + "/api/playlists/" + encodeURIComponent(match[3]);
+            var query = this.endpoint + "/api/playlists/" + encodeURIComponent(match[3]) + "?access_token=" + this.accessToken;
             var that = this;
             Tomahawk.asyncRequest(query, function (xhr) {
                 var res = JSON.parse(xhr.responseText);
@@ -239,13 +234,13 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                         type: "playlist",
                         title: res.data.name,
                         guid: "beatsmusic-playlist-" + encodeURIComponent(match[3]),
-                        info: res.data.description + " (A playlist by " + res.result.owner + " on Beats Music)",
-                        creator: res.data.user_display_name,
+                        info: res.data.description + " (A playlist by " + res.data.refs.author.display + " on Beats Music)",
+                        creator: res.data.refs.author.display,
                         url: url,
                         tracks: []
                     };
                     async.map(res.data.refs.tracks, function (item, cb) {
-                        var query2 = that.endpoint + "/api/tracks/" + encodeURIComponent(item.id);
+                        var query2 = that.endpoint + "/api/tracks/" + encodeURIComponent(item.id)  + "?client_id=" + that.app_token;
                         Tomahawk.asyncRequest(query2, function (xhr2) {
                             var res2 = JSON.parse(xhr2.responseText);
                             if (res2.code == "OK") {
@@ -263,7 +258,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                         Tomahawk.addUrlResult(url, result);
                     });
                 }
-            }, headers);
+            });
         }
     }
 });
