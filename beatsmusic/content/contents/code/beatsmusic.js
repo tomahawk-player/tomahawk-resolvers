@@ -216,7 +216,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
             });
         } else if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/tracks\//.test(url)) {
             var match = url.match(/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/tracks\/([^\/]*)/);
-            var query = this.endpoint + "/api/tracks/" + encodeURIComponent(match[4]);
+            var query = this.endpoint + "/api/tracks/" + encodeURIComponent(match[4]) + "?client_id=" + this.app_token;
             Tomahawk.asyncRequest(query, function (xhr) {
                 var res = JSON.parse(xhr.responseText);
                 if (res.code == "OK") {
@@ -226,7 +226,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                         artist: res.data.artist_display_name
                     });
                 }
-            }, headers);
+            });
         } else if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/playlists\/([^\/]*)\/?$/.test(url)) {
             // TODO: Use user's access token if we have one to retrieve private playlists
             var match = url.match(/https?:\/\/((on|listen)\.)?beatsmusic.com\/playlists\/([^\/]*)\/?$/);
