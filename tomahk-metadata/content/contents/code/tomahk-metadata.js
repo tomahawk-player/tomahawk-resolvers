@@ -54,23 +54,23 @@ var TomaHKMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         var urlParts = url.split('/').filter(function (item) { return item.length != 0; }).map(decodeURIComponent);
         if (/https?:\/\/(www\.)?toma.hk\/album\//.test(url)) {
             // We have to deal with an Album
-        Tomahawk.addUrlResult(url, {
-            type: 'album',
-            name: urlParts[urlParts.length - 1],
-            artist: urlParts[urlParts.length - 2]
-        });
+            Tomahawk.addUrlResult(url, {
+                type: 'album',
+                name: urlParts[urlParts.length - 1],
+                artist: urlParts[urlParts.length - 2]
+            });
         } else if (/https?:\/\/(www\.)?toma.hk\/artist\//.test(url)) {
             // We have to deal with an Artist
-        Tomahawk.addUrlResult(url, {
-            type: 'artist',
-            name: urlParts[urlParts.length - 1]
-        });
+            Tomahawk.addUrlResult(url, {
+                type: 'artist',
+                name: urlParts[urlParts.length - 1]
+            });
         } else if (/https?:\/\/(www\.)?toma.hk\/p\//.test(url)) {
             // We have a playlist
-        Tomahawk.addUrlResult(url, {
-            type: 'xspf-url',
-            url: url.replace('toma.hk/p/', 'toma.hk/xspf/')
-        });
+            Tomahawk.addUrlResult(url, {
+                type: 'xspf-url',
+                url: url.replace('toma.hk/p/', 'toma.hk/xspf/')
+            });
         } else if (/https?:\/\/(www\.)?toma.hk\/\?(artist=)[^&]*(&title=)/.test(url)) {
             // We search for a track
             Tomahawk.addUrlResult(url, {
