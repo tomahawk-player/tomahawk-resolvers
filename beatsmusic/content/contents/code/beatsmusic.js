@@ -193,7 +193,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                         type: "album",
                         name: res.data.title,
                         artist: res.data.artist_display_name
-                    })
+                    });
                 }
             });
         } else if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/artists\/([^\/]*)\/?$/.test(url)) {
@@ -205,7 +205,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                     Tomahawk.addUrlResult(url, {
                         type: "artist",
                         name: res.data.name
-                    })
+                    });
                 }
             });
         } else if (/https?:\/\/((on|listen)\.)?beatsmusic.com\/albums\/([^\/]*)\/tracks\//.test(url)) {
