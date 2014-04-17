@@ -83,6 +83,9 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
                     if (song.album !== null) {
                         dAlbum = song.album;
                     }
+                    if (typeof(song.sources) != 'undefined' && song.sources != null && song.sources.length > 0) {
+                        result.linkUrl = song.sources[0]
+                    }
                     if ((dTitle.toLowerCase().indexOf(title.toLowerCase()) !== -1 && dArtist.toLowerCase().indexOf(artist.toLowerCase()) !== -1) || (artist === "" && album === "")) {
                         result.artist = ((dArtist !== "") ? dArtist : artist);
                         result.album = ((dAlbum !== "") ? dAlbum : album);
