@@ -43,3 +43,6 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 | beatsmusic | :lock:    | ✔      | ✔               | ✔              | :lock:            | ✔              | ✘          |
 | beets      | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | ✔          |
 | deezer-metadata | ✘    | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
+| dilandu    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
+| exfm       | ✔         | ✔      | ✘               | ✘              | ✔                 | ✔              | ✘          |
+| grooveshark | :lock:   | :lock: | ✘               | ✘              | ✘                 | ✘              | ✘          |
