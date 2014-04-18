@@ -33,3 +33,4 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 | ampache    | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | ✔          |
 | beatsmusic | :lock:    | ✔      | ✔               | ✔              | :lock:            | ✔              | ✘          |
 | beets      | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | ✔          |
+| deezer-metadata | ✘    | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
