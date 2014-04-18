@@ -17,6 +17,15 @@ For developer documentation, see [HACKING.md](HACKING.md).
 Not all resolvers feature the same capabilities, this is either due to the lacking capabilities of the service they connect to or that the capability is not yet implemented.
 Some of the features need authentication (e.g. being a premium subscriber to this service), some can be used without any subscription or authentication at all.
 
+**Available Capabilities:**
+* **Resolving**: Given a tuple of `Artist,Track` (or a triple `Artist,Album,Track`) return a stream URL (and some metadata about it) so that one can play this track.
+* **Search**: (Fuzzily) find tracks, artists and albums on all services matching a query that can be streamed.
+* **Open Artist URL**: Given an URL about an artist of a service, return the information about that. (This opens the artist page in Tomahawk).
+* **Open Album URL**: Given an URL about an album of a service, return the information about that. (This opens the album page in Tomahawk).
+* **Open Playlist URL**: Given an URL about a playlist of a service, return the information about that. (This imports the playlist in Tomahawk if it was not previously imported)
+* **Open Track URL**: Given an URL about a track of a service, return the information about that. (This opens the track page in Tomahawk and plays it).
+* **Collection**: Browse the collection of music stored by the user in this service.
+
 **Legend:**
 * ✔ - Supports without authentication
 * :lock: - Authentication required
