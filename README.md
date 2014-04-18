@@ -28,7 +28,7 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 
 | *Resolver* | Resolving | Search | Open Artist URL | Open Album URL | Open Playlist URL | Open Track URL | Collection |
 |------------|-----------|--------|-----------------|----------------|-------------------|----------------|------------|
-| 4shared    | ?         | ?      | ?               | ?              | ?                 | ?              | ?          |
+| 4shared    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | 8tracks    | ?         | ?      | ?               | ?              | ?                 | ?              | ?          |
 | ampache    | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | ✔          |
 | beatsmusic | :lock:    | ✔      | ✔               | ✔              | :lock:            | ✔              | ✘          |
