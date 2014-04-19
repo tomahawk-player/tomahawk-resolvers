@@ -283,7 +283,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 
 		// Now we can go further down, and check the ytplayer.config map
-		streamMatch = html.match(/(ytplayer\.config =)([^\r\n]+);/);
+		streamMatch = html.match(/(ytplayer\.config =)([^\r\n]+?);/);
 
 		if (!streamMatch) {
 			// Todo: Open window for user input?
