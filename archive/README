@@ -1,0 +1,3 @@
+Resolvers in this directory are not functional anymore because the used API
+is not available anymore. The resolver may still be helpful as a basis for
+developing new resolvers.
