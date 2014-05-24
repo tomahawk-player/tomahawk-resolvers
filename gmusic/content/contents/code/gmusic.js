@@ -1,5 +1,5 @@
 /* Google Play Music resolver for Tomahawk.
- * 
+ *
  * Written in 2013 by Sam Hanes <sam@maltera.com>
  * Extensive modifications in 2014 by Lalit Maganti
  *
@@ -10,7 +10,7 @@
  *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software. If not, see:
- * http://creativecommons.org/publicdomain/zero/1.0/ 
+ * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
 var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
@@ -141,38 +141,44 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         var url =  this._baseURL + 'trackfeed';
 
         var that = this;
-        this._request( 'POST', url, function (request) {
-            if (200 != request.status) {
-                Tomahawk.log(
-                        "Google Music search '" + query + "' failed:\n"
-                        + request.status + " "
-                        + request.statusText.trim() + "\n"
-                        + request.responseText.trim()
-                    );
-                return;
-            }
-
-            var response = JSON.parse( request.responseText );
-            var results = { tracks: [], albums: [], artists: [] };
-            for (var idx = 0; idx < response.data.items.length; idx++) {
-                var entry = response.data.items[ idx ];
-                var lowerQuery = query.toLowerCase();
-                if (entry.artist.toLowerCase() === lowerQuery 
-                    || entry.album.toLowerCase() === lowerQuery
-                    || entry.title.toLowerCase() === lowerQuery) {
-                    var artist = that._convertArtist(entry);
-                    var album = that._convertAlbum(entry);
-                    if (!that.containsObject(artist, results.artists)) {
-                        results.artists.push(artist);
-                    }
-                    if (!that.containsObject(album, results.albums)) {
-                        results.albums.push(album);
-                    }
-                    results.tracks.push(that._convertTrack(entry));
+        Tomahawk.asyncRequest(url,
+            function (request) {
+                if (200 != request.status) {
+                    Tomahawk.log(
+                            "Google Music search '" + query + "' failed:\n"
+                            + request.status + " "
+                            + request.statusText.trim() + "\n"
+                                + request.responseText.trim()
+                        );
+                    return;
                 }
-            }
-            callback.call( window, results );
-        });
+
+                var response = JSON.parse( request.responseText );
+                var results = { tracks: [], albums: [], artists: [] };
+                for (var idx = 0; idx < response.data.items.length; idx++) {
+                    var entry = response.data.items[ idx ];
+                    var lowerQuery = query.toLowerCase();
+                    if (entry.artist.toLowerCase() === lowerQuery
+                        || entry.album.toLowerCase() === lowerQuery
+                        || entry.title.toLowerCase() === lowerQuery) {
+                        var artist = that._convertArtist(entry);
+                        var album = that._convertAlbum(entry);
+                        if (!that.containsObject(artist, results.artists)) {
+                            results.artists.push(artist);
+                        }
+                        if (!that.containsObject(album, results.albums)) {
+                            results.albums.push(album);
+                        }
+                        results.tracks.push(that._convertTrack(entry));
+                    }
+                }
+                callback.call( window, results );
+            }, {
+                'Content-type': 'application/x-www-form-urlencoded',
+                'Authorization': 'GoogleLogin auth=' + this._token,
+            }, {
+                method: 'POST'
+            });
     },
 
     search: function (qid, query) {
@@ -240,6 +246,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     + '=' + urn.id;
 
         Tomahawk.reportStreamUrl(qid, url, {
+            'Content-type': 'application/x-www-form-urlencoded',
             'Authorization': 'GoogleLogin auth=' + this._token,
             'X-Device-ID'  : this._deviceId
         });
@@ -247,8 +254,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
     _loadSettings: function (callback) {
         var that = this;
-        that._request(
-            'POST', that._webURL
+        Tomahawk.asyncRequest(that._webURL
                     + 'services/loadsettings?u=0&xt='
                     + encodeURIComponent( that._xt ),
             function (request) {
@@ -288,7 +294,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     that._deviceId = device.id.slice( 2 );
                     Tomahawk.log(that._deviceId);
 
-                    Tomahawk.log( that.settings.name 
+                    Tomahawk.log( that.settings.name
                             + " using device ID from "
                             + device.carrier + " "
                             + device.manufacturer + " "
@@ -306,15 +312,20 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                             + " and log in to your account."
                         );
                 }
-            },
-            { 'Content-Type': 'application/json' }, 
-            JSON.stringify({ 'sessionId': '' })
+            }, {
+                'Content-type': 'application/x-www-form-urlencoded',
+                'Authorization': 'GoogleLogin auth=' + this._token,
+                'Content-Type': 'application/json'
+            }, {
+                method: 'POST',
+                body: JSON.stringify({ 'sessionId': '' })
+            }
         );
     },
 
     _loadWebToken: function (callback) {
         var that = this;
-        that._request( 'HEAD', that._webURL + 'listen',
+        Tomahawk.asyncRequest(that._webURL + 'listen',
             function (request) {
                 if (200 != request.status) {
                     Tomahawk.log( "request for xt cookie failed:"
@@ -333,10 +344,13 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     Tomahawk.log( "xt cookie missing" );
                     return;
                 }
+            }, {
+                'Authorization': 'GoogleLogin auth=' + this._token
+            }, {
+                method: 'HEAD'
             }
         );
     },
-
 
     /** Called when the login process is completed.
      * @callback loginCB
@@ -345,8 +359,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     /** Asynchronously authenticates with the SkyJam service.
      * Only one login attempt will run at a time. If a login request is
      * already pending the callback (if one is provided) will be queued
-     * to run when it is complete. 
-     * 
+     * to run when it is complete.
+     *
      * @param {loginCB} [callback] a function to be called on completion
      */
     _login: function (callback) {
@@ -363,14 +377,13 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         var that = this;
         var name = this.settings.name;
-        this._request(
-            'POST', 'https://www.google.com/accounts/ClientLogin',
+        Tomahawk.asyncRequest('https://www.google.com/accounts/ClientLogin',
             function (request) {
                 if (200 == request.status) {
                     that._token = request.responseText
                             .match( /^Auth=(.*)$/m )[ 1 ];
                     that._loginLock = false;
-            
+
                     Tomahawk.log( name + " logged in successfully" );
 
                     for (var idx = 0; idx < that._loginCallbacks.length; idx++) {
@@ -378,122 +391,20 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     }
                     that._loginCallbacks = null;
                 } else {
-                    Tomahawk.log(
-                            name + " login failed:\n"
+                    Tomahawk.log(name + " login failed:\n"
                             + request.status + " "
                             + request.statusText.trim() + "\n"
-                            + request.responseText.trim()
-                        );
+                            + request.responseText.trim());
                 }
-            }, null,
-            {   'accountType':  'HOSTED_OR_GOOGLE',
-                'Email':        that._email.trim(),
-                'Passwd':       that._password.trim(),
-                'service':      'sj',
-                'source':       'tomahawk-gmusic-' + that._version
-            }, true
+            }, {
+                'Content-type': 'application/x-www-form-urlencoded'
+            }, {
+                method: 'POST',
+                data: "accountType=HOSTED_OR_GOOGLE&Email=" + that._email.trim()
+                    + "&Passwd=" + that._password.trim() + "&service=sj&source=tomahawk-gmusic-"
+                    + that._version
+            }
         );
-    },
-
-    /** Called when an HTTP request is completed.
-     * @callback requestCB
-     * @param {XMLHttpRequest} request the completed request
-     */
-
-    /** Sends an asynchronous HTTP request.
-     *
-     * If an authentication token is available it will be sent.
-     * Unless {@code nologin} is set, if the server returns 401 
-     * {@link #_login} will be called and the request will be retried.
-     * Automatic login will only be attempted once per request. If 401
-     * is returned again after logging in the request will be handled
-     * as normal.
-     *
-     * If {@code body} is not provided the request will be sent without
-     * an entity. If a body is provided it must be of a type supported
-     * by {@code XMLHttpRequest}. As a special case, if an object is
-     * provided it will be interpreted as form parameters and encoded
-     * as {@code application/x-www-form-urlencoded}.
-     * 
-     * @param {string} method the HTTP method to use
-     * @param {string} url the URL to request
-     * @param {requestCB} callback completion callback function
-     * @param {object} [headers] additional request headers
-     * @param {string|object} [body] the request entity to be sent
-     * @param {boolean} [nologin=false]
-     *        whether to suppress automatic re-authentication
-     */
-     _request: function (method, url, callback, headers, body, nologin) {
-        var that = this;
-        var args = arguments;
-
-        // if we're waiting for a login, queue the request
-        if (!nologin && this._loginLock) {
-            this._loginCallbacks.push( function() {
-                args[ 5 ] = true; // set nologin
-                that._request.apply( that, args );
-            } );
-            return;
-        }
-
-        var request = new XMLHttpRequest();
-        request.open( method, url, true );
-
-        // prevent useless parsing of the response
-        request.responseType = 'text';
-
-        // add the authentication token if we have one
-        if (this._token) request.setRequestHeader(
-                'Authorization', 'GoogleLogin auth=' + this._token );
-
-        // add extra request headers
-        if (headers) for (var name in headers)
-            request.setRequestHeader( name, headers[ name ] );
-
-        // add extra request headers
-        for (var name in request.headers)
-            Tomahawk.log(name);
-
-        var name = this.settings.name;
-        request.onreadystatechange = function() {
-            if (4 != request.readyState) return;
-
-            // log in and retry if necessary
-            if (401 == request.status && !nologin) {
-                Tomahawk.log( name + ' login expired, re-authenticating' );
-                that._login( function() {
-                    args[ 5 ] = true; // set nologin
-                    that._request.apply( that, args );
-                });
-            } else {
-                callback.call( window, request );
-            }
-        }
-
-        // if body given as object encode as x-www-form-urlencoded
-        if ('object' == typeof body) {
-            request.setRequestHeader( 'Content-Type',
-                    'application/x-www-form-urlencoded' );
-
-            function encode (value) {
-                // close enough to x-www-form-urlencoded
-                return encodeURIComponent( value ).replace( '%20', '+' );
-            }
-
-            var postdata = "";
-            for (var name in body) {
-                postdata += '&' + encode( name )
-                    + '=' + encode( body[ name ] );
-            }
-
-            body = postdata.substring( 1 );
-        }
-
-        if (body) {
-            request.send( body );
-        } else {
-            request.send();
-        }
     },
 
     containsObject: function (obj, list) {
