@@ -118,10 +118,19 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     _convertTrack: function (entry) {
         return {
             artist:     entry.artist,
-            duration:   entry.durationMillis / 1000,
-            source:     "Google Music",
+            album:      entry.album,
             track:      entry.title,
+            year:       entry.year,
+
+            albumpos:   entry.trackNumber,
+            discnumber: entry.discNumber,
+
+            size:       entry.estimatedSize,
+            duration:   entry.durationMillis / 1000,
+
+            source:     "Google Music",
             url:        'gmusic://track/' + entry.id,
+            checked:    true
         };
     },
 
