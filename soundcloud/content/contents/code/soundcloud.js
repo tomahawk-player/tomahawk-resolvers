@@ -68,16 +68,15 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 	init: function() {
 		// Set userConfig here
 		var userConfig = this.getUserConfig();
-		if ( userConfig !== undefined ){
-			this.includeCovers = userConfig.includeCovers;
-			this.includeRemixes = userConfig.includeRemixes;
-			this.includeLive = userConfig.includeLive;
-		}
-		else {
-			this.includeCovers = false;
-			this.includeRemixes = false;
-			this.includeLive = false;
-		}
+        if ( userConfig !== undefined ) {
+            this.includeCovers = userConfig.includeCovers;
+            this.includeRemixes = userConfig.includeRemixes;
+            this.includeLive = userConfig.includeLive;
+        } else {
+            this.includeCovers = false;
+            this.includeRemixes = false;
+            this.includeLive = false;
+        }
 
 
 		String.prototype.capitalize = function(){
