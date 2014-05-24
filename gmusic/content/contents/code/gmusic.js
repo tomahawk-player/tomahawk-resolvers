@@ -59,6 +59,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         this._password = config.password;
 
         if (!this._email || !this._password) {
+            Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
             Tomahawk.log( name + " resolver not configured." );
             return;
         }
@@ -84,6 +85,11 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         this._login( function() {
             that._loadWebToken( function() {
                 that._loadSettings( function() {
+                    that._getData(function (response) {
+                        that.trackCount = response.data.items.length;
+                        Tomahawk.log("Reporting collection");
+                        Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
+                    });
                     that._ready = true;
                 });
             });
@@ -404,6 +410,67 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         }
 
         return false;
+    },
+
+    // Script Collection Support
+
+    artists: function (qid) {
+        this._getData(function (response) {
+            var names = response.data.items.map(function (item) {
+                return item.artist;
+            });
+            var unique_names = names.filter(function (item, pos) {
+                return names.indexOf(item) == pos;
+            });
+            Tomahawk.addArtistResults({
+                qid: qid,
+                artists: unique_names
+            });
+        });
+    },
+
+    albums: function (qid, artist) {
+        this._getData(function (response) {
+            var names = response.data.items.filter(function (item) {
+                return item.artist == artist;
+            }).map(function (item) {
+                return item.album;
+            });
+            var unique_names = names.filter(function (item, pos) {
+                return names.indexOf(item) == pos;
+            });
+            Tomahawk.addAlbumResults({
+                qid: qid,
+                artist: artist,
+                albums: unique_names
+            });
+        });
+    },
+
+    tracks: function (qid, artist, album) {
+        var that = this;
+        this._getData(function (response) {
+            var tracks = response.data.items.filter(function (item) {
+                return item.artist == artist && item.album == album;
+            }).map(function (item) {
+                return that._convertTrack(item);
+            });
+            Tomahawk.addAlbumTrackResults({
+                qid: qid,
+                artist: artist,
+                album: album,
+                results: tracks
+            });
+        });
+    },
+
+    collection: function () {
+        return {
+            prettyname: "Google Music",
+            description: this._email,
+            iconfile: '../images/icon.png',
+            trackcount: this.trackCount
+        };
     }
 });
 
