@@ -65,7 +65,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 		}
 	},
 
-	init: function() {
+    /**
+     * Initial the soundcloud resolver.
+     *
+     * @param callback function(err) Callback that notifies when the resolver was initialised.
+     */
+	init: function (callback) {
 		// Set userConfig here
 		var userConfig = this.getUserConfig();
         if ( userConfig !== undefined ) {
@@ -83,6 +88,10 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 			return this.replace( /(^|\s)([a-z])/g , function(m,p1,p2){ return p1+p2.toUpperCase(); } );
 		};
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+
+        if (callback) {
+            callback(null);
+        }
 	},
 
 	getTrack: function (trackTitle, origTitle) {
