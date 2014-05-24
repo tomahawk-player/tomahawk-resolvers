@@ -9,9 +9,6 @@
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/gmusic.js",
-        "scripts": [
-            "contents/code/cryptojs.js"
-        ],
         "icon": "contents/images/icon.png",
         "resources": [
             "contents/code/config.ui",
