@@ -10,6 +10,7 @@
     "manifest": {
         "main": "contents/code/gmusic.js",
         "icon": "contents/images/icon.png",
+        "scripts": [],
         "resources": [
             "contents/code/config.ui",
             "contents/code/play-logo.png"
