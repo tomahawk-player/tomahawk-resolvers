@@ -62,32 +62,6 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
             return;
         }
 
-        // check that we have all the needed CryptoJS modules
-        {   var error = false;
-            if (error |= 'object' !== typeof CryptoJS) {
-                Tomahawk.log( "CryptoJS missing" );
-            } else {
-                if (error |= 'object' !== typeof CryptoJS.algo.HMAC)
-                    Tomahawk.log( "CryptoJS.algo.HMAC missing" );
-
-                if (error |= 'object' !== typeof CryptoJS.algo.SHA1)
-                    Tomahawk.log( "CryptoJS.algo.SHA1 missing" );
-
-                if (error |= 'object' !== typeof CryptoJS.enc.Base64)
-                    Tomahawk.log( "CryptoJS.enc.Base64 missing" );
-            }
-
-            if (error) {
-                Tomahawk.log( "Required CryptoJS modules are missing."
-                        + " Did cryptojs.js get loaded? Some versions"
-                        + " of Tomahawk don't load extra scripts when"
-                        + " installing unpacked resolvers. Try making"
-                        + " an AXE and installing it instead."
-                    );
-                return;
-            }
-        }
-
         // load signing key
         {   var s1 = CryptoJS.enc.Base64.parse(
                     'VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
