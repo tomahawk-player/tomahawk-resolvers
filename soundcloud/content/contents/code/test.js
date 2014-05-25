@@ -94,6 +94,12 @@ buster.testCase("soundcloud", {
                 }
             ]));
         this.instance.resolve("qid-001", "Bloc Party", "", "Ratchet");
+    },
+
+    "// test search": function () {
+    },
+
+    "// test url lookup": function () {
     }
 });
 
