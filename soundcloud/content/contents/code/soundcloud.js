@@ -167,10 +167,14 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
                         results.push(result);
                     }
 				}
-				Tomahawk.addTrackResults({
-                    qid: qid,
-                    results: [results[0]]
-                });
+                if (results.length > 0) {
+                    Tomahawk.addTrackResults({
+                        qid: qid,
+                        results: [results[0]]
+                    });
+                } else {
+                    Tomahawk.addTrackResults(empty);
+                }
 			} else {
 				Tomahawk.addTrackResults(empty);
 			}
