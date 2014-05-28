@@ -204,7 +204,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 						stop = stop - 1;
 						continue;
 					}
-					var result = new Object();
+					var result = {};
 
 					if (that.getTrack(resp[i].title, "")){
 						var track = resp[i].title;
