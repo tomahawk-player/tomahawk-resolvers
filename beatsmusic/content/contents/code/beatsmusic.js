@@ -98,7 +98,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
 
-        Tomahawk.addCustomUrlTranslator("beatsmusic", "getStreamUrl", true);
+        Tomahawk.addCustomUrlHandler("beatsmusic", "getStreamUrl", true);
 
         // re-login every 50 minutes
         setInterval((function(self) { return function() { self.login(); }; })(this), 1000*60*50);
@@ -139,7 +139,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         var trackId = url.replace("beatsmusic://track/", "");
         Tomahawk.asyncRequest(this.endpoint + "/api/tracks/" + trackId + "/audio?acquire=1&bitrate=highest&access_token=" + this.accessToken, function (xhr) {
             var res = JSON.parse(xhr.responseText);
-            Tomahawk.reportUrlTranslation(qid, res.data.location + "/?slist=" + res.data.resource);
+            Tomahawk.reportStreamUrl(qid, res.data.location + "/?slist=" + res.data.resource);
         });
     },
 
