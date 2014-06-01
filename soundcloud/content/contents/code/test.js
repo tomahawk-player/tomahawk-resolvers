@@ -1,26 +1,10 @@
 var buster = require("buster");
-var fs = require('fs');
 var nock = require("nock");
-var TomahawkJS = require("tomahawkjs");
+var utils = require("../../../../test/utils.js");
 
 buster.testCase("soundcloud", {
     setUp: function (done) {
-        var that = this;
-        this.metadata = JSON.parse(fs.readFileSync('soundcloud/content/metadata.json'))
-        TomahawkJS.loadAxe('soundcloud/soundcloud-' + this.metadata.version + '.axe', function(err, axe) {
-            axe.getInstance(function(err, instance_context) {
-                that.instance = instance_context.instance;
-                that.context = instance_context.context;
-                that.instance.init(function (error) {
-                    if (error) {
-                        // TODO Loading failed, crash!
-                    } else {
-                        // Resolver loaded successfully, start testing.
-                        done();
-                    }
-                });
-            });
-        });
+        utils.loadResolver('soundcloud', this, done);
     },
 
     "test capabilities": function () {
