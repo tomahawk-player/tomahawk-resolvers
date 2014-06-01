@@ -1,12 +1,13 @@
 var buster = require("buster");
+var fs = require('fs');
 var nock = require("nock");
 var TomahawkJS = require("tomahawkjs");
 
 buster.testCase("soundcloud", {
     setUp: function (done) {
         var that = this;
-        // TODO: Make this path dynamic, maybe even freshly built the resolver first.
-        TomahawkJS.loadAxe('soundcloud/soundcloud-0.9.6.axe', function(err, axe) {
+        this.metadata = JSON.parse(fs.readFileSync('soundcloud/content/metadata.json'))
+        TomahawkJS.loadAxe('soundcloud/soundcloud-' + this.metadata.version + '.axe', function(err, axe) {
             axe.getInstance(function(err, instance_context) {
                 that.instance = instance_context.instance;
                 that.context = instance_context.context;
