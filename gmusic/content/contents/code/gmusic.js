@@ -47,9 +47,15 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
     newConfigSaved: function() {
         var config = this.getUserConfig();
-        if (this._email !== config.email
-                || this._password !== config.password)
+        if (this._email !== config.email || this._password !== config.password) {
             this.init();
+            this.invalidateCache();
+        }
+    },
+
+    invalidateCache: function() {
+        delete this.cachedRequest.response;
+        // Tomahawk.deleteFuzzyIndex();
     },
 
     init: function() {
