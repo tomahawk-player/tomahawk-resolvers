@@ -78,9 +78,6 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         this._email = config.email;
         this._password = config.password;
 
-        // Invalidate cache if account has changed for example
-        delete this.cachedRequest;
-
         if (!this._email || !this._password) {
             Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
             Tomahawk.log( name + " resolver not configured." );
