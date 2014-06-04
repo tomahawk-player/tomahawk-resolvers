@@ -211,7 +211,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
                 var resultIds = Tomahawk.searchFuzzyIndex(query);
                 for (var idx = 0; idx < resultIds.length; idx++) {
-                    var entry = resultIds[idx][0];
+                    var id = resultIds[idx][0];
+                    var entry = response.data.items[id];
                     var artist = that._convertArtist(entry);
                     var album = that._convertAlbum(entry);
                     if (!that.containsObject(artist, results.artists)) {
