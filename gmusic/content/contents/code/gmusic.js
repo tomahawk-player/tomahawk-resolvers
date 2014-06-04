@@ -246,9 +246,6 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     );
                 return;
             }
-
-            Tomahawk.log(request.responseText);
-
             var response = JSON.parse( request.responseText );
 
             // entries member is missing when there are no results
@@ -335,6 +332,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     Tomahawk.addTrackResults({ 'qid': qid, 'results': [] });
                 }
             }, 1);
+        } else {
+            Tomahawk.addTrackResults({ 'qid': qid, 'results': [] });
         }
     },
 
