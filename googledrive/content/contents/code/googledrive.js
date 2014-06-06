@@ -111,7 +111,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.oauth.init();
 
-        Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl", "true" );
+        Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl", true );
         Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
 
 		//TODO updateDatabase when?
