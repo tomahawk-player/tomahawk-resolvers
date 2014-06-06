@@ -104,19 +104,12 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     init: function () {
-        Tomahawk.log("Beginnning INIT of Google Drive resovler");
 		//dbLocal.setItem("googledrive.expiresOn","1");
 		//dbLocal.setItem("googledrive.cursor","");
-
-		//Tomahawk.showWebInspector();
 
         this.cursor = dbLocal.getItem('googledrive.cursor','');
 
         this.oauth.init();
-        musicManager.initDatabase() ;
-
-        //musicManager.showDatabase();
-        //this.googleDriveMusicManagerTests() ;
 
         Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl", "true" );
         Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
