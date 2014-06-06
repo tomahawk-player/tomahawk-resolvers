@@ -9,7 +9,7 @@
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/googledrive.js",
-        "scripts": ["contents/code/musicManager.js"],
+        "scripts": [],
         "icon": "contents/images/icon.svg",
         "resources": [
             "contents/code/config.ui",

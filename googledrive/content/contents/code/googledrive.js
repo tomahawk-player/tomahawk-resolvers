@@ -104,18 +104,19 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     init: function () {
+        Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl", true );
+
 		//dbLocal.setItem("googledrive.expiresOn","1");
 		//dbLocal.setItem("googledrive.cursor","");
 
-        this.cursor = dbLocal.getItem('googledrive.cursor','');
+        // this.cursor = dbLocal.getItem('googledrive.cursor','');
 
-        this.oauth.init();
+        // this.oauth.init();
 
-        Tomahawk.addCustomUrlHandler( "googledrive", "getStreamUrl", true );
-        Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
+        // Tomahawk.reportCapabilities( TomahawkResolverCapability.Browsable | TomahawkResolverCapability.AccountFactory );
 
 		//TODO updateDatabase when?
-  		this.updateDatabase();
+  		// this.updateDatabase();
     },
 
     updateDatabase: function(pageToken){
@@ -168,6 +169,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     resolve: function (qid, artist, album, title) {
+        return false;
        musicManager.resolve(artist, album, title, function(results) {
 		   var return_songs = {
                 qid: qid,
@@ -180,6 +182,7 @@ var GoogleDriveResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     search: function (qid, searchString) {
+        return false;
         // set up a limit for the musicManager search Query
         Tomahawk.log("search query");
 		musicManager.searchQuery(searchString,function(results){
