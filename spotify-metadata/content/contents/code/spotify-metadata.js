@@ -54,7 +54,7 @@ var SpotifyMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         var match = url.match(/spotify:(album|artist|track):(.*)/);
         var playlistmatch = url.match(/spotify:user:[0-9]*:playlist:(.*)/);
         if (match == null) {
-            match = url.match(/https?:\/\/(play|open)\.spotify\.[^\/]+\/(album|artist|track)\/([^\/]*)/);
+            match = url.match(/https?:\/\/(play|open)\.spotify\.[^\/]+\/(album|artist|track)\/([^\/\?]*)/);
             if (match != null) match.splice(1, 1);
         }
         if (match != null) {
