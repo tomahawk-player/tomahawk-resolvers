@@ -216,10 +216,10 @@ bool checkTracksAreLoaded(QList<sp_track*> waitingForLoaded);
 bool checkPlaylistIsLoaded(sp_playlist* pl );
 bool checkTracksAreLoaded(QList< sp_track* > waitingForLoaded);
 
-Q_DECLARE_METATYPE( sp_playlistcontainer* );
-Q_DECLARE_METATYPE( sp_playlist* );
-Q_DECLARE_METATYPE( const int* );
-Q_DECLARE_METATYPE( QList< sp_track* > );
-Q_DECLARE_METATYPE( QList< int > );
+Q_DECLARE_METATYPE( sp_playlistcontainer* )
+Q_DECLARE_METATYPE( sp_playlist* )
+Q_DECLARE_METATYPE( const int* )
+Q_DECLARE_METATYPE( QList< sp_track* > )
+Q_DECLARE_METATYPE( QList< int > )
 
 #endif // SPOTIFYPLAYLISTS_H
