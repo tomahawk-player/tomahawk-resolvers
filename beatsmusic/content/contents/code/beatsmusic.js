@@ -167,6 +167,9 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                                 track: res2.data.title,
                                 url: "beatsmusic://track/" + res2.data.id
                             };
+                            if (res2.data.refs.hasOwnProperty("album")) {
+                                result.album = res2.data.refs.album.display;
+                            }
                             cb(null, result);
                         } else {
                             Tomahawk.log("Failed to get track metadata: " +
