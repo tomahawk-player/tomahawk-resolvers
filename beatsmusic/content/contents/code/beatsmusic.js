@@ -162,6 +162,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
                         if (res2.code == "OK") {
                             var result = {
                                 artist: res2.data.artist_display_name,
+                                bitrate: 320,
                                 duration: res2.data.duration,
                                 source: that.settings.name,
                                 track: res2.data.title,
