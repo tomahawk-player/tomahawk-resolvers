@@ -194,7 +194,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 callback(that.cachedRequest.response);
             }, {
                 'Content-type': 'application/x-www-form-urlencoded',
-                'Authorization': 'GoogleLogin auth=' + this._token,
+                'Authorization': 'GoogleLogin auth=' + this._token
             }, {
                 method: 'POST'
             });
