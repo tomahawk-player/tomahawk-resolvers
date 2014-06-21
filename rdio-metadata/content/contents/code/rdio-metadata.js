@@ -49,6 +49,13 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
+    encodeOAuthComponent: function (url) {
+        var encoded = encodeURIComponent(url);
+        encoded = encoded.replace(/\!/g, "%21").replace(/\'/g, "%27");
+        encoded = encoded.replace(/\(/g, "%28").replace(/\)/g, "%29");
+        return encoded.replace(/\*/g, "%2A");
+    },
+
     lookupUrl: function (url) {
         var that = this;
         var fetchUrl = 'http://api.rdio.com/1/'
@@ -57,13 +64,15 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         var nonce = '';
         for (i = 0; i < 8; i++) nonce += parseInt(Math.random() * 10).toString();
         query += '&oauth_nonce=' + nonce;
-        query += '&oauth_signature_method=' + encodeURIComponent('HMAC-SHA1');
+        query += '&oauth_signature_method=' + this.encodeOAuthComponent('HMAC-SHA1');
         query += '&oauth_timestamp=' + Math.round((new Date()).getTime() / 1000);;
         query += '&oauth_version=1.0';
-        query += '&url=' + encodeURIComponent(url);
-        var toSign = 'POST&' + encodeURIComponent(fetchUrl) + '&' + encodeURIComponent(query);
+        query += '&url=' + this.encodeOAuthComponent(url);
+        var toSign = 'POST&' + this.encodeOAuthComponent(fetchUrl) + '&' + this.encodeOAuthComponent(query);
         var signature = CryptoJS.HmacSHA1(toSign, 'yt35kakDyW&').toString(CryptoJS.enc.Base64);
-        query += '&oauth_signature=' + encodeURIComponent(signature);
+        query += '&oauth_signature=' + this.encodeOAuthComponent(signature);
+        Tomahawk.log(fetchUrl)
+        Tomahawk.log(query)
         Tomahawk.asyncRequest(fetchUrl, function (xhr) {
             var res = JSON.parse(xhr.responseText);
             if (res.status == 'ok') {
