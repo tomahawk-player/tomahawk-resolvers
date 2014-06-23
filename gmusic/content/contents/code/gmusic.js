@@ -157,7 +157,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     },
 
     _getData: function (callback) {
-        if (this.hasOwnProperty('cachedRequest') && this.cachedRequest.time + this.settings.cacheTime > Date.now()) {
+        if (this.hasOwnProperty('cachedRequest')
+            && this.cachedRequest.time + this.settings.cacheTime * 1000 > Date.now()) {
             callback(this.cachedRequest.response);
         } else {
             var that = this;
