@@ -461,11 +461,9 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 }
             }, {
                 'Content-type': 'application/x-www-form-urlencoded',
-                'Authorization': 'GoogleLogin auth=' + this._token,
-                'Content-Type': 'application/json'
+                'Authorization': 'GoogleLogin auth=' + this._token
             }, {
-                method: 'POST',
-                body: JSON.stringify({ 'sessionId': '' })
+                method: 'POST'
             }
         );
     },
