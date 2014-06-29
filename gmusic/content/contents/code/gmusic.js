@@ -108,7 +108,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     that._getData(function (response) {
                         if (response.data) {
                             that.trackCount = response.data.items.length;
-                            Tomahawk.log("Reporting collection");
+                            Tomahawk.log("Reporting collection with " + that.trackCount
+                                + " tracks");
                             Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
                         }
                     });
