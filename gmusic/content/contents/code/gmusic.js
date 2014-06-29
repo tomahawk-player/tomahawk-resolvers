@@ -162,7 +162,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
             callback(this.cachedRequest.response);
         } else {
             var that = this;
-            var url =  this._baseURL + 'trackfeed';
+            var url = this._baseURL
+                + 'trackfeed?fields=data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
             Tomahawk.asyncRequest(url, function (request) {
                 var oldMD5 = "";
                 if (that.hasOwnProperty('cachedRequest')) {
