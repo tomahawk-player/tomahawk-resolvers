@@ -68,6 +68,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     },
 
     invalidateCache: function() {
+        Tomahawk.log("Invalidating cache");
         delete this.cachedRequest;
         Tomahawk.deleteFuzzyIndex();
     },
@@ -86,13 +87,13 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         // load signing key
         {   var s1 = CryptoJS.enc.Base64.parse(
-                    'VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
-                    + 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='
-                );
+                'VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
+                + 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='
+        );
             var s2 = CryptoJS.enc.Base64.parse(
                     'ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
                     + 'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ=='
-                );
+            );
 
             for (var idx = 0; idx < s1.words.length; idx++)
                 s1.words[ idx ] ^= s2.words[ idx ];
@@ -106,8 +107,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
             that._loadWebToken( function() {
                 that._loadSettings( function() {
                     that._getData(function (response) {
-                        if (response.data) {
-                            that.trackCount = response.data.items.length;
+                        if (response) {
+                            that.trackCount = response.length;
                             Tomahawk.log("Reporting collection with " + that.trackCount
                                 + " tracks");
                             Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
@@ -157,32 +158,47 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         return entry.artist;
     },
 
-    _getData: function (callback) {
-        if (this.hasOwnProperty('cachedRequest')
-            && this.cachedRequest.time + this.settings.cacheTime * 1000 > Date.now()) {
-            callback(this.cachedRequest.response);
-        } else {
-            var that = this;
-            var url = this._baseURL
-                + 'trackfeed?fields=data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
-            Tomahawk.asyncRequest(url, function (request) {
-                var oldMD5 = "";
-                if (that.hasOwnProperty('cachedRequest')) {
-                    oldMD5 = that.cachedRequest.md5;
-                }
-                that.cachedRequest = {
-                    response: JSON.parse(request.responseText),
-                    md5: CryptoJS.MD5(request.responseText),
-                    time: Date.now()
-                };
+    _waitingCallbacks: [],
 
-                if (that.cachedRequest.response.data) {
-                    // Check if we need to update the cache.
-                    if (oldMD5 != that.cachedRequest.md5) {
+    _isRequesting: false,
+
+    _callAllWaitingCallbacks: function () {
+        while (this._waitingCallbacks.length > 0) {
+            this._waitingCallbacks.splice(0, 1)[0](this.cachedRequest.response);
+        }
+        this._isRequesting = false;
+    },
+
+    _getData: function (callback) {
+        var that = this;
+        var url = that._baseURL
+            + 'trackfeed?fields=nextPageToken,'
+            + 'data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
+        if (that.cachedRequest) {
+            url += '&updated-min=' + that.cachedRequest.time * 1000;
+        }
+        var time = Date.now();
+        var results = [];
+        that._waitingCallbacks.push(callback);
+        if (!that._isRequesting) {
+            if (!that.cachedRequest
+                || that.cachedRequest.time + that.settings.cacheTime * 1000 > Date.now) {
+                Tomahawk.log("Checking cache");
+                that._isRequesting = true;
+                that._paginatedRequest(results, url, function (results) {
+                    if (results && results.length > 0) {
+                        Tomahawk.log("Collection needs to be updated");
+                        if (that.cachedRequest) {
+                            results = that.cachedRequest.response.concat(results);
+                        }
                         // Recreate fuzzy index
+                        that.cachedRequest = {
+                            response: results,
+                            time: Date.now()
+                        };
                         var indexList = [];
-                        for (var idx = 0; idx < that.cachedRequest.response.data.items.length; idx++) {
-                            var entry = that.cachedRequest.response.data.items[ idx ];
+                        for (var idx = 0; idx < that.cachedRequest.response.length; idx++) {
+                            var entry = that.cachedRequest.response[ idx ];
                             indexList.push({
                                 id: idx,
                                 artist: entry.artist,
@@ -190,25 +206,49 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                                 track: entry.title
                             });
                         }
+                        Tomahawk.log("Creating fuzzy index, count: " + indexList.length);
                         Tomahawk.createFuzzyIndex(indexList);
+                        Tomahawk.log("Updated cache in " + (Date.now() - time) + "ms");
+                    } else {
+                        Tomahawk.log("Collection doesn't need to be updated");
                     }
-                }
-
-                callback(that.cachedRequest.response);
-            }, {
-                'Content-Type': 'application/json',
-                'Authorization': 'GoogleLogin auth=' + this._token
-            }, {
-                method: 'POST',
-                data: JSON.stringify({'max-results': 20000})
-            });
+                    that._callAllWaitingCallbacks();
+                }, {method: 'POST'});
+            } else {
+                that._callAllWaitingCallbacks();
+            }
         }
+    },
+
+    _paginatedRequest: function (results, url, callback, options) {
+        var that = this;
+        var extraHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': 'GoogleLogin auth=' + that._token
+        };
+        Tomahawk.asyncRequest(url, function (request) {
+            var response = JSON.parse(request.responseText);
+            if (response.data) {
+                results = results.concat(response.data.items);
+                Tomahawk.log("Received chunk containing" + results.length + " tracks");
+            }
+            if (response.nextPageToken) {
+                options = {
+                    method: 'POST',
+                    data: JSON.stringify({'start-token': response.nextPageToken})
+                };
+                that._paginatedRequest(results, url, callback, options);
+            } else {
+                callback(results);
+            }
+        }, extraHeaders, options);
     },
 
     _execSearchLocker: function (query, callback, max_results, results) {
         var that = this;
+        var time = Date.now();
         this._getData(function (response) {
-            if (response.data) {
+            if (response) {
                 if (!results) {
                     results = { tracks: [], albums: [], artists: [] };
                 }
@@ -216,7 +256,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 var resultIds = Tomahawk.searchFuzzyIndex(query);
                 for (var idx = 0; idx < resultIds.length; idx++) {
                     var id = resultIds[idx][0];
-                    var entry = response.data.items[id];
+                    var entry = response[id];
                     var artist = that._convertArtist(entry);
                     var album = that._convertAlbum(entry);
                     if (!that.containsObject(artist, results.artists)) {
@@ -228,6 +268,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     results.tracks.push(that._convertTrack(entry));
                 }
             }
+            Tomahawk.log("Searched Locker for " + (Date.now() - time) + "ms and found "
+                + results.tracks.length + " tracks");
             callback.call( window, results );
         });
     },
@@ -241,6 +283,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         if (max_results)
             url += '&max-results=' + max_results;
 
+        var time = Date.now();
         Tomahawk.asyncRequest(url, function (request) {
             if (200 != request.status) {
                 Tomahawk.log(
@@ -248,7 +291,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                         + request.status + " "
                         + request.statusText.trim() + "\n"
                         + request.responseText.trim()
-                    );
+                );
                 return;
             }
             var response = JSON.parse( request.responseText );
@@ -280,6 +323,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                         break;
                 }
             }
+            Tomahawk.log("Searched All Access for " + (Date.now() - time) + "ms and found "
+                + results.tracks.length + " tracks");
             callback.call( window, results );
         }, {
             'Authorization': 'GoogleLogin auth=' + this._token
@@ -307,11 +352,11 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         this._execSearch( query, function (results) {
             Tomahawk.addTrackResults(
-            { 'qid': qid, 'results': results.tracks } );
+                { 'qid': qid, 'results': results.tracks } );
             Tomahawk.addAlbumResults(
-                    { 'qid': qid, 'results': results.albums } );
+                { 'qid': qid, 'results': results.albums } );
             Tomahawk.addArtistResults(
-                    { 'qid': qid, 'results': results.artists } );
+                { 'qid': qid, 'results': results.artists } );
         }, 20);
     },
 
@@ -348,17 +393,20 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         // Ensure that the recent data was loaded
         this._getData(function (response) {
+            var time = Date.now();
             var resultIds = Tomahawk.resolveFromFuzzyIndex(artist, album, title);
             if (resultIds.length > 0) {
                 Tomahawk.addTrackResults({
                     'qid': qid,
                     'results': [
-                        that._convertTrack(response.data.items[resultIds[0][0]])
+                        that._convertTrack(response[resultIds[0][0]])
                     ]
                 });
             } else {
                 that._resolveAllAccess(qid, artist, album, title);
             }
+            Tomahawk.log("Resolved Locker for " + (Date.now() - time) + "ms and found "
+                + resultIds.length.length + " tracks");
         });
     },
 
@@ -390,9 +438,9 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
             ;
 
         var url = 'https://android.clients.google.com/music/mplay'
-                + '?net=wifi&pt=e&targetkbps=8310'
-                + '&' + ('T' == urn.id[ 0 ] ? 'mjck' : 'songid')
-                    + '=' + urn.id + '&slt=' + salt + '&sig=' + sig;
+            + '?net=wifi&pt=e&targetkbps=8310'
+            + '&' + ('T' == urn.id[ 0 ] ? 'mjck' : 'songid')
+            + '=' + urn.id + '&slt=' + salt + '&sig=' + sig;
 
         Tomahawk.reportStreamUrl(qid, url, {
             'Content-type': 'application/x-www-form-urlencoded',
@@ -404,15 +452,15 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     _loadSettings: function (callback) {
         var that = this;
         Tomahawk.asyncRequest(that._webURL
-                    + 'services/loadsettings?u=0&xt='
-                    + encodeURIComponent( that._xt ),
+                + 'services/loadsettings?u=0&xt='
+                + encodeURIComponent( that._xt ),
             function (request) {
                 if (200 != request.status) {
                     Tomahawk.log(
                             "settings request failed:\n"
                             + request.status + " "
                             + request.statusText.trim()
-                        );
+                    );
                     return;
                 }
 
@@ -420,14 +468,14 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 if (!response.settings) {
                     Tomahawk.log( "settings request failed:\n"
                             + request.responseText.trim()
-                        );
+                    );
                     return;
                 }
 
                 that._allAccess = response.settings.isSubscription;
                 Tomahawk.log( "Google Play Music All Access is "
                         + (that._allAccess ? "enabled" : "disabled" )
-                    );
+                );
 
                 var device = null;
                 var devices = response.settings.devices;
@@ -448,7 +496,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                             + device.carrier + " "
                             + device.manufacturer + " "
                             + device.model
-                        );
+                    );
 
                     callback.call( window );
                 } else {
@@ -459,7 +507,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                             + " ID to function. Please open the Google"
                             + " Music application on an Android device"
                             + " and log in to your account."
-                        );
+                    );
                 }
             }, {
                 'Content-type': 'application/x-www-form-urlencoded',
@@ -478,12 +526,12 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     Tomahawk.log( "request for xt cookie failed:"
                             + request.status + " "
                             + request.statusText.trim()
-                        );
+                    );
                     return;
                 }
 
                 var match = request.getResponseHeader( 'Set-Cookie' )
-                                .match( /^xt=([^;]+)(?:;|$)/m );
+                    .match( /^xt=([^;]+)(?:;|$)/m );
                 if (match) {
                     that._xt = match[ 1 ];
                     callback.call( window );
@@ -529,7 +577,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
             function (request) {
                 if (200 == request.status) {
                     that._token = request.responseText
-                            .match( /^Auth=(.*)$/m )[ 1 ];
+                        .match( /^Auth=(.*)$/m )[ 1 ];
                     that._loginLock = false;
 
                     Tomahawk.log( name + " logged in successfully" );
@@ -540,9 +588,9 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     that._loginCallbacks = null;
                 } else {
                     Tomahawk.log(name + " login failed:\n"
-                            + request.status + " "
-                            + request.statusText.trim() + "\n"
-                            + request.responseText.trim());
+                        + request.status + " "
+                        + request.statusText.trim() + "\n"
+                        + request.responseText.trim());
                 }
             }, {
                 'Content-type': 'application/x-www-form-urlencoded'
@@ -570,7 +618,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
     artists: function (qid) {
         this._getData(function (response) {
-            var names = response.data.items.map(function (item) {
+            var names = response.map(function (item) {
                 return item.artist;
             });
             var unique_names = names.filter(function (item, pos) {
@@ -585,7 +633,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
     albums: function (qid, artist) {
         this._getData(function (response) {
-            var names = response.data.items.filter(function (item) {
+            var names = response.filter(function (item) {
                 return item.artist == artist;
             }).map(function (item) {
                 return item.album;
@@ -604,7 +652,7 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     tracks: function (qid, artist, album) {
         var that = this;
         this._getData(function (response) {
-            var tracks = response.data.items.filter(function (item) {
+            var tracks = response.filter(function (item) {
                 return item.artist == artist && item.album == album;
             }).map(function (item) {
                 return that._convertTrack(item);
