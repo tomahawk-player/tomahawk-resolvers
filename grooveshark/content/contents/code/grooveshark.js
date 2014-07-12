@@ -184,7 +184,11 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         //});
     },
 
-    authenticate: function () {
+    configTest: function() {
+        this.authenticate(true);
+    },
+
+    authenticate: function (doConfigTest) {
         Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username);
         var hashString;
         if (typeof CryptoJS.MD5 == "function") {
@@ -196,18 +200,36 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             login: this.username,
             password: hashString
         };
+        var errorHandler;
+        if (doConfigTest){
+            errorHandler = function () {
+                Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+            };
+        }
         this.apiCallWithSessionId("authenticate", params, function (xhr) {
             Tomahawk.log("Got result of authenticate: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (ret.result.success) {
-                if (!ret.result.IsAnywhere) {
+                if (ret.result.UserID == 0) {
+                    if (doConfigTest) {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidCredentials);
+                    }
+                } else if (!ret.result.IsAnywhere) {
+                    if (doConfigTest) {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                            "Tomahawk requires a Grooveshark Anywhere account.");
+                    }
                     Tomahawk.log("Tomahawk requires a Grooveshark Anywhere account!");
+                } else if (doConfigTest) {
+                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Success);
                 }
+            } else if (doConfigTest) {
+                Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidAccount);
             }
-        });
+        }, errorHandler);
     },
 
-    ensureSessionId: function (callback) {
+    ensureSessionId: function (callback, errorHandler) {
         if (this.sessionId) {
             if (callback) {
                 callback.call(window);
@@ -223,9 +245,12 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
                         callback.call(window);
                     }
                 } else {
+                    if (errorHandler) {
+                        errorHandler.call(window);
+                    }
                     Tomahawk.log("Not able to get session id.. " + xhr.responseText);
                 }
-            });
+            }, errorHandler);
         }
     },
 
@@ -273,7 +298,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
-    apiCall: function (methodName, args, callback) {
+    apiCall: function (methodName, args, callback, errorHandler) {
         Tomahawk.log("apiCall - methodName: " + methodName + ", args: " + args);
         var payload = {
             method: methodName
@@ -300,7 +325,8 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         };
         Tomahawk.asyncRequest(url, callback, headers, {
             method: 'POST',
-            data: data
+            data: data,
+            errorHandler: errorHandler
         });
     },
 
@@ -315,11 +341,11 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
 
-    apiCallWithSessionId: function (methodName, args, callback) {
+    apiCallWithSessionId: function (methodName, args, callback, errorHandler) {
         var that = this;
         that.ensureSessionId(function () {
-            that.apiCall(methodName, args, callback);
-        });
+            that.apiCall(methodName, args, callback, errorHandler);
+        }, errorHandler);
     },
 
     getStreamUrl: function (qid, url) {
