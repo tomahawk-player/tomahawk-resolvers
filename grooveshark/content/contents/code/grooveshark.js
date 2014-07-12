@@ -113,9 +113,8 @@ function removeDiacritics (str) {
 var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     apiKey: "tomahawkplayer",
     sessionId: "",
-    streamKeys: [],
+    countryId: "",
     ip: "",
-    numSessionKeysTries : 0,
 
     spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
@@ -160,87 +159,6 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
-    getClientIP: function() {
-        var that = this;
-        Tomahawk.asyncRequest( "http://toma.hk?stat=1", function(xhr) {
-            var result = JSON.parse(xhr.responseText);
-            if (result.ip) {
-                that.ip = result.ip;
-            }
-        });
-    },
-
-    apiCallSync: function (methodName, args) {
-        var payload = {
-            method: methodName
-        };
-        payload.header = {
-            wsKey: this.apiKey
-        };
-        if (this.sessionId != "") {
-            payload.header.sessionID = this.sessionId;
-        }
-        payload.parameters = args;
-
-        var json = JSON.stringify(payload);
-        var sig = Tomahawk.hmac(this.secret, json);
-        var url = "https://api.grooveshark.com/ws/3.0/?sig=" + sig;
-
-        var xmlHttpRequest = new XMLHttpRequest();
-        xmlHttpRequest.open('POST', url, false);
-        xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
-        Tomahawk.log("URL: " + url);
-        Tomahawk.log("Post Body: " + json);
-        xmlHttpRequest.send(json);
-        if (xmlHttpRequest.status == 200) {
-            return xmlHttpRequest.responseText;
-        } else {
-            Tomahawk.log("Failed to do SYNCHRONOUS POST request: to: " + url + " and with body: " + json);
-            Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
-        }
-    },
-
-    apiCall: function (methodName, args, callback) {
-        var payload = {
-            method: methodName
-        };
-        payload.header = {
-            wsKey: this.apiKey
-        };
-        if (this.sessionId != "") {
-            payload.header.sessionID = this.sessionId;
-        }
-        payload.parameters = args;
-
-        var json = JSON.stringify(payload);
-        var sig = Tomahawk.hmac(this.secret, json);
-        var url = "https://api.grooveshark.com/ws/3.0/?sig=" + sig;
-        this.doPost(url, json, callback);
-    },
-
-    doPost: function (url, body, callback) {
-        var xmlHttpRequest = new XMLHttpRequest();
-        Tomahawk.log("Doing post:" + url + ", with body:" + body);
-        xmlHttpRequest.open('POST', url, true);
-        xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
-        xmlHttpRequest.setRequestHeader("X-Client-IP", this.ip);
-        xmlHttpRequest.onreadystatechange = function () {
-
-            if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
-                Tomahawk.log("Succeeded to do POST request: to: " + url + " and with body: " + body + "\n" + xmlHttpRequest.responseText);
-                callback.call(window, xmlHttpRequest);
-            } else if (xmlHttpRequest.readyState === 4) {
-                Tomahawk.log("Failed to do POST request: to: " + url + " and with body: " + body);
-                Tomahawk.log("Status Code was: " + xmlHttpRequest.status);
-                if (this.sessionId) { // if an error occurred, try re-fetching session id once
-                    this.sessionId = "";
-                    this.getSessionId();
-                }
-            }
-        };
-        xmlHttpRequest.send(body);
-    },
-
     init: function () {
         var userConfig = this.getUserConfig();
         if (!userConfig.username || !userConfig.password) {
@@ -248,23 +166,13 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             return;
         }
         Tomahawk.log("Doing Grooveshark resolver init, got credentials: " + userConfig.username );
+        this.secret = this.spell("499pn17500pq8r20nso1613p2q264r7r");
         this.username = userConfig.username;
         this.password = userConfig.password;
 
-        this.sessionId = window.localStorage['sessionId'];
-        this.countryId = window.localStorage['countryId'];
+        this.authenticate();
 
-        this.getClientIP();
-
-        this.secret = this.spell("499pn17500pq8r20nso1613p2q264r7r");
-
-        Tomahawk.addCustomUrlHandler( "groove", "getStreamUrl" );
-
-        if (!this.sessionId) {
-            this.getSessionId();
-        } else if (!this.countryId || this.countryId == '') {
-            this.getCountry();
-        }
+        Tomahawk.addCustomUrlHandler("groove", "getStreamUrl", true);
 
         // Testing only
         //Tomahawk.log("Getting playlist songs!");
@@ -276,105 +184,178 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         //});
     },
 
-    getSessionId: function () {
-        var that = this;
-        this.apiCall("startSession", [], function (xhr) {
-            var res = JSON.parse(xhr.responseText);
-            if ( res.result && res.result.success) {
-                Tomahawk.log("Got grooveshark session id");
-                that.sessionId = res.result.sessionID;
-                window.localStorage['sessionId'] = that.sessionId;
-                that.authenticate();
-            } else {
-                Tomahawk.log("Not able to get session id.. " + xhr.responseText);
-            }
-        });
-    },
     authenticate: function () {
+        Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username);
+        var hashString;
+        if (typeof CryptoJS.MD5 == "function") {
+            hashString = CryptoJS.MD5(this.password).toString(CryptoJS.enc.Hex);
+        } else {
+            hashString = Tomahawk.md5(this.password);
+        }
         var params = {
             login: this.username,
-            password: Tomahawk.md5(this.password)
+            password: hashString
         };
-        var that = this;
-        Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username );
-        this.apiCall("authenticate", params, function (xhr) {
+        this.apiCallWithSessionId("authenticate", params, function (xhr) {
             Tomahawk.log("Got result of authenticate: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (ret.result.success) {
                 if (!ret.result.IsAnywhere) {
                     Tomahawk.log("Tomahawk requires a Grooveshark Anywhere account!");
-                } else if (!this.countryId) {
-                    that.getCountry();
                 }
             }
         });
     },
 
-    getCountry: function () {
-        var that = this;
-        Tomahawk.log("Grooveshark resolver Getting country...");
-        this.apiCall('getCountry', [], function (xhr) {
-            var ret = JSON.parse(xhr.responseText);
-            that.countryId = JSON.stringify(ret.result);
-            Tomahawk.log("Got country id: " + that.countryId);
-            window.localStorage['countryId'] = that.countryId;
+    ensureSessionId: function (callback) {
+        if (this.sessionId) {
+            if (callback) {
+                callback.call(window);
+            }
+        } else {
+            var that = this;
+            this.apiCall("startSession", [], function (xhr) {
+                var res = JSON.parse(xhr.responseText);
+                if (res.result && res.result.success) {
+                    Tomahawk.log("Got grooveshark session id");
+                    that.sessionId = res.result.sessionID;
+                    if (callback) {
+                        callback.call(window);
+                    }
+                } else {
+                    Tomahawk.log("Not able to get session id.. " + xhr.responseText);
+                }
+            });
+        }
+    },
 
-            // Finally ready
+    ensureClientIP: function (callback) {
+        if (this.ip) {
+            if (callback) {
+                callback.call(window);
+            }
+        } else {
+            var that = this;
+            Tomahawk.asyncRequest("http://toma.hk?stat=1", function (xhr) {
+                var result = JSON.parse(xhr.responseText);
+                if (result.ip) {
+                    that.ip = result.ip;
+                    if (callback) {
+                        callback.call(window);
+                    }
+                }
+            });
+        }
+    },
+
+    ensureCountryId: function (callback) {
+        if (this.countryId) {
+            if (callback) {
+                callback.call(window);
+            }
+        } else {
+            var that = this;
+            Tomahawk.log("Grooveshark resolver Getting country...");
+            that.ensureClientIP(function () {
+                that.apiCall('getCountry', [], function (xhr) {
+                    var ret = JSON.parse(xhr.responseText);
+                    if (ret.result) {
+                        that.countryId = ret.result;
+                        Tomahawk.log("Got country id: " + that.countryId);
+                        if (callback) {
+                            callback.call(window);
+                        }
+                    } else {
+                        Tomahawk.log("Not able to get country id.. " + xhr.responseText);
+                    }
+                });
+            });
+        }
+    },
+
+    apiCall: function (methodName, args, callback) {
+        Tomahawk.log("apiCall - methodName: " + methodName + ", args: " + args);
+        var payload = {
+            method: methodName
+        };
+        payload.header = {
+            wsKey: this.apiKey
+        };
+        if (this.sessionId != "") {
+            payload.header.sessionID = this.sessionId;
+        }
+        payload.parameters = args;
+
+        var data = JSON.stringify(payload);
+        var sig;
+        if (typeof CryptoJS.HmacMD5 == "function") {
+            sig = CryptoJS.HmacMD5(data, this.secret).toString(CryptoJS.enc.Hex);
+        } else {
+            sig = Tomahawk.hmac(this.secret, data);
+        }
+        var url = "https://api.grooveshark.com/ws/3.0/?sig=" + sig;
+
+        var headers = {
+            "Content-Type": "application/json"
+        };
+        Tomahawk.asyncRequest(url, callback, headers, {
+            method: 'POST',
+            data: data
         });
     },
 
-    getStreamUrl: function (ourUrl) {
-        var songId = ourUrl.replace("groove://", "");
+    apiCallWithCountryId: function (methodName, args, callback) {
+        var that = this;
+        that.ensureSessionId(function () {
+            that.ensureCountryId(function () {
+                args.country = that.countryId;
+                Tomahawk.log("Setting country id: " + args.country);
+                that.apiCall(methodName, args, callback);
+            });
+        });
+    },
+
+    apiCallWithSessionId: function (methodName, args, callback) {
+        var that = this;
+        that.ensureSessionId(function () {
+            that.apiCall(methodName, args, callback);
+        });
+    },
+
+    getStreamUrl: function (qid, url) {
+        var songId = url.replace("groove://", "");
 
         //Tomahawk.log("Got factory function called to get grooveshark streaming url from:" + ourUrl + " and songId:" + songId);
         var params = {
-            songID: songId,
-            country: JSON.parse(this.countryId)
+            songID: songId
         };
 
-        var streamResult = this.apiCallSync('getSubscriberStreamKey', params );
-        //Tomahawk.log("Got song stream server: " + streamResult);
-        var ret = JSON.parse(streamResult);
-        if (ret.errors) {
-            Tomahawk.log("Got error doing getSubscriberStreamKey api call: " + streamResult);
-            if (this.numSessionKeysTries < 5)
-            {
-                Tomahawk.log("Retrying to get a new session key!")
-                this.sessionId = "";
-                this.getSessionId();
-                this.numSessionKeysTries = this.numSessionKeysTries + 1;
+        var that=this;
+        that.apiCallWithCountryId('getSubscriberStreamKey', params, function (request) {
+            Tomahawk.log("Got song stream url: " + request.responseText);
+            var ret = JSON.parse(request.responseText);
+            if (ret.errors) {
+                Tomahawk.log("Error doing getSubscriberStreamKey api call: "
+                    + request.responseText);
+                Tomahawk.log("Deleting old session key!");
+                that.sessionId = "";
+            } else {
+                // ret.result.duration contains the duration of the song, we should update the duration here !
+                Tomahawk.log("Reporting song stream url: " + ret.result.url);
+                Tomahawk.reportStreamUrl(qid, ret.result.url);
             }
-        } else {
-            var url = unescape(ret.result.url);
-            Tomahawk.log("Found MP3 URL: " + ret.result.url);
-            this.streamKeys[songId] = ret.result.StreamKey;
-	    // ret.result.duration contains the duration of the song, we should update the duration here !
-
-            return url;
-        }
-
-        return "";
+        });
     },
 
     doSearchOrResolve: function(qid, queryText, limit) {
-        if (!this.countryId) {
-            Tomahawk.log("No country id, skipping resolving");
-            return;
-        }
-        if (!this.sessionId) {
-            Tomahawk.log("No session id, skipping resolving");
-            return;
-        }
-
         var params = {
             query: queryText,
-            country: this.countryId,
             limit: limit
         };
 
         var that = this;
-        this.apiCall("getSongSearchResults", params, function (xhr) {
-            //Tomahawk.log("Got song search results: " + xhr.responseText);
+        this.apiCallWithCountryId("getSongSearchResults", params, function (xhr) {
+            Tomahawk.log("Got song search results: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (!ret || !ret.result || !ret.result.songs) {
                 return;
