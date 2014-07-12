@@ -19,5 +19,8 @@
             "contents/code/subsonic-icon.png",
             "contents/code/subsonic.png"
         ]
-    }
+    },
+    "staticCapabilities": [
+        "configTestable"
+    ]
 }

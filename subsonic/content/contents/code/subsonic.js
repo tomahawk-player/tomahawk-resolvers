@@ -185,6 +185,48 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         } );
     },
 
+    configTest: function () {
+        Tomahawk.asyncRequest(this.buildBaseUrl("/rest/ping.view"),
+            function (xhr) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                }
+                if (response && response["subsonic-response"]
+                    && response["subsonic-response"].status) {
+                    if (response["subsonic-response"].status === "ok") {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Success);
+                    } else {
+                        if (response["subsonic-response"].error) {
+                            if (response["subsonic-response"].error.code === 40) {
+                                Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidCredentials);
+                            } else if (response["subsonic-response"].error.code === 50) {
+                                Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidAccount);
+                            } else if (response["subsonic-response"].error.message) {
+                                Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                                    response["subsonic-response"].error.message);
+                            }
+                        } else {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                        }
+                    }
+                } else {
+                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                }
+            }, {}, {
+                errorHandler: function (xhr) {
+                    if (xhr.status == 404 || xhr.status == 0) {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                    } else {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                            xhr.responseText.trim());
+                    }
+                }
+            }
+        );
+    },
+
     buildBaseUrl : function(subsonic_view)
     {
         return this.host + ":" + this.port + subsonic_view +
