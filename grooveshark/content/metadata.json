@@ -17,5 +17,8 @@
             "contents/code/grooveshark.svg",
             "contents/code/grooveshark-icon.png"
         ]
-    }
+    },
+    "staticCapabilities": [
+        "configTestable"
+    ]
 }
