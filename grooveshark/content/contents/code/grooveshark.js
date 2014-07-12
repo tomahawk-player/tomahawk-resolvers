@@ -112,7 +112,6 @@ function removeDiacritics (str) {
 
 var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     apiKey: "tomahawkplayer",
-    tinySongKey: "2b8a3ea77bfd0f57bd5d06abae606dbc",
     sessionId: "",
     streamKeys: [],
     ip: "",
@@ -126,10 +125,10 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         weight: 30,
         timeout: 20
     },
+
     getConfigUi: function () {
         var uiData = Tomahawk.readBase64("config.ui");
         return {
-
             "widget": uiData,
             fields: [{
                 name: "username",
@@ -139,21 +138,20 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
                 name: "password",
                 widget: "passwordLineEdit",
                 property: "text"
-            }, ],
+            }],
             images: [{
                 "grooveshark.png": Tomahawk.readBase64("grooveshark.png")
-            }, ]
+            }]
         };
     },
+
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
-        Tomahawk.log("In newConfigSaved... " + userConfig.username + " compared to " + this.username);
+        Tomahawk.log("newConfigSaved - username: " + userConfig.username);
         if ((userConfig.username != this.username) || (userConfig.password != this.password)) {
             Tomahawk.log("Saving new Grooveshark credentials with username:" + userConfig.username);
             this.sessionId = "";
             this.countryId = "";
-            window.localStorage['sessionId'] = "";
-            window.localStorage['countryId'] = "";
 
             this.username = userConfig.username;
             this.password = userConfig.password;
@@ -161,6 +159,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             this.init();
         }
     },
+
     getClientIP: function() {
         var that = this;
         Tomahawk.asyncRequest( "http://toma.hk?stat=1", function(xhr) {
@@ -170,13 +169,14 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             }
         });
     },
+
     apiCallSync: function (methodName, args) {
         var payload = {
             method: methodName
         };
         payload.header = {
             wsKey: this.apiKey
-        }
+        };
         if (this.sessionId != "") {
             payload.header.sessionID = this.sessionId;
         }
@@ -206,7 +206,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         };
         payload.header = {
             wsKey: this.apiKey
-        }
+        };
         if (this.sessionId != "") {
             payload.header.sessionID = this.sessionId;
         }
@@ -217,9 +217,10 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         var url = "https://api.grooveshark.com/ws/3.0/?sig=" + sig;
         this.doPost(url, json, callback);
     },
+
     doPost: function (url, body, callback) {
         var xmlHttpRequest = new XMLHttpRequest();
-        Tomahawk.log("DOing post:" + url + ", with body:" + body);
+        Tomahawk.log("Doing post:" + url + ", with body:" + body);
         xmlHttpRequest.open('POST', url, true);
         xmlHttpRequest.setRequestHeader("Content-Type", "application/octet-stream");
         xmlHttpRequest.setRequestHeader("X-Client-IP", this.ip);
@@ -236,8 +237,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
                     this.getSessionId();
                 }
             }
-        }
-//         Tomahawk.log("Post Body: " + body);
+        };
         xmlHttpRequest.send(body);
     },
 
@@ -267,13 +267,13 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         }
 
         // Testing only
-//         Tomahawk.log("Getting playlist songs!");
-//         this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
-//             Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
-//         });
-//         this.apiCall('getSongsInfo', { songIDs: ['3GBAjY'] }, function(xhr) {
-//             Tomahawk.log("GOT SONG INFO:" + xhr.responseText );
-//         });
+        //Tomahawk.log("Getting playlist songs!");
+        //this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
+        //    Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
+        //});
+        //this.apiCall('getSongsInfo', { songIDs: ['3GBAjY'] }, function(xhr) {
+        //    Tomahawk.log("GOT SONG INFO:" + xhr.responseText );
+        //});
     },
 
     getSessionId: function () {
@@ -302,8 +302,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             var ret = JSON.parse(xhr.responseText);
             if (ret.result.success) {
                 if (!ret.result.IsAnywhere) {
-                    alert("Tomahawk requires a Grooveshark Anywhere account!");
-                    return;
+                    Tomahawk.log("Tomahawk requires a Grooveshark Anywhere account!");
                 } else if (!this.countryId) {
                     that.getCountry();
                 }
@@ -312,8 +311,8 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     getCountry: function () {
-	var that = this;
-        Tomahawk.log("Grooveshark resolver Getting country..." );
+        var that = this;
+        Tomahawk.log("Grooveshark resolver Getting country...");
         this.apiCall('getCountry', [], function (xhr) {
             var ret = JSON.parse(xhr.responseText);
             that.countryId = JSON.stringify(ret.result);
@@ -358,83 +357,57 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     doSearchOrResolve: function(qid, queryText, limit) {
-         if (!this.countryId) {
-                Tomahawk.log("No country id, skipping resolving");
+        if (!this.countryId) {
+            Tomahawk.log("No country id, skipping resolving");
+            return;
+        }
+        if (!this.sessionId) {
+            Tomahawk.log("No session id, skipping resolving");
+            return;
+        }
+
+        var params = {
+            query: queryText,
+            country: this.countryId,
+            limit: limit
+        };
+
+        var that = this;
+        this.apiCall("getSongSearchResults", params, function (xhr) {
+            //Tomahawk.log("Got song search results: " + xhr.responseText);
+            var ret = JSON.parse(xhr.responseText);
+            if (!ret || !ret.result || !ret.result.songs) {
                 return;
             }
-            if (!this.sessionId) {
-                Tomahawk.log("No session id, skipping resolving");
+            var songs = ret.result.songs;
+            var results = []
+
+            if (songs.length === 0)
+            // we should try without artist name, just album song name
+            {
                 return;
             }
-
-    //         var query = artist + " " + title;
-    //         var that = this;
-    //         var url = "http://tinysong.com/b/" + query + "?format=json&key=" + this.tinySongKey;
-    //         Tomahawk.asyncRequest(url, function(xhr) {
-    //             Tomahawk.log("Got song search results: " + xhr.responseText);
-    //             var ret = JSON.parse(xhr.responseText);
-    //             if (!ret || !ret.SongID) {
-    //                 Tomahawk.log("Grooveshark could not parse output of TinySong query or SongID:" + xhr.responseText);
-    //                 return;
-    //             }
-    //             Tomahawk.log("Returning: " + ret.SongID );
-    //             var songResult = {
-    //                 artist: ret.ArtistName,
-    //                 album: ret.AlbumName,
-    //                 track: ret.SongName,
-    //                 source: that.settings.name,
-    //                 url: "groove://" + ret.SongID,
-    //                 mimetype: 'audio/mpeg',
-    // //                 duration: ret.result.uSecs / 1000000,
-    //                 // score: Tomahawk.valueForSubNode(song, "rating")
-    //             }
-    //
-    //             var toReturn = {
-    //                 results: [ songResult ],
-    //                 qid: qid
-    //             };
-    //             Tomahawk.addTrackResults(toReturn);
-    //         });
-
-	    var params = {
-		    query: queryText,
-		    country: this.countryId,
-		    limit: limit
-	    };
-
-
-            var that = this;
-            this.apiCall("getSongSearchResults", params, function (xhr) {
-                //Tomahawk.log("Got song search results: " + xhr.responseText);
-                var ret = JSON.parse(xhr.responseText);
-                if (!ret || !ret.result || !ret.result.songs) return;
-                var songs = ret.result.songs;
-                var results = []
-
-                if (songs.length === 0) 
-		    // we should try without artist name, just album song name
-		    return;
-	    Tomahawk.log("Got search result with num of songs: " + songs.length);
-                for (var i = 0; i < songs.length; i++) {
-                    var song = songs[i];
-                    var songResult = {
-                        artist: song.ArtistName,
-                        album: song.AlbumName,
-                        track: song.SongName,
-                        source: that.settings.name,
-                        url: "groove://" + song.SongID,
-                        mimetype: 'audio/mpeg'
-			//duration: ret.result.uSecs/ 1000000
-                        // score: Tomahawk.valueForSubNode(song, "rating")
-                    }
-                    results.push(songResult);
-                }
-                var toReturn = {
-                    results: results,
-                    qid: qid
+            Tomahawk.log("Got search result with num of songs: " + songs.length);
+            for (var i = 0; i < songs.length; i++) {
+                var song = songs[i];
+                var songResult = {
+                    artist: song.ArtistName,
+                    album: song.AlbumName,
+                    track: song.SongName,
+                    source: that.settings.name,
+                    url: "groove://" + song.SongID,
+                    mimetype: 'audio/mpeg'
+                    //duration: ret.result.uSecs/ 1000000
+                    // score: Tomahawk.valueForSubNode(song, "rating")
                 };
-                Tomahawk.addTrackResults(toReturn);
-            });
+                results.push(songResult);
+            }
+            var toReturn = {
+                results: results,
+                qid: qid
+            };
+            Tomahawk.addTrackResults(toReturn);
+        });
     },
 
     resolve: function (qid, artist, album, title) {
@@ -448,6 +421,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 	    // we use removeDiacritics cause it seems to have some problem in grooveshark resolving
 	    this.doSearchOrResolve(qid, removeDiacritics(searchString), 1);
     },
+
     search: function (qid, searchString) {
        this.doSearchOrResolve(qid, searchString, 15);
     }
