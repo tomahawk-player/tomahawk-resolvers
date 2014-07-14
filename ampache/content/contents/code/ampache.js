@@ -36,16 +36,16 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
             "widget": uiData,
             fields: [{
+                name: "server",
+                widget: "serverLineEdit",
+                property: "text"
+            }, {
                 name: "username",
                 widget: "usernameLineEdit",
                 property: "text"
             }, {
                 name: "password",
                 widget: "passwordLineEdit",
-                property: "text"
-            }, {
-                name: "ampache",
-                widget: "ampacheLineEdit",
                 property: "text"
             }],
             images: [{
@@ -58,13 +58,9 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
-        if ((userConfig.username != this.username) || (userConfig.password != this.password) || (userConfig.ampache != this.ampache)) {
+        if ((userConfig.username != this.username) || (userConfig.password != this.password)
+            || (userConfig.server != this.server)) {
             Tomahawk.log("Saving new Ampache credentials with username:" << userConfig.username);
-
-            this.username = userConfig.username;
-            this.password = userConfig.password;
-            this.ampache = userConfig.ampache;
-
             window.sessionStorage["ampacheAuth"] = "";
             this.init();
         }
@@ -139,7 +135,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     init: function () {
         // check resolver is properly configured
         var userConfig = this.getUserConfig();
-        if (!userConfig.username || !userConfig.password || !userConfig.ampache) {
+        if (!userConfig.username || !userConfig.password || !userConfig.server) {
             Tomahawk.log("Ampache Resolver not properly configured!");
             return;
         }
@@ -152,7 +148,16 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.username = userConfig.username;
         this.password = userConfig.password;
-        this.ampache = userConfig.ampache;
+        this.server = userConfig.server;
+        if (!this.server) {
+            this.server = "http://localhost/ampache";
+        } else {
+            if (this.server.search(".*:\/\/") < 0) {
+                // couldn't find a proper protocol, so we default to "http://"
+                this.server = "http://" + this.server;
+            }
+            this.server = this.server.trim();
+        }
 
         this.prepareHandshake();
 
@@ -186,7 +191,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     generateUrl: function (action, auth, params) {
-        var ampacheUrl = this.ampache.replace(/\/$/, "") + "/server/xml.server.php?";
+        var ampacheUrl = this.server.replace(/\/$/, "") + "/server/xml.server.php?";
         if (params === undefined) params = [];
         params['action'] = action;
         params['auth'] = auth;
@@ -317,8 +322,6 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             qid: qid
         };
 
-        userConfig = this.getUserConfig();
-
         var params = {
             filter: searchString,
             limit: this.settings.limit
@@ -437,7 +440,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     collection: function()
     {
         //strip http:// and trailing slash
-        var desc = this.ampache.replace(/^http:\/\//,"")
+        var desc = this.server.replace(/^http:\/\//,"")
                                .replace(/^https:\/\//,"")
                                .replace(/\/$/, "")
                                .replace(/\/remote.php\/ampache/, "");
@@ -452,7 +455,7 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
             return_object["trackcount"] = this.trackCount;
 
         //stupid check if it's an ownCloud instance
-        if (this.ampache.indexOf("/remote.php/ampache") !== -1)
+        if (this.server.indexOf("/remote.php/ampache") !== -1)
         {
             return_object["prettyname"] = "ownCloud";
             return_object["iconfile"] = "owncloud-icon.png";
