@@ -159,11 +159,16 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         params['action'] = action;
         params['auth'] = auth;
 
-
+        var first = true;
         for (param in params) {
             if (typeof (params[param]) == 'string') params[param] = params[param].trim();
 
-            ampacheUrl += encodeURIComponent(param) + "=" + encodeURIComponent(params[param]) + "&";
+            if (!first) {
+                ampacheUrl += "&";
+            } else {
+                first = false;
+            }
+            ampacheUrl += encodeURIComponent(param) + "=" + encodeURIComponent(params[param]);
         }
         return ampacheUrl;
     },
