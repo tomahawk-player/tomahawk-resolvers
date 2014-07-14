@@ -3,7 +3,7 @@
     "pluginName": "ampache",
     "author": "Dominik, Leo and Teo",
     "email": "teo@kde.org",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "website": "http://gettomahawk.com",
     "description": "Connects to an Ampache or ownCloud server and resolves tracks",
     "type": "resolver/javascript",
@@ -18,5 +18,8 @@
             "contents/code/owncloud-icon.png",
             "contents/code/owncloud.png"
         ]
-    }
+    },
+    "staticCapabilities": [
+        "configTestable"
+    ]
 }
