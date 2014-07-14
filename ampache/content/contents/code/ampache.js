@@ -104,6 +104,33 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
         if (pingInterval) window.setInterval(this.ping, pingInterval - 60);
     },
 
+    configTest: function () {
+        var that = this;
+        Tomahawk.asyncRequest(this.generateUrl('handshake', this.passphrase, this.params),
+            function (xhr) {
+                // parse the result
+                var domParser = new DOMParser();
+                xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
+                that.applyHandshake(xmlDoc);
+
+                if (!that.auth) {
+                    Tomahawk.log("auth failed: " + xhr.responseText);
+                    var error = xmlDoc.getElementsByTagName("error")[0];
+                    if (typeof error != 'undefined' && error.getAttribute("code") == "403") {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidAccount);
+                    } else {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidCredentials);
+                    }
+                } else {
+                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Success);
+                }
+            }, {}, {
+                errorHandler: function () {
+                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                }
+            });
+    },
+
     init: function () {
         // check resolver is properly configured
         var userConfig = this.getUserConfig();
