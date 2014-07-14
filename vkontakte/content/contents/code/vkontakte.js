@@ -188,7 +188,7 @@ var VK = {
         var url = "http://api.vk.com/api.php"
 
         var md5hash;
-        if (typeof CryptoJS.MD5 == "function") {
+        if (typeof CryptoJS !== "undefined" && typeof CryptoJS.MD5 == "function") {
             md5hash = CryptoJS.MD5(api[0] + 'api_id=' + api[1]
                 + 'count=10format=jsonmethod=audio.searchq=' + track + 'sort=2test_mode=1'
                 + api[2]).toString(CryptoJS.enc.Hex);

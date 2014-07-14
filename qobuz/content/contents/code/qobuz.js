@@ -175,7 +175,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
         // We build the parameters for this call
         var params;
         var hashString;
-        if (typeof CryptoJS.MD5 == "function") {
+        if (typeof CryptoJS !== "undefined" && typeof CryptoJS.MD5 == "function") {
             hashString = CryptoJS.MD5(this.password).toString(CryptoJS.enc.Hex);
         } else {
             hashString = Tomahawk.md5(this.password);
@@ -260,7 +260,7 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
 
         // Hashing Parmentier
         var md5Payload;
-        if (typeof CryptoJS.MD5 == "function") {
+        if (typeof CryptoJS !== "undefined" && typeof CryptoJS.MD5 == "function") {
             md5Payload = CryptoJS.MD5(payload).toString(CryptoJS.enc.Hex);
         } else {
             md5Payload = Tomahawk.md5(payload);

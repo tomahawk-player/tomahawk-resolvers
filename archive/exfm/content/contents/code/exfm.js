@@ -169,7 +169,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
             } else if (res.hasOwnProperty("site") && res.site.hasOwnProperty("songs")) {
                 // A site with songs
                 var guid;
-                if (typeof CryptoJS.SHA256 == "function") {
+                if (typeof CryptoJS !== "undefined" && typeof CryptoJS.SHA256 == "function") {
                     guid = CryptoJS.SHA256(query).toString(CryptoJS.enc.Hex);
                 } else {
                     guid = Tomahawk.sha256(query);
@@ -190,7 +190,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
             } else if (res.hasOwnProperty("songs")) {
                 // A list of songs
                 var guid;
-                if (typeof CryptoJS.SHA256 == "function") {
+                if (typeof CryptoJS !== "undefined" && typeof CryptoJS.SHA256 == "function") {
                     guid = CryptoJS.SHA256(query).toString(CryptoJS.enc.Hex);
                 } else {
                     guid = Tomahawk.sha256(query);
