@@ -74,8 +74,13 @@ var AmpacheResolver = Tomahawk.extend(TomahawkResolver, {
     {
         // prepare handshake arguments
         var time = Tomahawk.timestamp();
-        var key = Tomahawk.sha256(this.password);
-        this.passphrase = Tomahawk.sha256(time + key);
+        if (typeof CryptoJS.SHA256 == "function") {
+            var key = CryptoJS.SHA256(this.password).toString(CryptoJS.enc.Hex);
+            this.passphrase = CryptoJS.SHA256(time + key).toString(CryptoJS.enc.Hex);
+        } else {
+            var key = Tomahawk.sha256(this.password);
+            this.passphrase = Tomahawk.sha256(time + key);
+        }
 
         // do the handshake
         this.params = {
