@@ -22,6 +22,9 @@
      <property name="pixmap">
       <pixmap>ampache.png</pixmap>
      </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
     </widget>
    </item>
    <item>
