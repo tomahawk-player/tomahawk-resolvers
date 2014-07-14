@@ -191,7 +191,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     authenticate: function (doConfigTest) {
         Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username);
         var hashString;
-        if (typeof CryptoJS.MD5 == "function") {
+        if (typeof CryptoJS !== "undefined" && typeof CryptoJS.MD5 == "function") {
             hashString = CryptoJS.MD5(this.password).toString(CryptoJS.enc.Hex);
         } else {
             hashString = Tomahawk.md5(this.password);
@@ -313,7 +313,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
         var data = JSON.stringify(payload);
         var sig;
-        if (typeof CryptoJS.HmacMD5 == "function") {
+        if (typeof CryptoJS !== "undefined" && typeof CryptoJS.HmacMD5 == "function") {
             sig = CryptoJS.HmacMD5(data, this.secret).toString(CryptoJS.enc.Hex);
         } else {
             sig = Tomahawk.hmac(this.secret, data);
