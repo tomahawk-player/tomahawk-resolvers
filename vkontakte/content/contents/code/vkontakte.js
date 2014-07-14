@@ -187,7 +187,16 @@ var VK = {
         var api = VK.getApiData()
         var url = "http://api.vk.com/api.php"
 
-        md5hash = Tomahawk.md5(api[0]+'api_id='+api[1]+'count=10format=jsonmethod=audio.searchq='+track+'sort=2test_mode=1'+api[2])
+        var md5hash;
+        if (typeof CryptoJS.MD5 == "function") {
+            md5hash = CryptoJS.MD5(api[0] + 'api_id=' + api[1]
+                + 'count=10format=jsonmethod=audio.searchq=' + track + 'sort=2test_mode=1'
+                + api[2]).toString(CryptoJS.enc.Hex);
+        } else {
+            md5hash = Tomahawk.md5(api[0] + 'api_id=' + api[1]
+                + 'count=10format=jsonmethod=audio.searchq=' + track + 'sort=2test_mode=1'
+                + api[2]);
+        }
         var data = 'api_id='+api[1]+'&method=audio.search&format=json&sig='+md5hash+'&sort=2&test_mode=1&count=10&q='+encodeURIComponent(track)
 
         if (debugMode == true) { Tomahawk.log("Search url: "+url+'?'+data); }
