@@ -174,15 +174,21 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
 
         // We build the parameters for this call
         var params;
+        var hashString;
+        if (typeof CryptoJS.MD5 == "function") {
+            hashString = CryptoJS.MD5(this.password).toString(CryptoJS.enc.Hex);
+        } else {
+            hashString = Tomahawk.md5(this.password);
+        }
         if (this.username.indexOf('@') != -1) {
             params = { // User provided us with a username
                 email: this.username,
-                password: Tomahawk.md5(this.password)
+                password: hashString
             };
         } else {
             params = { // User provided us with an email
                 username: this.username,
-                password: Tomahawk.md5(this.password)
+                password: hashString
             };
         }
         
@@ -253,7 +259,12 @@ var QobuzResolver = Tomahawk.extend(TomahawkResolver, {
         payload += this.apiParameter.secret;
 
         // Hashing Parmentier
-        var md5Payload = Tomahawk.md5(payload);
+        var md5Payload;
+        if (typeof CryptoJS.MD5 == "function") {
+            md5Payload = CryptoJS.MD5(payload).toString(CryptoJS.enc.Hex);
+        } else {
+            md5Payload = Tomahawk.md5(payload);
+        }
 
         // Creating the new arguments
         var newArgs = args;
