@@ -168,10 +168,16 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
                 return that.track2Result(res.song);
             } else if (res.hasOwnProperty("site") && res.site.hasOwnProperty("songs")) {
                 // A site with songs
+                var guid;
+                if (typeof CryptoJS.SHA256 == "function") {
+                    guid = CryptoJS.SHA256(query).toString(CryptoJS.enc.Hex);
+                } else {
+                    guid = Tomahawk.sha256(query);
+                }
                 var result = {
                     type: "playlist",
                     title: res.site.title,
-                    guid: 'exfm-site-' + Tomahawk.sha256(query),
+                    guid: 'exfm-site-' + guid,
                     info: "ex.fm parse of : " + res.site.url,
                     creator: "exfm",
                     url: url,
@@ -183,10 +189,16 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
                 Tomahawk.addUrlResult(url, result);
             } else if (res.hasOwnProperty("songs")) {
                 // A list of songs
+                var guid;
+                if (typeof CryptoJS.SHA256 == "function") {
+                    guid = CryptoJS.SHA256(query).toString(CryptoJS.enc.Hex);
+                } else {
+                    guid = Tomahawk.sha256(query);
+                }
                 var result = {
                     type: "playlist",
                     title: "ex.fm" + url.replace(/https?:\/\/(www\.)?ex.fm/, ''),
-                    guid: 'exfm-playlist-' + Tomahawk.sha256(query),
+                    guid: 'exfm-playlist-' + guid,
                     info: "A playlist imported from ex.fm: " + url,
                     creator: "exfm",
                     url: url,
