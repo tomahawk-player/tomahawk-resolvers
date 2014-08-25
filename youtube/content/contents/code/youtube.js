@@ -338,7 +338,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		Tomahawk.asyncRequest(apiQuery, function(xhr) {
 			var results = [];
 			var resp = JSON.parse(xhr.responseText);
-			if (resp.data.totalItems !== 0) {
+			if (resp.data.totalItems !== 0 && resp.data.items !== undefined) {
 				var stop = Math.min(limit, resp.data.totalItems);
 				for (i = 0; i < Math.min(limit, resp.data.totalItems); i++) {
 					if (resp.data.items[i] === undefined) {
