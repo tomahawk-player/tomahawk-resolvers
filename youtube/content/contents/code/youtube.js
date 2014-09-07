@@ -76,6 +76,10 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 		timeout: 15
 	},
 
+	// Wrap Tomahawk.addTrackResults to intercept the call from Hatchet
+	addTrackResults: function(qid, results) {
+		Tomahawk.addTrackResults(qid, results);
+	},
 	getTrack: function (trackTitle, origTitle, isSearch) {
 		if ((this.includeCovers === false || this.includeCovers === undefined) && trackTitle.search(/(\Wcover(?!(\w)))/i) !== -1 && origTitle.search(/(\Wcover(?!(\w)))/i) === -1) {
 			return null;
@@ -419,7 +423,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 											results: [finalResult],
 											qid: qid
 										};
-										Tomahawk.addTrackResults(resolveReturn);
+										that.addTrackResults(resolveReturn);
 									}
 								}
 								else {
@@ -433,11 +437,11 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 					}
 				}
 				if (stop === 0) { // if no results had appropriate titles, return empty
-					Tomahawk.addTrackResults(empty);
+					that.addTrackResults(empty);
 				}
 			}
 			else {
-				Tomahawk.addTrackResults(empty);
+				that.addTrackResults(empty);
 			}
 		});
 	},
@@ -578,7 +582,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 			results: [],
 			qid: qid
 		};
-		Tomahawk.addTrackResults(empty);
+		this.addTrackResults(empty);
 	},
 
 	handleItemResponse: function(qid, searchString, data)
@@ -696,7 +700,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 										results: finalResults,
 										qid: qid
 									};
-									Tomahawk.addTrackResults(return1);
+									that.addTrackResults(return1);
 									return;
 								}
 							}
