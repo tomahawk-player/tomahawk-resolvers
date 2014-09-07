@@ -386,6 +386,7 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 							result.artist = artist;
 						}
 
+						result.youtubeVideoId = responseItem.id;
 						result.source = that.settings.name;
 						result.mimetype = "video/h264";
 						result.duration = responseItem.duration;
@@ -393,44 +394,12 @@ var YoutubeResolver = Tomahawk.extend(TomahawkResolver, {
 						result.year = responseItem.uploaded.slice(0,4);
 						result.track = title;
 						result.linkUrl = responseItem.player['default'];
+                        Ember.Logger.debug('linkUrl: ', result.linkUrl);
 						if (that.qualityPreference === 0) {
 							result.linkUrl += "&hd=1";
 						}
 
-						(function(i, qid, result) {
-							Tomahawk.asyncRequest(responseItem.player['default'], function(xhr2) {
-								result.url  = that.parseVideoUrlFromYtPage(xhr2.responseText, result);
-								if (result.url && result.url !== undefined) {
-									// Get the expiration time, to be able to cache results in tomahawk
-									var expires = result.url.match(/expire=([0-9]+)(?=(&))/);
-									if (expires && expires[1] !== undefined) {
-										result.expires = Math.floor(expires[1]);
-									}
-									result.bitrate = that.getBitrate(result.url);
-									result.id = i;
-									results.push(result);
-									stop = stop - 1;
-									if (stop === 0) {
-										var best = i + 1;
-										for (var j = 0; j < results.length; j++) {
-											if (results[j].id < best || that.hasPreferredQuality(results[j].url)) {
-												best = results[j].id;
-												var finalResult = results[j];
-											}
-										}
-										delete finalResult.id;
-										var resolveReturn = {
-											results: [finalResult],
-											qid: qid
-										};
-										that.addTrackResults(resolveReturn);
-									}
-								}
-								else {
-									stop = stop - 1;
-								}
-							});
-						})(i, qid, result);
+                        that.addTrackResults(qid, [result]);
 					}
 					else {
 						stop = stop - 1;
