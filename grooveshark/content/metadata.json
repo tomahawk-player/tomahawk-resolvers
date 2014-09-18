@@ -5,7 +5,7 @@
     "email": "lfranchi@kde.org",
     "version": "0.7.0",
     "website": "http://gettomahawk.com",
-    "description": "Searches Grooveshark for playable tracks, requires premium account",
+    "description": "Searches Grooveshark for playable tracks. Requires a VIP account.",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/grooveshark.js",
