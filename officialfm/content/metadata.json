@@ -5,7 +5,7 @@
     "email": "lasconic@gmail.com",
     "version": "1.0.7",
     "website": "http://gettomahawk.com",
-    "description": "Searches Official.fm for playable tracks",
+    "description": "Searches Official.fm for playable tracks.",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/officialfm.js",

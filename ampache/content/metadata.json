@@ -5,7 +5,7 @@
     "email": "teo@kde.org",
     "version": "0.3.2",
     "website": "http://gettomahawk.com",
-    "description": "Connects to an Ampache or ownCloud server and resolves tracks",
+    "description": "Connects to an Ampache or ownCloud server and resolves tracks.",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/ampache.js",
