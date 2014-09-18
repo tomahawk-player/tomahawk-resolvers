@@ -23,7 +23,7 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
     settings: {
         name: 'Bandcamp',
         weight: 90,
-        icon: 'bandcamp-sourceicon.png',
+        icon: 'bandcamp-icon.png',
         timeout: 10
     },
 
