@@ -5,7 +5,7 @@
     "email": "ron.jaegers@gmail.com",
     "version": "0.0.5",
     "website": "http://gettomahawk.com",
-    "description": "Resolves tracks from Synology AudioStation",
+    "description": "Resolves and plays tracks from your Synology AudioStation.",
     "platform": "any",
     "type": "resolver/javascript",
     "manifest": {

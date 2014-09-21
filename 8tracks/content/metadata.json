@@ -5,12 +5,14 @@
     "email": "lfranchi@kde.org",
     "version": "0.1",
     "website": "http://gettomahawk.com",
-    "description": "Looks for tracks to play from 8tracks.com",
+    "description": "Looks for tracks to play from 8tracks.com.",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/8tracks.js",
         "scripts": [],
         "icon": "contents/images/icon.png",
-        "resources": []
+        "resources": [
+            "contents/code/8tracks-icon.png"
+        ]
     }
 }

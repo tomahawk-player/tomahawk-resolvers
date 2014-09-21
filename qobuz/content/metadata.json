@@ -5,7 +5,7 @@
     "email": "regbasket@gmail.com",
     "version": "0.1",
     "website": "http://gettomahawk.com",
-    "description": "Searches Qobuz for playable tracks",
+    "description": "Searches Qobuz for playable tracks. Qobuz subscription required.",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/qobuz.js",
