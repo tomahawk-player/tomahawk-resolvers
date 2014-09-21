@@ -5,7 +5,7 @@
     "email": "lasconic@gmail.com",
     "version": "0.1.5",
     "website": "http://gettomahawk.com",
-    "description": "Looks for tracks to play from www.4shared.com",
+    "description": "Looks for tracks to play from www.4shared.com.",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/4shared.js",

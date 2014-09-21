@@ -5,7 +5,7 @@
 	"email": "uwelk@xhochy.com",
 	"version": "0.1.1",
 	"website": "http://gettomahawk.com",
-	"description": "Stream music from Beats.",
+	"description": "Stream music from Beats Music.",
 	"type": "resolver/javascript",
 	"manifest": {
 		"main": "contents/code/beatsmusic.js",

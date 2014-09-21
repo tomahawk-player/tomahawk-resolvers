@@ -5,7 +5,7 @@
 	"email": "uwelk@xhochy.com",
 	"version": "0.1.0",
 	"website": "http://gettomahawk.com",
-	"description": "Supports loading/drag'n'drop of rdio URLs.",
+	"description": "Supports loading and drag & drop of Rdio URLs.",
 	"type": "resolver/javascript",
 	"manifest": {
 		"main": "contents/code/rdio-metadata.js",
