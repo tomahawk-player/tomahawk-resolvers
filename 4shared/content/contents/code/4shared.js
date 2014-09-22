@@ -1,6 +1,7 @@
 /* === This file is part of Tomahawk Player - <http://tomahawk-player.org> ===
  *
  *   Copyright 2011, lasconic <lasconic@gmail.com>
+ *   Fixed in 2014 by Lorenz Hübschle-Schneider <lorenz@4z2.de>
  *
  *   Tomahawk is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,68 +25,85 @@ var FSharedResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5
     },
     resolve: function (qid, artist, album, title) {
-        var valueForSubNode = function (node, tag) {
-                return node.getElementsByTagName(tag)[0].textContent;
+        // Parse a file detail page
+        var parseFileDetailPage = function (fileXhr) {
+
+            var response = fileXhr.responseText,
+                urlRegex = /<\!-- file: (https?:\/\/.*\.mp3) -->/gi,
+                durationRegex = /options_[0-9]+\['duration'\] = '([0-9]+).0';/gi,
+                bitrateRegex = /<b>Bit Rate:<\/b>\n\s+([0-9]+) kbps \|/gi,
+                match;
+
+            // Find mp3 URL
+            match = urlRegex.exec(response);
+            if (!match) {
+                return;
+            }
+            var mp3Url = match[1];
+
+            // Find track duration
+            match = durationRegex.exec(response);
+            var duration = match ? parseInt(match[1], 10) : null;
+
+            // Try to find bit rate (only present on some files)
+            match = bitrateRegex.exec(response);
+            var bitrate = match ? parseInt(match[1], 10) : 128;
+
+            var result = {
+                artist: artist,
+                album: album,
+                track: title,
+                source: that.settings.name,
+                url: mp3Url,
+                duration: duration,
+                extension: 'mp3',
+                bitrate: bitrate,
+                score: 0.80
             };
+
+            // return this result
+            Tomahawk.addTrackResults({
+                qid: qid,
+                results: [result]
+            });
+        };
 
         // build query to 4shared
+        var request = [title, artist].join(" ").trim();
+
         var url = "http://search.4shared.com/network/searchXml.jsp?q=";
-        var request = "";
-        if (title !== "") request += title + " ";
-
-        if (artist !== "") request += artist + " ";
-
-        url += encodeURIComponent(request)
-
+        url += encodeURIComponent(request);
         url += "&searchExtention=mp3&sortType=1&sortOrder=1&searchmode=3";
+
         // send request and parse it into javascript
         var that = this;
-        var xmlString = Tomahawk.asyncRequest(url, function(xhr) {
+        Tomahawk.asyncRequest(url, function (xhr) {
             // parse xml
-            var domParser = new DOMParser();
-            xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
+            var domParser = new DOMParser(),
+                xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml"),
+                results = xmlDoc.getElementsByTagName("result-files");
 
-            var results = new Array();
-            var r = xmlDoc.getElementsByTagName("result-files");
             // check the response
-            if (r.length > 0 && r[0].childNodes.length > 0) {
-                var links = xmlDoc.getElementsByTagName("file");
+            if (results.length > 0 && results[0].childNodes.length > 0) {
+                var links = xmlDoc.getElementsByTagName("file"),
+                    link, fileDetailUrl;
 
-                // walk through the results and store it in 'results'
+                // walk through the results
                 for (var i = 0; i < links.length; i++) {
-                    var link = links[i];
-
-                    var result = new Object();
-                    result.artist = artist;
-                    result.album = album;
-                    result.track = title;
-                    //result.year = valueForSubNode(link, "year");
-                    result.source = that.settings.name;
-                    result.url = decodeURI(valueForSubNode(link, "flash-preview-url"));
-
-                    result.extension = "mp3";
-                    //result.bitrate = valueForSubNode(link, "bitrate")/1000;
-                    result.bitrate = 128;
-                    //result.duration = valueForSubNode(link, "duration");
-                    result.score = 0.80;
-                    results.push(result);
+                    link = links[i];
+                    fileDetailUrl = link.getElementsByTagName("url")[0].textContent;
+                    fileDetailUrl = decodeURI(fileDetailUrl);
+                    // process this file detail page
+                    Tomahawk.asyncRequest(fileDetailUrl, parseFileDetailPage);
                 }
             }
-
-            var return1 = {
-                qid: qid,
-                results: results
-            };
-            
-            Tomahawk.addTrackResults(return1);
         });
     },
     search: function (qid, searchString) {
-        var return1 = {
+        return {
             qid: qid,
-            results: new Array()
+            results: []
         };
-        return return1;
     }
 });
 

@@ -3,7 +3,7 @@
     "pluginName": "4shared",
     "author": "lasconic",
     "email": "lasconic@gmail.com",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "website": "http://gettomahawk.com",
     "description": "Looks for tracks to play from www.4shared.com.",
     "type": "resolver/javascript",
