@@ -53,11 +53,14 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
 
-    login: function() {
+    login: function(callback) {
         var userConfig = this.getUserConfig();
         if (!userConfig.user || !userConfig.password) {
             Tomahawk.log("Beats Music Resolver not properly configured!");
             this.loggedIn = false;
+            if (callback) {
+                callback("Beats Music Resolver not properly configured!");
+            }
             return;
         }
 
@@ -85,6 +88,9 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
             var res = JSON.parse(xhr.responseText);
             that.accessToken = res.access_token;
             that.loggedIn = true;
+            if (callback) {
+                callback();
+            }
         }, headers, {
             method: "POST",
             data: data
@@ -93,7 +99,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
     spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
-	init: function() {
+	init: function(cb) {
         this.app_token = this.spell("s4fw8if4jfwxakawi7xud55c");
 
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
@@ -103,7 +109,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         // re-login every 50 minutes
         setInterval((function(self) { return function() { self.login(); }; })(this), 1000*60*50);
 
-        this.login();
+        this.login(cb);
 	},
 
 
