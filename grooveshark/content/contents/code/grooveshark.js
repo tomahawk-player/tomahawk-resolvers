@@ -146,9 +146,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
-        Tomahawk.log("newConfigSaved - username: " + userConfig.username);
         if ((userConfig.username != this.username) || (userConfig.password != this.password)) {
-            Tomahawk.log("Saving new Grooveshark credentials with username:" + userConfig.username);
             this.sessionId = "";
             this.countryId = "";
 
@@ -165,7 +163,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             Tomahawk.log("Grooveshark Resolver not properly configured!");
             return;
         }
-        Tomahawk.log("Doing Grooveshark resolver init, got credentials: " + userConfig.username );
+        // Tomahawk.log("Doing Grooveshark resolver init, got credentials: " + userConfig.username );
         this.secret = this.spell("499pn17500pq8r20nso1613p2q264r7r");
         this.username = userConfig.username;
         this.password = userConfig.password;
@@ -189,7 +187,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     authenticate: function (doConfigTest) {
-        Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username);
+        // Tomahawk.log("Grooveshark resolver authenticating with username: " + this.username);
         var hashString;
         if (typeof CryptoJS !== "undefined" && typeof CryptoJS.MD5 == "function") {
             hashString = CryptoJS.MD5(this.password).toString(CryptoJS.enc.Hex);
@@ -207,7 +205,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             };
         }
         this.apiCallWithSessionId("authenticate", params, function (xhr) {
-            Tomahawk.log("Got result of authenticate: " + xhr.responseText);
+            // Tomahawk.log("Got result of authenticate: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (ret.result.success) {
                 if (ret.result.UserID == 0) {
@@ -239,7 +237,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             this.apiCall("startSession", [], function (xhr) {
                 var res = JSON.parse(xhr.responseText);
                 if (res.result && res.result.success) {
-                    Tomahawk.log("Got grooveshark session id");
+                    // Tomahawk.log("Got grooveshark session id");
                     that.sessionId = res.result.sessionID;
                     if (callback) {
                         callback.call(window);
@@ -280,13 +278,13 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             }
         } else {
             var that = this;
-            Tomahawk.log("Grooveshark resolver Getting country...");
+            // Tomahawk.log("Grooveshark resolver Getting country...");
             that.ensureClientIP(function () {
                 that.apiCall('getCountry', [], function (xhr) {
                     var ret = JSON.parse(xhr.responseText);
                     if (ret.result) {
                         that.countryId = ret.result;
-                        Tomahawk.log("Got country id: " + that.countryId);
+                        // Tomahawk.log("Got country id: " + that.countryId);
                         if (callback) {
                             callback.call(window);
                         }
@@ -299,17 +297,17 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     apiCall: function (methodName, args, callback, errorHandler) {
-        Tomahawk.log("apiCall - methodName: " + methodName + ", args: " + args);
+        // Tomahawk.log("apiCall - methodName: " + methodName + ", args: " + args);
         var payload = {
-            method: methodName
-        };
-        payload.header = {
-            wsKey: this.apiKey
+            header: {
+                wsKey: this.apiKey
+            },
+            method: methodName,
+            parameters: args
         };
         if (this.sessionId != "") {
             payload.header.sessionID = this.sessionId;
         }
-        payload.parameters = args;
 
         var data = JSON.stringify(payload);
         var sig;
@@ -364,7 +362,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
         that.ensureSessionId(function () {
             that.ensureCountryId(function () {
                 args.country = that.countryId;
-                Tomahawk.log("Setting country id: " + args.country);
+                // Tomahawk.log("Setting country id: " + args.country);
                 that.apiCall(methodName, args, callback);
             });
         });
@@ -385,9 +383,9 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             songID: songId
         };
 
-        var that=this;
-        that.apiCallWithCountryId('getSubscriberStreamKey', params, function (request) {
-            Tomahawk.log("Got song stream url: " + request.responseText);
+        var that = this;
+        this.apiCallWithCountryId('getSubscriberStreamKey', params, function (request) {
+            // Tomahawk.log("Got song stream url: " + request.responseText);
             var ret = JSON.parse(request.responseText);
             if (ret.errors) {
                 Tomahawk.log("Error doing getSubscriberStreamKey api call: "
@@ -396,7 +394,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
                 that.sessionId = "";
             } else {
                 // ret.result.duration contains the duration of the song, we should update the duration here !
-                Tomahawk.log("Reporting song stream url: " + ret.result.url);
+                // Tomahawk.log("Reporting song stream url: " + ret.result.url);
                 Tomahawk.reportStreamUrl(qid, ret.result.url);
             }
         });
@@ -410,7 +408,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
         var that = this;
         this.apiCallWithCountryId("getSongSearchResults", params, function (xhr) {
-            Tomahawk.log("Got song search results: " + xhr.responseText);
+            // Tomahawk.log("Got song search results: " + xhr.responseText);
             var ret = JSON.parse(xhr.responseText);
             if (!ret || !ret.result || !ret.result.songs) {
                 return;
@@ -423,7 +421,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
             {
                 return;
             }
-            Tomahawk.log("Got search result with num of songs: " + songs.length);
+            // Tomahawk.log("Got search result with num of songs: " + songs.length);
             for (var i = 0; i < songs.length; i++) {
                 var song = songs[i];
                 var songResult = {
