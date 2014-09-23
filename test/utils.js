@@ -1,7 +1,7 @@
 var fs = require('fs');
 var TomahawkJS = require("tomahawkjs");
 
-module.exports.loadResolver = function (name, owner, done) {
+module.exports.loadResolver = function (name, owner, done, config) {
     owner.metadata = JSON.parse(fs.readFileSync(name + '/content/metadata.json'))
     TomahawkJS.loadAxe(name + '/' + name + '-' + owner.metadata.version + '.axe', function(err, axe) {
         axe.getInstance(function(err, instance_context) {
@@ -15,6 +15,7 @@ module.exports.loadResolver = function (name, owner, done) {
                     done();
                 }
             });
-        });
+        }, config);
     });
 };
+
