@@ -6,6 +6,7 @@ config["resolver tests"] = {
     sources: [
     ],
     tests: [
+        "beatsmusic/content/contents/code/test.js",
         "soundcloud/content/contents/code/test.js"
     ]
 }
