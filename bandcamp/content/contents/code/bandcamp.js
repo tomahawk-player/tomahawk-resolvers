@@ -42,7 +42,7 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
         var that = this;
         Tomahawk.asyncRequest(findArtistUrl, function (xhr) {
             var response = JSON.parse(xhr.responseText);
-            if (response.results.length !== 0) {
+            if (response.results !== undefined && response.results.length !== 0) {
                 var bandcampArtistId = response.results[0].band_id;
                 var artistDiscographyUrl = "http://api.bandcamp.com/api/band/3/discography?key=" + that.secret + "&band_id=" + bandcampArtistId;
                 Tomahawk.asyncRequest(artistDiscographyUrl, function (xhr1) {
