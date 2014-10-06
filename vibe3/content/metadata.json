@@ -1,0 +1,16 @@
+{
+    "name": "vibe3",
+    "pluginName": "vibe3",
+    "author": "Lorenz Hübschle-Schneider",
+    "email": "lorenz@4z2.de",
+    "version": "0.1.0",
+    "website": "http://gettomahawk.com",
+    "description": "Looks for tracks to play from www.vibe3.com.",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/vibe3.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": []
+    }
+}
