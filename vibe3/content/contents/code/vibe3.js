@@ -102,17 +102,19 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
                 // Trim away the artist-title-separator and extra spaces
                 track_title = track_title.replace(' - ', '').trim();
 
-                results.push({
-                    artist: artist,
-                    track: track_title,
-                    source: that.settings.name,
-                    url: mp3url,
-                    extension: 'mp3',
-                    bitrate: 128,
-                    score: 0.80
-                });
+                if ( artist !== "" && track_title !== "" && mp3url !== "" )
+                {
+                    results.push({
+                        artist: artist,
+                        track: track_title,
+                        source: that.settings.name,
+                        url: mp3url,
+                        extension: 'mp3',
+                        bitrate: 128,
+                        score: 0.80
+                    });
+                }
             }
-
             Tomahawk.addTrackResults({
                 qid: qid,
                 results: results
@@ -130,7 +132,7 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
         url = url.replace("vibe3://", "http://");
         var headers = {
             "Referer": "http://vibe3.com"
-        }
+        };
         Tomahawk.reportStreamUrl(qid, url, headers);
     },
     search: function (qid, searchString) {
