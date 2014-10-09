@@ -593,7 +593,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     {
                         Tomahawk.addTrackResults( { qid: qid, results: [that.getMostRelevant( results )] } );
                     }
-                    that.getMetadata( qid, results );
+                    else
+                    {
+                        that.getMetadata( qid, results );
+                    }
                 }
             }
             else
