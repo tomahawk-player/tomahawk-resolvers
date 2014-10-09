@@ -574,8 +574,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                         result.score = 0.85;
                         result.year = responseItem.snippet.publishedAt.slice( 0, 4 );
                         result.track = title;
-                        result.youtubeId = responseItem.id.videoId;
-                        result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeId;
+                        result.youtubeVideoId = responseItem.id.videoId;
+                        result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeVideoId;
                         result.id = i;
                         if ( that.qualityPreference === 0 )
                         {
@@ -652,9 +652,9 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     var result = new Object();
                     result.artist = parsedTrack.artist;
                     result.track = parsedTrack.track;
-                    result.youtubeId = resp.items[i].id.videoId;
+                    result.youtubeVideoId = resp.items[i].id.videoId;
                     result.year = resp.items[i].snippet.publishedAt.slice( 0, 4 );
-                    result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeId;
+                    result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeVideoId;
                     result.mimetype = "video/h264";
                     result.score = (parsedTrack.isOfficial !== undefined ? 0.85 : 0.95);
                     results.push( result );
@@ -711,7 +711,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         
         var queryUrl = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&id=";
         results.forEach( function( result ){
-            queryUrl += result.youtubeId + ",";
+            queryUrl += result.youtubeVideoId + ",";
         } );
         queryUrl = queryUrl.substring( 0, queryUrl.length - 1 );
         var that = this;
@@ -720,7 +720,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             results.forEach( function( result ){
                 for ( var i = 0; i < response.items.length; i++ )
                 {
-                    if ( response.items[i].id == result.youtubeId )
+                    if ( response.items[i].id == result.youtubeVideoId )
                     {
                         result.name = that.settings.name;
                         result.duration = that.iso8601toSeconds( response.items[i].contentDetails.duration );
