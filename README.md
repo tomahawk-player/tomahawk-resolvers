@@ -59,5 +59,6 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 | subsonic   | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | :lock:     |
 | synology-audiostation | :lock:    | :lock: | ✘    | ✘              | ✘                 | ✘              | :lock:     |
 | tomahk-metadata | ✘    | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
+| vibe3      | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | vkontakte  | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | youtube    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
