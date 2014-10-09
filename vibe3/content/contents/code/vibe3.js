@@ -1,5 +1,6 @@
 /*
  *   Copyright 2014, Lorenz Hübschle-Schneider <lorenz@4z2.de>
+ *   Copyright 2014, Thierry Göckel <thierry@strayrayday.lu>
  *
  *   The MIT License (MIT)
  *
@@ -64,7 +65,7 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
         name: 'vibe3',
         icon: '../images/icon.png',
         weight: 80,
-        timeout: 5
+        timeout: 10
     },
     init: function () {
         // Add URL handler for vibe3:// urls
@@ -136,10 +137,7 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.reportStreamUrl(qid, url, headers);
     },
     search: function (qid, searchString) {
-        return {
-            qid: qid,
-            results: []
-        };
+        this.resolve( qid, searchString );
     }
 });
 
