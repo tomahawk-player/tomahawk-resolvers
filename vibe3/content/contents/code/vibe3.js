@@ -88,7 +88,9 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
                 xmlDoc = domParser.parseFromString(xhr.responseText, "text/html"),
                 tracks = xmlDoc.getElementsByTagName("li"),
                 track, rawUrl, mp3url, artist, track_title, i,
-                results = [];
+                results = [],
+                encodedQuery = encodeURIComponent(query.replace(" ", "_").toLowerCase()),
+                linkUrl = "http://vibe3.com/mp3/" + encodedQuery + ".html";
 
             // check the response
             for (i = 0; i < tracks.length; i++) {
@@ -103,13 +105,13 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
                 // Trim away the artist-title-separator and extra spaces
                 track_title = track_title.replace(' - ', '').trim();
 
-                if ( artist !== "" && track_title !== "" && mp3url !== "" )
-                {
+                if (artist !== "" && track_title !== "" && mp3url !== "") {
                     results.push({
                         artist: artist,
                         track: track_title,
                         source: that.settings.name,
                         url: mp3url,
+                        linkUrl: linkUrl,
                         extension: 'mp3',
                         bitrate: 128,
                         score: 0.80
@@ -137,7 +139,7 @@ var Vibe3Resolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.reportStreamUrl(qid, url, headers);
     },
     search: function (qid, searchString) {
-        this.resolve( qid, searchString );
+        this.resolve(qid, searchString);
     }
 });
 
