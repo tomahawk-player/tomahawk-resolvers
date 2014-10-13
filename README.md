@@ -22,7 +22,7 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 * **Search**: (Fuzzily) find tracks, artists and albums on all services matching a query that can be streamed.
 * **Open Artist URL**: Given an URL about an artist of a service, return the information about that. (This opens the artist page in Tomahawk).
 * **Open Album URL**: Given an URL about an album of a service, return the information about that. (This opens the album page in Tomahawk).
-* **Open Playlist URL**: Given an URL about a playlist of a service, return the information about that. (This imports the playlist in Tomahawk if it was not previously imported)
+* **Open Playlist**: Given an URL about a playlist of a service, return the information about that. (This imports the playlist in Tomahawk if it was not previously imported)
 * **Open Track URL**: Given an URL about a track of a service, return the information about that. (This opens the track page in Tomahawk and plays it).
 * **Collection**: Browse the collection of music stored by the user in this service.
 
@@ -35,8 +35,8 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 **Notes:**
 * Some services can search without being authenticated but only resolve after authentication. At the moment, we do not support this in Tomahawk but this may change in future.
 
-| *Resolver* | Resolving | Search | Open Artist URL | Open Album URL | Open Playlist URL | Open Track URL | Collection |
-|------------|-----------|--------|-----------------|----------------|-------------------|----------------|------------|
+| *Resolver* | Resolving | Search | Open Artist URL | Open Album URL | Open Playlist | Open Track URL | Collection |
+|:----------:|:---------:|:------:|:---------------:|:--------------:|:-------------:|:--------------:|:----------:|
 | 4shared    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | 8tracks    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | ampache    | :key:     | :key:  | ✘               | ✘              | ✘                 | ✘              | :key:      |
