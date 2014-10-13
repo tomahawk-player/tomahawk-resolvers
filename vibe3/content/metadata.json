@@ -3,7 +3,7 @@
     "pluginName": "vibe3",
     "author": "Lorenz Hübschle-Schneider and Thierry Göckel",
     "email": "lorenz@4z2.de",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "website": "http://gettomahawk.com",
     "description": "Looks for tracks to play from www.vibe3.com.",
     "type": "resolver/javascript",
