@@ -28,7 +28,7 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 
 **Legend:**
 * ✔ - Supports without authentication
-* :lock: - Authentication required
+* :key: - Authentication required
 * ? - Unknown
 * ✘ - No support for this capability
 
@@ -39,25 +39,25 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 |------------|-----------|--------|-----------------|----------------|-------------------|----------------|------------|
 | 4shared    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | 8tracks    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
-| ampache    | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | :lock:     |
-| beatsmusic | :lock:    | ✔      | ✔               | ✔              | :lock:            | ✔              | ✘          |
-| beets      | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | :lock:     |
+| ampache    | :key:     | :key:  | ✘               | ✘              | ✘                 | ✘              | :key:      |
+| beatsmusic | :key:     | ✔      | ✔               | ✔              | :key:             | ✔              | ✘          |
+| beets      | :key:     | :key:  | ✘               | ✘              | ✘                 | ✘              | :key:      |
 | deezer-metadata | ✘    | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
 | dilandu    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | exfm       | ✔         | ✔      | ✘               | ✘              | ✔                 | ✔              | ✘          |
-| grooveshark | :lock:   | :lock: | ✘               | ✘              | ✘                 | ✘              | ✘          |
+| grooveshark | :key:    | :key:  | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | jamendo    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | jazz-on-line | ?       | ?      | ?               | ?              | ?                 | ?              | ?          |
 | lastfm     | ✔         | ✘      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | muzebra    | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | officialfm | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
-| qobuz      | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | ✘          |
+| qobuz      | :key:     | :key:  | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | rdio-metadata | ✘      | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
 | soundcloud | ✔         | ✔      | ✔               | ✔              | ✔                 | ✔              | ✘          |
 | spotify-metadata | ✘   | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
-| spotify    | :lock:    | :lock: | ✘               | ✘              | :lock:            | ✘              | ✘          |
-| subsonic   | :lock:    | :lock: | ✘               | ✘              | ✘                 | ✘              | :lock:     |
-| synology-audiostation | :lock:    | :lock: | ✘    | ✘              | ✘                 | ✘              | :lock:     |
+| spotify    | :key:     | :key:  | ✘               | ✘              | :key:             | ✘              | ✘          |
+| subsonic   | :key:     | :key:  | ✘               | ✘              | ✘                 | ✘              | :key:      |
+| synology-audiostation  | :key:  | :key:           | ✘              | ✘                 | ✘              | ✘          | :key:    |
 | tomahk-metadata | ✘    | ✘      | ✔               | ✔              | ✔                 | ✔              | ✘          |
 | vibe3      | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
 | vkontakte  | ✔         | ✔      | ✘               | ✘              | ✘                 | ✘              | ✘          |
