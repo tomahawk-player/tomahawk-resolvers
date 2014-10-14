@@ -585,7 +585,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     }
                 }
                 if (results.length === 0) { // if no results had appropriate titles, return empty
-                    that.sendEmptyResult();
+                    that.sendEmptyResult( qid, artist + " - " + title );
                 }
                 else
                 {
@@ -601,7 +601,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             }
             else
             {
-                that.sendEmptyResult();
+                that.sendEmptyResult( qid, artist + " - " + title );
             }
         });
     },
