@@ -107,7 +107,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
     spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
-	init: function(cb) {
+    init: function(cb) {
         this.app_token = this.spell("s4fw8if4jfwxakawi7xud55c");
 
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
@@ -118,7 +118,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         setInterval((function(self) { return function() { self.login(); }; })(this), 1000*60*50);
 
         this.login(cb);
-	},
+    },
 
     apiRequest: function (path, queryArgs, cb) {
         var queryArray = ["client_id=" + this.app_token];
