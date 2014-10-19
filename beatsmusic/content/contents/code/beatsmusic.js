@@ -120,18 +120,35 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         this.login(cb);
 	},
 
+    apiRequest: function (path, queryArgs, cb) {
+        var queryArray = ["client_id=" + this.app_token];
+        for (key in queryArgs) {
+            queryArray.push(key + "=" + queryArgs[key]);
+        }
+        var url = this.endpoint + "/api" + path;
+        url += "?" + queryArray.join("&");
+        Tomahawk.asyncRequest(url, function (xhr) {
+            var res = JSON.parse(xhr.responseText);
+            if (res.code == "OK") {
+                cb(res, xhr);
+            }
+        });
+    },
 
     resolve: function (qid, artist, album, title) {
         if (!this.loggedIn) return;
 
         // TODO: Add album to search
         var that = this;
-        Tomahawk.asyncRequest(this.endpoint + "/api/search?type=track&filters=streamable:true&limit=1&q=" + encodeURIComponent(artist + " " + title) + "&client_id=" + this.app_token, function (xhr) {
-            var res = JSON.parse(xhr.responseText);
-            if (res.code == "OK" && res.info.count > 0) {
+        this.apiRequest("/search", {
+            "type": "track",
+            "filters": "streamable:true",
+            "limit": "1",
+            "q": encodeURIComponent(artist + " " + title)
+        }, function (res) {
+            if (res.info.count > 0) {
                 // For the moment we just use the first result
-                Tomahawk.asyncRequest(that.endpoint + "/api/tracks/" + res.data[0].id + "?client_id=" + that.app_token, function (xhr2) {
-                    var res2 = JSON.parse(xhr2.responseText);
+                that.apiRequest("/tracks/" + res.data[0].id, {}, function (res2) {
                     Tomahawk.addTrackResults({
                         qid: qid,
                         results: [{
