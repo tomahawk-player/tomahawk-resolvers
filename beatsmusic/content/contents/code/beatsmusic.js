@@ -55,8 +55,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
 
-        if (this.user !== userConfig.user || this.password !== userConfig.password)
-        {
+        if (this.user !== userConfig.user || this.password !== userConfig.password) {
             this.init();
         }
     },
