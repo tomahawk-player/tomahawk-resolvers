@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Spotify
-Comment=Play your music from and sync your playlists with Spotify. Requires a Premium account.
+Comment=Stream music from Spotify. Requires a Premium account.
 
 Type=Service
 X-KDE-ServiceTypes=Tomahawk/BinaryResolver
