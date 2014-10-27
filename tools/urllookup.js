@@ -37,4 +37,3 @@ utils.loadAxe(resolverPath, resolver, function () {
         }
     }
 }, resolverConfig);
-
