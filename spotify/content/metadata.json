@@ -1,0 +1,19 @@
+{
+    "name": "Spotify",
+    "pluginName": "spotify",
+    "author": "Uwe L. Korn",
+    "email": "uwelk@xhochy.com",
+    "version": "0.1.0",
+    "website": "http://gettomahawk.com",
+    "description": "Stream music from Spotify.",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/spotify.js",
+        "icon": "contents/images/icon.png",
+        "scripts": [],
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/spotify.png"
+        ]
+    }
+}
