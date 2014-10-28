@@ -8,15 +8,5 @@ handlers:
   static_files: index.html
   upload: index\.html
 
-- url: /js
-  static_dir: js
-
-- url: /jquery\.clipboard\.swf
-  static_files: jquery.clipboard.swf
-  upload: jquery\.clipboard\.swf
-
-- url: /callback
-  script: _go_app
-
 - url: /json
   script: _go_app
