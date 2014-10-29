@@ -10,3 +10,6 @@ handlers:
 
 - url: /json
   script: _go_app
+
+- url: /spotify
+  script: _go_app
