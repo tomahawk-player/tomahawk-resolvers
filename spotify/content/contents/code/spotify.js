@@ -197,7 +197,6 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
         }, {
             "Authorization": "Bearer " + this.access_token
         });
-        // TODO
     },
 
 	search: function (qid, searchString) {
