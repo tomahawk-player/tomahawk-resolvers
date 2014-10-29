@@ -22,9 +22,14 @@ if (argv._.length > 3) {
 }
 
 // All -/-- arguments will be added to the config.
-// TODO: Add an agurment to load the config from a file.
+// If --config is specified, we will instead load them from the config file.
 var resolverConfig = argv;
-delete resolverConfig._;
+if (argv.hasOwnProperty("config")) {
+    // FIXME: Add support for absolute paths
+    resolverConfig = require("../" + argv.config);
+} else {
+    delete resolverConfig._;
+}
 
 var resolver = {};
 
