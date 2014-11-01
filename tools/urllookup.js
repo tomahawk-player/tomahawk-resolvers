@@ -18,7 +18,12 @@ var url = argv._[1];
 // All -/-- arguments will be added to the config.
 // TODO: Add an agurment to load the config from a file.
 var resolverConfig = argv;
-delete resolverConfig._;
+if (argv.hasOwnProperty("config")) {
+    // FIXME: Add support for absolute paths
+    resolverConfig = require("../" + argv.config);
+} else {
+    delete resolverConfig._;
+}
 
 var resolver = {};
 
