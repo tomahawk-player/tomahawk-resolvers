@@ -200,7 +200,29 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
 	search: function (qid, searchString) {
-        // TODO
+        var that = this;
+        var searchUrl = "https://api.spotify.com/v1/search?market=from_token"
+        // TODO: Artists and Albums
+        searchUrl += "&type=track";
+        searchUrl += "&q=" + encodeURIComponent(searchString);
+        Tomahawk.asyncRequest(searchUrl, function (xhr) {
+            var res = JSON.parse(xhr.responseText);
+            Tomahawk.addTrackResults({
+                qid: qid,
+                results: res.tracks.items.map(function (item) {
+                    return {
+                        artist: item.artists[0].name,
+                        album: item.album.name,
+                        duration: item.duration_ms / 1000,
+                        source: that.settings.name,
+                        track: item.name,
+                        url: "spotify://track/" + item.id
+                    };
+                })
+            });
+        }, {
+            "Authorization": "Bearer " + this.access_token
+        });
 	},
 
     canParseUrl: function (url, type) {
