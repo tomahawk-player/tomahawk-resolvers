@@ -29,6 +29,7 @@
 
 // Typedef the pointers for better readability.
 typedef struct MHD_Connection* connection_ptr;
+typedef struct MHD_Daemon* daemon_ptr;
 typedef struct MHD_Response* response_ptr ;
 
 std::mutex exit_mutex;
@@ -90,9 +91,9 @@ int main( int argc, char* argv[] )
         return EXIT_FAILURE;
     }
 
-    struct MHD_Daemon* daemon = MHD_start_daemon( MHD_USE_THREAD_PER_CONNECTION,
-                                                  atoi(argv[1]), nullptr, nullptr,
-                                                  &ahc_echo, nullptr, MHD_OPTION_END);
+    daemon_ptr daemon = MHD_start_daemon( MHD_USE_THREAD_PER_CONNECTION,
+                                          atoi(argv[1]), nullptr, nullptr,
+                                          &ahc_echo, nullptr, MHD_OPTION_END);
     if ( daemon == nullptr )
     {
         return EXIT_FAILURE;
