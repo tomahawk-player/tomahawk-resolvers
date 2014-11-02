@@ -54,7 +54,7 @@ static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
         return MHD_YES;
     }
 
-    // There should no data uploaded in the GET request.
+    // There should be no data uploaded in the GET request.
     if ( *upload_data_size )
     {
         return MHD_NO;
