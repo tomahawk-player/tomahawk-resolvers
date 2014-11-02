@@ -3,6 +3,7 @@ cmake_minimum_required( VERSION 2.8.6 )
 set( CMAKE_MODULE_PATH  "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
 
 find_package(Microhttpd REQUIRED)
+find_package(Spotify REQUIRED)
 
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag( "-std=c++11" CXX11_FOUND )
