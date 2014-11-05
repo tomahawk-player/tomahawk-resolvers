@@ -2,9 +2,9 @@
 
 ## Developing resolvers
 
-The Tomahawk resolver API is currently still in flux. You can use some of the existing resolvers as inspiration, especially Subsonic and Ex.fm.
+The Tomahawk resolver API is currently still in flux. You can use some of the existing resolvers as inspiration, especially Subsonic and Soundcloud.
 
-The API you should develop against is defined in [`tomahawk.js`](https://github.com/tomahawk-player/tomahawk/blob/master/data/js/tomahawk.js) and [`JSResolverHelper`](https://github.com/tomahawk-player/tomahawk/blob/master/src/libtomahawk/resolvers/JSResolverHelper.h) in the Tomahawk main repo.
+The API you should develop against is defined in [`tomahawk.js`](https://github.com/tomahawk-player/tomahawk/blob/master/data/js/tomahawk.js) and [`JSResolverHelper`](https://github.com/tomahawk-player/tomahawk/blob/master/src/libtomahawk/resolvers/JSResolverHelper.h) in the Tomahawk main repo. This API is also being used in the [`Tomahawk Android`](https://github.com/tomahawk-player/tomahawk-android) App, which means that you only have to write one resolver and have it work right away on Desktop and Android!
 
 If you have questions, look for us in #tomahawk on irc.freenode.net.
 
