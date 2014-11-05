@@ -3,7 +3,7 @@
 	"pluginName": "deezer-metadata",
 	"author": "Uwe L. Korn",
 	"email": "uwelk@xhochy.com",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"website": "http://gettomahawk.com",
 	"description": "(0.8+) Supports loading and drag & drop of Deezer URLs.",
 	"type": "resolver/javascript",
