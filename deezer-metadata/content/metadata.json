@@ -5,7 +5,7 @@
 	"email": "uwelk@xhochy.com",
 	"version": "0.1.1",
 	"website": "http://gettomahawk.com",
-	"description": "Supports loading and drag & drop of Deezer URLs.",
+	"description": "(0.8+) Supports loading and drag & drop of Deezer URLs.",
 	"type": "resolver/javascript",
 	"manifest": {
 		"main": "contents/code/deezer-metadata.js",
