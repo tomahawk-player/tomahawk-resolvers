@@ -57,8 +57,6 @@ static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
         return MHD_NO;
     }
 
-    std::cout << "Test" << std::endl;
-
     // On the first call only the headers are valid. Reply in the second round.
     if ( &header_test != *ptr )
     {
