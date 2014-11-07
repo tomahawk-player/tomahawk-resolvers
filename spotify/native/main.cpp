@@ -34,6 +34,17 @@ typedef struct MHD_Response* response_ptr ;
 
 std::mutex exit_mutex;
 
+int handle_exit(const connection_ptr connection)
+{
+    // Shutdown requested, unlock the relevant mutex.
+    response_ptr response = MHD_create_response_from_data( strlen( "OK" ), (void*)"OK", MHD_NO, MHD_NO );
+    int ret = MHD_queue_response( connection, MHD_HTTP_OK, response );
+    MHD_destroy_response( response );
+    // FIXME: Add a settle time so that we can actually send the response.
+    exit_mutex.unlock();
+    return ret;
+}
+
 static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
                      const char* method, const char* /*version*/, const char* /*upload_data*/,
                      size_t* upload_data_size, void** ptr)
@@ -45,8 +56,6 @@ static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
     {
         return MHD_NO;
     }
-
-    std::cout << "Test" << std::endl;
 
     // On the first call only the headers are valid. Reply in the second round.
     if ( &header_test != *ptr )
@@ -64,12 +73,7 @@ static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
     int ret;
     if ( !strcmp( url, "/exit" ) )
     {
-        // Shutdown requested, unlock the relevant mutex.
-        response_ptr response = MHD_create_response_from_data( strlen( "OK" ), (void*)"OK", MHD_NO, MHD_NO );
-        ret = MHD_queue_response( connection, MHD_HTTP_OK, response );
-        MHD_destroy_response( response );
-        // FIXME: Add a settle time so that we can actually send the response.
-        exit_mutex.unlock();
+        ret = handle_exit(connection);
     }
     else
     {
