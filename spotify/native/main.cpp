@@ -52,7 +52,7 @@ static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
     static int header_test;
 
     // We only expect GET requests.
-    if ( 0 != strcmp( method, "GET" ) )
+    if ( strcmp( method, "GET" ) )
     {
         return MHD_NO;
     }
