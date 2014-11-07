@@ -88,7 +88,7 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
     login: function(callback) {
         var that = this;
         var userConfig = this.getUserConfig();
-        if (!userConfig.access_token || !userConfig.refresh_token) {
+        if (!userConfig.access_token || !userConfig.refresh_token || !userConfig.user || !userConfig.password) {
             Tomahawk.log("Spotify Resolver not properly configured!");
             this.loggedIn = false;
             if (callback) {
@@ -99,6 +99,8 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.access_token = userConfig.access_token;
         this.refresh_token = userConfig.refresh_token;
+        this.user = userConfig.user;
+        this.password = userConfig.password;
         // TODO: Maybe not from userConfig...
         // Also we do not want the secret in the resolver
         this.client_id = userConfig.client_id;
