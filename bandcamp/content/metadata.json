@@ -3,11 +3,10 @@
     "pluginName": "bandcamp",
     "author": "Thierry Göckel",
     "email": "thierry@strayrayday.lu",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "website": "http://gettomahawk.com",
     "description": "Stream music from Bandcamp.",
     "platform": "any",
-    "tomahawkVersion": "0.6.99",
     "type": "resolver/javascript",
     "manifest": {
         "main": "contents/code/bandcamp.js",
