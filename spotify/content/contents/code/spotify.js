@@ -53,6 +53,7 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
 
+        // FIXME
         if (this.user !== userConfig.user || this.password !== userConfig.password) {
             this.init();
         }
