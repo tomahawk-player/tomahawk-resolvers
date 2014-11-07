@@ -145,7 +145,6 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
                     }
                 });
             } else {
-                Tomahawk.log(JSON.stringify(response));
                 Tomahawk.addTrackResults(empty);
             }
         });
@@ -153,17 +152,17 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
 
     canParseUrl: function (url, type) {
         switch (type) {
-            case TomahawkUrlType.Album:
-                return false;
+            case TomahawkUrlType.Album: //Don't rely on Tomahawk's InfoPlugins for Bandcamp's mostly rather unknown bands & albums
+                return false; // Albums are opened as playlists instead
             case TomahawkUrlType.Artist:
-                return false;
+                return true;
             case TomahawkUrlType.Playlist:
                 return true;
             case TomahawkUrlType.Track:
                 return true;
             default:
-                //return (/https?:\/\/[a-z]*\.bandcamp.com\//).test(url); // Always return true in the future (non bandcamp.com pages exist)
-                return true;
+                return (/https?:\/\/[a-z]*\.bandcamp.com\//).test(url); // This excludes bandcamp pages with a custom (non .bandcamp.com) URL
+                // return true; // go easy on API queries per key ratio
         }
     },
 
@@ -180,7 +179,6 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
 
     lookupUrl: function (url) {
         var query = "http://api.bandcamp.com/api/url/1/info?key=" + this.secret + "&url=" + url;
-        Tomahawk.log(query);
         var result = {};
         var that = this;
         Tomahawk.asyncRequest(query, function (xhr) {
@@ -191,90 +189,52 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
                     query = "http://api.bandcamp.com/api/track/3/info?key=" + that.secret + "&track_id=" + response.track_id;
                 }
                 else if (response.hasOwnProperty("album_id")){
-                    result.type = "album";
+                    result.type = "playlist";
                     result.guid = "bandcamp-album-playlist-" + response.album_id;
                     query = "http://api.bandcamp.com/api/album/2/info?key=" + that.secret + "&album_id=" + response.album_id;
                 }
                 else {
                     result.type = "artist";
-                    result.guid = "bandcamp-artist-playlist-" + response.band_id;
                     query = "http://api.bandcamp.com/api/band/3/discography?key=" + that.secret + "&band_id=" + response.band_id;
                 }
                 Tomahawk.asyncRequest(query, function (xhr2) {
                     var response2 = JSON.parse(xhr2.responseText);
-                    if (result.type === "artist"){
-                        result.type = "playlist";
+                    if (result.type === "track" && response2.hasOwnProperty("title")){
+                        result = that.track2Result(response2);
+                    } else if (result.type === "playlist" && response2.hasOwnProperty("tracks")){
+                        result.title = response2.title;
+                        if (response2.hasOwnProperty("about")){
+                            result.description = response2.about;
+                        }
                         result.tracks = [];
-                        albums = {};
-                        var stop = 0;
-                        for (i = 0; i < response2.discography.length; i++){
-                            if (response2.discography[i].track_id){
-                                result.tracks.push(that.track2Result(response2.discography[i]));
-                            }
-                            else if (response2.discography[i].album_id){
-                                if (!result.hasOwnProperty("artist")){
-                                    result.artist = response2.discography[i].artist;
-                                    result.title = result.artist + " Bandcamp discography";
-                                }
-                                albums[response2.discography[i].title] = response2.discography[i].album_id;
-                                stop++;
-                            }
-                        }
-                        for (var album in albums){
-                            if (albums.hasOwnProperty(album)){
-                                query = "http://api.bandcamp.com/api/album/2/info?key=" + that.secret + "&album_id=" + albums[album];
-                                Tomahawk.asyncRequest(query, function (xhr3){
-                                    var response3 = JSON.parse(xhr3.responseText);
-                                    if (response3.hasOwnProperty("tracks")){
-                                        response3.tracks.forEach(function(track){
-                                            result.tracks.push(that.track2Result(track));
-                                        });
-                                    }
-                                    stop--;
-                                    if (stop === 0){
-                                        if (result.hasOwnProperty("tracks")){
-                                            for (i = 0; i < result.tracks.length; i++){
-                                                result.tracks[i].artist = result.artist;
-                                            }
-                                        }
-                                        Tomahawk.addUrlResult(url, result);
-                                    }
-                                });
-                            }
-                        }
+                        response2.tracks.forEach(function (track){
+                            result.tracks.push(that.track2Result(track));
+                        });
                     } else {
-                        if (result.type === "track" && response2.hasOwnProperty("title")){
-                            result = that.track2Result(response2);
-                        } else if (result.type === "album" && response2.hasOwnProperty("tracks")){
-                            result.type = "playlist";
-                            result.title = response2.title;
-                            if (response2.hasOwnProperty("about")){
-                                result.description = response2.about;
-                            }
-                            result.tracks = [];
-                            response2.tracks.forEach(function (track){
-                                result.tracks.push(that.track2Result(track));
-                            });
-                        }
-                        query = "http://api.bandcamp.com/api/band/3/info?key=" + that.secret + "&band_id=" + response2.band_id;
-                        Tomahawk.asyncRequest(query, function (xhr3) {
-                            var response3 = JSON.parse(xhr3.responseText);
-                            if (response3.hasOwnProperty("name")){
+                        Tomahawk.addUrlResult(url, {});
+                    }
+                    query = "http://api.bandcamp.com/api/band/3/info?key=" + that.secret + "&band_id=" + response.band_id;
+                    Tomahawk.asyncRequest(query, function (xhr3) {
+                        var response3 = JSON.parse(xhr3.responseText);
+                        if (response3.hasOwnProperty("name")){
+                            if (result.type === "playlist"){
                                 result.artist = response3.name;
-                                if (result.type === "playlist"){
-                                    result.title = result.artist + " - " + result.title;
-                                }
+                                result.title = result.artist + " - " + result.title;
                                 if (result.hasOwnProperty("tracks")){
-                                    for (i = 0; i < result.tracks.length; i++){
+                                    for (var i = 0; i < result.tracks.length; i++){
                                         result.tracks[i].artist = result.artist;
                                     }
                                 }
-                                Tomahawk.addUrlResult(url, result);
+                            } else if (result.type === "artist"){
+                                result.name = response3.name;
                             } else {
-                                Tomahawk.addUrlResult(url, {});
+                                result.artist = response3.name;
                             }
-                        });
-                    }
+                            Tomahawk.addUrlResult(url, result);
+                        } else {
+                            Tomahawk.addUrlResult(url, {});
+                        }
+                    });
                 });
             } else {
                 Tomahawk.addUrlResult(url, {});
