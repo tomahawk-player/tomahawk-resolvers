@@ -27,6 +27,6 @@
     "buster": "^0.7.13",
     "minimist": "^1.1.0",
     "nock": "^0.32.0",
-    "tomahawkjs": "^0.3.3"
+    "tomahawkjs": "^0.3.4"
   }
 }
