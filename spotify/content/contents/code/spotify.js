@@ -106,6 +106,8 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
         this.client_id = userConfig.client_id;
         this.client_secret = userConfig.client_secret;
 
+        Tomahawk.addCustomUrlHandler("spotify", "getStreamUrl", true);
+
         if (this.hasOwnProperty("access_token") && this.hasOwnProperty("refresh_token")) {
             // Check if access_token is still valid.
             var headers = {
@@ -171,6 +173,11 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
         setInterval((function(self) { return function() { self.login(); }; })(this), 1000*60*50);
 
         this.login(cb);
+    },
+
+    getStreamUrl: function (qid, url) {
+        var trackId = url.replace("spotify://track/", "");
+        Tomahawk.reportStreamUrl(qid, trackId);
     },
 
     resolve: function (qid, artist, album, title) {
