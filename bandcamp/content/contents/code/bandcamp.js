@@ -156,13 +156,14 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
             case TomahawkUrlType.Album:
                 return false;
             case TomahawkUrlType.Artist:
-                return true;
+                return false;
             case TomahawkUrlType.Playlist:
                 return true;
             case TomahawkUrlType.Track:
                 return true;
             default:
-                return (/https?:\/\/[a-z]*\.bandcamp.com\//).test(url); // Always return true in the future (non bandcamp.com pages exist)
+                //return (/https?:\/\/[a-z]*\.bandcamp.com\//).test(url); // Always return true in the future (non bandcamp.com pages exist)
+                return true;
         }
     },
 
@@ -179,7 +180,8 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
 
     lookupUrl: function (url) {
         var query = "http://api.bandcamp.com/api/url/1/info?key=" + this.secret + "&url=" + url;
-        result = {};
+        Tomahawk.log(query);
+        var result = {};
         var that = this;
         Tomahawk.asyncRequest(query, function (xhr) {
             var response = JSON.parse(xhr.responseText);
@@ -267,7 +269,6 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
                                         result.tracks[i].artist = result.artist;
                                     }
                                 }
-                                Tomahawk.log("Returning " + JSON.stringify(result) + " for " + url);
                                 Tomahawk.addUrlResult(url, result);
                             } else {
                                 Tomahawk.addUrlResult(url, {});
