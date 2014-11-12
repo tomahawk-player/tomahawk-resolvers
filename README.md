@@ -63,3 +63,4 @@ Some of the features need authentication (e.g. being a premium subscriber to thi
 | vibe3      | ✔         | ✔      | ✘               | ✘              | ✘             | ✘              | ✘          |
 | vkontakte  | ✔         | ✔      | ✘               | ✘              | ✘             | ✘              | ✘          |
 | youtube    | ✔         | ✔      | ✘               | ✘              | ✘             | ✘              | ✘          |
+| youtube-metadata    | ✘         | ✘      | ✘               | ✘              | ✔             | ✔              | ✘          |
