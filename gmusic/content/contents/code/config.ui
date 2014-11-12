@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>393</width>
-    <height>203</height>
+    <width>585</width>
+    <height>251</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -36,6 +36,32 @@
       <bool>true</bool>
      </property>
     </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Note: if you use 2-Step Verification, you must create an &lt;a href=&quot;https://support.google.com/accounts/answer/185833?hl=en&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;app-specifc password&lt;/span&gt;&lt;/a&gt; to use in Tomahawk.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="openExternalLinks">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <layout class="QFormLayout" name="formLayout">
