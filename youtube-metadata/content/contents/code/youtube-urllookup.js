@@ -16,7 +16,15 @@
 *
 **/
 
-var YoutubeUrllookup = Tomahawk.extend(TomahawkResolver, {
+var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
+
+    settings: {
+        name: 'YouTube Metadata',
+        icon: 'youtube-icon.png',
+        weight: 0, // not a resolver
+        timeout: 15
+    },
+
     init: function (callback) {
         String.prototype.regexIndexOf = function (regex, startpos) {
             var indexOf = this.substring(startpos || 0).search(regex);
@@ -116,11 +124,11 @@ var YoutubeUrllookup = Tomahawk.extend(TomahawkResolver, {
                     }
                     var title = response.items[i].snippet.title;
                     if (title.toLowerCase().match(/\(full .*?\)/g)){
-                        Tomahawk.log("Excluding " + title);
                         continue;
                     }
                     var parsedTrack = that.cleanupAndParseTrack(title);
                     if (parsedTrack && parsedTrack.hasOwnProperty("artist") && parsedTrack.hasOwnProperty("track")){
+                        parsedTrack.position = response.items[i].snippet.position;
                         candidates.push(parsedTrack);
                     }
                 }
@@ -132,10 +140,49 @@ var YoutubeUrllookup = Tomahawk.extend(TomahawkResolver, {
                     }
                     that.extractPlaylistItems(url, query, candidates);
                 } else {
-                    Tomahawk.log(candidates.length + " candidates: " + JSON.stringify(candidates));
-                    Tomahawk.addUrlResult(url, {});
+                    that.verify(url, candidates);
                 }
+            } else {
+                Tomahawk.addUrlResult(url, {});
             }
+        });
+    },
+
+    verify: function (url, candidates){
+        var stop = candidates.length;
+        var query = "";
+        var result = {};
+        result.tracks = [];
+        candidates.forEach(function (candidate){
+            query = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent(candidate.artist) + "&track=" + encodeURIComponent(candidate.track);
+            Tomahawk.asyncRequest(query, function (xhr) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.track !== undefined && response.track.name !== undefined && response.track.artist.name !== undefined){
+                    if (response.track.name.toLowerCase() === candidate.track.toLowerCase() && response.track.artist.name.toLowerCase() === candidate.artist.toLowerCase()){
+                        var track = {};
+                        track.type = "track";
+                        track.artist = response.track.artist.name;
+                        track.title = response.track.name;
+                        track.position = candidate.position;
+                        result.tracks.push(track);
+                    }
+                }
+                stop--;
+                if (stop === 0){
+                    if (result.tracks.length !== 0){
+                        result.tracks.sort(function(a,b){return (a.position > b.position) ? 1 : ((b.position > a.position) ? -1 : 0);});
+                        result.tracks.forEach(function(v){ delete v.position});
+                        result.type = "playlist";
+                        var begin = url.indexOf("&list=") + 6;
+                        var playlistId = (url.indexOf("&", begin) !== -1) ? url.substring(begin, Math.min(url.length, url.indexOf("&", begin))) : (url.indexOf("#", begin) !== -1) ? url.substring(begin, Math.min(url.length, url.indexOf("#", begin))) : url.substring(begin, url.length);
+                        result.guid = "youtube-playlist-" + playlistId;
+                        result.title = "YouTube Mix - " + result.tracks[0].artist + " - " + result.tracks[0].title;
+                        Tomahawk.addUrlResult(url, result);
+                    } else {
+                        Tomahawk.addUrlResult(url, {});
+                    }
+                }
+            });
         });
     },
 
@@ -163,15 +210,12 @@ var YoutubeUrllookup = Tomahawk.extend(TomahawkResolver, {
             begin = url.indexOf("?v=") + 3;
             var videoId = (url.indexOf("&", begin) !== -1) ? url.substring(begin, Math.min(url.length, url.indexOf("&", begin))): url.substring(begin, url.length);
             query = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id=" + videoId + "&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA";
-            Tomahawk.log("Query URL for " + url + " --> " + query);
             Tomahawk.asyncRequest(query, function (xhr) {
                 var response = JSON.parse(xhr.responseText);
                 if (response.hasOwnProperty("items") && response.items.length !== 0){
                     var title = response.items[0].snippet.title;
-                    Tomahawk.log("Initial title \"" + title + "\"");
                     var parsedTrack = that.cleanupAndParseTrack(title);
                     if (parsedTrack && parsedTrack.hasOwnProperty("artist") && parsedTrack.hasOwnProperty("track")){
-                        Tomahawk.log(JSON.stringify(parsedTrack));
                         query = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent(parsedTrack.artist) + "&track=" + encodeURIComponent(parsedTrack.track);
                         Tomahawk.asyncRequest(query, function (xhr2) {
                             var response2 = JSON.parse(xhr2.responseText);
@@ -198,10 +242,10 @@ var YoutubeUrllookup = Tomahawk.extend(TomahawkResolver, {
         } else {
             begin = url.indexOf("&list=") + 6;
             var playlistId = (url.indexOf("&", begin) !== -1) ? url.substring(begin, Math.min(url.length, url.indexOf("&", begin))) : (url.indexOf("#", begin) !== -1) ? url.substring(begin, Math.min(url.length, url.indexOf("#", begin))) : url.substring(begin, url.length);
-           query = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + playlistId + "&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=10";
+           query = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + playlistId + "&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=50";
             this.extractPlaylistItems(url, query, []);
         }
     }
 });
 
-Tomahawk.resolver.instance = YoutubeUrllookup;
+Tomahawk.resolver.instance = YoutubeMetadataResolver;

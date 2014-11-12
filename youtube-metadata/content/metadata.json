@@ -1,7 +1,7 @@
 {
-    "name": "YouTube URL Lookup",
-    "pluginName": "youtube-urllookup",
-    "author": "Thierry Göckel",
+    "name": "YouTube Metadata",
+    "pluginName": "youtube-metadata",
+    "author": "Thierry GÃ¶ckel",
     "email": "thierry@strayrayday.lu",
     "version": "0.0.1",
     "website": "http://gettomahawk.com",
@@ -10,7 +10,7 @@
     "manifest": {
         "main": "contents/code/youtube-urllookup.js",
         "scripts": [],
-        "icon": "",
-        "resources": []
+        "icon": "contents/images/icon.png",
+        "resources": ["contents/code/youtube-icon.png"]
     }
 }
