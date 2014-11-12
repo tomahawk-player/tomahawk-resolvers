@@ -77,5 +77,5 @@ var HatchetMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     }
 });
 
-Tomahawk.resolver.instance = TomaHKMetadataResolver;
+Tomahawk.resolver.instance = HatchetMetadataResolver;
 
