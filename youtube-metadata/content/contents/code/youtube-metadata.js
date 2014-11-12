@@ -30,6 +30,9 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
             var indexOf = this.substring(startpos || 0).search(regex);
             return (indexOf >= 0) ? (indexOf + (startpos || 0 )) : indexOf;
         };
+        String.prototype.capitalise = function () {
+            return this.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+        };
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
         if (callback){
             callback(null);
@@ -113,7 +116,6 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
 
     extractPlaylistItems: function (url, query, candidates){
         var that = this;
-        Tomahawk.log(query);
         Tomahawk.asyncRequest(query, function (xhr) {
             var response = JSON.parse(xhr.responseText);
             if (response.hasOwnProperty("items") && response.items.length !== 0){
@@ -154,18 +156,22 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         var result = {};
         result.tracks = [];
         candidates.forEach(function (candidate){
-            query = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent(candidate.artist) + "&track=" + encodeURIComponent(candidate.track);
+            query = "http://ws.audioscrobbler.com/2.0/?method=track.getCorrection&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&artist=" + encodeURIComponent(candidate.artist) + "&track=" + encodeURIComponent(candidate.track);
             Tomahawk.asyncRequest(query, function (xhr) {
                 var response = JSON.parse(xhr.responseText);
-                if (response.track !== undefined && response.track.name !== undefined && response.track.artist.name !== undefined){
-                    if (response.track.name.toLowerCase() === candidate.track.toLowerCase() && response.track.artist.name.toLowerCase() === candidate.artist.toLowerCase()){
-                        var track = {};
-                        track.type = "track";
-                        track.artist = response.track.artist.name;
-                        track.title = response.track.name;
-                        track.position = candidate.position;
-                        result.tracks.push(track);
-                    }
+                var track = {};
+                if (response.hasOwnProperty("corrections") && response.corrections.hasOwnProperty("correction") && response.corrections.correction.hasOwnProperty("track") && response.corrections.correction.track.hasOwnProperty("artist")){
+                    track.type = "track";
+                    track.artist = response.corrections.correction.track.artist.name;
+                    track.title = response.corrections.correction.track.name;
+                    track.position = candidate.position;
+                    result.tracks.push(track);
+                } else if (response.hasOwnProperty("corrections")){
+                    track.type = "track";
+                    track.title = candidate.track.capitalise();
+                    track.artist = candidate.artist.capitalise();
+                    track.position = candidate.position;
+                    result.tracks.push(track);
                 }
                 stop--;
                 if (stop === 0){
@@ -216,22 +222,18 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                     var title = response.items[0].snippet.title;
                     var parsedTrack = that.cleanupAndParseTrack(title);
                     if (parsedTrack && parsedTrack.hasOwnProperty("artist") && parsedTrack.hasOwnProperty("track")){
-                        query = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent(parsedTrack.artist) + "&track=" + encodeURIComponent(parsedTrack.track);
+                        query = "http://ws.audioscrobbler.com/2.0/?method=track.getCorrection&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent(parsedTrack.artist) + "&track=" + encodeURIComponent(parsedTrack.track);
                         Tomahawk.asyncRequest(query, function (xhr2) {
                             var response2 = JSON.parse(xhr2.responseText);
-                            if (response2.track !== undefined && response2.track.name !== undefined && response2.track.artist.name !== undefined){
-                                if (response2.track.name.toLowerCase() === parsedTrack.track.toLowerCase() && response2.track.artist.name.toLowerCase() === parsedTrack.artist.toLowerCase()){
-                                    result.type = "track";
-                                    result.artist = response2.track.artist.name;
-                                    result.title = response2.track.name;
-                                    Tomahawk.addUrlResult(url, result);
-                                }
-                            } else {
-                                if(response2.track !== undefined){
-                                    Tomahawk.log("Bad track name? " + query + ": " + JSON.stringify(response2.track));
-                                } else {
-                                    Tomahawk.log("Bad result from track lookup? " + query + ": " + JSON.stringify(response2));
-                                }
+                            if (response2.hasOwnProperty("corrections") && response2.corrections.hasOwnProperty("correction") && response2.corrections.correction.hasOwnProperty("track") && response2.corrections.correction.track.hasOwnProperty("artist")){
+                                result.type = "track";
+                                result.artist = response2.corrections.correction.track.artist.name;
+                                result.title = response2.corrections.correction.track.name;
+                                Tomahawk.addUrlResult(url, result);
+                            } else if (response2.hasOwnProperty("corrections")){
+                                result.type = "track";
+                                result.artist = parsedTrack.artist.capitalise();
+                                result.title = parsedTrack.track.capitalise();
                             }
                         });
                     } else {
