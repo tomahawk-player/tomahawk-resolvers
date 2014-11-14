@@ -112,8 +112,8 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
                                             var normalisedTrackName = title.toLowerCase().replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ");
                                             for (var k = 0; k < response2.tracks.length; k++) {
                                                 var normalisedReturnedTrackName = response2.tracks[k].title.toLowerCase().replace(/[\.,-\/#!$%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ");
-                                                if ((response2.tracks[k].title.toLowerCase() === title.toLowerCase() || (normalisedReturnedTrackName === normalisedTrackName && album === response2.title)) 
-                                                    && response2.tracks[k].streaming_url) {
+                                                if ((response2.tracks[k].title.toLowerCase() === title.toLowerCase() || (normalisedReturnedTrackName === normalisedTrackName && album === response2.title)) &&
+                                                    response2.tracks[k].streaming_url) {
                                                     result.url = response2.tracks[k].streaming_url;
                                                     result.artist = artist;
                                                     result.album = response2.title;
@@ -161,7 +161,7 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
             case TomahawkUrlType.Track:
                 return true;
             default:
-                return (/https?:\/\/[a-z]*\.bandcamp.com\//).test(url); // This excludes bandcamp pages with a custom (non .bandcamp.com) URL
+                return (/https?:\/\/(?!-)[A-Za-z0-9-]{1,62}[A-Za-z0-9]\.bandcamp.com\//).test(url); // This excludes bandcamp pages with a custom (non .bandcamp.com) URL
                 // return true; // go easy on API queries per key ratio
         }
     },
@@ -210,8 +210,9 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
                         response2.tracks.forEach(function (track){
                             result.tracks.push(that.track2Result(track));
                         });
-                    } else {
+                    } else if (result.type !== "artist"){
                         Tomahawk.addUrlResult(url, {});
+                        return;
                     }
                     query = "http://api.bandcamp.com/api/band/3/info?key=" + that.secret + "&band_id=" + response.band_id;
                     Tomahawk.asyncRequest(query, function (xhr3) {
