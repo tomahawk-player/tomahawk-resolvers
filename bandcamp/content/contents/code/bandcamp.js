@@ -151,6 +151,10 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     canParseUrl: function (url, type) {
+	// This excludes bandcamp pages with a custom (non .bandcamp.com) URL
+        if (!(/https?:\/\/(?!-)[A-Za-z0-9-]{1,62}[A-Za-z0-9]\.bandcamp.com\//).test(url))
+	    return false;
+
         switch (type) {
             case TomahawkUrlType.Album: //Don't rely on Tomahawk's InfoPlugins for Bandcamp's mostly rather unknown bands & albums
                 return false; // Albums are opened as playlists instead
@@ -161,8 +165,7 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
             case TomahawkUrlType.Track:
                 return true;
             default:
-                return (/https?:\/\/(?!-)[A-Za-z0-9-]{1,62}[A-Za-z0-9]\.bandcamp.com\//).test(url); // This excludes bandcamp pages with a custom (non .bandcamp.com) URL
-                // return true; // go easy on API queries per key ratio
+                return true;
         }
     },
 
