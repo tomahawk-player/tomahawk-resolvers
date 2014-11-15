@@ -193,6 +193,9 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     canParseUrl: function (url, type){
+        if (!(/https?:\/\/(www\.)?youtube.com\/watch\?v=.*/).test(url))
+	    return false;
+
         switch (type){
             case TomahawkUrlType.Album:
                 return false;
@@ -203,7 +206,7 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
             case TomahawkUrlType.Track:
                 return true;
             default:
-                return (/https?:\/\/(www\.)?youtube.com\/watch\?v=.*/).test(url);
+                return true;
         }
     },
 
