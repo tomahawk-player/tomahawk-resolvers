@@ -53,7 +53,7 @@
    <item>
     <widget class="QLabel" name="label_5">
      <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Finally, if you are still unable to log in, make sure that you enable &quot;less secure apps&quot; in your &lt;a href=&quot;https://www.google.com/settings/security/lesssecureapps&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Google account settings&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Otherwise, make sure that you enable &quot;less secure apps&quot; in your &lt;a href=&quot;https://www.google.com/settings/security/lesssecureapps&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0000ff;&quot;&gt;Google account settings&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
