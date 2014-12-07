@@ -3,7 +3,7 @@
     "pluginName": "youtube-metadata",
     "author": "Thierry Göckel",
     "email": "thierry@strayrayday.lu",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "website": "http://gettomahawk.com",
     "description": "Enables dropping YouTube URLs on Tomahawk.",
     "type": "resolver/javascript",

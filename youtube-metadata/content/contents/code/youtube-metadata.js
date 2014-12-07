@@ -228,16 +228,18 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                         query = "http://ws.audioscrobbler.com/2.0/?method=track.getCorrection&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent(parsedTrack.artist) + "&track=" + encodeURIComponent(parsedTrack.track);
                         Tomahawk.asyncRequest(query, function (xhr2) {
                             var response2 = JSON.parse(xhr2.responseText);
-                            if (response2.hasOwnProperty("corrections") && response2.corrections.hasOwnProperty("correction") && response2.corrections.correction.hasOwnProperty("track") && response2.corrections.correction.track.hasOwnProperty("artist")){
-                                result.type = "track";
-                                result.artist = response2.corrections.correction.track.artist.name;
-                                result.title = response2.corrections.correction.track.name;
-                                Tomahawk.addUrlResult(url, result);
-                            } else if (response2.hasOwnProperty("corrections")){
-                                result.type = "track";
-                                result.artist = parsedTrack.artist.capitalise();
-                                result.title = parsedTrack.track.capitalise();
+                            if (response2.hasOwnProperty("corrections")){
+                                if (response2.corrections.hasOwnProperty("correction") && response2.corrections.correction.hasOwnProperty("track") && response2.corrections.correction.track.hasOwnProperty("artist")){
+                                    result.type = "track";
+                                    result.artist = response2.corrections.correction.track.artist.name;
+                                    result.title = response2.corrections.correction.track.name;
+                                } else {
+                                    result.type = "track";
+                                    result.artist = parsedTrack.artist.capitalise();
+                                    result.title = parsedTrack.track.capitalise();
+                                }
                             }
+                            Tomahawk.addUrlResult(url, result);
                         });
                     } else {
                         Tomahawk.addUrlResult(url, result);
