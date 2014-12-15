@@ -13,6 +13,8 @@
         "main": "contents/code/subsonic.js",
         "scripts": [],
         "icon": "contents/images/icon.png",
+        "iconWhite": "contents/images/iconWhite.png",
+        "iconBackground": "contents/images/iconBackground.png",
         "resources": [
             "contents/code/config.ui",
             "contents/code/runnersid-icon.png",

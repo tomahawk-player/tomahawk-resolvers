@@ -13,6 +13,8 @@
             "contents/code/async.js"
         ],
         "icon": "contents/images/icon.png",
+        "iconWhite": "contents/images/iconWhite.png",
+        "iconBackground": "contents/images/iconBackground.png",
         "indicator": "contents/images/icon-16x16.png",
         "resources": [
             "contents/code/config.ui",
