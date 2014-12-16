@@ -21,5 +21,8 @@
             "contents/code/beatsmusic.png",
             "contents/code/beatsmusic-wide.png"
         ]
-    }
+    },
+    "staticCapabilities": [
+        "configTestable"
+    ]
 }
