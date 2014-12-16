@@ -2,6 +2,7 @@
  *
  * Written in 2013 by Sam Hanes <sam@maltera.com>
  * Extensive modifications in 2014 by Lalit Maganti
+ * Further modifications in 2014 by Enno Gottschalk <mrmaffen@googlemail.com>
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to
@@ -70,6 +71,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     invalidateCache: function() {
         Tomahawk.log("Invalidating cache");
         delete this.cachedRequest;
+        if (Tomahawk.localStorage)
+            Tomahawk.localStorage.removeItem(this.storageKey);
         Tomahawk.deleteFuzzyIndex();
     },
 
@@ -87,13 +90,13 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         // load signing key
         {   var s1 = CryptoJS.enc.Base64.parse(
-                'VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
-                + 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='
-        );
+                    'VzeC4H4h+T2f0VI180nVX8x+Mb5HiTtGnKgH52Otj8ZCGDz9jRW'
+                    + 'yHb6QXK0JskSiOgzQfwTY5xgLLSdUSreaLVMsVVWfxfa8Rw=='
+                );
             var s2 = CryptoJS.enc.Base64.parse(
                     'ZAPnhUkYwQ6y5DdQxWThbvhJHN8msQ1rqJw0ggKdufQjelrKuiG'
                     + 'GJI30aswkgCWTDyHkTGK9ynlqTkJ5L4CiGGUabGeo8M6JTQ=='
-            );
+                );
 
             for (var idx = 0; idx < s1.words.length; idx++)
                 s1.words[ idx ] ^= s2.words[ idx ];
@@ -169,8 +172,19 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         this._isRequesting = false;
     },
 
+    storageKey: "gmusic_cached_request",
+
     _getData: function (callback) {
         var that = this;
+        if (!that.cachedRequest) {
+            var persistedRequest;
+            if (Tomahawk.localStorage)
+                persistedRequest = Tomahawk.localStorage.getItem(that.storageKey);
+            if (persistedRequest) {
+                that.cachedRequest = JSON.parse(persistedRequest);
+                that._ensureFuzzyIndex();
+            }
+        }
         var url = that._baseURL
             + 'trackfeed?fields=nextPageToken,'
             + 'data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
@@ -196,18 +210,9 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                             response: results,
                             time: Date.now()
                         };
-                        var indexList = [];
-                        for (var idx = 0; idx < that.cachedRequest.response.length; idx++) {
-                            var entry = that.cachedRequest.response[ idx ];
-                            indexList.push({
-                                id: idx,
-                                artist: entry.artist,
-                                album: entry.album,
-                                track: entry.title
-                            });
-                        }
-                        Tomahawk.log("Creating fuzzy index, count: " + indexList.length);
-                        Tomahawk.createFuzzyIndex(indexList);
+                        if (Tomahawk.localStorage)
+                            Tomahawk.localStorage.setItem(that.storageKey, JSON.stringify(that.cachedRequest));
+                        that._createFuzzyIndex(that.cachedRequest.response);
                         Tomahawk.log("Updated cache in " + (Date.now() - time) + "ms");
                     } else {
                         Tomahawk.log("Collection doesn't need to be updated");
@@ -218,6 +223,27 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 that._callAllWaitingCallbacks();
             }
         }
+    },
+
+    _ensureFuzzyIndex: function () {
+        if (!Tomahawk.hasFuzzyIndex() && this.cachedRequest) {
+            this._createFuzzyIndex(this.cachedRequest.response);
+        }
+    },
+
+    _createFuzzyIndex: function (results) {
+        var indexList = [];
+        for (var idx = 0; idx < results.length; idx++) {
+            var entry = results[ idx ];
+            indexList.push({
+                id: idx,
+                artist: entry.artist,
+                album: entry.album,
+                track: entry.title
+            });
+        }
+        Tomahawk.log("Creating fuzzy index, count: " + indexList.length);
+        Tomahawk.createFuzzyIndex(indexList);
     },
 
     _paginatedRequest: function (results, url, callback, options) {
@@ -268,8 +294,8 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     results.tracks.push(that._convertTrack(entry));
                 }
             }
-            Tomahawk.log("Searched Locker for " + (Date.now() - time) + "ms and found "
-                + results.tracks.length + " tracks");
+            Tomahawk.log("Locker: Searched with query '" + query + "' for " + (Date.now() - time)
+                + "ms and found "+ results.tracks.length + " track results");
             callback.call( window, results );
         });
     },
@@ -285,15 +311,6 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         var time = Date.now();
         Tomahawk.asyncRequest(url, function (request) {
-            if (200 != request.status) {
-                Tomahawk.log(
-                        "Google Music search '" + query + "' failed:\n"
-                        + request.status + " "
-                        + request.statusText.trim() + "\n"
-                        + request.responseText.trim()
-                );
-                return;
-            }
             var response = JSON.parse( request.responseText );
 
             // entries member is missing when there are no results
@@ -323,13 +340,20 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                         break;
                 }
             }
-            Tomahawk.log("Searched All Access for " + (Date.now() - time) + "ms and found "
-                + results.tracks.length + " tracks");
+            Tomahawk.log("All Access: Searched with query '" + query + "' for "
+                + (Date.now() - time) + "ms and found " + results.tracks.length + " track results");
             callback.call( window, results );
         }, {
             'Authorization': 'GoogleLogin auth=' + this._token
         }, {
-            method: 'GET'
+            method: 'GET',
+            errorHandler: function (request) {
+                Tomahawk.log("Google Music search '" + query + "' failed:\n"
+                        + request.status + " "
+                        + request.statusText.trim() + "\n"
+                        + request.responseText.trim()
+                );
+            }
         });
     },
 
@@ -352,11 +376,11 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
         this._execSearch( query, function (results) {
             Tomahawk.addTrackResults(
-                { 'qid': qid, 'results': results.tracks } );
+            { 'qid': qid, 'results': results.tracks } );
             Tomahawk.addAlbumResults(
-                { 'qid': qid, 'results': results.albums } );
+                    { 'qid': qid, 'results': results.albums } );
             Tomahawk.addArtistResults(
-                { 'qid': qid, 'results': results.artists } );
+                    { 'qid': qid, 'results': results.artists } );
         }, 20);
     },
 
@@ -368,7 +392,6 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 query += ' - ' + album;
             }
             query += ' - ' + title;
-            Tomahawk.log(query);
             this._execSearchAllAccess(query, function (results) {
                 if (results.tracks.length > 0) {
                     Tomahawk.addTrackResults({
@@ -395,7 +418,9 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         this._getData(function (response) {
             var time = Date.now();
             var resultIds = Tomahawk.resolveFromFuzzyIndex(artist, album, title);
+            var resolveTarget = "";
             if (resultIds.length > 0) {
+                resolveTarget = "Locker";
                 Tomahawk.addTrackResults({
                     'qid': qid,
                     'results': [
@@ -403,10 +428,12 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                     ]
                 });
             } else {
+                resolveTarget = "All Access";
                 that._resolveAllAccess(qid, artist, album, title);
             }
-            Tomahawk.log("Resolved Locker for " + (Date.now() - time) + "ms and found "
-                + resultIds.length.length + " tracks");
+            Tomahawk.log(resolveTarget + ": Resolved track '" + artist + " - " + title + " - "
+                + album + "' for " + (Date.now() - time) + "ms and found " + resultIds.length
+                + " track results");
         });
     },
 
@@ -421,14 +448,16 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
     },
 
     getStreamUrl: function (qid, urn) {
-        if (!this._ready) return;
-        Tomahawk.log( "getting stream for '" + urn + "'" );
-
-        urn = this._parseUrn( urn );
-        if (!urn || 'track' != urn.type)
+        if (!this._ready) {
+            Tomahawk.log("Failed to get stream for '" + urn + "', resolver wasn't ready");
             return;
-
-        Tomahawk.log( "track ID is '" + urn.id + "'" );
+        }
+        urn = this._parseUrn( urn );
+        if (!urn || 'track' != urn.type) {
+            Tomahawk.log( "Failed to get stream. Couldn't parse '" + urn + "'" );
+            return;
+        }
+        Tomahawk.log("Getting stream for '" + urn + "', track ID is '" + urn.id + "'");
 
         var salt = util.salt(13);
         var sig = CryptoJS.HmacSHA1(urn.id + salt, this._key).toString(util.Base64)
@@ -438,9 +467,9 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
             ;
 
         var url = 'https://android.clients.google.com/music/mplay'
-            + '?net=wifi&pt=e&targetkbps=8310'
-            + '&' + ('T' == urn.id[ 0 ] ? 'mjck' : 'songid')
-            + '=' + urn.id + '&slt=' + salt + '&sig=' + sig;
+                + '?net=wifi&pt=e&targetkbps=8310'
+                + '&' + ('T' == urn.id[ 0 ] ? 'mjck' : 'songid')
+                    + '=' + urn.id + '&slt=' + salt + '&sig=' + sig;
 
         Tomahawk.reportStreamUrl(qid, url, {
             'Content-type': 'application/x-www-form-urlencoded',
@@ -449,33 +478,28 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
         });
     },
 
-    _loadSettings: function (callback) {
+    _loadSettings: function (callback, doConfigTest) {
         var that = this;
         Tomahawk.asyncRequest(that._webURL
-                + 'services/loadsettings?u=0&xt='
-                + encodeURIComponent( that._xt ),
+                    + 'services/loadsettings?u=0&xt='
+                    + encodeURIComponent( that._xt ),
             function (request) {
-                if (200 != request.status) {
-                    Tomahawk.log(
-                            "settings request failed:\n"
-                            + request.status + " "
-                            + request.statusText.trim()
-                    );
-                    return;
-                }
-
                 var response = JSON.parse( request.responseText );
                 if (!response.settings) {
                     Tomahawk.log( "settings request failed:\n"
                             + request.responseText.trim()
-                    );
+                        );
+                    if (doConfigTest) {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                            "Wasn't able to get resolver settings");
+                    }
                     return;
                 }
 
                 that._allAccess = response.settings.isSubscription;
                 Tomahawk.log( "Google Play Music All Access is "
                         + (that._allAccess ? "enabled" : "disabled" )
-                );
+                    );
 
                 var device = null;
                 var devices = response.settings.devices;
@@ -489,17 +513,17 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
 
                 if (device) {
                     that._deviceId = device.id.slice( 2 );
-                    Tomahawk.log(that._deviceId);
-
-                    Tomahawk.log( that.settings.name
-                            + " using device ID from "
-                            + device.carrier + " "
-                            + device.manufacturer + " "
-                            + device.model
-                    );
+                    Tomahawk.log(that.settings.name + " using device ID '" + that._deviceId
+                        + "' from " + device.carrier + " " + device.manufacturer + " "
+                        + device.model);
 
                     callback.call( window );
                 } else {
+                    if (doConfigTest) {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                                "No Android devices associated with Google account."
+                                + " Please open the 'Play Music' App, log in and play a song");
+                    }
                     Tomahawk.log( that.settings.name
                             + ": there aren't any Android devices"
                             + " associated with your Google account."
@@ -507,43 +531,65 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                             + " ID to function. Please open the Google"
                             + " Music application on an Android device"
                             + " and log in to your account."
-                    );
+                        );
                 }
             }, {
                 'Content-type': 'application/x-www-form-urlencoded',
                 'Authorization': 'GoogleLogin auth=' + this._token
             }, {
-                method: 'POST'
+                method: 'POST',
+                errorHandler: function (request) {
+                    if (doConfigTest) {
+                        if (request.status == 403) {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidAccount);
+                        } else {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                        }
+                    }
+                    Tomahawk.log(
+                            "Settings request failed:\n"
+                            + request.status + " "
+                            + request.statusText.trim()
+                    );
+                }
             }
         );
     },
 
-    _loadWebToken: function (callback) {
+    _loadWebToken: function (callback, doConfigTest) {
         var that = this;
         Tomahawk.asyncRequest(that._webURL + 'listen',
             function (request) {
-                if (200 != request.status) {
-                    Tomahawk.log( "request for xt cookie failed:"
-                            + request.status + " "
-                            + request.statusText.trim()
-                    );
-                    return;
-                }
-
-                var match = request.getResponseHeader( 'Set-Cookie' )
-                    .match( /^xt=([^;]+)(?:;|$)/m );
+                var match = request.getResponseHeader('Set-Cookie')
+                    .match(/^xt=([^;]+)(?:;|$)/m);
                 if (match) {
                     that._xt = match[ 1 ];
-                    callback.call( window );
+                    callback.call(window);
                 } else {
-                    Tomahawk.log( "xt cookie missing" );
-                    return;
+                    if (doConfigTest) {
+                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                            "Wasn't able to get xt cookie");
+                    }
+                    Tomahawk.log("xt cookie missing");
                 }
             }, {
                 'Authorization': 'GoogleLogin auth=' + this._token
             }, {
                 method: 'HEAD',
-                needCookieHeader: true
+                needCookieHeader: true,
+                errorHandler: function (request) {
+                    if (doConfigTest) {
+                        if (request.status == 403) {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidAccount);
+                        } else {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                        }
+                    }
+                    Tomahawk.log("Request for xt cookie failed:"
+                            + request.status + " "
+                            + request.statusText.trim()
+                    );
+                }
             }
         );
     },
@@ -558,49 +604,83 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
      * to run when it is complete.
      *
      * @param {loginCB} [callback] a function to be called on completion
+     * @param doConfigTest boolean indicating whether or not to call the configTest callbacks
      */
-    _login: function (callback) {
+    _login: function (callback, doConfigTest) {
         this._token = null;
 
+        if (!this._loginCallbacks) {
+            this._loginCallbacks = [];
+        }
+        if (callback) {
+            this._loginCallbacks.push(callback);
+        }
+        if (doConfigTest){
+            this.doConfigTest = true;
+        }
         // if a login is already in progress just queue the callback
         if (this._loginLock) {
-            this._loginCallbacks.push( callback );
             return;
         }
 
         this._loginLock = true;
-        this._loginCallbacks = [ callback ];
 
         var that = this;
         var name = this.settings.name;
         Tomahawk.asyncRequest('https://www.google.com/accounts/ClientLogin',
             function (request) {
-                if (200 == request.status) {
-                    that._token = request.responseText
-                        .match( /^Auth=(.*)$/m )[ 1 ];
-                    that._loginLock = false;
+                that._token = request.responseText
+                    .match(/^Auth=(.*)$/m)[ 1 ];
 
-                    Tomahawk.log( name + " logged in successfully" );
+                Tomahawk.log(name + " logged in successfully");
 
-                    for (var idx = 0; idx < that._loginCallbacks.length; idx++) {
-                        that._loginCallbacks[ idx ].call( window );
-                    }
-                    that._loginCallbacks = null;
-                } else {
-                    Tomahawk.log(name + " login failed:\n"
-                        + request.status + " "
-                        + request.statusText.trim() + "\n"
-                        + request.responseText.trim());
+                for (var idx = 0; idx < that._loginCallbacks.length; idx++) {
+                    that._loginCallbacks[ idx ].call(window);
                 }
+                that._loginCallbacks = null;
+                that._loginLock = false;
             }, {
                 'Content-type': 'application/x-www-form-urlencoded'
             }, {
                 method: 'POST',
                 data: "accountType=HOSTED_OR_GOOGLE&Email=" + that._email.trim()
                     + "&Passwd=" + that._password.trim() + "&service=sj&source=tomahawk-gmusic-"
-                    + that._version
+                    + that._version,
+                errorHandler: function (request) {
+                    Tomahawk.log(name + " login failed:\n"
+                        + request.status + " "
+                        + request.statusText.trim() + "\n"
+                        + request.responseText.trim());
+                    for (var idx = 0; idx < that._loginCallbacks.length; idx++) {
+                        that._loginCallbacks[ idx ].call(window);
+                    }
+                    if (that.doConfigTest) {
+                        that.doConfigTest = false;
+                        if (request.status == 403) {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidCredentials);
+                        } else if (request.status == 404) {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
+                        } else {
+                            Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Other,
+                                request.responseText.trim());
+                        }
+                    }
+                    that._loginCallbacks = null;
+                    that._loginLock = false;
+                }
             }
         );
+    },
+
+    configTest: function () {
+        var that = this;
+        this._login(function () {
+            that._loadWebToken(function () {
+                that._loadSettings(function () {
+                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Success);
+                }, true);
+            }, true);
+        }, true);
     },
 
     containsObject: function (obj, list) {
