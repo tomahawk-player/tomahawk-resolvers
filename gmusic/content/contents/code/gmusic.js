@@ -481,31 +481,41 @@ var GMusicResolver = Tomahawk.extend( TomahawkResolver, {
                 var devices = response.settings.devices;
                 for (var i = 0; i < devices.length; i++) {
                     var entry = devices[ i ];
-                    if ('PHONE' == entry.type) {
+                    if ('PHONE' == entry.type || 'IOS' == entry.type) {
                         device = entry;
                         break;
                     }
                 }
 
                 if (device) {
-                    that._deviceId = device.id.slice( 2 );
-                    Tomahawk.log(that._deviceId);
-
-                    Tomahawk.log( that.settings.name
+                    if ('PHONE' == device.type) {
+                        that._deviceId = device.id.slice( 2 );
+                        Tomahawk.log( that.settings.name
                             + " using device ID from "
                             + device.carrier + " "
                             + device.manufacturer + " "
                             + device.model
-                    );
+                        );
+                        
+                    }
+                    if ('IOS' == device.type) {
+                        that._deviceId = device.id;
+                        Tomahawk.log( that.settings.name
+                            + " using device ID from ios device named "
+                            + device.name
+                        );
+                    }
+                    
+                    Tomahawk.log(that._deviceId);
 
                     callback.call( window );
                 } else {
                     Tomahawk.log( that.settings.name
-                            + ": there aren't any Android devices"
+                            + ": there aren't any Android/iOS devices"
                             + " associated with your Google account."
-                            + " This resolver needs an Android device"
+                            + " This resolver needs an Android/iOS device"
                             + " ID to function. Please open the Google"
-                            + " Music application on an Android device"
+                            + " Music application on an Android/iOS device"
                             + " and log in to your account."
                     );
                 }
