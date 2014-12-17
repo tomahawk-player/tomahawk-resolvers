@@ -49,18 +49,22 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
-    encodeOAuthComponent: function (url) {
-        var encoded = encodeURIComponent(url);
-        encoded = encoded.replace(/\!/g, "%21").replace(/\'/g, "%27");
-        encoded = encoded.replace(/\(/g, "%28").replace(/\)/g, "%29");
-        return encoded.replace(/\*/g, "%2A");
+    encodeOAuthComponent: function(url) {
+        return encodeURIComponent(url)
+            .replace(/\!/g, "%21")
+            .replace(/\*/g, "%2A")
+            .replace(/\'/g, "%27")
+            .replace(/\(/g, "%28")
+            .replace(/\)/g, "%29");
     },
+
+    spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
     lookupUrl: function (url) {
         var that = this;
         var fetchUrl = 'http://api.rdio.com/1/'
         var query = 'extras=tracks&method=getObjectFromUrl';
-        query += '&oauth_consumer_key=gk8zmyzj5xztt8aj48csaart';
+        query += '&oauth_consumer_key=' + this.spell("tdo7m2m8u6r7r76mpod9jqlc");
         var nonce = '';
         for (i = 0; i < 8; i++) nonce += parseInt(Math.random() * 10).toString();
         query += '&oauth_nonce=' + nonce;
@@ -69,7 +73,7 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         query += '&oauth_version=1.0';
         query += '&url=' + this.encodeOAuthComponent(url);
         var toSign = 'POST&' + this.encodeOAuthComponent(fetchUrl) + '&' + this.encodeOAuthComponent(query);
-        var signature = CryptoJS.HmacSHA1(toSign, 'yt35kakDyW&').toString(CryptoJS.enc.Base64);
+        var signature = CryptoJS.HmacSHA1(toSign, this.spell("oKeSjHrS9d") + '&').toString(CryptoJS.enc.Base64);
         query += '&oauth_signature=' + this.encodeOAuthComponent(signature);
         Tomahawk.log(fetchUrl)
         Tomahawk.log(query)
