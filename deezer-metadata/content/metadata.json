@@ -1,20 +1,20 @@
 {
-	"name": "Deezer Metadata",
-	"pluginName": "deezer-metadata",
-	"author": "Uwe L. Korn",
-	"email": "uwelk@xhochy.com",
-	"version": "0.1.3",
-	"website": "http://gettomahawk.com",
-	"description": "(0.8+) Supports loading and drag and drop of Deezer URLs.",
-	"type": "resolver/javascript",
-	"manifest": {
-		"main": "contents/code/deezer-metadata.js",
-		"scripts": [],
-		"icon": "contents/images/icon.png",
-		"iconWhite": "contents/images/iconWhite.png",
+    "name": "Deezer Metadata",
+    "pluginName": "deezer-metadata",
+    "author": "Uwe L. Korn",
+    "email": "uwelk@xhochy.com",
+    "version": "0.1.3",
+    "website": "http://gettomahawk.com",
+    "description": "(0.8+) Supports loading and drag and drop of Deezer URLs.",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/deezer-metadata.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "iconWhite": "contents/images/iconWhite.png",
         "iconBackground": "contents/images/iconBackground.png",
-		"resources": [
-			"contents/code/deezer-metadata.png"
-		]
-	}
+        "resources": [
+            "contents/code/deezer-metadata.png"
+        ]
+    }
 }
