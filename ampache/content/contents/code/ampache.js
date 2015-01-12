@@ -405,6 +405,18 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         });
     },
 
+    tracks: function () {
+        var resolver = this;
+        return this.apiCall("songs", {
+            offset: 0,
+            limit: 1000000 // EHRM.
+        }).then(function (xmlDoc) {
+            var results = resolver.parseSongResponse(xmlDoc);
+
+            return { results: results };
+        });
+    },
+
     collection: function()
     {
         //strip http:// and trailing slash
@@ -419,7 +431,8 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
             iconfile: "ampache-icon.png",
             capabilities: [
                 Tomahawk.Collection.BrowseCapability.Artists,
-                Tomahawk.Collection.BrowseCapability.Albums
+                Tomahawk.Collection.BrowseCapability.Albums,
+                Tomahawk.Collection.BrowseCapability.Tracks
             ]
         };
 
