@@ -440,7 +440,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
             return_object["trackcount"] = this.trackCount;
 
         //stupid check if it's an ownCloud instance
-        if (this.server.indexOf("/remote.php/ampache") !== -1)
+        if (~this.server.indexOf("/remote.php/ampache") || ~this.server.indexOf('/apps/music/ampache'))
         {
             return_object["prettyname"] = "ownCloud";
             return_object["iconfile"] = "owncloud-icon.png";
