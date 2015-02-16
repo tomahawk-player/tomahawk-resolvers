@@ -49,7 +49,7 @@ var TidalResolver = Tomahawk.extend( TomahawkResolver, {
         cacheTime: 300,
         name: 'TIDAL',
         icon: '../images/icon.png',
-        weight: 90,
+        weight: 91,
         timeout: 8
     },
 
