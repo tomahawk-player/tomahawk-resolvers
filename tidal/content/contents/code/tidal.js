@@ -177,9 +177,9 @@ var TidalResolver = Tomahawk.extend( TomahawkResolver, {
     resolve: function (qid, artist, album, title) {
         var that = this;
         if (!this._countryCode) return;
-        artist = encodeURIComponent(artist);
-        album = encodeURIComponent(album);
-        title = encodeURIComponent(title);
+        artist = encodeURIComponent(artist.replace('-',' '));
+        album = encodeURIComponent(album.replace('-',' '));
+        title = encodeURIComponent(title.replace('-',' '));
 
         xhrRequest(that.api_location + "search/tracks","GET", "query=" 
                 +artist+"+"+album+"+"+title+"&token="+that.api_token+"&countryCode="+that._countryCode,
