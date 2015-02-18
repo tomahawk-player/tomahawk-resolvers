@@ -207,7 +207,13 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    getStreamUrl: function (qid, urn) {
+    getStreamUrl: function(qid, url) {
+        Promise.resolve(this.getStreamUrlPromise(url)).then(function(streamUrl){
+            Tomahawk.reportStreamUrl(qid, streamUrl);
+        });
+    },
+
+    getStreamUrlPromise: function (urn) {
         if (!this.logged_in) {
             this._login(this.getStreamUrl, [qid, urn], this);
             return;
@@ -232,7 +238,6 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return Tomahawk.get(this.api_location + "tracks/"+parsedUrn.id+"/streamUrl", {
                 data: params
             }).then( function (response) {
-                Tomahawk.reportStreamUrl(qid, response.url);
                 return response.url;
         });
     },
