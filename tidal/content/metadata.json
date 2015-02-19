@@ -1,9 +1,9 @@
 {
-    "name": "Tidal",
+    "name": "TidalHiFi",
     "pluginName": "tidal",
-    "author": "Anton Romanov",
+    "author": "Anton Romanov and Will Stott",
     "email": "",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "website": "http://gettomahawk.com",
     "description": "Streams music from tidalhifi.com (requires subscription)",
     "type": "resolver/javascript",
