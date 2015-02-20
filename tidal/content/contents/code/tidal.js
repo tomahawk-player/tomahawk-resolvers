@@ -1,6 +1,6 @@
 /* Tidal resolver for Tomahawk.
  *
- * Written in 2015 by Anton Romanov, and William Stott
+ * Written in 2015 by Anton Romanov, and Will Stott
  *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to
@@ -19,7 +19,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     api_location : 'https://listen.tidalhifi.com/v1/',
     api_token : 'P5Xbeo5LFvESeDy6',
 
-    logged_in: 0, // 0 = pending, 1 = success, 2 = failed
+    logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
 
     settings: {
         cacheTime: 300,
@@ -30,10 +30,9 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     strQuality: ['LOW', 'HIGH', 'LOSSLESS'],
-    numQuality: [ 128,   320,    1411     ],
+    numQuality: [ 64,    320,    1411     ],
 
     getConfigUi: function() {
-        // Tomahawk.log('Called getConfigUi()');
         return {
             "widget": Tomahawk.readBase64( "config.ui" ),
             fields: [{
@@ -74,7 +73,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
         Tomahawk.addCustomUrlHandler( 'tidal', 'getStreamUrl', true );
 
-        this._login();
+        return this._login();
     },
 
     _convertTrack: function (entry) {
@@ -106,18 +105,23 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return entry.name;
     },
 
+    _sanitizeQuery: function (query) {
+        return query.replace(/[ \-]+/g, ' ').toLowerCase();
+    },
+
     search: function (query) {
         if (!this.logged_in) {
-            this._login(this.search, [query], this);
+            return this._defer(this.search, [query], this);
+        } else if (this.logged_in ===2) {
             return;
         }
 
         var that = this;
-        var query = encodeURIComponent(query);
+
         var params = {
-            limit: 25,
-            query: query,
-            token: this.api_token,
+            limit: 9999,
+            query: this._sanitizeQuery(query),
+            sessionId: this._sessionId,
             countryCode: this._countryCode
         };
 
@@ -128,9 +132,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
 
         return tracks;
-
-        /*
-        albums = Tomahawk.get(this.api_location + "search/albums", {
+        // Tomahawk doesn't support returning seperated results... yet.
+        /* albums = Tomahawk.get(this.api_location + "search/albums", {
                 data: params
             }).then( function (response) {
                 var result =  response.items.map(that._convertAlbum, that);
@@ -143,53 +146,31 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 return response.items.map(that._convertArtist, that);
         });
 
-        // WIP, many problems with this. Promise.all doesn't seem to work.
-        // And tomahawk doesn't support it anyway... yet.
         return Promise.all( [tracks, albums, artists] ).then( function (results) {
-
-            Tomahawk.log('======================= tracks ========================');
-            for (var i = 0; i < results[0].length; i++) {
-                Tomahawk.log(results[0][i].track);
-            }
-
-            Tomahawk.log('======================= albums ========================');
-            for (var i = 0; i < results[1].length; i++) {
-                Tomahawk.log(results[1][i].album);
-            }
-
-            Tomahawk.log('======================= artists ========================');
-            for (var i = 0; i < results[2].length; i++) {
-                Tomahawk.log(results[2][i]);
-            }
-
             return {
                 tracks: results[0],
                 albums: results[1],
                 artists: results[2]
             };
-        });
-        */
-        
+        }); */
     },
 
     resolve: function (artist, album, title) {
         if (!this.logged_in) {
-            this._login(this.resolve, [artist, album, title], this);
+            return this._defer(this.resolve, [artist, album, title], this);
+        } else if (this.logged_in === 2) {
             return;
-        } 
+        }
 
         var that = this;
+        var query = this._sanitizeQuery([ artist, album, title ].join(' '));
 
-        var query = [ artist, album, title ].join(' ');
-
-        query = query.replace(/[ \-]+/g, ' ');
-
-        return Tomahawk.get(that.api_location + "search/tracks", {
+        return Tomahawk.get(this.api_location + "search/tracks", {
                 data: {
+                    limit: 5,
                     query: query,
-                    token: this.api_token,
-                    countryCode: this._countryCode,
-                    dataType: 'json'
+                    sessionId: this._sessionId,
+                    countryCode: this._countryCode
                 }
             }).then(function (response) {
                 return response.items.map(that._convertTrack, that);
@@ -208,14 +189,15 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     getStreamUrl: function(qid, url) {
-        Promise.resolve(this.getStreamUrlPromise(url)).then(function(streamUrl){
+        Promise.resolve(this._getStreamUrlPromise(url)).then(function(streamUrl){
             Tomahawk.reportStreamUrl(qid, streamUrl);
         });
     },
 
-    getStreamUrlPromise: function (urn) {
+    _getStreamUrlPromise: function (urn) {
         if (!this.logged_in) {
-            this._login(this.getStreamUrl, [qid, urn], this);
+            return this._defer(this.getStreamUrl, [urn], this);
+        } else if (this.logged_in === 2) {
             return;
         }
 
@@ -233,8 +215,6 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             sessionId: this._sessionId
         };
 
-        Tomahawk.log("Getting stream for '" + parsedUrn + "', track ID is '" + parsedUrn.id + "'");
-
         return Tomahawk.get(this.api_location + "tracks/"+parsedUrn.id+"/streamUrl", {
                 data: params
             }).then( function (response) {
@@ -242,33 +222,29 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
     },
 
-    _login: function (callback, args, scope) {
-        if (typeof this._loginCallbacks !== "array") {
-            this._loginCallbacks = [];
-        }
-
-        if (typeof callback == "function") {
+    _defer: function (callback, args, scope) {
+        if ('then' in this._loginPromise) {
             args = args || [];
             scope = scope || this;
-            Tomahawk.log('Deferring action: ', args);
-            this._loginCallbacks.push([callback, args, scope]);
+            Tomahawk.log('Deferring action with ' + args.length + ' arguments.');
+            return this._loginPromise.then(function () {
+                Tomahawk.log('Callback.');
+                callback.call(scope, args);
+            });
         }
+    },
 
-        // if a login is already in progress just queue the callback
+    _login: function () {
+        // If a login is already in progress don't start another!
         if (this._loginLock) return;
 
-        this._token = null;
         this._loginLock = true;
         this.logged_in = 0;
 
         var that = this;
-        var params = "token=" + this.api_token;
+        var params = "?token=" + this.api_token;
 
-        Tomahawk.post(
-              // URL
-            this.api_location + "login/username?" + params,
-            { // Settings
-                dataType: 'json',
+        this._loginPromise = Tomahawk.post( this.api_location + "login/username" + params, {
                 type: 'POST', // borked Tomahawk.js
                 data: {
                     "username": this._email.trim(),
@@ -276,26 +252,24 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 }
             }
         ).then( function (resp) {
-            that._countryCode = resp.countryCode;
-            that._sessionId = resp.sessionId;
-
             Tomahawk.log(that.settings.name + " logged in successfully.");
 
-            // Take care of anything Tomahawk asked for before authentication.
-            while (that._loginCallbacks.length > 0) {
-                var cb = that._loginCallbacks.pop();
-                Tomahawk.log('Performing action: ', cb[1]);
-                cb[0].call(cb[2], cb[1]);
-            }
+            that._countryCode = resp.countryCode;
+            that._sessionId = resp.sessionId;
+            that._userId = resp.userId;
             that._loginLock = false;
             that.logged_in = 1;
-        }, function () {
-            Tomahawk.log(that.settings.name + " failed login!");
-            // Clear callbacks, let the user refresh once logged in.
-            that._loginCallbacks = [];
-            that.logged_in = 2;
+        }, function (error) {
+            Tomahawk.log(that.settings.name + " failed login.");
+
+            delete that._countryCode;
+            delete that._sessionId;
+            delete that._userId;
             that._loginLock = false;
+            that.logged_in = 2;
         });
+
+        return this._loginPromise;
     }
 });
 
