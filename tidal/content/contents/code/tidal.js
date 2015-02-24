@@ -104,12 +104,13 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     _convertArtist: function (entry) {
-        return entry.name;
+        return {
+            name: entry.name,
+        };
     },
 
     _convertPlaylist: function (entry) {
         return {
-            type:       "playlist",
             title:      entry.title,
             guid:       "tidal-playlist-" + entry.uuid,
             info:       entry.description + " (from TidalHiFi)",
@@ -176,6 +177,28 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         }
     },
 
+    _debugPrint: function (obj, spaces) {
+        spaces = spaces || '';
+
+        var str = '';
+        for (key in obj) {
+            if (typeof obj[key] === "object") {
+                var b = ["{", "}"]
+                if (obj[key].constructor == Array) {
+                    b = ["[", "]"];
+                }
+                str += spaces+key+": "+b[0]+"\n"+this._debugPrint(obj[key], spaces+'    ')+"\n"+spaces+b[1]+'\n';
+            } else {
+                str += spaces+key+": "+obj[key]+"\n";
+            }
+        }
+        if (spaces != '') {
+            return str;
+        } else {
+            str.split('\n').map(Tomahawk.log, Tomahawk);
+        }
+    },
+
     lookupUrl: function (url) {
         if (!this.logged_in) {
             return this._defer(this.lookupUrl, [url], this);
@@ -183,7 +206,6 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             Tomahawk.addUrlResult(url, null);
             return null;
         }
-
 
         var match = this._parseUrlPrefix(url);
 
@@ -206,9 +228,12 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             var getInfo = Tomahawk.get(rqUrl, { data: params } );
             var getTracks = Tomahawk.get(rqUrl + "/tracks", { data: params });
 
+            Tomahawk.log(rqUrl);
+
             promise = Promise.all([getInfo, getTracks]).then( function (response) {
                 var result = that._convertAlbum(response[0]);
                 result.tracks = response[1].items.map(that._convertTrack, that);
+                result.tracks.map(function (item) {item.type="track"});
                 return result;
             });
 
@@ -239,12 +264,14 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             promise = Promise.all([getInfo, getTracks]).then( function (response) {
                 var result = that._convertPlaylist(response[0]);
                 result.tracks = response[1].items.map(that._convertTrack, that);
+                result.tracks.map(function (item) {item.type="track"});
                 return result;
             });
         }
 
         /*return */promise.then(function (result) {
             result.type = match[2];
+            that._debugPrint(result);
             Tomahawk.addUrlResult(url, result);
         }).catch(function (e) {
             Tomahawk.log("Error in lookupUrl! " + e);
