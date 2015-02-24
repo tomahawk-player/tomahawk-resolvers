@@ -71,6 +71,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             return;
         }
 
+        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
         Tomahawk.addCustomUrlHandler( 'tidal', 'getStreamUrl', true );
 
         return this._login();
@@ -97,7 +98,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     _convertAlbum: function (entry) {
         return {
             artist:     entry.artist.name,
-            album:      entry.title
+            album:      entry.title,
+            url:        entry.url
         };
     },
 
@@ -105,75 +107,147 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return entry.name;
     },
 
-    _sanitizeQuery: function (query) {
-        return query.replace(/[ \-]+/g, ' ').toLowerCase();
+    _convertPlaylist: function (entry) {
+        return {
+            type:       "playlist",
+            title:      entry.title,
+            guid:       "tidal-playlist-" + entry.uuid,
+            info:       entry.description + " (from TidalHiFi)",
+            creator:    "tidal-user-" + entry.creator.id,
+            // TODO: Perhaps use tidal://playlist/uuid
+            url:        entry.url
+        };
     },
 
-    search: function (query) {
+    search: function (query, limit) {
         if (!this.logged_in) {
             return this._defer(this.search, [query], this);
         } else if (this.logged_in ===2) {
-            return;
+            return null;
         }
 
         var that = this;
 
         var params = {
-            limit: 9999,
-            query: this._sanitizeQuery(query),
+            limit: limit || 9999,
+            query: query.replace(/[ \-]+/g, ' ').toLowerCase(),
+
             sessionId: this._sessionId,
             countryCode: this._countryCode
         };
 
-        tracks = Tomahawk.get(this.api_location + "search/tracks", {
-                data: params
-            }).then( function (response) {
-                return response.items.map(that._convertTrack, that);
+        return Tomahawk.get(this.api_location + "search/tracks", {
+            data: params
+        }).then( function (response) {
+            return response.items.map(that._convertTrack, that);
         });
-
-        return tracks;
-        // Tomahawk doesn't support returning seperated results... yet.
-        /* albums = Tomahawk.get(this.api_location + "search/albums", {
-                data: params
-            }).then( function (response) {
-                var result =  response.items.map(that._convertAlbum, that);
-                return result;
-        });
-
-        artists = Tomahawk.get(this.api_location + "search/artists", {
-                data: params
-            }).then( function (response) {
-                return response.items.map(that._convertArtist, that);
-        });
-
-        return Promise.all( [tracks, albums, artists] ).then( function (results) {
-            return {
-                tracks: results[0],
-                albums: results[1],
-                artists: results[2]
-            };
-        }); */
     },
 
     resolve: function (artist, album, title) {
+        var query = [ artist, album, title ].join(' ');
+
+        return this.search(query, 5);
+    },
+
+    _parseUrlPrefix: function (url) {
+        var match = url.match( /https?:\/\/(?:listen|play|www)+.(tidalhifi|wimpmusic).com\/(?:v1\/)?([a-z]{3,}?)s?\/([\w\-]+)[\/?]?/ );
+        // http://www.regexr.com/3afug
+        // 1: 'tidalhifi' or 'wimpmusic'
+        // 2: 'artist' or 'album' or 'track' or 'playlist' (removes the s)
+        // 3: ID of resource (seems to be the same for both services!)
+        return match;
+    },
+
+    canParseUrl: function (url, type) {
+        url = this._parseUrlPrefix(url);
+        if (!url) return false;
+
+        switch (type) {
+            case TomahawkUrlType.Album:
+                return url[2] == 'album';
+            case TomahawkUrlType.Artist:
+                return url[2] == 'artist';
+            case TomahawkUrlType.Track:
+                return url[2] == 'track';
+            case TomahawkUrlType.Playlist:
+                return url[2] == 'playlist';
+            default:
+                return true;
+        }
+    },
+
+    lookupUrl: function (url) {
         if (!this.logged_in) {
-            return this._defer(this.resolve, [artist, album, title], this);
+            return this._defer(this.lookupUrl, [url], this);
         } else if (this.logged_in === 2) {
-            return;
+            Tomahawk.addUrlResult(url, null);
+            return null;
         }
 
-        var that = this;
-        var query = this._sanitizeQuery([ artist, album, title ].join(' '));
 
-        return Tomahawk.get(this.api_location + "search/tracks", {
-                data: {
-                    limit: 5,
-                    query: query,
-                    sessionId: this._sessionId,
-                    countryCode: this._countryCode
-                }
+        var match = this._parseUrlPrefix(url);
+
+        Tomahawk.log(url + " -> " + match[1] + " " + match[2] + " " + match[3]);
+
+        if (!match[1]) return false;
+
+        var that = this;
+        var cb = undefined;
+        var promise = null;
+        var suffix = '/';
+        var params = {
+            countryCode: this._countryCode,
+            sessionId: this._sessionId
+        };
+
+        if (match[2] == 'album') {
+            var rqUrl = this.api_location + 'albums/' + match[3];
+
+            var getInfo = Tomahawk.get(rqUrl, { data: params } );
+            var getTracks = Tomahawk.get(rqUrl + "/tracks", { data: params });
+
+            promise = Promise.all([getInfo, getTracks]).then( function (response) {
+                var result = that._convertAlbum(response[0]);
+                result.tracks = response[1].items.map(that._convertTrack, that);
+                return result;
+            });
+
+        } else if (match[2] == 'artist') {
+            var rqUrl = this.api_location + 'artists/' + match[3];
+
+            promise = Tomahawk.get(rqUrl, {
+                data: params
             }).then(function (response) {
-                return response.items.map(that._convertTrack, that);
+                return that._convertArtist(response);
+            });
+
+        } else if (match[2] == 'track') {
+            var rqUrl = this.api_location + 'tracks/' + match[3];
+            // I can't find any link on the site for tracks.
+            promise = Tomahawk.get(rqUrl, {
+                data: params
+            }).then(function (response) {
+                return that._convertTrack(response);
+            });
+
+        } else if (match[2] == 'playlist') {
+            var rqUrl = this.api_location + 'playlists/' + match[3];
+
+            var getInfo = Tomahawk.get(rqUrl, { data: params } );
+            var getTracks = Tomahawk.get(rqUrl + "/tracks", { data: params });
+
+            promise = Promise.all([getInfo, getTracks]).then( function (response) {
+                var result = that._convertPlaylist(response[0]);
+                result.tracks = response[1].items.map(that._convertTrack, that);
+                return result;
+            });
+        }
+
+        /*return */promise.then(function (result) {
+            result.type = match[2];
+            Tomahawk.addUrlResult(url, result);
+        }).catch(function (e) {
+            Tomahawk.log("Error in lookupUrl! " + e);
         });
     },
 
