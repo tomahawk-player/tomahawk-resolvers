@@ -221,7 +221,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         var suffix = '/';
         var params = {
             countryCode: this._countryCode,
-            sessionId: this._sessionId
+            sessionId: this._sessionId,
+            limit:  9999,
         };
 
         if (match[2] == 'album') {
