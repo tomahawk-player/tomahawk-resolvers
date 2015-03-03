@@ -91,6 +91,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             duration:   entry.duration,
 
             url:        'tidal://track/' + entry.id,
+            hint:       'tidal://track/' + entry.id,
             checked:    true,
             bitrate:    this.numQuality[this._quality]
         };
