@@ -163,7 +163,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
 
     resolve: function (qid, artist, album, title) {
         if (!this.loggedIn) {
-            Tomahawk.addTrackResults({qid, results: []});
+            Tomahawk.addTrackResults({qid: qid, results: []});
             return;
         }
 
