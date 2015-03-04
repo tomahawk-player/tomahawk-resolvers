@@ -168,8 +168,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     _parseUrlPrefix: function (url) {
-        var match = url.match( /https?:\/\/(?:listen|play|www)+.(tidalhifi|wimpmusic).com\/(?:v1\/)?([a-z]{3,}?)s?\/([\w\-]+)[\/?]?/ );
-        // http://www.regexr.com/3afug
+        var match = url.match( /(?:https?:\/\/)?(?:listen|play|www).(tidalhifi|wimpmusic).com\/(?:v1\/)?([a-z]{3,}?)s?\/([\w\-]+)[\/?]?/ );
+        // http://www.regexr.com/3ahtg
         // 1: 'tidalhifi' or 'wimpmusic'
         // 2: 'artist' or 'album' or 'track' or 'playlist' (removes the s)
         // 3: ID of resource (seems to be the same for both services!)
