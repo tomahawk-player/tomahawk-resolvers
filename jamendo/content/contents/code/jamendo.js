@@ -45,6 +45,11 @@ var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
                 //result.year = Tomahawk.valueForSubNode(link, "year");
                 result.source = this.settings.name;
                 result.url = decodeURI(Tomahawk.valueForSubNode(link, "stream"));
+                if (result.url.indexOf('http:') === 0) {
+                     result.url = result.url.replace(/http:/, 'https:');
+                }
+
+
                 // jamendo also provide ogg ?
                 result.extension = "mp3";
                 //result.bitrate = Tomahawk.valueForSubNode(link, "bitrate")/1000;
@@ -67,7 +72,7 @@ var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
     },
     resolve: function (qid, artist, album, title) {
         // build query to Jamendo
-        var url = "http://api.jamendo.com/get2/id+name+duration+stream+album_name+artist_name/track/xml/track_album+album_artist/?";
+        var url = "https://api.jamendo.com/get2/id+name+duration+stream+album_name+artist_name/track/xml/track_album+album_artist/?";
         if (title !== "") url += "name=" + encodeURIComponent(title) + "&";
 
         if (artist !== "") url += "artist_name=" + encodeURIComponent(artist) + "&";
@@ -81,7 +86,7 @@ var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
     },
     search: function (qid, searchString) {
         // build query to Jamendo
-        var url = "http://api.jamendo.com/get2/id+name+duration+stream+album_name+artist_name/track/xml/track_album+album_artist/?";
+        var url = "https://api.jamendo.com/get2/id+name+duration+stream+album_name+artist_name/track/xml/track_album+album_artist/?";
         if (searchString !== "") url += "searchquery=" + encodeURIComponent(searchString);
 
         url += "&n=20";
