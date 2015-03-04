@@ -162,7 +162,10 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     resolve: function (qid, artist, album, title) {
-        if (!this.loggedIn) return;
+        if (!this.loggedIn) {
+            Tomahawk.addTrackResults({qid, results: []});
+            return;
+        }
 
         // TODO: Add album to search
         var that = this;
