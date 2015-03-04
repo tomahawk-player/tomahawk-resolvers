@@ -93,7 +93,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             url:        'tidal://track/' + entry.id,
             hint:       'tidal://track/' + entry.id,
             checked:    true,
-            bitrate:    this.numQuality[this._quality]
+            bitrate:    this.numQuality[this._quality],
+            type:       "track",
         };
     },
 
@@ -101,13 +102,15 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return {
             artist:     entry.artist.name,
             name:       entry.title,
-            url:        entry.url
+            url:        entry.url,
+            type:       "album",
         };
     },
 
     _convertArtist: function (entry) {
         return {
             name: entry.name,
+            type: "artist",
         };
     },
 
@@ -118,7 +121,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             info:       entry.description + " (from TidalHiFi)",
             creator:    "tidal-user-" + entry.creator.id,
             // TODO: Perhaps use tidal://playlist/uuid
-            url:        entry.url
+            url:        entry.url,
+            type:       "playlist"
         };
     },
 
@@ -202,18 +206,27 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     lookupUrl: function (url) {
+        this.lookupUrlPromise(url).then(function (result) {
+            Tomahawk.addUrlResult(url, result);
+        }).catch(function (e) {
+            Tomahawk.addUrlResult(url, null);
+            Tomahawk.log("Error in lookupUrlPromise! " + e);
+        });
+    },
+
+    lookupUrlPromise: function (url) {
         if (!this.logged_in) {
             return this._defer(this.lookupUrl, [url], this);
         } else if (this.logged_in === 2) {
-            Tomahawk.addUrlResult(url, null);
-            return null;
+            throw new Error('Failed login');
         }
 
         var match = this._parseUrlPrefix(url);
 
         Tomahawk.log(url + " -> " + match[1] + " " + match[2] + " " + match[3]);
 
-        if (!match[1]) return false;
+        if (!match[1])
+            throw new Error('Empty 1st part of url');
 
         var that = this;
         var cb = undefined;
@@ -233,18 +246,19 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
             Tomahawk.log(rqUrl);
 
-            promise = Promise.all([getInfo, getTracks]).then(
+            return Promise.all([getInfo, getTracks]).then(
                 function (response) {
                     var result = that._convertAlbum(response[0]);
                     result.tracks = response[1].items.map(that._convertTrack, that);
                     result.tracks.map(function (item) {item.type="track"});
+                    result.type = "album";
                     return result;
                 });
 
         } else if (match[2] == 'artist') {
             var rqUrl = this.api_location + 'artists/' + match[3];
 
-            promise = Tomahawk.get(rqUrl, {
+            return Tomahawk.get(rqUrl, {
                 data: params
             }).then(function (response) {
                 return that._convertArtist(response);
@@ -253,7 +267,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         } else if (match[2] == 'track') {
             var rqUrl = this.api_location + 'tracks/' + match[3];
             // I can't find any link on the site for tracks.
-            promise = Tomahawk.get(rqUrl, {
+            return Tomahawk.get(rqUrl, {
                 data: params
             }).then(function (response) {
                 return that._convertTrack(response);
@@ -265,7 +279,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             var getInfo = Tomahawk.get(rqUrl, { data: params } );
             var getTracks = Tomahawk.get(rqUrl + "/tracks", { data: params });
 
-            promise = Promise.all([getInfo, getTracks]).then( function (response) {
+            return Promise.all([getInfo, getTracks]).then( function (response) {
                 var result = that._convertPlaylist(response[0]);
                 result.tracks = response[1].items.map(that._convertTrack, that);
                 result.tracks.map(function (item) {item.type="track"});
@@ -273,12 +287,6 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             });
         }
 
-        /*return */promise.then(function (result) {
-            result.type = match[2];
-            Tomahawk.addUrlResult(url, result);
-        }).catch(function (e) {
-            Tomahawk.log("Error in lookupUrl! " + e);
-        });
     },
 
     _parseUrn: function (urn) {
