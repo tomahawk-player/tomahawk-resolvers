@@ -237,7 +237,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         Tomahawk.log(url + " -> " + match[1] + " " + match[2] + " " + match[3]);
 
         if (!match[1])
-            throw new Error('Empty 1st part of url');
+            throw new Error("Couldn't parse given URL: " + url);
 
         var that = this;
         var cb = undefined;
@@ -257,14 +257,11 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
             Tomahawk.log(rqUrl);
 
-            return Promise.all([getInfo, getTracks]).then(
-                function (response) {
-                    var result = that._convertAlbum(response[0]);
-                    result.tracks = response[1].items.map(that._convertTrack, that);
-                    result.tracks.map(function (item) {item.type="track"});
-                    result.type = "album";
-                    return result;
-                });
+            return Promise.all([getInfo, getTracks]).then(function (response) {
+                var result = that._convertAlbum(response[0]);
+                result.tracks = response[1].items.map(that._convertTrack, that);
+                return result;
+            });
 
         } else if (match[2] == 'artist') {
             var rqUrl = this.api_location + 'artists/' + match[3];
@@ -293,7 +290,6 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             return Promise.all([getInfo, getTracks]).then( function (response) {
                 var result = that._convertPlaylist(response[0]);
                 result.tracks = response[1].items.map(that._convertTrack, that);
-                result.tracks.map(function (item) {item.type="track"});
                 return result;
             });
         }
@@ -311,7 +307,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     getStreamUrl: function(qid, url) {
-        Promise.resolve(this._getStreamUrlPromise(url)).then(function(streamUrl){
+        Promise.resolve(this._getStreamUrlPromise(url)).then(function (streamUrl){
             Tomahawk.reportStreamUrl(qid, streamUrl);
         }).catch(Tomahawk.log);
     },
@@ -338,9 +334,9 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
 
         return Tomahawk.get(this.api_location + "tracks/"+parsedUrn.id+"/streamUrl", {
-                data: params
-            }).then( function (response) {
-                return response.url;
+            data: params
+        }).then( function (response) {
+            return response.url;
         });
     },
 
@@ -350,7 +346,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             scope = scope || this;
             Tomahawk.log('Deferring action with ' + args.length + ' arguments.');
             return this._loginPromise.then(function () {
-                Tomahawk.log('Callback.');
+                Tomahawk.log('Performing deferred action with ' + args.length + ' arguments.');
                 callback.call(scope, args);
             });
         }
