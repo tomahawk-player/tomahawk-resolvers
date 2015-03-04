@@ -32,16 +32,20 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
             if (responseString.track.album != undefined) {
                 result.album = responseString.track.album.title;
             } else {
-		result.album = "";
+                result.album = "";
             }
             if (responseString.track.year != undefined) {
                 result.year = responseString.track.year;
             }
             if (responseString.track.url != undefined) {
-		result.linkUrl = responseString.track.url;
-	    }
+                result.linkUrl = responseString.track.url;
+            }
             result.source = this.settings.name;
             result.url = responseString.track.freedownload;
+            if (result.url.indexOf('http:') === 0) {
+                result.url = result.url.replace(/http:/, 'https:');
+            }
+
             result.mimetype = "audio/mpeg";
             result.bitrate = 128;
             result.duration = responseString.track.duration / 1000;
@@ -57,7 +61,7 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
     resolve: function (qid, artist, album, title) {
         artist = encodeURIComponent(artist).replace(/\%20/g, '\+').trim();
         track = encodeURIComponent(title).replace(/\%20/g, '\+').trim();
-        var lastfmUrl = "http://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&autocorrect=1&artist=" + artist + "&track=" + track;
+        var lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&autocorrect=1&artist=" + artist + "&track=" + track;
         var that = this;
         Tomahawk.asyncRequest(lastfmUrl, function(xhr) {
             that.parseSongResponse(qid, JSON.parse(xhr.responseText));
