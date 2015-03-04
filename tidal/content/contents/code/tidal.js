@@ -53,33 +53,33 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     newConfigSaved: function() {
         var config = this.getUserConfig();
-        if (this._email !== config.email || this._password !== config.password 
-                || this._quality != config.quality) {
+
+        var changed = 
+            this._email !== config.email ||
+            this._password !== config.password ||
+            this._quality != config.quality;
+
+        if (changed) {
             this.init();
         }
     },
 
     testConfig: function (config) {
-        return this._getLoginPromise(config).then( 
-                function (resp) {
-                },
-                function (error) {
-                    throw new Error('Invalid credentials');
-                }
-            );
+        return this._getLoginPromise(config).catch(function (error) {
+            throw new Error('Invalid credentials');
+        });
     },
 
     init: function() {
-        var name = this.settings.name;
         var config = this.getUserConfig();
+
         this._email = config.email;
         this._password = config.password;
         this._quality = config.quality;
 
         if (!this._email || !this._password) {
             Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
-            Tomahawk.log( name + " resolver not configured." );
-            return;
+            throw new Error( "Invalid configuration." );
         }
 
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
@@ -141,7 +141,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         if (!this.logged_in) {
             return this._defer(this.search, [query], this);
         } else if (this.logged_in ===2) {
-            return null;
+            throw new Error('Failed login, cannot search.');
         }
 
         var that = this;
@@ -229,7 +229,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         if (!this.logged_in) {
             return this._defer(this.lookupUrl, [url], this);
         } else if (this.logged_in === 2) {
-            throw new Error('Failed login');
+            throw new Error('Failed login, cannot lookupUrl');
         }
 
         var match = this._parseUrlPrefix(url);
@@ -297,7 +297,6 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 return result;
             });
         }
-
     },
 
     _parseUrn: function (urn) {
@@ -314,14 +313,14 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     getStreamUrl: function(qid, url) {
         Promise.resolve(this._getStreamUrlPromise(url)).then(function(streamUrl){
             Tomahawk.reportStreamUrl(qid, streamUrl);
-        });
+        }).catch(Tomahawk.log);
     },
 
     _getStreamUrlPromise: function (urn) {
         if (!this.logged_in) {
             return this._defer(this.getStreamUrl, [urn], this);
         } else if (this.logged_in === 2) {
-            return;
+            throw new Error('Failed login, cannot getStreamUrl.');
         }
 
         var parsedUrn = this._parseUrn( urn );
@@ -360,7 +359,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     _getLoginPromise: function (config) {
         var params = "?token=" + this.api_token;
         return Tomahawk.post( this.api_location + "login/username" + params, {
-                type: 'POST', // borked Tomahawk.js
+                type: 'POST', // backwards compatibility for old versions of tomahawk.js
                 data: {
                     "username": config.email.trim(),
                     "password": config.password.trim()
@@ -371,33 +370,30 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     _login: function (config) {
         // If a login is already in progress don't start another!
-        if (this._loginLock){
-            Tomahawk.log("login already in progress");
-            return;
-        }
-
-        this._loginLock = true;
+        if (this.logged_in === 0) return;
         this.logged_in = 0;
 
         var that = this;
 
         this._loginPromise = this._getLoginPromise(config).then(
-                function (resp) {
-                    that._countryCode = resp.countryCode;
-                    that._sessionId = resp.sessionId;
-                    that._userId = resp.userId;
-                    that._loginLock = false;
-                    that.logged_in = 1;
-                },
-                function (error) {
-                    Tomahawk.log(that.settings.name + " failed login.");
+            function (resp) {
+                Tomahawk.log(that.settings.name + " successfully logged in.");
 
-                    delete that._countryCode;
-                    delete that._sessionId;
-                    delete that._userId;
-                    that._loginLock = false;
-                    that.logged_in = 2;
-                }
+                that._countryCode = resp.countryCode;
+                that._sessionId = resp.sessionId;
+                that._userId = resp.userId;
+
+                that.logged_in = 1;
+            },
+            function (error) {
+                Tomahawk.log(that.settings.name + " failed login.");
+
+                delete that._countryCode;
+                delete that._sessionId;
+                delete that._userId;
+
+                that.logged_in = 2;
+            }
         );
         return this._loginPromise;
     }
