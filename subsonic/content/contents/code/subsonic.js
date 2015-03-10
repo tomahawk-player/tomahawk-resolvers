@@ -128,9 +128,32 @@ var SubsonicResolver = Tomahawk.extend(TomahawkResolver, {
         return 0;
     },
 
+    _migrateSubsonicUrl: function (userConfig) {
+	var parser = document.createElement('a');
+	
+	Tomahawk.log("Migrating Subsonic Resolver config from previous version...");
+	
+	parser.href = userConfig.subsonic_url;
+	
+	userConfig.host = parser.hostname;
+	userconfig.port = parser.port;
+	
+	delete userConfig.subsonic_url;
+	
+	window.localStorage[ this.scriptPath() ] = JSON.stringify(userConfig);
+
+	return userConfig;
+    },
+
     init: function()
     {
         var userConfig = this.getUserConfig();
+
+	// detect old config & update if necessary
+	if (userConfig.subsonic_url) {
+	    userConfig = this._migrateSubsonicUrl(userConfig);
+	}
+
         if (!userConfig.user || !userConfig.password) {
             Tomahawk.log("Subsonic Resolver not properly configured!");
             return;
