@@ -177,7 +177,10 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
 
     getStreamUrl: function (qid, url) {
         var trackId = url.replace("spotify://track/", "");
-        Tomahawk.reportStreamUrl(qid, trackId);
+        var that = this;
+        Tomahawk.ensureBinaryRunning(function () {
+            Tomahawk.reportStreamUrl(qid, trackId);
+        });
     },
 
     resolve: function (qid, artist, album, title) {

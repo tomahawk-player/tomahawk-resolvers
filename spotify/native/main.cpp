@@ -27,6 +27,8 @@
 #include <iostream>
 #include <mutex>
 
+#include "spotify_key.h"
+
 // Typedef the pointers for better readability.
 typedef struct MHD_Connection* connection_ptr;
 typedef struct MHD_Daemon* daemon_ptr;
@@ -37,6 +39,16 @@ std::mutex exit_mutex;
 int handle_exit(const connection_ptr connection)
 {
     // Shutdown requested, unlock the relevant mutex.
+    response_ptr response = MHD_create_response_from_data( strlen( "OK" ), (void*)"OK", MHD_NO, MHD_NO );
+    int ret = MHD_queue_response( connection, MHD_HTTP_OK, response );
+    MHD_destroy_response( response );
+    // FIXME: Add a settle time so that we can actually send the response.
+    exit_mutex.unlock();
+    return ret;
+}
+
+int handle_login(const connection_ptr connection)
+{
     response_ptr response = MHD_create_response_from_data( strlen( "OK" ), (void*)"OK", MHD_NO, MHD_NO );
     int ret = MHD_queue_response( connection, MHD_HTTP_OK, response );
     MHD_destroy_response( response );
@@ -74,6 +86,10 @@ static int ahc_echo( void* /*cls*/, connection_ptr connection, const char* url,
     if ( !strcmp( url, "/exit" ) )
     {
         ret = handle_exit(connection);
+    }
+    else if ( !strcmp( url, "/login" ) )
+    {
+        ret = handle_login(connection);
     }
     else
     {
