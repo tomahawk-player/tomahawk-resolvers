@@ -1,0 +1,7 @@
+site_name: Tomahawk Resolvers API
+pages:
+    - [index.md, Index]
+    - [basic.md, Basic Structure]
+    - [searchresolve.md, Search and Resolve]
+    - [urllookup.md, URL Lookup]
+theme: readthedocs
