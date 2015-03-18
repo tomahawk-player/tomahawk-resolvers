@@ -359,7 +359,8 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 data: {
                     "username": config.email.trim(),
                     "password": config.password.trim()
-                }
+                },
+                headers: { 'Origin' : 'http://listen.tidalhifi.com' }
             }
         );
     },
