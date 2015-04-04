@@ -11,3 +11,4 @@ build
 *.axe
 *.md5
 node_modules/
+metadata.desktop
