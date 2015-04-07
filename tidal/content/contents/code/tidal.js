@@ -79,7 +79,10 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
         if (!this._email || !this._password) {
             Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
-            throw new Error( "Invalid configuration." );
+            //This is being called even for disabled ones
+            //throw new Error( "Invalid configuration." );
+            Tomahawk.log("Invalid Configuration");
+            return;
         }
 
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
