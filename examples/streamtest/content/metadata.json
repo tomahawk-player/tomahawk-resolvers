@@ -1,0 +1,20 @@
+{
+    "name": "Streaming Test Plugin",
+    "pluginName": "streamtest",
+    "author": "Anton Romanov",
+    "email": "",
+    "version": "0.0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Streams music from stream specified in settings",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/streamtest.js",
+        "icon": "contents/icon.png",
+        "scripts": [],
+        "resources": [
+            "contents/code/config.ui"
+        ]
+    },
+    "staticCapabilities": [
+    ]
+}
