@@ -1,4 +1,6 @@
 site_name: Tomahawk Resolvers API
+site_favicon: favicon.png
+repo_url: https://github.com/tomahawk-player/tomahawk-resolvers
 pages:
     - [index.md, Index]
     - [basic.md, Basic Structure]
