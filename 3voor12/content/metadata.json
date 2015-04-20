@@ -4,7 +4,7 @@
     "author": "grosbouff",
     "version": "0.1",
     "website": "http://gettomahawk.com",
-    "description": "Loads the collection of abums featured on 3voor12 (http://3voor12.vpro.nl/).",
+    "description": "Loads the collection of albums featured on 3voor12 (http://3voor12.vpro.nl/).",
     "platform": "any",
     "tomahawkVersion": "0.8.0",
     "type": "resolver/javascript",
