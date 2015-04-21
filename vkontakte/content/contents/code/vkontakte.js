@@ -30,7 +30,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         cacheTime: 300,
         name: 'VK.com',
         icon: '../images/icon.png',
-        weight: 80,
+        weight: 75,
         timeout: 8
     },
 
@@ -98,9 +98,9 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             data: params
         }).then(
             function (resp) {
-                Tomahawk.log(JSON.stringify(resp));
                 if(resp.error)
                 {
+                    Tomahawk.log(JSON.stringify(resp));
                     //14 is Captcha needed, TODO: Once Tomahawk will support
                     //   showing this we need to show it to user
                     //if (resp.error.error_code == 14)
@@ -126,7 +126,11 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     _convertTrack: function (entry) {
-        return {
+        var escapeRegExp = function (string){
+            return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        };
+    
+        entry = {
             artist:     entry.artist,
             track:      entry.title,
             title:      entry.title,
@@ -134,9 +138,31 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             url:        entry.url,
             type:       "track",
         };
+        var trackInfo = this;
+        if (trackInfo.title) {
+            if (entry.artist.toLowerCase().search(trackInfo.artist.toLowerCase()) != -1 &&
+                    entry.artist.toLowerCase().search(trackInfo.album.toLowerCase()) != -1)
+                //Assuming user put "Vader - The Ultimate Incantation" into
+                //artist
+            {
+                entry.artist = trackInfo.artist;
+                entry.album  = trackInfo.album;
+            }
+            var regex = new RegExp('[0-9\ \-\.]+' + escapeRegExp(trackInfo.title), 'i');
+            //Track title looks like:
+            //  11. Decapitated Saints
+            if (entry.title.match(regex)) {
+                entry.title = trackInfo.title;
+            }
+        }
+
+        entry.track = entry.title;
+
+        return entry;
     },
 
-    search: function (query, limit) {
+    search: function (query, limit, trackInfo) {
+        Tomahawk.log(query);
         if (!this.logged_in) {
             return this._defer(this.search, [query], this);
         } else if (this.logged_in ===2) {
@@ -151,14 +177,35 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
 
         return this._apiCall('audio.search',params).then( function (response) {
-            return response.response.items.map(that._convertTrack);
+            return response.response.items.map(that._convertTrack, trackInfo);
         });
     },
 
     resolve: function (artist, album, title) {
+        var that = this;
         var query = [ artist, album, title ].join(' ');
 
-        return this.search(query, 5);
+        return that.search(query, 5,
+                {
+                    artist: artist,
+                    album: album,
+                    title: title
+                }).then(function (results) {
+                    if (results.length < 5) {
+                        //Retry without album as VK.com doesn't really have an album field
+                        //(at least in the sense we need it)
+                        query = [ artist, title ].join(' ');
+                        return that.search(query, 5,
+                            {
+                                artist: artist,
+                                album: album,
+                                title: title
+                            }).then( function (new_results) {
+                                return results.concat(new_results);
+                            });
+                    }
+                    return results;
+                })
     },
 
     _defer: function (callback, args, scope) {
