@@ -26,6 +26,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
 
+    queue : [], //we'll queue up resolve requests and execute them in batches
+
     settings: {
         cacheTime: 300,
         name: 'VK.com',
@@ -162,7 +164,6 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     search: function (query, limit, trackInfo) {
-        Tomahawk.log(query);
         if (!this.logged_in) {
             return this._defer(this.search, [query], this);
         } else if (this.logged_in ===2) {
@@ -171,41 +172,59 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
         var that = this;
 
-        var params = {
-            count: limit || 300,
-            q: query,
-        };
+        if( typeof query === 'string' ) {
+            var params = {
+                count: limit || 300,
+                q: query,
+            };
 
-        return this._apiCall('audio.search',params).then( function (response) {
-            return response.response.items.map(that._convertTrack, trackInfo);
-        });
+            return this._apiCall('audio.search',params).then( function (response) {
+                return response.response.items.map(that._convertTrack, trackInfo);
+            });
+        } else { //Array of queries
+            var code = 'return [' + query.map(function(q, i) { return 'API.audio.search({"q":"'+q+'","count":'+limit[i]+'})'; }).join(',') + '];';
+            Tomahawk.log(JSON.stringify(code));
+            return this._apiCall('execute', {code: code}).then( function (response) {
+                return response.response.map(function (r,i) {
+                    return r.items.map(that._convertTrack, trackInfo[i]);
+                });
+            });
+        }
     },
 
     resolve: function (artist, album, title) {
         var that = this;
-        var query = [ artist, album, title ].join(' ');
-
-        return that.search(query, 5,
-                {
-                    artist: artist,
-                    album: album,
-                    title: title
-                }).then(function (results) {
-                    if (results.length < 5) {
-                        //Retry without album as VK.com doesn't really have an album field
-                        //(at least in the sense we need it)
-                        query = [ artist, title ].join(' ');
-                        return that.search(query, 5,
-                            {
-                                artist: artist,
-                                album: album,
-                                title: title
-                            }).then( function (new_results) {
-                                return results.concat(new_results);
-                            });
-                    }
-                    return results;
-                })
+        if (album === '')
+        {
+            var query = [ artist, album, title ].join(' ');
+            return that.search(query, 5,
+                    {
+                        artist: artist,
+                        album: album,
+                        title: title
+                    }).then(function (results) {
+                        return results;
+                    })
+        } else {
+            //Send 2 search requests with and without album with a single API
+            //call
+            return that.search( [ [artist,album,title].join(' '), [artist,title].join(' ')],
+                    [3,3], 
+                    [{artist:artist,album:album,title:title},{artist:artist,album:album,title:title}]
+                    ).then(function(result) {
+                            result = result[0].concat(result[1]);
+                            //Now leave only unique items
+                            var u = {}, a = [];
+                            for(var i = 0, l = result.length; i < l; ++i){
+                                if(u.hasOwnProperty(result[i].url)) {
+                                    continue;
+                                }
+                                a.push(result[i]);
+                                u[result[i].url] = 1;
+                            }
+                            return a;
+                    });
+        }
     },
 
     _defer: function (callback, args, scope) {
