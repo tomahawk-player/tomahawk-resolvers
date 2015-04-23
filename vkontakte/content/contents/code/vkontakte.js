@@ -173,24 +173,14 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
         var that = this;
 
-        if( typeof query === 'string' ) {
-            var params = {
-                count: limit || 300,
-                q: query,
-            };
+        var params = {
+            count: limit || 300,
+            q: query,
+        };
 
-            return this._apiCall('audio.search',params).then( function (response) {
-                return response.response.items.map(that._convertTrack, trackInfo);
-            });
-        } else { //Array of queries
-            var code = 'return [' + query.map(function(q, i) { return 'API.audio.search({"q":"'+q+'","count":'+limit[i]+'})'; }).join(',') + '];';
-            Tomahawk.log(JSON.stringify(code));
-            return this._apiCall('execute', {code: code}).then( function (response) {
-                return response.response.map(function (r,i) {
-                    return r.items.map(that._convertTrack, trackInfo[i]);
-                });
-            });
-        }
+        return this._apiCall('audio.search',params).then( function (response) {
+            return response.response.items.map(that._convertTrack, trackInfo);
+        });
     },
 
     _batchResolve: function (that) {
