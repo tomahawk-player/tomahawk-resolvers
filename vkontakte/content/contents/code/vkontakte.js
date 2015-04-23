@@ -3,14 +3,7 @@
  * Written in 2015 by Anton Romanov
  * API documentation: https://vk.com/dev
  *
- * To the extent possible under law, the author(s) have dedicated all
- * copyright and related and neighboring rights to this software to
- * the public domain worldwide. This software is distributed without
- * any warranty.
- *
- * You should have received a copy of the CC0 Public Domain Dedication
- * along with this software. If not, see:
- * http://creativecommons.org/publicdomain/zero/1.0/
+ * Licensed under the Eiffel Forum License 2.
  */
 
 var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
@@ -26,7 +19,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
 
-    _queue : {}, //we'll queue up resolve requests and execute them in batches
+    _queue : Object.create(null), //we'll queue up resolve requests and execute them in batches
     _batching : false, //did we already started batching?
 
     settings: {
@@ -55,9 +48,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     newConfigSaved: function() {
         var config = this.getUserConfig();
 
-        var changed = 
-            this._email !== config.email ||
-            this._password !== config.password;
+        var changed = this._email !== config.email || this._password !== config.password;
 
         if (changed) {
             this.init();
@@ -99,8 +90,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
         return Tomahawk.get("https://api.vk.com/method/" + api, {
             data: params
-        }).then(
-            function (resp) {
+        }).then(function (resp) {
                 if(resp.error)
                 {
                     Tomahawk.log(JSON.stringify(resp));
@@ -186,7 +176,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     _batchResolve: function (that) {
         var saved_queue = that._queue;
         that._batching = false;
-        that._queue = {};
+        that._queue = Object.create(null);
 
         var queries = [];
         var count = 0;
@@ -254,7 +244,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
 
         if (!(this._batching)) {
-            setTimeout(function(){ that._batchResolve(that); }, 1000);
+            setTimeout(function(){ that._batchResolve(that); }, 2000);
             this._batching = true;
         }
 
