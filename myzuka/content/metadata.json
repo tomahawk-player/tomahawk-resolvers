@@ -1,0 +1,17 @@
+{
+    "name": "myzuka.org",
+    "pluginName": "myzuka",
+    "author": "Anton Romanov",
+    "email": "",
+    "version": "0.0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Streams music from myzuka.org",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/myzuka.js",
+        "icon": "contents/images/icon.png",
+        "scripts": [],
+        "resources": []
+    },
+    "staticCapabilities": []
+}
