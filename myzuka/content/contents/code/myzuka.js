@@ -8,7 +8,7 @@
 var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     apiVersion: 0.9,
 
-    api_location : 'https://myzuka.org/',
+    apiLocation : 'https://myzuka.org/',
 
     settings: {
         cacheTime: 300,
@@ -29,10 +29,9 @@ var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             searchText: query
         };
 
-        return Tomahawk.get(this.api_location + "Search", {
+        return Tomahawk.get(this.apiLocation + "Search", {
             data: params
         }).then( function (response) {
-            //return response.items.map(that._convertTrack, that);
             var results = [];
             var trackRe = /<a\ +href="\/Artist\/[^"]+">([^<]+)<[\s\S]*?<a\ +href="\/?(Song[^"]+)">([^<]+)/gm;
             var tracks = response.substring(response.indexOf("Поиск по композициям"), response.length);
@@ -68,14 +67,14 @@ var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     getStreamUrl: function(qid, url) {
         var that = this;
-        var songPageUrl = this.api_location + url.match(/^myzuka:\/\/(.+)$/)[1];
+        var songPageUrl = this.apiLocation + url.match(/^myzuka:\/\/(.+)$/)[1];
         Tomahawk.get(songPageUrl).then(function(response) {
             var mediaRe = /<a itemprop="audio" href="([^"]+)/gm;
             var match = mediaRe.exec(response);
             Tomahawk.log(JSON.stringify(match));
             var streamUrl = match[1].replace(/&amp;/g, '&');
             if (streamUrl.substring(0, 4) != "http") {
-                streamUrl = that.api_location + streamUrl;
+                streamUrl = that.apiLocation + streamUrl;
             }
             Tomahawk.reportStreamUrl(qid, streamUrl);
         });
