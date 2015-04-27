@@ -26,7 +26,7 @@ var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
     handleResponse: function(qid, xhr) {    
         // parse xml
         var domParser = new DOMParser();
-        xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
+        var xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
 
         var results = new Array();
         var r = xmlDoc.getElementsByTagName("data");

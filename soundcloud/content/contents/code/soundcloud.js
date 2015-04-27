@@ -127,7 +127,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
             var resp = JSON.parse(xhr.responseText);
             if (resp.length !== 0){
                 var results = [];
-                for (i = 0; i < resp.length; i++) {
+                for (var i = 0; i < resp.length; i++) {
                     // Need some more validation here
                     // This doesnt help it seems, or it just throws the error anyhow, and skips?
                     if (typeof(resp[i]) == 'undefined' || resp[i] === null) {
