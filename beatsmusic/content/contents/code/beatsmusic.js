@@ -131,7 +131,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
         this.login(null, true);
     },
 
-    spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
+    spell: function(a){var magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}var c=d.charCodeAt(0)>=96;var k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
     init: function(cb) {
         this.app_token = this.spell("s4fw8if4jfwxakawi7xud55c");
