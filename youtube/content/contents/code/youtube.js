@@ -115,7 +115,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     sendEmptyResult: function( qid, searchString )
     {
-        Tomahawk.log( "No results for " + searchString );
+//         Tomahawk.log( "No results for " + searchString );
         var empty = {
             results: [],
             qid: qid
