@@ -3,7 +3,7 @@
     "pluginName": "lastfm",
     "author": "Thierry Göckel",
     "email": "thierry@strayrayday.lu",
-    "version": "0.2.4",
+    "version": "0.3",
     "website": "http://gettomahawk.com",
     "description": "Resolves to freely downloadable tracks on Last.fm.",
     "type": "resolver/javascript",
