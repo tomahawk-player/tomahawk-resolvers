@@ -67,13 +67,22 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
         if (this.arr.length >= 1){
             result.type = "artist";
             result.name = decodeURIComponent(this.arr[0]).replace(/\+/g, " ");
+            if (result.name.indexOf("?") !== -1){
+                result.name = result.name.substring(0, result.name.indexOf("?"));
+            }
             if (this.arr.length >= 2){
                 result.type = "album";
                 result.artist = result.name;
                 result.name = decodeURIComponent(this.arr[1]).replace(/\+/g, " ");
+                if (result.name.indexOf("?") !== -1){
+                    result.name = result.name.substring(0, result.name.indexOf("?"));
+                }
                 if (this.arr.length === 3){
                     result.type = "track";
                     result.title = decodeURIComponent(this.arr[2]).replace(/\+/g, " ");
+                    if (result.title.indexOf("?") !== -1){
+                        result.title = result.title.substring(0, result.title.indexOf("?"));
+                    }
                     delete result.name;
                 }
             }
