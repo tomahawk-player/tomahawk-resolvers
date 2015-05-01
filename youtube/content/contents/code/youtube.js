@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012 Hugo Lindström <hugolm84@gmail.com>
- * Copyright (C) 2011-2014 Thierry Göckel <thierry@strayrayday.lu>
+ * Copyright (C) 2011-2015 Thierry Göckel <thierry@strayrayday.lu>
  * Copyright (C) 2012 Leo Franchi <lfranchi@kde.org>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,8 +32,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     resolveMode: false,
 
-    init: function()
+    init: function(callback)
     {
+        "use strict";
+
         // Set userConfig here
         var userConfig = this.getUserConfig();
         if ( Object.getOwnPropertyNames( userConfig ).length > 0 )
@@ -64,10 +66,15 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         String.prototype.splice = function( idx, rem, s ) {
             return ( this.slice( 0, idx ) + s + this.slice( idx + Math.abs( rem ) ) );
         };
+        if (callback){
+            callback(null);
+        }
     },
 
     getConfigUi: function()
     {
+        "use strict";
+
         var uiData = Tomahawk.readBase64( "config.ui" );
         return {
             "widget": uiData,
@@ -100,6 +107,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     newConfigSaved: function ()
     {
+        "use strict";
+
         var userConfig = this.getUserConfig();
         if ((userConfig.includeCovers !== this.includeCovers) || (userConfig.includeRemixes !== this.includeRemixes) ||
             (userConfig.includeLive !== this.includeLive) || (userConfig.qualityPreference !== this.qualityPreference))
@@ -113,9 +122,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         }
     },
 
-    sendEmptyResult: function( qid, searchString )
+    sendEmptyResult: function( qid )
     {
-//         Tomahawk.log( "No results for " + searchString );
+        "use strict";
+
         var empty = {
             results: [],
             qid: qid
@@ -126,6 +136,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     // Allows async requests being made with userdata
     asyncRequest: function ( url, userdata, callback )
     {
+        "use strict";
+
         Tomahawk.asyncRequest( url, function ( xhr ) {
             callback.call( window, xhr, userdata );
         } );
@@ -133,6 +145,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     debugMsg: function( msg )
     {
+        "use strict";
+
         if ( msg.toLowerCase().indexOf( "assert" ) === 0 )
         {
             Tomahawk.log( this.settings.name + msg );
@@ -145,6 +159,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     iso8601toSeconds: function( iso8601 )
     {
+        "use strict";
+
         var matches = iso8601.match( /[0-9]+[HMS]/g );
         var seconds = 0;
         matches.forEach( function ( part ) {
@@ -170,11 +186,15 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     magicCleanup: function( toClean )
     {
+        "use strict";
+
         return toClean.replace( /[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "" ).replace( /(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'' ).replace( /\s+/g,' ' ).toLowerCase();
     },
 
     getMostRelevant: function( results )
     {
+        "use strict";
+
         var best = results.length;
         var finalResult = results[0];
         for ( var j = 0; j < results.length; j++ )
@@ -191,6 +211,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     hasPreferredQuality: function( urlString )
     {
+        "use strict";
+
         if ( this.qualityPreference === undefined )
         {
             this.debugMsg( "ASSERT: quality undefined!" );
@@ -206,6 +228,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     
     getPreferredQuality: function()
     {
+        "use strict";
+
         if ( this.qualityPreference === undefined )
         {
             this.qualityPreference = 0;
@@ -215,13 +239,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         {
             case 0:
                 return "hd720";
-                break;
             case 1:
                 return "medium";
-                break;
             case 2:
                 return "small";
-                break;
             default:
                 return "hd720";
         }
@@ -231,6 +252,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     getBitrate: function ( urlString )
     {
+        "use strict";
+
         //http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
         // No need to get higher than hd720, as it only will eat bandwith and do nothing for sound quality
         if ( urlString.indexOf( "quality=hd720" ) !== -1 )
@@ -251,6 +274,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     getTrack: function ( trackTitle, origTitle, isSearch )
     {
+        "use strict";
+
         if ( ( this.includeCovers === false || this.includeCovers === undefined ) && trackTitle.search( /(\Wcover(?!(\w)))/i ) !== -1 && origTitle.search( /(\Wcover(?!(\w)))/i ) === -1 )
         {
             return null;
@@ -275,6 +300,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     cleanupAndParseTrack: function( title, searchString )
     {
+        "use strict";
+
         var result = {};
         // For the ease of parsing, remove these
         // Maybe we could up the score a bit?
@@ -361,9 +388,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     parseCleanTrack: function( track )
     {
+        "use strict";
+
         var result = {};
         result.query = track;
-        that = this;
         result.query.replace( /.*?(?=([-–—:|]\s))/g, function ( param ) {
             if ( param.trim() !== "" )
             {
@@ -421,7 +449,9 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     parseURLS: function( rawUrls )
     {
-        var parsedUrls = new Array();
+        "use strict";
+
+        var parsedUrls = [];
         var urls = decodeURIComponent( decodeURIComponent( rawUrls ) );
         // Youtube changes the start delimiter randomly
         var matches = urls.match( /^((.+?)(=))/ );
@@ -431,10 +461,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             for ( var i = 0; i < urlArray.length; i++ )
             {
                 var url;
-                if ( matches[0] != "url=" )
+                if ( matches[0] !== "url=" )
                 {
                     // Delimiter isnt url=, we need to sort the params
-                    url = ( urlArray[i] != urlArray[0] ) ? matches[0] + urlArray[i] : urlArray[i];
+                    url = ( urlArray[i] !== urlArray[0] ) ? matches[0] + urlArray[i] : urlArray[i];
                     var urlMatch = url.match( /(.+?)(url=)(.+?)(\?)(.+)/ );
                     // Base & Params
                     url = urlMatch[3]+urlMatch[4] + "&" + urlMatch[1]+urlMatch[5];
@@ -507,6 +537,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     resolve: function( qid, artist, album, title )
     {
+        "use strict";
+
         this.resolveMode = true;
         var query;
         if ( artist !== "" )
@@ -517,16 +549,12 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         {
             query += encodeURIComponent( title );
         }
-        var apiQuery = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=10&order=relevance&type=video&q=" + query.replace( /\%20/g, '\+' );
+        var apiQuery = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=10&order=relevance&type=video&q=" + query.replace( /\%20/g, '+' );
         if ( this.hatchet )
         {
             apiQuery += "&videoEmbeddable=true";
         }
         var that = this;
-        var empty = {
-            results: [],
-            qid: qid
-        };
         Tomahawk.asyncRequest( apiQuery, function( xhr ) {
             var results = [];
             var resp = JSON.parse( xhr.responseText );
@@ -564,7 +592,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     }
                     if ( that.getTrack( responseTitle, title ) )
                     {
-                        var result = new Object();
+                        var result = {};
                         if ( artist !== "" )
                         {
                             result.artist = artist;
@@ -608,7 +636,9 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     getCandidates: function( qid, searchString )
     {
-        var queryUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=50&order=relevance&type=video&q=" + encodeURIComponent( searchString ).replace( /\%20/g, '\+' );
+        "use strict";
+
+        var queryUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=50&order=relevance&type=video&q=" + encodeURIComponent( searchString ).replace( /\%20/g, '+' );
         if ( this.hatchet )
         {
             queryUrl += "&videoEmbeddable=true";
@@ -616,7 +646,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         var that = this;
         Tomahawk.asyncRequest( queryUrl, function( xhr ){
             var resp = JSON.parse( xhr.responseText );
-            var results = new Array();
+            var results = [];
             if ( resp.pageInfo.totalResults !== 0 )
             {
                 var total = resp.items.length;
@@ -649,7 +679,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     {
                         continue;
                     }
-                    var result = new Object();
+                    var result = {};
                     result.artist = parsedTrack.artist;
                     result.track = parsedTrack.track;
                     result.youtubeVideoId = resp.items[i].id.videoId;
@@ -673,8 +703,11 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     verify: function( qid, candidates )
     {
+        "use strict";
+
         var verified = [];
         var total = candidates.length;
+        var that = this;
         candidates.forEach( function( candidate ){
             var trackLookupUrl = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent( candidate.artist ) + "&track=" + encodeURIComponent( candidate.track );
             Tomahawk.asyncRequest( trackLookupUrl, function( xhr ){
@@ -708,6 +741,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     getMetadata: function( qid, results )
     {
+        "use strict";
         
         var queryUrl = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&id=";
         results.forEach( function( result ){
@@ -720,7 +754,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             results.forEach( function( result ){
                 for ( var i = 0; i < response.items.length; i++ )
                 {
-                    if ( response.items[i].id == result.youtubeVideoId )
+                    if ( response.items[i].id === result.youtubeVideoId )
                     {
                         result.name = that.settings.name;
                         result.duration = that.iso8601toSeconds( response.items[i].contentDetails.duration );
@@ -733,6 +767,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     parseVideoUrlFromYtPages: function( qid, results )
     {
+        "use strict";
+
         var that = this;
         var total = results.length;
         results.forEach( function( result ){
@@ -742,9 +778,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 // First, lets try and find the stream_map at top of the page
                 // to save some time going to the end and do JSON.parse on the yt.config
                 var streamMatch = html.match( /(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i );
+                var parsed;
                 if ( streamMatch && streamMatch[2] !== undefined )
                 {
-                    var parsed = this.parseURLS( streamMatch[2] );
+                    parsed = this.parseURLS( streamMatch[2] );
                     if ( parsed )
                     {
                         url = parsed;
@@ -812,6 +849,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
     search: function( qid, searchString )
     {
+        "use strict";
+
         this.getCandidates( qid, searchString );
     }
 } );
