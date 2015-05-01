@@ -1,6 +1,6 @@
 /* === This file is part of Tomahawk Player - <http://tomahawk-player.org> ===
  *
- *   Copyright 2011-2012, Thierry Göckel <thierry@strayrayday.lu>
+ *   Copyright 2011-2015, Thierry Göckel <thierry@strayrayday.lu>
  *
  *   Tomahawk is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,27 +17,87 @@
  */
 
 var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
+
+    arr: [],
+
     settings: {
         name: 'Last.fm',
         icon: 'lastfm-icon.png',
         weight: 85,
         timeout: 5
     },
+
+    init: function (callback){
+        "use strict";
+
+        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        if (callback){
+            callback(null);
+        }
+    },
+
+    canParseUrl: function (url, type){
+        "use strict";
+
+        var domainRegex = /http:\/\/(cn|www)\.last(\.fm|fm\.(de|es|fr|it|jp|pl|com\.br|ru|se|com\.tr))\/music\//;
+
+        if (!(domainRegex).test(url)){
+            return false;
+        }
+        this.arr = url.replace(domainRegex, "").split("\/");
+
+        switch (type){
+            case TomahawkUrlType.Album:
+                return this.arr.length >= 2;
+            case TomahawkUrlType.Artist:
+                return this.arr.length >= 1;
+            case TomahawkUrlType.Playlist:
+                return false;
+            case TomahawkUrlType.Track:
+                return this.arr.length === 3;
+            default:
+                return true;
+        }
+    },
+
+    lookupUrl: function (url){
+        "use strict";
+
+        var result = {};
+        if (this.arr.length >= 1){
+            result.type = "artist";
+            result.name = decodeURIComponent(this.arr[0]).replace(/\+/g, " ");
+            if (this.arr.length >= 2){
+                result.type = "album";
+                result.artist = result.name;
+                result.name = decodeURIComponent(this.arr[1]).replace(/\+/g, " ");
+                if (this.arr.length === 3){
+                    result.type = "track";
+                    result.title = decodeURIComponent(this.arr[2]).replace(/\+/g, " ");
+                    delete result.name;
+                }
+            }
+        }
+        Tomahawk.addUrlResult(url, result);
+    },
+
     parseSongResponse: function (qid, responseString) {
-        var results = new Array();
-        if (responseString != undefined && responseString.track != undefined && responseString.track.freedownload) {
-            var result = new Object();
+        "use strict";
+
+        var results = [];
+        if (responseString !== undefined && responseString.track !== undefined && responseString.track.freedownload) {
+            var result = {};
             result.artist = responseString.track.artist.name;
             result.track = responseString.track.name;
-            if (responseString.track.album != undefined) {
+            if (responseString.track.album !== undefined) {
                 result.album = responseString.track.album.title;
             } else {
                 result.album = "";
             }
-            if (responseString.track.year != undefined) {
+            if (responseString.track.year !== undefined) {
                 result.year = responseString.track.year;
             }
-            if (responseString.track.url != undefined) {
+            if (responseString.track.url !== undefined) {
                 result.linkUrl = responseString.track.url;
             }
             result.source = this.settings.name;
@@ -59,8 +119,10 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.addTrackResults(return1);
     },
     resolve: function (qid, artist, album, title) {
-        artist = encodeURIComponent(artist).replace(/\%20/g, '\+').trim();
-        track = encodeURIComponent(title).replace(/\%20/g, '\+').trim();
+        "use strict";
+
+        artist = encodeURIComponent(artist).replace(/\%20/g, '+').trim();
+        var track = encodeURIComponent(title).replace(/\%20/g, '+').trim();
         var lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&autocorrect=1&artist=" + artist + "&track=" + track;
         var that = this;
         Tomahawk.asyncRequest(lastfmUrl, function(xhr) {
@@ -68,6 +130,8 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
     search: function (qid, searchString) {
+        "use strict";
+
         // Not yet possible, sorry
         this.resolve(qid, "", "", "");
     }
