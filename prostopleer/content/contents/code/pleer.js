@@ -5,44 +5,6 @@
  *
  */
 
-// Copied from vibe3.js resolver
-// DOMParser polyfill, slightly modified version of
-// https://gist.github.com/eligrey/1129031 (public domain)
-(function(DOMParser) {
-    "use strict";
-    var DOMParser_proto = DOMParser.prototype,
-        real_parseFromString = DOMParser_proto.parseFromString;
-
-    // Firefox/Opera/IE throw errors on unsupported types
-    try {
-        // WebKit returns null on unsupported types
-        if ((new DOMParser()).parseFromString("", "text/html")) {
-            // text/html parsing is natively supported
-            return;
-        }
-    } catch (ex) {}
-
-    DOMParser_proto.parseFromString = function(markup, type) {
-        if (/^\s*text\/html\s*(?:;|$)/i.test(type)) {
-            var doc = document.implementation.createHTMLDocument(""),
-                doc_elt = doc.documentElement,
-                first_elt;
-
-            doc_elt.innerHTML = markup;
-            first_elt = doc_elt.firstElementChild;
-
-            if (doc_elt.childElementCount === 1 &&
-                first_elt.localName.toLowerCase() === "html") {
-                doc.replaceChild(first_elt, doc_elt);
-            }
-
-            return doc;
-        } else {
-            return real_parseFromString.apply(this, arguments);
-        }
-    };
-}(DOMParser));
-
 var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     apiVersion: 0.9,
 
@@ -54,8 +16,18 @@ var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         timeout: 8
     },
 
-    init: function() {
-        Tomahawk.addCustomUrlHandler( 'prostopleer', 'getStreamUrl', true );
+    _convertTrack: function (entry) {
+        return {
+            artist:     entry.artist,
+            track:      entry.track,
+            title:      entry.track,
+            size:       entry.size,
+            duration:   entry.length,
+            bitrate:    parseInt(entry.bitrate.split(' ')[0]),
+            url:        entry.file,
+            checked:    true,
+            type:       "track",
+        };
     },
 
     search: function (query) {
@@ -63,39 +35,9 @@ var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
         query = query.replace(/\ /g, '+');
 
-        return Tomahawk.get("http://pleer.com/search?q=" + query).then(function (response){
-            // parse xml
-            var domParser = new DOMParser();
-            var xmlDoc = domParser.parseFromString(response, "text/html");
-            var result_divs = xmlDoc.getElementsByTagName("li");
-
-            var results = [];
-
-            for (var i = 0; i < result_divs.length; i++) {
-                var track = result_divs[i];
-                if(track.hasAttribute('file_id')) {
-                    results.push({
-                        type:       'track',
-                        artist:     track.getAttribute('singer'),
-                        title:      track.getAttribute('song'),
-                        track:      track.getAttribute('song'),
-                        url:        'prostopleer://' + track.getAttribute('link'),
-                        duration:   parseInt(track.getAttribute('duration')),
-                        size:       parseFloat(track.getAttribute('size').split(' ')[0]) * 1024 * 1024,
-                        bitrate:    parseInt(track.getAttribute('rate').split(' '))
-                    });
-                }
-            }
-            return results;
+        return Tomahawk.get("http://pleer.com/browser-extension/search?q=" + query).then(function (response){
+            return response.tracks.map(that._convertTrack, that);
         });
-    },
-
-    getStreamUrl: function(qid, url) {
-        Tomahawk.post('http://pleer.com/site_api/files/get_url',{
-                    data: {action: 'play', id: url.split('://')[1]}
-                }).then(function (result){
-                    Tomahawk.reportStreamUrl(qid, result.track_link);
-                });
     },
 
     resolve: function (artist, album, title) {
