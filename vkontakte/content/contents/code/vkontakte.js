@@ -207,7 +207,6 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 tracks = tracks.concat.apply(tracks, result.result.map(function(item) {return item.items;}));
                 //Leave unique only
                 var u = {}, a = [];
-                Tomahawk.log(JSON.stringify(tracks));
                 for(var i = 0, l = tracks.length; i < l; ++i){
                     if(u.hasOwnProperty(tracks[i].url)) {
                         continue;
@@ -238,13 +237,11 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             if(!(qid in that._queue)) {
                 that._queue[qid] = [];
             }
-            Tomahawk.log(resolve);
             that._queue[qid].push(resolve);
-            Tomahawk.log(JSON.stringify(that._queue));
         });
 
         if (!(this._batching)) {
-            setTimeout(function(){ that._batchResolve(that); }, 2000);
+            setTimeout(function(){ that._batchResolve(that); }, 1000);
             this._batching = true;
         }
 
