@@ -13,7 +13,7 @@ var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         name: 'prostopleer',
         weight: 76,
         icon: '../images/icon.png',
-        timeout: 8
+        timeout: 15
     },
 
     _convertTrack: function (entry) {
