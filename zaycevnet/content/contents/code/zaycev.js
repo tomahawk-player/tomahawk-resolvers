@@ -5,6 +5,108 @@
  *
  */
 
+function strtr(str, from, to) {
+  //  discuss at: http://phpjs.org/functions/strtr/
+  // original by: Brett Zamir (http://brett-zamir.me)
+  //    input by: uestla
+  //    input by: Alan C
+  //    input by: Taras Bogach
+  //    input by: jpfle
+  // bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // bugfixed by: Brett Zamir (http://brett-zamir.me)
+  //  depends on: krsort
+  //  depends on: ini_set
+  //   example 1: $trans = {'hello' : 'hi', 'hi' : 'hello'};
+  //   example 1: strtr('hi all, I said hello', $trans)
+  //   returns 1: 'hello all, I said hi'
+  //   example 2: strtr('äaabaåccasdeöoo', 'äåö','aao');
+  //   returns 2: 'aaabaaccasdeooo'
+  //   example 3: strtr('ääääääää', 'ä', 'a');
+  //   returns 3: 'aaaaaaaa'
+  //   example 4: strtr('http', 'pthxyz','xyzpth');
+  //   returns 4: 'zyyx'
+  //   example 5: strtr('zyyx', 'pthxyz','xyzpth');
+  //   returns 5: 'http'
+  //   example 6: strtr('aa', {'a':1,'aa':2});
+  //   returns 6: '2'
+
+  var fr = '',
+    i = 0,
+    j = 0,
+    lenStr = 0,
+    lenFrom = 0,
+    tmpStrictForIn = false,
+    fromTypeStr = '',
+    toTypeStr = '',
+    istr = '';
+  var tmpFrom = [];
+  var tmpTo = [];
+  var ret = '';
+  var match = false;
+
+  // Received replace_pairs?
+  // Convert to normal from->to chars
+  if (typeof from === 'object') {
+    // Not thread-safe; temporarily set to true
+    tmpStrictForIn = this.ini_set('phpjs.strictForIn', false);
+    from = this.krsort(from);
+    this.ini_set('phpjs.strictForIn', tmpStrictForIn);
+
+    for (fr in from) {
+      if (from.hasOwnProperty(fr)) {
+        tmpFrom.push(fr);
+        tmpTo.push(from[fr]);
+      }
+    }
+
+    from = tmpFrom;
+    to = tmpTo;
+  }
+
+  // Walk through subject and replace chars when needed
+  lenStr = str.length;
+  lenFrom = from.length;
+  fromTypeStr = typeof from === 'string';
+  toTypeStr = typeof to === 'string';
+
+  for (i = 0; i < lenStr; i++) {
+    match = false;
+    if (fromTypeStr) {
+      istr = str.charAt(i);
+      for (j = 0; j < lenFrom; j++) {
+        if (istr == from.charAt(j)) {
+          match = true;
+          break;
+        }
+      }
+    } else {
+      for (j = 0; j < lenFrom; j++) {
+        if (str.substr(i, from[j].length) == from[j]) {
+          match = true;
+          // Fast forward
+          i = (i + from[j].length) - 1;
+          break;
+        }
+      }
+    }
+    if (match) {
+      ret += toTypeStr ? to.charAt(j) : to[j];
+    } else {
+      ret += str.charAt(i);
+    }
+  }
+
+  return ret;
+};
+
+function htmldecode (encoded) {
+    var div = document.createElement('div');
+    div.innerHTML = encoded;
+    return div.innerText
+};
+
 var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     apiVersion: 0.9,
 
@@ -16,67 +118,23 @@ var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         timeout: 8
     },
 
-    rc4: function (key, str) {
-        var s = [],
-            j = 0,
-            x, res = '';
-        for (var i = 0; i < 256; i++) {
-            s[i] = i;
-        }
-        for (i = 0; i < 256; i++) {
-            j = (j + s[i] + key.charCodeAt(i % key.length)) % 256;
-            x = s[i];
-            s[i] = s[j];
-            s[j] = x;
-        }
-        i = 0;
-        j = 0;
-        for (var y = 0; y < str.length; y++) {
-            i = (i + 1) % 256;
-            j = (j + s[i]) % 256;
-            x = s[i];
-            s[i] = s[j];
-            s[j] = x;
-            res += String.fromCharCode(str.charCodeAt(y) ^ s[(s[i] + s[j]) % 256]);
-        }
-        return res;
-    },
-
-    strtr: function (str, from, to) {
-        var result = "";
-        for (var i in str) {
-            var char = str[i];
-            var num = from.indexOf(char);
-            result += to[num];
-        }
-        return result;
-    },
-
-    hex2bin: function (hex) {
-        var bytes = [],
-            str;
-        for (var i = 0; i < hex.length - 1; i += 2)
-            bytes.push(parseInt(hex.substr(i, 2), 16));
-        return String.fromCharCode.apply(String, bytes);
-    },
-
     decodeSongID: function(song_id) {
-        song_id = decodeURIComponent(song_id);
-        song_id = song_id.replace(/[\-_]/gi, '');
+        song_id = decodeURIComponent(song_id).replace(/[\-_]/gi, '');
         var alphabet = song_id.substr(0, 16);
         song_id = song_id.substr(16);
-        song_id = this.strtr(song_id, alphabet, '0123456789abcdef');
-        var key = this.keyd;
-        song_id = this.hex2bin(song_id);
-        song_id = this.rc4(key, song_id);
+        song_id = strtr(song_id, alphabet, '0123456789abcdef');
+        //I'm sure there should be less awkward way to get the raw final string
+        //with CryptoJS
+        song_id = CryptoJS.RC4.encrypt(CryptoJS.enc.Hex.parse(song_id), CryptoJS.enc.Latin1.parse(this.keyd));
+        song_id = CryptoJS.enc.Base64.parse(song_id.toString()).toString(CryptoJS.enc.Latin1);
         return song_id;
     },
 
     _convertTrack: function (entry) {
         return {
-            artist:     entry.artist.name,
-            track:      entry.name,
-            title:      entry.name,
+            artist:     htmldecode(entry.artist.name),
+            track:      htmldecode(entry.name),
+            title:      htmldecode(entry.name),
             duration:   entry.length,
             url:        'zaycev://' + entry.uid,
             checked:    true,
