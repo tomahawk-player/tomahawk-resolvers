@@ -130,6 +130,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             duration:   entry.duration,
             url:        entry.url,
             type:       "track",
+            checked:    true
         };
         var trackInfo = this;
         if (trackInfo.title) {
