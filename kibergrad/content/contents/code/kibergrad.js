@@ -310,7 +310,8 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 size:       track.size,
                 duration:   track.duration,
                 bitrate:    track.bitrate,
-                url:        CryptoJS.enc.Base64.parse(track.base64).toString(CryptoJS.enc.Latin1),
+                //url:        CryptoJS.enc.Base64.parse(track.base64).toString(CryptoJS.enc.Latin1),
+                url:        'http://kibergrad.com/api/song/download/' + track.id + '.mp3',
                 checked:    true,
                 type:       "track",
             });
