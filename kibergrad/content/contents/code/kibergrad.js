@@ -322,7 +322,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     search: function (query) {
         var that = this;
 
-        return Tomahawk.get("http://m.kibergrad.com/search/songs?q=" + query,
+        return Tomahawk.get("http://m.kibergrad.com/search?q=" + query,
             {headers: { 'X-Requested-With' : 'XMLHttpRequest' } }).then(function (response){
             if (typeof response == 'string' || response instanceof String)
                 response = JSON.parse(response);
