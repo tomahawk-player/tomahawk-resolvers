@@ -13,7 +13,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     APP_ID : '2054573',
     APP_KEY : 'KUPNPTTQGApLFVOVgqdx',
     APP_SCOPE : 'audio',
-    API_VERSION : '5.0',
+    API_VERSION : '5.33',
 
     STORAGE_KEY : 'vk.com.access_token',
 
@@ -74,6 +74,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             Tomahawk.log("Invalid Configuration");
             return;
         }
+        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.addCustomUrlHandler( 'vk', 'getStreamUrl', true );
 
         return this._login(config);
     },
@@ -118,6 +120,81 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         );
     },
 
+    _parseUrlPrefix: function (url) {
+        var match = url.match( /(?:https?:\/\/)?(?:www\.)?vk\.com\/audios(\d+)\?album_id=(\d+)/ );
+        // eg: http://vk.com/audios8178142?album_id=59520611
+        return match;
+    },
+
+    canParseUrl: function (url, type) {
+        url = this._parseUrlPrefix(url);
+        if (!url) return false;
+
+        return true;
+        switch (type) {
+            case TomahawkUrlType.Playlist:
+                return true;
+            default:
+                return false;
+        }
+    },
+
+    lookupUrl: function (url) {
+        this.lookupUrlPromise(url).then(function (result) {
+            Tomahawk.addUrlResult(url, result);
+        }).catch(function (e) {
+            Tomahawk.log("Error in lookupUrlPromise! " + e);
+            Tomahawk.addUrlResult(url, null);
+        });
+    },
+
+    lookupUrlPromise: function (url) {
+        if (!this.logged_in) {
+            return this._defer(this.lookupUrl, [url], this);
+        } else if (this.logged_in === 2) {
+            throw new Error('Failed login, cannot lookupUrl');
+        }
+
+        var match = this._parseUrlPrefix(url);
+        var that = this;
+
+        if (!match[1])
+            throw new Error("Couldn't parse given URL: " + url);
+
+        var owner = match[1];
+        var album = match[2];
+        var code = 'var owner = ' + owner + '; ' + 
+                   'var album = ' + album + '; ' +
+                   'var albums = API.audio.getAlbums({owner_id: owner}).items; ' +
+                   'var l = albums.length - 1; ' +
+                   'var title = ""; ' +
+                   'while ( l >= 0 ) { ' +
+                   '    if ( albums[l].id == album ) { ' +
+                   '        title = albums[l].title; ' +
+                   '        l = -1; ' +
+                   '    } ' +
+                   '    l = l - 1 ; ' +
+                   '} ' +
+                   'var tracks = API.audio.get({album_id : album, owner_id : owner}).items; ' +
+                   'return { ' +
+                   '   title: title, ' +
+                   '   tracks: tracks, ' +
+                   '   type: "playlist" '+
+                   '};';
+
+        return this._apiCall('execute',{code: code}).then( function (response) {
+            response.response.tracks = response.response.tracks.map(that._convertTrack);
+            return response.response;
+        });
+    },
+
+    getStreamUrl : function (qid, url) {
+        var id = url.match( /vk:\/\/track\/([_\d]+)/ )[1];
+        this._apiCall('audio.getById', {audios : id}).then( function (response) {
+            Tomahawk.reportStreamUrl(qid, response[0].url);
+        });
+    },
+
     _convertTrack: function (entry) {
         var escapeRegExp = function (string){
             return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
@@ -129,6 +206,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             title:      entry.title,
             duration:   entry.duration,
             url:        entry.url,
+            hint:       'vk://track/' + entry.owner_id + '_' + entry.id,
             type:       "track",
             checked:    true
         };
