@@ -91,6 +91,12 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return this._login(config);
     },
 
+    _convertTracks: function (entries) {
+        return entries.filter(function (entry) {
+            return entry.allowStreaming;
+        }).map(this._convertTrack, this);
+    },
+
     _convertTrack: function (entry) {
         return {
             artist:     entry.artist.name,
@@ -160,7 +166,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return Tomahawk.get(this.api_location + "search/tracks", {
             data: params
         }).then( function (response) {
-            return response.items.map(that._convertTrack, that);
+            return that._convertTracks(response.items);
         });
     },
 
@@ -262,7 +268,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
             return Promise.all([getInfo, getTracks]).then(function (response) {
                 var result = that._convertAlbum(response[0]);
-                result.tracks = response[1].items.map(that._convertTrack, that);
+                result.tracks = that._convertTracks(response[1].items);
                 return result;
             });
 
@@ -292,7 +298,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
             return Promise.all([getInfo, getTracks]).then( function (response) {
                 var result = that._convertPlaylist(response[0]);
-                result.tracks = response[1].items.map(that._convertTrack, that);
+                result.tracks = that._convertTracks(response[1].items);
                 return result;
             });
         }
