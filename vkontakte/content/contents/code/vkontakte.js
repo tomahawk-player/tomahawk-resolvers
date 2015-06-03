@@ -199,38 +199,56 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         var escapeRegExp = function (string){
             return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
         };
+
+        var artist = entry.artist;
+        var title = entry.title;
+        var album = null;
     
-        entry = {
-            artist:     entry.artist,
-            track:      entry.title,
-            title:      entry.title,
+        var trackInfo = this;
+        if (trackInfo.title) {
+            //As vk.com doesn't really have an 'album' field,
+            //often tracks on vk.com are named in a similar fashion:
+            //artist: "Vader - The Ultimate Incantation"
+            //track: Decapitated Saints
+            //or 
+            //track: 'Track Name ("Album Name")' etc
+            //this block is to workaround that
+            
+            if (entry.artist.toLowerCase().search(trackInfo.artist.toLowerCase()) != -1 &&
+                    entry.artist.toLowerCase().search(trackInfo.album.toLowerCase()) != -1)
+                //Assuming user put "Vader - The Ultimate Incantation" into
+                //artist
+            {
+                artist = trackInfo.artist;
+                album  = trackInfo.album;
+            }
+            else if (entry.title.toLowerCase().search(trackInfo.artist.toLowerCase()) != -1 &&
+                    entry.title.toLowerCase().search(trackInfo.title.toLowerCase()) != -1)
+                //track: 'Track Name ("Album Name")' 
+            {
+                title = trackInfo.title;
+                album  = trackInfo.album;
+            }
+
+            var regex = new RegExp('[0-9\ \-\.]+' + escapeRegExp(trackInfo.title), 'i');
+            //Track title looks like:
+            //  11. Decapitated Saints
+            if (entry.title.match(regex)) {
+                title = trackInfo.title;
+            }
+        }
+
+        return {
+            artist:     artist,
+            track:      title,
+            title:      title,
+            album:      album,
             duration:   entry.duration,
             url:        entry.url,
             hint:       'vk://track/' + entry.owner_id + '_' + entry.id,
             type:       "track",
             checked:    true
         };
-        var trackInfo = this;
-        if (trackInfo.title) {
-            if (entry.artist.toLowerCase().search(trackInfo.artist.toLowerCase()) != -1 &&
-                    entry.artist.toLowerCase().search(trackInfo.album.toLowerCase()) != -1)
-                //Assuming user put "Vader - The Ultimate Incantation" into
-                //artist
-            {
-                entry.artist = trackInfo.artist;
-                entry.album  = trackInfo.album;
-            }
-            var regex = new RegExp('[0-9\ \-\.]+' + escapeRegExp(trackInfo.title), 'i');
-            //Track title looks like:
-            //  11. Decapitated Saints
-            if (entry.title.match(regex)) {
-                entry.title = trackInfo.title;
-            }
-        }
-
-        entry.track = entry.title;
-
-        return entry;
     },
 
     search: function (query, limit, trackInfo) {
