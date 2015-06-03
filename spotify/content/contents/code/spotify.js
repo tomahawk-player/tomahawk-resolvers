@@ -33,9 +33,9 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 15
     },
 
-    clientId : "q3r9p989687p496no2s92p9r84s779qp",
+    clientId: "q3r9p989687p496no2s92p9r84s779qp",
 
-    clientSecret : "789r9n607poo4s9no6998771s969o630",
+    clientSecret: "789r9n607poo4s9no6998771s969o630",
 
     redirectUri: "tomahawkspotifyresolver://callback",
 
@@ -71,22 +71,24 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
                     if (!that.getAccessTokenPromise) {
                         that.getAccessTokenPromise =
                             Tomahawk.post("https://accounts.spotify.com/api/token", settings)
-                                .then(function(res) {
+                                .then(function (res) {
                                     that.accessToken = res.access_token;
-                                    that.accessTokenExpires = new Date().getTime() + res.expires_in * 1000;
-                                    Tomahawk.localStorage.setItem(that.storageKeyAccessToken, that.accessToken);
+                                    that.accessTokenExpires = new Date().getTime() + res.expires_in
+                                        * 1000;
+                                    Tomahawk.localStorage.setItem(that.storageKeyAccessToken,
+                                        that.accessToken);
                                     Tomahawk.localStorage.setItem(that.storageKeyAccessTokenExpires,
                                         that.accessTokenExpires);
                                     Tomahawk.log("Received new access token!");
                                     return res.access_token;
                                 });
                     }
-                    that.getAccessTokenPromise.then(function() {
+                    that.getAccessTokenPromise.then(function () {
                         resolve({
                             accessToken: that.accessToken
                         });
                         delete that.getAccessTokenPromise;
-                    }, function(xhr) {
+                    }, function (xhr) {
                         reject({
                             error: xhr.responseText
                         });
@@ -109,25 +111,26 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
 
-    login: function() {
+    login: function () {
         Tomahawk.log("Starting login");
 
         var authUrl = "https://accounts.spotify.com/authorize";
         authUrl += "?client_id=" + this._spell(this.clientId);
         authUrl += "&response_type=code";
         authUrl += "&redirect_uri=" + encodeURIComponent(this.redirectUri);
-        authUrl += "&scope=playlist-read-private%20streaming%20user-read-private%20user-library-read";
+        authUrl
+            += "&scope=playlist-read-private%20streaming%20user-read-private%20user-library-read";
         authUrl += "&show_dialog=true";
 
         Tomahawk.showWebView(authUrl);
     },
 
-    logout: function() {
+    logout: function () {
         Tomahawk.localStorage.removeItem(this.storageKeyRefreshToken);
         Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Logout);
     },
 
-    isLoggedIn: function() {
+    isLoggedIn: function () {
         var refreshToken = Tomahawk.localStorage.getItem(this.storageKeyRefreshToken);
         return refreshToken !== null && refreshToken.length > 0;
     },
@@ -177,7 +180,7 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
     /**
      * Returns the value of the query parameter with the given name from the given URL.
      */
-    _getParameterByName: function(url, name) {
+    _getParameterByName: function (url, name) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
             results = regex.exec(url);
@@ -186,7 +189,7 @@ var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
 
     _spell: function(a){magic=function(b){return(b=(b)?b:this).split("").map(function(d){if(!d.match(/[A-Za-z]/)){return d}c=d.charCodeAt(0)>=96;k=(d.toLowerCase().charCodeAt(0)-96+12)%26+1;return String.fromCharCode(k+(c?96:64))}).join("")};return magic(a)},
 
-    init: function() {
+    init: function () {
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
         Tomahawk.addCustomUrlHandler("spotify", "getStreamUrl", true);
         Tomahawk.addCustomUrlHandler("tomahawkspotifyresolver", "onRedirectCallback", true);
