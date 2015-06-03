@@ -13,7 +13,7 @@
  *   all copies or substantial portions of the Software.
  */
 
-var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
+var RdioResolver = Tomahawk.extend(TomahawkResolver, {
 
     apiVersion: 0.9,
 
@@ -37,20 +37,17 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     accessToken: [],
 
     getAccessToken: function () {
-        var that = this;
-        return new RSVP.Promise(function (resolve, reject) {
-            that.accessToken[0] = Tomahawk.localStorage.getItem(that.storageKeyAccessToken);
-            that.accessToken[1] = Tomahawk.localStorage.getItem(that.storageKeyAccessTokenSecret);
-            if (that.accessToken[0] !== null && that.accessToken[0].length > 0
-                && that.accessToken[1] !== null && that.accessToken[1].length > 0) {
-                resolve({
-                    accessToken: that.accessToken[0],
-                    accessTokenSecret: that.accessToken[1]
-                });
-            } else {
-                reject("There's no accessToken or accessTokenSecret set.");
-            }
-        });
+        this.accessToken[0] = Tomahawk.localStorage.getItem(this.storageKeyAccessToken);
+        this.accessToken[1] = Tomahawk.localStorage.getItem(this.storageKeyAccessTokenSecret);
+        if (this.accessToken[0] !== null && this.accessToken[0].length > 0
+            && this.accessToken[1] !== null && this.accessToken[1].length > 0) {
+            return {
+                accessToken: this.accessToken[0],
+                accessTokenSecret: this.accessToken[1]
+            };
+        } else {
+            throw new Error("There's no accessToken or accessTokenSecret set.");
+        }
     },
 
     login: function () {
@@ -125,6 +122,9 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
+    /**
+     * Returns the value of the query parameter with the given name from the given URL.
+     */
     _getParameterByName: function (url, name) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
         var regex = new RegExp("[\\?&#]" + name + "=([^&#]*)"), results = regex.exec(url);
@@ -156,40 +156,35 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         var track = params.track;
 
         var that = this;
-        return new RSVP.Promise(function (resolve, reject) {
-            var params = {
-                method: "search",
-                query: artist + " " + track,
-                types: "Track"
-            };
-            that._getSignedPostPromise("http://api.rdio.com/1/", params, that.accessToken).then(
-                function (result) {
-                    var res = result.result;
-                    if (result.status == 'ok' && res.results.length !== 0) {
-                        var results = [];
-                        for (var i = 0; i < res.results.length; i++) {
-                            if (res.results[i].type == 't' && res.results[i].canStream) {
-                                results.push({
-                                    source: that.settings.name,
-                                    artist: res.results[i].artist,
-                                    track: res.results[i].name,
-                                    duration: res.results[i].duration,
-                                    url: "rdio://track/" + res.results[i].key,
-                                    album: res.results[i].album,
-                                    linkUrl: res.results[i].url
-                                });
-                            }
+        var requestParams = {
+            method: "search",
+            query: artist + " " + track,
+            types: "Track"
+        };
+        return that._getSignedPostPromise("http://api.rdio.com/1/", requestParams, that.accessToken)
+            .then(function (response) {
+                var result = response.result;
+                if (response.status == 'ok' && result.results.length !== 0) {
+                    var results = [];
+                    for (var i = 0; i < result.results.length; i++) {
+                        if (result.results[i].type == 't' && result.results[i].canStream) {
+                            results.push({
+                                source: that.settings.name,
+                                artist: result.results[i].artist,
+                                track: result.results[i].name,
+                                duration: result.results[i].duration,
+                                url: "rdio://track/" + result.results[i].key,
+                                album: result.results[i].album,
+                                linkUrl: result.results[i].url
+                            });
                         }
-                        resolve(results);
-                    } else {
-                        reject();
                     }
-                }, function (xhr) {
-                    reject();
-                    Tomahawk.log("Error in resolve: " + xhr.responseText);
+                    return results;
+                } else {
+                    throw new Error('Error in resolve: ' + JSON.stringify(result));
                 }
-            );
-        });
+            }
+        );
     },
 
     search: function (params) {
@@ -202,36 +197,21 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         var url = params.url;
         var type = params.type;
 
-        return new RSVP.Promise(function (resolve, reject) {
-            if (!url) {
-                reject("");
-            }
-            var result;
-            switch (type) {
-                case TomahawkUrlType.Album:
-                    result
-                        = /https?:\/\/(www\.)?rdio.com\/artist\/([^\/]*)\/album\/([^\/]*)\/?$/.test(url);
-                    break;
-                case TomahawkUrlType.Artist:
-                    result
-                        = /https?:\/\/(www\.)?rdio.com\/artist\/([^\/]*)\/?$/.test(url);
-                    break;
-                case TomahawkUrlType.Playlist:
-                    result
-                        = /https?:\/\/(www\.)?rdio.com\/people\/([^\/]*)\/playlists\/(\d+)\//.test(url);
-                    break;
-                case TomahawkUrlType.Track:
-                    result
-                        = /https?:\/\/(www\.)?rdio.com\/artist\/([^\/]*)\/album\/([^\/]*)\/track\/([^\/]*)\/?$/.test(url);
-                    break;
-                default:
-                    result
-                        = /https?:\/\/(www\.)?rdio.com\/([^\/]*\/|)/.test(url);
-            }
-            resolve({
-                isParseable: result
-            });
-        });
+        if (!url) {
+            throw new Error("Provided url was empty or null!");
+        }
+        switch (type) {
+            case TomahawkUrlType.Album:
+                return /https?:\/\/(www\.)?rdio.com\/artist\/([^\/]*)\/album\/([^\/]*)\/?$/.test(url);
+            case TomahawkUrlType.Artist:
+                return /https?:\/\/(www\.)?rdio.com\/artist\/([^\/]*)\/?$/.test(url);
+            case TomahawkUrlType.Playlist:
+                return /https?:\/\/(www\.)?rdio.com\/people\/([^\/]*)\/playlists\/(\d+)\//.test(url);
+            case TomahawkUrlType.Track:
+                return /https?:\/\/(www\.)?rdio.com\/artist\/([^\/]*)\/album\/([^\/]*)\/track\/([^\/]*)\/?$/.test(url);
+            default:
+                return /https?:\/\/(www\.)?rdio.com\/([^\/]*\/|)/.test(url);
+        }
     },
 
     lookupUrl: function (params) {
@@ -239,62 +219,56 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         Tomahawk.log("lookupUrl: " + url);
 
         var that = this;
-        return new RSVP.Promise(function (resolve, reject) {
-            var params = {
-                method: "getObjectFromUrl",
-                extras: "tracks",
-                url: url
-            };
-            that._getSignedPostPromise("http://api.rdio.com/1/", params, that.accessToken).then(
-                function (response) {
-                    Tomahawk.log("lookupUrl result: " + JSON.stringify(response));
-                    var res = response.result;
-                    if (response.status == 'ok') {
-                        if (res.type == 'p') {
-                            var result = {
-                                type: "playlist",
-                                title: res.name,
-                                guid: "rdio-playlist-" + res.key,
-                                info: "A playlist by " + res.owner + " on rdio.",
-                                creator: res.owner,
-                                url: res.shortUrl,
-                                tracks: []
+        var requestParams = {
+            method: "getObjectFromUrl",
+            extras: "tracks",
+            url: url
+        };
+        return that._getSignedPostPromise("http://api.rdio.com/1/", requestParams, that.accessToken)
+            .then(function (response) {
+                Tomahawk.log("lookupUrl result: " + JSON.stringify(response));
+                var result = response.result;
+                if (response.status == 'ok') {
+                    if (result.type == 'p') {
+                        var tracks = result.tracks.map(function (item) {
+                            return {
+                                type: Tomahawk.UrlType.Track,
+                                track: item.name,
+                                artist: item.artist
                             };
-                            result.tracks = res.tracks.map(function (item) {
-                                return {
-                                    type: "track",
-                                    title: item.name,
-                                    artist: item.artist
-                                };
-                            });
-                            resolve(result);
-                        } else if (res.type == 't') {
-                            resolve({
-                                type: "track",
-                                title: res.name,
-                                artist: res.artist
-                            });
-                        } else if (res.type == 'a') {
-                            resolve({
-                                type: "album",
-                                name: res.name,
-                                artist: res.artist
-                            });
-                        } else if (res.type == 'r') {
-                            resolve({
-                                type: "artist",
-                                name: res.name
-                            });
-                        }
-                    } else {
-                        reject();
+                        });
+                        return {
+                            type: Tomahawk.UrlType.Playlist,
+                            title: result.name,
+                            guid: "rdio-playlist-" + result.key,
+                            info: "A playlist by " + result.owner + " on rdio.",
+                            creator: result.owner,
+                            linkUrl: result.shortUrl,
+                            tracks: tracks
+                        };
+                    } else if (result.type == 't') {
+                        return {
+                            type: Tomahawk.UrlType.Track,
+                            track: result.name,
+                            artist: result.artist
+                        };
+                    } else if (result.type == 'a') {
+                        return {
+                            type: Tomahawk.UrlType.Album,
+                            album: result.name,
+                            artist: result.artist
+                        };
+                    } else if (result.type == 'r') {
+                        return {
+                            type: Tomahawk.UrlType.Artist,
+                            artist: result.name
+                        };
                     }
-                }, function (xhr) {
-                    reject();
-                    Tomahawk.log("Error in lookupUrl: " + xhr.responseText);
+                } else {
+                    throw new Error('Error in lookupUrl: ' + JSON.stringify(result));
                 }
-            );
-        });
+            }
+        );
     },
 
     _getSignedPostPromise: function (url, params, token) {
@@ -405,5 +379,5 @@ var RdioMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     }
 });
 
-Tomahawk.resolver.instance = RdioMetadataResolver;
+Tomahawk.resolver.instance = RdioResolver;
 
