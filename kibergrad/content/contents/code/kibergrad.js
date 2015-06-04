@@ -291,7 +291,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         }, function (error) { cache.put(id, ''); });
     },
 
-    _processTracks: function (songsList, cache) {
+    _processTracks: function (songsList, cache, trackInfo) {
         var that = this;
         var results = [];
         for(var i=0; i < songsList.length; ++i) {
@@ -299,14 +299,32 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             var albumTitle = cache.get(track.albumId);
             if (typeof albumTitle === 'undefined') {
                 return that._resolveAlbumName(track.albumId, cache).then(function (response){
-                    return that._processTracks(songsList, cache);
+                    return that._processTracks(songsList, cache, trackInfo);
                 });
             }
+            var artist = albumTitle.artist;
+            var title = track.name;
+            var album = albumTitle.album;
+
+            if (typeof trackInfo !== 'undefined') {
+                //Kibergrad eats special characters so we're here to workaround
+                //that
+                // (ie if name is "foo & bar" and kibergrad says "foo  bar"
+                // we'll pretend its "foo & bar"
+                var re = /[&\\\/\ \.\?\!\{\}\[\]\*\%\(\)\@\$\-\=\+\,]/gi;
+                if (artist.toLowerCase().replace(re, '') == trackInfo.artist.toLowerCase().replace(re, ''))
+                    artist = trackInfo.artist;
+                if (title.toLowerCase().replace(re, '') == trackInfo.title.toLowerCase().replace(re, ''))
+                    title = trackInfo.title;
+                if (album.toLowerCase().replace(re, '') == trackInfo.album.toLowerCase().replace(re, ''))
+                    album = trackInfo.album;
+            }
+
             results.push({
-                artist:     albumTitle.artist,
-                track:      track.name,
-                title:      track.name,
-                album:      albumTitle.album,
+                artist:     artist,
+                track:      title,
+                title:      title,
+                album:      album,
                 size:       track.size,
                 duration:   track.duration,
                 bitrate:    track.bitrate,
@@ -319,7 +337,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return results;
     },
 
-    search: function (query) {
+    search: function (query, trackInfo) {
         var that = this;
 
         return Tomahawk.get("http://m.kibergrad.com/search?q=" + query,
@@ -328,13 +346,18 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                 response = JSON.parse(response);
             if (!response.success)
                 return [];
-            return that._processTracks(response.songsList, that.cache);
+            return that._processTracks(response.songsList, that.cache, trackInfo);
         });
     },
 
     resolve: function (artist, album, title) {
         var query = [ artist, title ].join(' - ');
-        return this.search(query);
+        var trackInfo = {
+            title: title,
+            artist: artist,
+            album: album
+        };
+        return this.search(query, trackInfo);
     }
 });
 
