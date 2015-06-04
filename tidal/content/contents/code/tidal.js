@@ -54,7 +54,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     newConfigSaved: function() {
         var config = this.getUserConfig();
 
-        var changed = 
+        var changed =
             this._email !== config.email ||
             this._password !== config.password ||
             this._quality != config.quality;
@@ -65,8 +65,14 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     testConfig: function (config) {
-        return this._getLoginPromise(config).catch(function (error) {
-            throw new Error('Invalid credentials');
+        return this._getLoginPromise(config).then(function () {
+            return {result: Tomahawk.ConfigTestResultType.Success};
+        }, function (xhr) {
+            if (xhr.status == 401) {
+                return {result: Tomahawk.ConfigTestResultType.InvalidCredentials};
+            } else {
+                return {result: Tomahawk.ConfigTestResultType.CommunicationError};
+            }
         });
     },
 
@@ -146,7 +152,10 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    search: function (query, limit) {
+    search: function (params) {
+        var query = params.query;
+        var limit = params.limit;
+
         if (!this.logged_in) {
             return this._defer(this.search, [query], this);
         } else if (this.logged_in ===2) {
@@ -154,26 +163,32 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         }
 
         var that = this;
+        var settings = {
+            data: {
+                limit: limit || 9999,
+                query: query.replace(/[ \-]+/g, ' ').toLowerCase(),
 
-        var params = {
-            limit: limit || 9999,
-            query: query.replace(/[ \-]+/g, ' ').toLowerCase(),
-
-            sessionId: this._sessionId,
-            countryCode: this._countryCode
+                sessionId: this._sessionId,
+                countryCode: this._countryCode
+            }
         };
-
-        return Tomahawk.get(this.api_location + "search/tracks", {
-            data: params
-        }).then( function (response) {
-            return that._convertTracks(response.items);
-        });
+        return Tomahawk.get(this.api_location + "search/tracks", settings)
+            .then(function (response) {
+                return that._convertTracks(response.items);
+            });
     },
 
-    resolve: function (artist, album, title) {
-        var query = [ artist, album, title ].join(' ');
+    resolve: function (params) {
+        var artist = params.artist;
+        var album = params.album;
+        var track = params.track;
 
-        return this.search(query, 5);
+        var query = [ artist, album, track ].join(' ');
+
+        return this.search({
+            query: query,
+            limit: 5
+        });
     },
 
     _parseUrlPrefix: function (url) {
@@ -185,37 +200,51 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return match;
     },
 
-    canParseUrl: function (url, type) {
-        url = this._parseUrlPrefix(url);
-        if (!url) return false;
+    canParseUrl: function (params) {
+        var url = params.url;
+        var type = params.type;
 
-        switch (type) {
-            case TomahawkUrlType.Album:
-                return url[2] == 'album';
-            case TomahawkUrlType.Artist:
-                return url[2] == 'artist';
-            case TomahawkUrlType.Track:
-                return url[2] == 'track';
-            case TomahawkUrlType.Playlist:
-                return url[2] == 'playlist';
-            default:
-                return true;
-        }
+        return new RSVP.Promise(function (resolve, reject) {
+            url = this._parseUrlPrefix(url);
+            if (!url) {
+                reject("Couldn't parse URL. Invalid format?");
+                return;
+            }
+            var result;
+            switch (type) {
+                case TomahawkUrlType.Album:
+                    result = url[2] == 'album';
+                    break;
+                case TomahawkUrlType.Artist:
+                    result = url[2] == 'artist';
+                    break;
+                case TomahawkUrlType.Track:
+                    result = url[2] == 'track';
+                    break;
+                case TomahawkUrlType.Playlist:
+                    result = url[2] == 'playlist';
+                    break;
+            }
+            resolve({
+                isParseable: result
+            });
+        });
     },
 
     _debugPrint: function (obj, spaces) {
         spaces = spaces || '';
 
         var str = '';
-        for (key in obj) {
-            if (typeof obj[key] === "object") {
-                var b = ["{", "}"]
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                var b = ["{", "}"];
                 if (obj[key].constructor == Array) {
                     b = ["[", "]"];
                 }
-                str += spaces+key+": "+b[0]+"\n"+this._debugPrint(obj[key], spaces+'    ')+"\n"+spaces+b[1]+'\n';
+                str += spaces + key + ": " + b[0] + "\n" + this._debugPrint(obj[key],
+                        spaces + '    ') + "\n" + spaces + b[1] + '\n';
             } else {
-                str += spaces+key+": "+obj[key]+"\n";
+                str += spaces + key + ": " + obj[key] + "\n";
             }
         }
         if (spaces != '') {
@@ -224,17 +253,14 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             str.split('\n').map(Tomahawk.log, Tomahawk);
         }
     },
-    
-    lookupUrl: function (url) {
-        this.lookupUrlPromise(url).then(function (result) {
-            Tomahawk.addUrlResult(url, result);
-        }).catch(function (e) {
-            Tomahawk.addUrlResult(url, null);
-            Tomahawk.log("Error in lookupUrlPromise! " + e);
-        });
+
+    lookupUrl: function (params) {
+        var url = params.url;
+
+        return this._getLookupUrlPromise(url);
     },
 
-    lookupUrlPromise: function (url) {
+    _getLookupUrlPromise: function (url) {
         if (!this.logged_in) {
             return this._defer(this.lookupUrl, [url], this);
         } else if (this.logged_in === 2) {
@@ -249,9 +275,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             throw new Error("Couldn't parse given URL: " + url);
 
         var that = this;
-        var cb = undefined;
-        var promise = null;
-        var suffix = '/';
+
         var params = {
             countryCode: this._countryCode,
             sessionId: this._sessionId,
@@ -266,7 +290,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
             Tomahawk.log(rqUrl);
 
-            return Promise.all([getInfo, getTracks]).then(function (response) {
+            return RSVP.Promise.all([getInfo, getTracks]).then(function (response) {
                 var result = that._convertAlbum(response[0]);
                 result.tracks = that._convertTracks(response[1].items);
                 return result;
@@ -296,7 +320,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             var getInfo = Tomahawk.get(rqUrl, { data: params } );
             var getTracks = Tomahawk.get(rqUrl + "/tracks", { data: params });
 
-            return Promise.all([getInfo, getTracks]).then( function (response) {
+            return RSVP.Promise.all([getInfo, getTracks]).then( function (response) {
                 var result = that._convertPlaylist(response[0]);
                 result.tracks = that._convertTracks(response[1].items);
                 return result;
@@ -315,38 +339,37 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    getStreamUrl: function(qid, url) {
-        Promise.resolve(this._getStreamUrlPromise(url)).then(function (streamUrl){
-            Tomahawk.reportStreamUrl(qid, streamUrl);
-        }).catch(Tomahawk.log);
-    },
+    getStreamUrl: function(params) {
+        var url = params.url;
 
-    _getStreamUrlPromise: function (urn) {
         if (!this.logged_in) {
-            return this._defer(this.getStreamUrl, [urn], this);
+            return this._defer(this.getStreamUrl, [url], this);
         } else if (this.logged_in === 2) {
             throw new Error('Failed login, cannot getStreamUrl.');
         }
 
-        var parsedUrn = this._parseUrn( urn );
-        
+        var parsedUrn = this._parseUrn( url );
+
         if (!parsedUrn || parsedUrn.type != 'track') {
-            Tomahawk.log( "Failed to get stream. Couldn't parse '" + urn + "'" );
+            Tomahawk.log( "Failed to get stream. Couldn't parse '" + url + "'" );
             return;
         }
 
-        var params = {
-            token: this.api_token,
-            countryCode: this._countryCode,
-            soundQuality: this.strQuality[this._quality],
-            sessionId: this._sessionId
+        var settings = {
+            data: {
+                token: this.api_token,
+                countryCode: this._countryCode,
+                soundQuality: this.strQuality[this._quality],
+                sessionId: this._sessionId
+            }
         };
 
-        return Tomahawk.get(this.api_location + "tracks/"+parsedUrn.id+"/streamUrl", {
-            data: params
-        }).then( function (response) {
-            return response.url;
-        });
+        return Tomahawk.get(this.api_location + "tracks/" + parsedUrn.id + "/streamUrl", settings)
+            .then(function (response) {
+                return {
+                    url: response.url
+                };
+            });
     },
 
     _defer: function (callback, args, scope) {
@@ -362,16 +385,16 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     _getLoginPromise: function (config) {
-        var params = "?token=" + this.api_token;
-        return Tomahawk.post( this.api_location + "login/username" + params, {
-                type: 'POST', // backwards compatibility for old versions of tomahawk.js
-                data: {
-                    "username": config.email.trim(),
-                    "password": config.password.trim()
-                },
-                headers: { 'Origin' : 'http://listen.tidalhifi.com' }
-            }
-        );
+        var settings = {
+            type: 'POST', // backwards compatibility for old versions of tomahawk.js
+            data: {
+                "username": config.email.trim(),
+                "password": config.password.trim()
+            },
+            headers: {'Origin': 'http://listen.tidalhifi.com'}
+        };
+        return Tomahawk.post(this.api_location + "login/username?token=" + this.api_token,
+            settings);
     },
 
     _login: function (config) {
