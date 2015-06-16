@@ -90,7 +90,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         params['access_token'] = this._access_token;
         params['v']            = this.API_VERSION;
 
-        return Tomahawk.get("https://api.vk.com/method/" + api, {
+        return Tomahawk.post("https://api.vk.com/method/" + api, {
             data: params
         }).then(function (resp) {
                 if(resp.error)
