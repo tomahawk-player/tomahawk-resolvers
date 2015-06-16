@@ -13,7 +13,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     APP_ID : '2054573',
     APP_KEY : 'KUPNPTTQGApLFVOVgqdx',
     APP_SCOPE : 'audio',
-    API_VERSION : '5.33',
+    API_VERSION : '5.34',
 
     STORAGE_KEY : 'vk.com.access_token',
 
@@ -88,7 +88,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         }
 
         params['access_token'] = this._access_token;
-        params['v']            = this.API_VERSION;
+        if(!params.hasOwnProperty('v'))
+            params['v'] = this.API_VERSION;
 
         return Tomahawk.post("https://api.vk.com/method/" + api, {
             data: params
@@ -271,58 +272,80 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     _batchResolve: function (that) {
-        var saved_queue = that._queue;
+        var saved_queue_full = that._queue;
         that._batching = false;
         that._queue = Object.create(null);
-
-        var queries = [];
-        var count = 0;
-        for(var qid in saved_queue) {
-            qid = JSON.parse(qid);
-            if (qid[1] === '') {
-                //empty album
-                queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
-                    '",result:[API.audio.search({count:5,q:' +
-                    JSON.stringify(qid.join(' ')) + '})]}');
-            } else {
-                queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
-                    '",result:[API.audio.search({count:3,q:' +
-                    JSON.stringify(qid.join(' ')) +
-                    '}),API.audio.search({count:3,q:' +
-                    JSON.stringify([qid[0],qid[2]].join(' ')) +
-                    '})]}');
-            }
-            ++count;
+        var saved_queue_qids = [];
+        for(var qid in saved_queue_full) {
+            saved_queue_qids.push(qid);
         }
-        Tomahawk.log("Sending " + count + " of queued resolve requests");
-        var code = 'return [' + queries.join(',') + '];';        
-        Tomahawk.log("Prepared 'execute' code:" + code);
-        that._apiCall('execute', {code:code}).then(function(results) {
-            for (var result in results.response) {
-                result = results.response[result];
-                var tracks = [];
-                tracks = tracks.concat.apply(tracks, result.result.map(function(item) {return item.items;}));
-                //Leave unique only
-                var u = {}, a = [];
-                for(var i = 0, l = tracks.length; i < l; ++i){
-                    if(u.hasOwnProperty(tracks[i].url)) {
-                        continue;
+
+        //Slice queue in chunks of 5 as VK has a bug with > 5 audio.search
+        //calls inside execute call
+        var executeBatchSize = 5;
+        while (saved_queue_qids.length > 0)
+        {
+            var saved_queue = saved_queue_qids.splice(0, executeBatchSize);
+
+            var queries = [];
+            var count = 0;
+            var searchCount = 0;
+            for(var qid in saved_queue) {
+                qid = saved_queue[qid];
+                if ( searchCount >= executeBatchSize - 1 ) {
+                    saved_queue_qids.push(qid);
+                } else {
+                    qid = JSON.parse(qid);
+                    if (qid[1] === '') {
+                        searchCount++;
+                        //empty album
+                        queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
+                            '",result:[API.audio.search({count:5,q:' +
+                            JSON.stringify(qid.join(' - ')) + '})]}');
+                    } else {
+                        searchCount+=2;
+                        queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
+                            '",result:[API.audio.search({count:3,q:' +
+                            JSON.stringify(qid.join(' - ')) +
+                            '}),API.audio.search({count:3,q:' +
+                            JSON.stringify([qid[0],qid[2]].join(' - ')) +
+                            '})]}');
                     }
-                    a.push(tracks[i]);
-                    u[tracks[i].url] = 1;
                 }
-                var _qid = JSON.parse(decodeURIComponent(result.qid));
-                tracks = a.map(that._convertTrack, 
-                    {
-                        artist: _qid[0],
-                        album : _qid[1],
-                        title : _qid[2],
-                    });
-                for(var r in saved_queue[decodeURIComponent(result.qid)]) {
-                    saved_queue[decodeURIComponent(result.qid)][r](tracks);
-                }
+                ++count;
             }
-        });
+            Tomahawk.log("Sending " + count + " of queued resolve requests");
+            var code = 'return [' + queries.join(',') + '];';
+            Tomahawk.log("Prepared 'execute' code:" + code);
+            that._apiCall('execute', {code:code}).then(function(results) {
+                Tomahawk.log('got result ' + JSON.stringify(results));
+                for (var result in results.response) {
+                    result = results.response[result];
+                    var tracks = [];
+                    tracks = tracks.concat.apply(tracks, result.result.map(function(item) {return item.items;}));
+                    //Leave unique only
+                    var u = {}, a = [];
+                    for(var i = 0, l = tracks.length; i < l; ++i){
+                        if(u.hasOwnProperty(tracks[i].url)) {
+                            continue;
+                        }
+                        a.push(tracks[i]);
+                        u[tracks[i].url] = 1;
+                    }
+                    var _qid = JSON.parse(decodeURIComponent(result.qid));
+                    tracks = a.map(that._convertTrack,
+                        {
+                            artist: _qid[0],
+                            album : _qid[1],
+                            title : _qid[2],
+                        });
+                    for(var r in saved_queue_full[decodeURIComponent(result.qid)]) {
+                        Tomahawk.log('resolving' + decodeURIComponent(result.qid) + ' with ' + JSON.stringify(tracks));
+                        saved_queue_full[decodeURIComponent(result.qid)][r](tracks);
+                    }
+                }
+            });
+        }
     },
 
     resolve: function (artist, album, title) {
