@@ -12,3 +12,10 @@ build
 *.md5
 node_modules/
 metadata.desktop
+
+###IntelliJ###
+
+*.iml
+*.ipr
+*.iws
+.idea/
