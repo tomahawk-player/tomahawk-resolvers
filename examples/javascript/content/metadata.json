@@ -1,0 +1,20 @@
+{
+    "name": "Example Resolver",
+    "pluginName": "example",
+    "author": "Enno Gottschalk",
+    "email": "mrmaffen@gmail.com",
+    "version": "0.1.0",
+    "website": "http://gettomahawk.com",
+    "description": "Just an example Resolver.",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/example.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "iconWhite": "contents/images/iconWhite.png",
+        "iconBackground": "contents/images/iconBackground.png",
+        "resources": [
+            "contents/code/config.ui"
+        ]
+    }
+}
