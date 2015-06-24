@@ -2,9 +2,39 @@
 
 ## Developing resolvers
 
-The Tomahawk resolver API is currently still in flux. You can use some of the existing resolvers as inspiration, especially Subsonic and Soundcloud.
+The best way to get you started with writing your own Resolver is by looking at the [`Example Resolver`](https://github.com/tomahawk-player/tomahawk-resolvers/examples/javascript). It's well documented and includes almost every aspect of the Tomahawk Resolver API.
 
 The API you should develop against is defined in [`tomahawk.js`](https://github.com/tomahawk-player/tomahawk/blob/master/data/js/tomahawk.js) and [`JSResolverHelper`](https://github.com/tomahawk-player/tomahawk/blob/master/src/libtomahawk/resolvers/JSResolverHelper.h) in the Tomahawk main repo. This API is also being used in the [`Tomahawk Android`](https://github.com/tomahawk-player/tomahawk-android) App. Furthermore we also have an implementation in [`NodeJS`](https://github.com/xhochy/node-tomahawkjs). This means that you only have to write one resolver and have it work right away on Desktop, Android and Node!
+
+Since apiVersion 0.9 the resolver API has changed quite a bit.
+Previously this was the way of returning results to Tomahawk in the "resolve"-function:
+```javascript
+resolve: function(qid, artist, album, track) {
+    var results = getResultArray(artist, album, track);
+    Tomahawk.addTrackResults(qid, results);
+}
+```
+Now with the new promise-based API the same implementation would like this:  
+```javascript
+resolve: function (params) {
+    return getResultArray(params.artist, params.album, params.track);
+}
+```
+You can get the function parameters from the params map. Instead of relying on callback functions you are now able to return your results directly. Alternatively you can also return an RSVP.Promise object. But the real power of promises only becomes clear when you look at the way a "resolve"-request is normally being implemented in the real world:  
+```javascript
+resolve: function (params) {
+    var q = params.artist + " " + params.track;
+    return Tomahawk.get("http://someurl.org/search?q=" + q).then(function (result) {
+        var results = parseResultArray(result);
+        if (!results) {
+            throw new Error("Sry, couldn't get results");
+        } else {
+            return results;
+        }
+    });
+}
+```
+In one compact code block we are able to make a request. Then we parse the given "result" and simply return it without having to care about any request-id(qid) or callback-function. In addition we have a neat way of throwing an Error when something went wrong. Not to mention all the nice magic that comes with promise-functions like "all". If you're interested you might want to check out this great tutorial by Jake Archibald http://www.html5rocks.com/en/tutorials/es6/promises/. 
 
 If you have questions, look for us in #tomahawk on irc.freenode.net.
 
