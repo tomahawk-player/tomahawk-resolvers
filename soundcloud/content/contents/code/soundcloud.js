@@ -59,12 +59,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
     newConfigSaved: function () {
         var userConfig = this.getUserConfig();
-        if ((userConfig.includeCovers != this.includeCovers) || (userConfig.includeRemixes
-            != this.includeRemixes) || (userConfig.includeLive != this.includeLive)) {
+        if (userConfig.includeCovers != this.includeCovers
+            || userConfig.includeRemixes != this.includeRemixes
+            || userConfig.includeLive != this.includeLive) {
             this.includeCovers = userConfig.includeCovers;
             this.includeRemixes = userConfig.includeRemixes;
             this.includeLive = userConfig.includeLive;
-            this.saveUserConfig();
         }
     },
 
@@ -76,7 +76,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
     init: function (callback) {
         // Set userConfig here
         var userConfig = this.getUserConfig();
-        if (userConfig !== undefined) {
+        if (userConfig) {
             this.includeCovers = userConfig.includeCovers;
             this.includeRemixes = userConfig.includeRemixes;
             this.includeLive = userConfig.includeLive;
@@ -99,20 +99,22 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     _isValidTrack: function (trackTitle, origTitle) {
-        if ((this.includeCovers === false || this.includeCovers === undefined)
-            && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1) {
-            return null;
+        if (!this.includeCovers &&
+            trackTitle.search(/cover/i) >= 0 &&
+            origTitle.search(/cover/i) < 0) {
+            return false;
         }
-        if ((this.includeRemixes === false || this.includeRemixes === undefined)
-            && trackTitle.search(/(re)*mix/i) !== -1 && origTitle.search(/(re)*mix/i) === -1) {
-            return null;
+        if (!this.includeRemixes &&
+            trackTitle.search(/mix/i) >= 0 &&
+            origTitle.search(/mix/i) < 0) {
+            return false;
         }
-        if ((this.includeLive === false || this.includeLive === undefined)
-            && trackTitle.search(/live/i) !== -1 && origTitle.search(/live/i) === -1) {
-            return null;
-        } else {
-            return trackTitle;
+        if (!this.includeLive &&
+            trackTitle.search(/live/i) >= 0 &&
+            origTitle.search(/live/i) < 0) {
+            return false;
         }
+        return true;
     },
 
     resolve: function (qid, artist, album, title) {
