@@ -98,7 +98,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
         }
     },
 
-    getTrack: function (trackTitle, origTitle) {
+    _isValidTrack: function (trackTitle, origTitle) {
         if ((this.includeCovers === false || this.includeCovers === undefined)
             && trackTitle.search(/cover/i) !== -1 && origTitle.search(/cover/i) === -1) {
             return null;
@@ -163,7 +163,7 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
                             score: 0.85,
                             source: that.settings.name
                         };
-                        if (that.getTrack(resp[i].title, title)) {
+                        if (that._isValidTrack(resp[i].title, title)) {
                             result.track = title;
                         } else {
                             continue;
@@ -206,14 +206,14 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
             if (resp.length !== 0) {
                 var results = [];
                 var stop = resp.length;
-                for (i = 0; i < resp.length; i++) {
+                for (var i = 0; i < resp.length; i++) {
                     if (resp[i] === undefined) {
                         stop = stop - 1;
                         continue;
                     }
                     var result = {};
 
-                    if (that.getTrack(resp[i].title, "")) {
+                    if (that._isValidTrack(resp[i].title, "")) {
                         var track = resp[i].title;
                         if (track.indexOf(" - ") !== -1 && track.slice(track.indexOf(" - ")
                                 + 3).trim() !== "") {
@@ -313,15 +313,12 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
                 return false;
             case TomahawkUrlType.Artist:
                 return false;
-            // case TomahawkUrlType.Playlist:
-            // case TomahawkUrlType.Track:
-            // case TomahawkUrlType.Any:
             default:
                 return (/https?:\/\/(www\.)?soundcloud.com\//).test(url);
         }
     },
 
-    track2Result: function (track) {
+    _convertTrack: function (track) {
         var result = {
             type: "track",
             title: track.title,
@@ -351,11 +348,11 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
                     tracks: []
                 };
                 res.tracks.forEach(function (item) {
-                    result.tracks.push(that.track2Result(item));
+                    result.tracks.push(that._convertTrack(item));
                 });
                 Tomahawk.addUrlResult(url, result);
             } else if (res.kind == "track") {
-                Tomahawk.addUrlResult(url, that.track2Result(res));
+                Tomahawk.addUrlResult(url, that._convertTrack(res));
             } else if (res.kind == "user") {
                 var url2 = res.uri;
                 var prefix = 'soundcloud-';
@@ -381,11 +378,10 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
                         tracks: []
                     };
                     res2.forEach(function (item) {
-                        result.tracks.push(that.track2Result(item));
+                        result.tracks.push(that._convertTrack(item));
                     });
                     Tomahawk.addUrlResult(url, result);
                 });
-                return;
             } else {
                 Tomahawk.log("Could not parse SoundCloud URL: " + url);
                 Tomahawk.addUrlResult(url, {});
