@@ -195,6 +195,23 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
         });
     },
 
+    _guessMetaData: function (title) {
+        var matches = title.match(/\s*(.+?)\s*(?:\s[-\u2014]|\s["']|:)\s*["']?(.+?)["']?\s*$/);
+        if (matches && matches.length > 2) {
+            return {
+                track: matches[2],
+                artist: matches[1]
+            };
+        }
+        matches = title.match(/\s*(.+?)\s*[-\u2014]+\s*(.+?)\s*$/);
+        if (matches && matches.length > 2) {
+            return {
+                track: matches[2],
+                artist: matches[1]
+            };
+        }
+    },
+
     search: function (qid, searchString) {
         var apiQuery = "https://api.soundcloud.com/tracks.json?consumer_key=TiNg2DRYhBnp01DA3zNag&filter=streamable&q="
             + encodeURIComponent(searchString.replace('"', '').replace("'", ""));
@@ -217,37 +234,16 @@ var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
 
                     if (that._isValidTrack(resp[i].title, "")) {
                         var track = resp[i].title;
-                        if (track.indexOf(" - ") !== -1 && track.slice(track.indexOf(" - ")
-                                + 3).trim() !== "") {
-                            result.track = track.slice(track.indexOf(" - ") + 3).trim();
-                            result.artist = track.slice(0, track.indexOf(" - ")).trim();
-                        } else if (track.indexOf(" -") !== -1 && track.slice(track.indexOf(" -")
-                                + 2).trim() !== "") {
-                            result.track = track.slice(track.indexOf(" -") + 2).trim();
-                            result.artist = track.slice(0, track.indexOf(" -")).trim();
-                        } else if (track.indexOf(": ") !== -1 && track.slice(track.indexOf(": ")
-                                + 2).trim() !== "") {
-                            result.track = track.slice(track.indexOf(": ") + 2).trim();
-                            result.artist = track.slice(0, track.indexOf(": ")).trim();
-                        } else if (track.indexOf("-") !== -1 && track.slice(track.indexOf("-")
-                                + 1).trim() !== "") {
-                            result.track = track.slice(track.indexOf("-") + 1).trim();
-                            result.artist = track.slice(0, track.indexOf("-")).trim();
-                        } else if (track.indexOf(":") !== -1 && track.slice(track.indexOf(":")
-                                + 1).trim() !== "") {
-                            result.track = track.slice(track.indexOf(":") + 1).trim();
-                            result.artist = track.slice(0, track.indexOf(":")).trim();
-                        } else if (track.indexOf("\u2014") !== -1
-                            && track.slice(track.indexOf("\u2014") + 2).trim() !== "") {
-                            result.track = track.slice(track.indexOf("\u2014") + 2).trim();
-                            result.artist = track.slice(0, track.indexOf("\u2014")).trim();
-                        } else if (resp[i].title !== "" && resp[i].user.username !== "") {
-                            // Last resort, the artist is the username
-                            result.track = resp[i].title;
-                            result.artist = resp[i].user.username;
-                        } else {
-                            stop = stop - 1;
-                            continue;
+                        result = that._guessMetaData(track);
+                        if (!result) {
+                            if (resp[i].title !== "" && resp[i].user.username !== "") {
+                                // Last resort, the artist is the username
+                                result.track = resp[i].title;
+                                result.artist = resp[i].user.username;
+                            } else {
+                                stop = stop - 1;
+                                continue;
+                            }
                         }
                     } else {
                         stop = stop - 1;
