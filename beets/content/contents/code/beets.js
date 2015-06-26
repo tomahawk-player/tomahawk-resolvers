@@ -20,25 +20,26 @@
 
 // Map all the audio types supported by beets to extensions and MIME types.
 var AUDIO_TYPES = {
-    'MP3':      ['mp3',  'audio/mpeg'],
-    'AAC':      ['m4a',  'audio/mp4'],
-    'OGG':      ['ogg',  'audio/ogg'],
-    'FLAC':     ['flac', 'audio/x-flac'],
-    'APE':      ['ape',  'audio/ape'],
-    'WavPack':  ['wv',   'audio/x-wavpack'],
-    'MusePack': ['mpc',  'audio/x-musepack']
+    'MP3': ['mp3', 'audio/mpeg'],
+    'AAC': ['m4a', 'audio/mp4'],
+    'OGG': ['ogg', 'audio/ogg'],
+    'FLAC': ['flac', 'audio/x-flac'],
+    'APE': ['ape', 'audio/ape'],
+    'WavPack': ['wv', 'audio/x-wavpack'],
+    'MusePack': ['mpc', 'audio/x-musepack']
 };
 
 // Backward compability for Tomahawk<0.7.100/API<0.2.0 which did not support authed requests
 if (Tomahawk.hasOwnProperty('apiVersion') && Tomahawk.atLeastVersion('0.2.0')) {
     var passwordRequest = function (url, username, password, cb, errorHandler) {
-        Tomahawk.asyncRequest(url, cb, {}, {username: username, password: password, errorHandler: errorHandler});
+        Tomahawk.asyncRequest(url, cb, {},
+            {username: username, password: password, errorHandler: errorHandler});
     };
 } else {
     var passwordRequest = function (url, username, password, cb, errorHandler) {
         var xmlHttpRequest = new XMLHttpRequest();
         xmlHttpRequest.open('GET', url, true, username, password);
-        xmlHttpRequest.onreadystatechange = function() {
+        xmlHttpRequest.onreadystatechange = function () {
             if (xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
                 cb(xmlHttpRequest);
             } else if (xmlHttpRequest.readyState == 4) {
@@ -90,8 +91,8 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
 
         passwordRequest(url, this.username, this.password, function (xhr) {
             var resp = JSON.parse(xhr.responseText),
-            items = resp.results,
-            searchResults = [];
+                items = resp.results,
+                searchResults = [];
             items.forEach(function (item) {
                 var type_info = AUDIO_TYPES[item.format];
                 searchResults.push({
@@ -134,7 +135,7 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
                 name: "useTLS",
                 widget: "tlsCheckBox",
                 property: "checked"
-            },{
+            }, {
                 name: "useAuth",
                 widget: "useAuthCheckBox",
                 property: "checked"
@@ -149,12 +150,14 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
             }]
         };
     },
+
     newConfigSaved: function () {
         this.init();
     },
+
     init: function () {
-        var userConfig = this.getUserConfig(),
-            that = this;
+        var userConfig = this.getUserConfig();
+        var that = this;
         this.host = userConfig.host || 'localhost';
         this.port = parseInt(userConfig.port, 10);
         this.useTLS = userConfig.useTLS;
@@ -229,8 +232,8 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     albums: function (qid, artist) {
         var url = this.baseUrl() + '/album/query/albumartist:' + encodeURIComponent(artist);
         passwordRequest(url, this.username, this.password, function (xhr) {
-            var response = JSON.parse(xhr.responseText),
-            results = [];
+            var response = JSON.parse(xhr.responseText);
+            var results = [];
             response.results.forEach(function (item) {
                 results.push(item.album);
             });
@@ -243,11 +246,12 @@ var BeetsResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     tracks: function (qid, artist, album) {
-        var url = this.baseUrl() + '/item/query/' + encodeURIComponent('artist:' + artist) + '/' + encodeURIComponent('album:' + album);
+        var url = this.baseUrl() + '/item/query/' + encodeURIComponent('artist:' + artist) + '/'
+            + encodeURIComponent('album:' + album);
         var baseUrl = this.baseUrl();
         passwordRequest(url, this.username, this.password, function (xhr) {
-            var response = JSON.parse(xhr.responseText),
-            searchResults = [];
+            var response = JSON.parse(xhr.responseText);
+            var searchResults = [];
             response.results.forEach(function (item) {
                 var type_info = AUDIO_TYPES[item.format];
                 searchResults.push({
