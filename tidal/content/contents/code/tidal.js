@@ -16,7 +16,7 @@ var TidalResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     apiVersion: 0.9,
 
     /* This can also be used with WiMP service if you change next 2 lines */
-    api_location : 'https://listen.tidalhifi.com/v1/',
+    api_location : 'https://api.tidalhifi.com/v1/',
     api_token : 'P5Xbeo5LFvESeDy6',
 
     logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
