@@ -17,18 +17,20 @@
  */
 
 var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
+
     settings: {
         name: 'Jamendo',
         icon: 'jamendo-icon.png',
         weight: 75,
         timeout: 5
     },
-    handleResponse: function(qid, xhr) {    
+
+    handleResponse: function (qid, xhr) {
         // parse xml
         var domParser = new DOMParser();
         var xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
 
-        var results = new Array();
+        var results = [];
         var r = xmlDoc.getElementsByTagName("data");
         // check the response
         if (r.length > 0 && r[0].childNodes.length > 0) {
@@ -38,61 +40,64 @@ var JamendoResolver = Tomahawk.extend(TomahawkResolver, {
             for (var i = 0; i < links.length; i++) {
                 var link = links[i];
 
-                var result = new Object();
-                result.artist = Tomahawk.valueForSubNode(link, "artist_name");
-                result.album = Tomahawk.valueForSubNode(link, "album_name");
-                result.track = Tomahawk.valueForSubNode(link, "name");
-                //result.year = Tomahawk.valueForSubNode(link, "year");
-                result.source = this.settings.name;
-                result.url = decodeURI(Tomahawk.valueForSubNode(link, "stream"));
-                if (result.url.indexOf('http:') === 0) {
-                     result.url = result.url.replace(/http:/, 'https:');
-                }
-
-
-                // jamendo also provide ogg ?
-                result.extension = "mp3";
-                //result.bitrate = Tomahawk.valueForSubNode(link, "bitrate")/1000;
-                result.duration = Tomahawk.valueForSubNode(link, "duration");
-                result.score = 1.0;
-
-                results.push(result);
+                results.push({
+                    artist: Tomahawk.valueForSubNode(link, "artist_name"),
+                    album: Tomahawk.valueForSubNode(link, "album_name"),
+                    track: Tomahawk.valueForSubNode(link, "name"),
+                    //year : Tomahawk.valueForSubNode(link, "year"),
+                    source: this.settings.name,
+                    url: decodeURI(Tomahawk.valueForSubNode(link, "stream"))
+                        .replace(/http:\/\//, 'https://'),
+                    // jamendo also provide ogg ?
+                    extension: "mp3",
+                    //bitrate : Tomahawk.valueForSubNode(link, "bitrate")/1000,
+                    duration: Tomahawk.valueForSubNode(link, "duration"),
+                    score: 1.0
+                });
             }
         }
-        var return1 = {
+        Tomahawk.addTrackResults({
             qid: qid,
             results: results
-        };
-        Tomahawk.addTrackResults(return1);
+        });
     },
-    
-    sendRequest: function (url) {
-        // send request and parse it into javascript
-        Tomahawk.asyncRequest(url, this.handleResponse);
-    },
+
     resolve: function (qid, artist, album, title) {
         // build query to Jamendo
         var url = "https://api.jamendo.com/get2/id+name+duration+stream+album_name+artist_name/track/xml/track_album+album_artist/?";
-        if (title !== "") url += "name=" + encodeURIComponent(title) + "&";
+        if (title !== "") {
+            url += "name=" + encodeURIComponent(title) + "&";
+        }
 
-        if (artist !== "") url += "artist_name=" + encodeURIComponent(artist) + "&";
+        if (artist !== "") {
+            url += "artist_name=" + encodeURIComponent(artist) + "&";
+        }
 
-        if (album !== "") url += "album_name=" + encodeURIComponent(album) + "&";
+        if (album !== "") {
+            url += "album_name=" + encodeURIComponent(album) + "&";
+        }
 
         url += "n=20";
 
         var that = this;
-        Tomahawk.asyncRequest(url, function(xhr) { that.handleResponse(qid, xhr); } );
+        Tomahawk.asyncRequest(url, function (xhr) {
+            that.handleResponse(qid, xhr);
+        });
     },
+
     search: function (qid, searchString) {
         // build query to Jamendo
         var url = "https://api.jamendo.com/get2/id+name+duration+stream+album_name+artist_name/track/xml/track_album+album_artist/?";
-        if (searchString !== "") url += "searchquery=" + encodeURIComponent(searchString);
+        if (searchString !== "") {
+            url += "searchquery=" + encodeURIComponent(searchString);
+        }
 
         url += "&n=20";
         var that = this;
-        Tomahawk.asyncRequest(url, function(xhr) { that.handleResponse(qid, xhr); } );
-    },
+        Tomahawk.asyncRequest(url, function (xhr) {
+            that.handleResponse(qid, xhr);
+        });
+    }
 });
 
 Tomahawk.resolver.instance = JamendoResolver;
