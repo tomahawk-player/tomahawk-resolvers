@@ -29,11 +29,11 @@ var HatchetMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     resolve: function (qid, artist, album, title) {
-        Tomahawk.addTrackResults({ results: [], qid: qid });
+        Tomahawk.addTrackResults({results: [], qid: qid});
     },
 
     search: function (qid, searchString) {
-        Tomahawk.addTrackResults({ results: [], qid: qid });
+        Tomahawk.addTrackResults({results: [], qid: qid});
     },
 
     canParseUrl: function (url, type) {
@@ -52,7 +52,7 @@ var HatchetMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     lookupUrl: function (url) {
-        Tomahawk.log("lookupUrl: "+url);
+        Tomahawk.log("lookupUrl: " + url);
         var urlParts =
             url.split('/').filter(function (item) {
                 return item.length != 0;
@@ -100,18 +100,18 @@ var HatchetMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                     tracks: []
                 };
                 var playlistEntries = {};
-                res.playlistEntries.forEach( function (item) {
+                res.playlistEntries.forEach(function (item) {
                     playlistEntries[item.id] = item;
                 });
                 var artists = {};
-                res.artists.forEach( function (item) {
+                res.artists.forEach(function (item) {
                     artists[item.id] = item;
                 });
                 var tracks = {};
-                res.tracks.forEach( function (item) {
+                res.tracks.forEach(function (item) {
                     tracks[item.id] = item;
                 });
-                result.tracks = res.playlists[0].playlistEntries.map( function (item) {
+                result.tracks = res.playlists[0].playlistEntries.map(function (item) {
                     var track = tracks[playlistEntries[item].track];
                     return {
                         type: "track",
@@ -120,9 +120,10 @@ var HatchetMetadataResolver = Tomahawk.extend(TomahawkResolver, {
                     };
                 });
                 Tomahawk.addUrlResult(url, result);
-                Tomahawk.log("Reported found playlist '" + result.title + "' containing " + result.tracks.length + " tracks");
+                Tomahawk.log("Reported found playlist '" + result.title + "' containing "
+                    + result.tracks.length + " tracks");
             });
-         }
+        }
     }
 });
 
