@@ -19,10 +19,11 @@
  */
 
 var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
+
     apiVersion: 0.9,
-    ready: false,
-    artists: {},
-    albums: {},
+
+    _ready: false,
+
     settings: {
         name: 'Ampache',
         icon: 'ampache-icon.png',
@@ -68,7 +69,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
     },
 
     init: function () {
-        this.ready = false;
+        this._ready = false;
 
         if (!this.element) {
             this.element = document.createElement('div');
@@ -81,12 +82,12 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
             return;
         }
 
-        this.sanitizeConfig(userConfig);
+        this._sanitizeConfig(userConfig);
         this.username = userConfig.username;
         this.password = userConfig.password;
         this.server = userConfig.server;
 
-        return this.login(this);
+        return this._login(this);
     },
 
     // WIP:
@@ -117,11 +118,12 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
                 }
             });
     },*/
+
     testConfig: function (config) {
-        return this.handshake(this.sanitizeConfig(config));
+        return this._handshake(this._sanitizeConfig(config));
     },
 
-    sanitizeConfig: function(config) {
+    _sanitizeConfig: function (config) {
         if (!config.server) {
             config.server = "http://localhost/ampache";
         } else {
@@ -135,14 +137,14 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         return config;
     },
 
-    handshake: function(config) {
+    _handshake: function (config) {
         var time = Tomahawk.timestamp();
-        var passphrase;
+        var key, passphrase;
         if (typeof CryptoJS !== "undefined" && typeof CryptoJS.SHA256 == "function") {
-            var key = CryptoJS.SHA256(config.password).toString(CryptoJS.enc.Hex);
+            key = CryptoJS.SHA256(config.password).toString(CryptoJS.enc.Hex);
             passphrase = CryptoJS.SHA256(time + key).toString(CryptoJS.enc.Hex);
         } else {
-            var key = Tomahawk.sha256(config.password);
+            key = Tomahawk.sha256(config.password);
             passphrase = Tomahawk.sha256(time + key);
         }
 
@@ -152,13 +154,11 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         params.version = 350001;
         params.auth = passphrase;
 
-        var resolver = this;
-        return this.apiCallBase(config.server, 'handshake', params).then(this.parseHandshakeResult);
+        return this._apiCallBase(config.server, 'handshake', params).then(this._parseHandshakeResult);
     },
 
-    parseHandshakeResult: function(xmlDoc)
-    {
-        var roots = xmlDoc.getElementsByTagName("root");;
+    _parseHandshakeResult: function (xmlDoc) {
+        var roots = xmlDoc.getElementsByTagName("root");
         var auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
         if (!auth) {
             Tomahawk.log("INVALID HANDSHAKE RESPONSE: ", xmlDoc);
@@ -166,8 +166,10 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         }
 
         Tomahawk.log("New auth token: " + auth);
-        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0], "session_length")) * 1000;
-        var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0], "songs");
+        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0],
+                "session_length")) * 1000;
+        var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0],
+            "songs");
 
         return {
             auth: auth,
@@ -176,39 +178,37 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         };
     },
 
-    login: function (config) {
+    _login: function (config) {
         var resolver = this;
-        return this.handshake(config).then(function(result) {
+        return this._handshake(config).then(function (result) {
             resolver.auth = result.auth;
             resolver.trackCount = result.trackCount;
 
             Tomahawk.log("Ampache Resolver properly initialised!", result);
-            resolver.ready = true;
+            resolver._ready = true;
             Tomahawk.readdResolver();
             Tomahawk.PluginManager.registerPlugin("collection", resolver);
 
             // FIXME: the old timer should be cancelled ...
-            if (result.pingInterval) window.setInterval(resolver.ping, result.pingInterval - 60);
+            if (result.pingInterval) {
+                window.setInterval(resolver._ping, result.pingInterval - 60);
+            }
         });
     },
 
-    ampacheUrl: function (serverUrl) {
-        return serverUrl.replace(/\/$/, "") + "/server/xml.server.php";
-    },
-
-    apiCallBase: function(serverUrl, action, params) {
+    _apiCallBase: function (serverUrl, action, params) {
         params = params || {};
         params.action = action;
 
         var options = {
-            url: this.ampacheUrl(serverUrl),
+            url: serverUrl.replace(/\/$/, "") + "/server/xml.server.php",
             data: params
         };
 
         return Tomahawk.get(options);
     },
 
-    apiCall: function(action, params) {
+    _apiCall: function (action, params) {
         if (!this.auth) {
             throw new Error("Not authed, can't do api call");
         }
@@ -217,17 +217,17 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         params.auth = this.auth;
 
         var resolver = this;
-        return this.apiCallBase(this.server, action, params).then(function (xmlDoc) {
+        return this._apiCallBase(this.server, action, params).then(function (xmlDoc) {
             var error = xmlDoc.getElementsByTagName("error")[0];
-            if ( typeof error != 'undefined' && error.getAttribute("code") == "401" ) //session expired
+            if (typeof error != 'undefined' && error.getAttribute("code") == "401") //session expired
             {
                 Tomahawk.log("Let's reauth for: " + action);
-                return resolver.login().then(function () {
-                    return resolver.apiCallBase(action, params);
-                }, function (error) {
-                    throw new Error("Could not renew session.");
+                return resolver._login().then(function () {
+                    return resolver._apiCallBase(action, params);
+                }, function () {
                     Tomahawk.readdResolver();
                     Tomahawk.PluginManager.unregisterPlugin("collection", resolver);
+                    throw new Error("Could not renew session.");
                 });
             }
 
@@ -235,23 +235,22 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         });
     },
 
-    ping: function () {
-        this.apiCall('ping').then(function() {
+    _ping: function () {
+        this._apiCall('ping').then(function () {
             Tomahawk.log('Ping succeeded.');
-        }, function() {
+        }, function () {
             Tomahawk.log('Ping failed.');
         });
     },
 
-    decodeEntity : function(str)
-    {
+    _decodeEntity: function (str) {
         this.element.innerHTML = str;
         return this.element.textContent;
     },
 
-    parseSongResponse: function(xmlDoc) {
-        var results = new Array();
-        // check the repsonse
+    _parseSongResponse: function (xmlDoc) {
+        var results = [];
+        // check the response
         var songElements = xmlDoc.getElementsByTagName("song")[0];
         if (songElements !== undefined && songElements.childNodes.length > 0) {
             var songs = xmlDoc.getElementsByTagName("song");
@@ -260,10 +259,10 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
             for (var i = 0; i < songs.length; i++) {
                 var song = songs[i];
 
-                var result = {
-                    artist: this.decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
-                    album: this.decodeEntity(Tomahawk.valueForSubNode(song, "album")),
-                    track: this.decodeEntity(Tomahawk.valueForSubNode(song, "title")),
+                results.push({
+                    artist: this._decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
+                    album: this._decodeEntity(Tomahawk.valueForSubNode(song, "album")),
+                    track: this._decodeEntity(Tomahawk.valueForSubNode(song, "title")),
                     albumpos: Tomahawk.valueForSubNode(song, "track"),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
@@ -273,9 +272,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
                     size: Tomahawk.valueForSubNode(song, "size"),
                     duration: Tomahawk.valueForSubNode(song, "time"),
                     score: Tomahawk.valueForSubNode(song, "rating")
-                };
-
-                results.push(result);
+                });
             }
         }
         return results;
@@ -286,7 +283,9 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
     },
 
     search: function (searchString) {
-        if (!this.ready) return;
+        if (!this._ready) {
+            return;
+        }
 
         var params = {
             filter: searchString,
@@ -294,8 +293,8 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         };
 
         var that = this;
-        return this.apiCall("search_songs", params).then(function (xmlDoc) {
-            return that.parseSongResponse(xmlDoc);
+        return this._apiCall("search_songs", params).then(function (xmlDoc) {
+            return that._parseSongResponse(xmlDoc);
         });
     },
 
@@ -303,21 +302,21 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
     artists: function () {
         var that = this;
         this.artistIds = {};
-        return this.apiCall("artists").then(function (xmlDoc) {
+        return this._apiCall("artists").then(function (xmlDoc) {
             var results = [];
-            // check the repsonse
+            // check the response
             var root = xmlDoc.getElementsByTagName("root")[0];
             if (root !== undefined && root.childNodes.length > 0) {
                 var artists = xmlDoc.getElementsByTagName("artist");
                 for (var i = 0; i < artists.length; i++) {
-                    artistName = Tomahawk.valueForSubNode(artists[i], "name");
-                    artistId = artists[i].getAttribute("id");
-                    results.push(that.decodeEntity(artistName));
+                    var artistName = Tomahawk.valueForSubNode(artists[i], "name");
+                    var artistId = artists[i].getAttribute("id");
+                    results.push(that._decodeEntity(artistName));
                     that.artistIds[artistName] = artistId;
                 }
             }
 
-            return { artists: results };
+            return {artists: results};
         });
     },
 
@@ -325,39 +324,38 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         var artist = params.artist;
         var artistId = this.artistIds[artist];
         this.albumIdsForArtist = {};
-        var that = this;
 
-        var params = {
+        params = {
             filter: artistId
         };
 
-        return this.apiCall("artist_albums", params).then(this.parseAlbumResponse.bind(this));
+        return this._apiCall("artist_albums", params).then(this._parseAlbumResponse.bind(this));
     },
 
     albums: function () {
-        var that = this;
-
-        return this.apiCall("albums").then(this.parseAlbumResponse.bind(this));
+        return this._apiCall("albums").then(this._parseAlbumResponse.bind(this));
     },
 
-    parseAlbumResponse: function(xmlDoc) {
+    _parseAlbumResponse: function (xmlDoc) {
         var results = [];
         var artists = [];
 
-        // check the repsonse
+        // check the response
         var root = xmlDoc.getElementsByTagName("root")[0];
         if (root !== undefined && root.childNodes.length > 0) {
             var albums = xmlDoc.getElementsByTagName("album");
             for (var i = 0; i < albums.length; i++) {
-                albumName = Tomahawk.valueForSubNode(albums[i], "name");
-                albumId = albums[i].getAttribute("id");
+                var albumName = Tomahawk.valueForSubNode(albums[i], "name");
+                var albumId = albums[i].getAttribute("id");
                 artist = Tomahawk.valueForSubNode(albums[i], "artist");
-                results.push(this.decodeEntity(albumName));
+                results.push(this._decodeEntity(albumName));
                 artists.push(artist);
 
                 this.albumIdsForArtist = this.albumIdsForArtist || {};
-                artistObject = this.albumIdsForArtist[artist];
-                if (artistObject === undefined) artistObject = {};
+                var artistObject = this.albumIdsForArtist[artist];
+                if (artistObject === undefined) {
+                    artistObject = {};
+                }
                 artistObject[albumName] = albumId;
                 this.albumIdsForArtist[artist] = artistObject;
             }
@@ -368,7 +366,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
             artists: artists
         };
 
-        Tomahawk.log("Ampache albums about to return: " + JSON.stringify( return_albums ));
+        Tomahawk.log("Ampache albums about to return: " + JSON.stringify(return_albums));
         return return_albums;
     },
 
@@ -382,48 +380,48 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
 
         Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
 
-        var params = {
+        params = {
             filter: albumId
         };
 
-        return this.apiCall("album_songs", params).then(function (xmlDoc) {
-            var tracks_result = that.parseSongResponse(xmlDoc);
-            tracks_result.sort( function(a,b) {
-                if ( a.albumpos < b.albumpos )
+        return this._apiCall("album_songs", params).then(function (xmlDoc) {
+            var tracks_result = that._parseSongResponse(xmlDoc);
+            tracks_result.sort(function (a, b) {
+                if (a.albumpos < b.albumpos) {
                     return -1;
-                else if ( a.albumpos > b.albumpos )
+                } else if (a.albumpos > b.albumpos) {
                     return 1;
-                else
+                } else {
                     return 0;
-            } );
+                }
+            });
 
             var return_tracks = {
                 results: tracks_result
             };
-            Tomahawk.log("Ampache tracks about to return: " + JSON.stringify( return_tracks ));
+            Tomahawk.log("Ampache tracks about to return: " + JSON.stringify(return_tracks));
             return return_tracks;
         });
     },
 
     tracks: function () {
         var resolver = this;
-        return this.apiCall("songs", {
+        return this._apiCall("songs", {
             offset: 0,
             limit: 1000000 // EHRM.
         }).then(function (xmlDoc) {
-            var results = resolver.parseSongResponse(xmlDoc);
+            var results = resolver._parseSongResponse(xmlDoc);
 
-            return { results: results };
+            return {results: results};
         });
     },
 
-    collection: function()
-    {
+    collection: function () {
         //strip http:// and trailing slash
-        var desc = this.server.replace(/^http:\/\//,"")
-                               .replace(/^https:\/\//,"")
-                               .replace(/\/$/, "")
-                               .replace(/\/remote.php\/ampache/, "");
+        var desc = this.server.replace(/^http:\/\//, "")
+            .replace(/^https:\/\//, "")
+            .replace(/\/$/, "")
+            .replace(/\/remote.php\/ampache/, "");
 
         var return_object = {
             prettyname: "Ampache",
@@ -436,12 +434,13 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
             ]
         };
 
-        if ( typeof( this.trackCount ) !== 'undefined' )
+        if (typeof( this.trackCount ) !== 'undefined') {
             return_object["trackcount"] = this.trackCount;
+        }
 
         //stupid check if it's an ownCloud instance
-        if (~this.server.indexOf("/remote.php/ampache") || ~this.server.indexOf('/apps/music/ampache'))
-        {
+        if (~this.server.indexOf("/remote.php/ampache")
+            || ~this.server.indexOf('/apps/music/ampache')) {
             return_object["prettyname"] = "ownCloud";
             return_object["iconfile"] = "owncloud-icon.png";
         }
@@ -451,9 +450,6 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
 });
 
 Tomahawk.resolver.instance = AmpacheResolver;
-
-
-
 
 /*
  * TEST ENVIRONMENT
@@ -468,7 +464,7 @@ Tomahawk.resolver.instance = AmpacheResolver;
     };
 };*/
 //
-var resolver = Tomahawk.resolver.instance;
+// var resolver = Tomahawk.resolver.instance;
 //
 //
 // // configure tests
