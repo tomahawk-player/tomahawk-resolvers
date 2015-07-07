@@ -3,6 +3,7 @@
  *   Copyright 2011, Dominik Schmidt <domme@tomahawk-player.org>
  *   Copyright 2011, Leo Franchi <lfranchi@kde.org>
  *   Copyright 2013, Teo Mrnjavac <teo@kde.org>
+ *   Copyright 2015, Enno Gottschalk <mrmaffen@googlemail.com>
  *
  *   Tomahawk is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
  *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
+var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
 
@@ -58,17 +59,21 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         };
     },
 
-    newConfigSaved: function () {
-        var userConfig = this.getUserConfig();
-        if ((userConfig.username != this.username) || (userConfig.password != this.password)
-            || (userConfig.server != this.server)) {
-            Tomahawk.readdResolver();
-            Tomahawk.PluginManager.unregisterPlugin("collection", this);
-            this.init();
+    newConfigSaved: function (newConfig) {
+        if ((newConfig.username != this.username) || (newConfig.password != this.password)
+            || (newConfig.server != this.server)) {
+            Tomahawk.log("Invalidating cache");
+            var that = this;
+            ampacheCollection.wipe({id: ampacheCollection.settings.id}).then(function () {
+                window.localStorage.removeItem("ampache_last_cache_update");
+                that.init();
+            });
         }
     },
 
     init: function () {
+        var that = this;
+
         this._ready = false;
 
         if (!this.element) {
@@ -87,40 +92,82 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         this.password = userConfig.password;
         this.server = userConfig.server;
 
-        return this._login(this);
+        return this._login().then(function () {
+            if (that.auth) {
+                that._ensureCollection().then(function () {
+                    Tomahawk.PluginManager.registerPlugin("collection", ampacheCollection);
+                });
+            }
+        });
     },
 
-    // WIP:
-/*    configTest: function () {
+    _ensureCollection: function () {
         var that = this;
-        this.prepareHandshake();
-        Tomahawk.asyncRequest(this.generateUrl('handshake', this.passphrase, this.params),
-            function (xhr) {
-                // parse the result
-                var domParser = new DOMParser();
-                xmlDoc = domParser.parseFromString(xhr.responseText, "text/xml");
-                that.applyHandshake(xmlDoc);
 
-                if (!that.auth) {
-                    Tomahawk.log("auth failed: " + xhr.responseText);
-                    var error = xmlDoc.getElementsByTagName("error")[0];
-                    if (typeof error != 'undefined' && error.getAttribute("code") == "403") {
-                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidAccount);
-                    } else {
-                        Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.InvalidCredentials);
-                    }
+        if (!this._requestPromise) {
+            Tomahawk.log("Checking if collection needs to be updated");
+            var time = Date.now();
+
+            var settings = {
+                offset: 0,
+                limit: 1000000 // EHRM.
+            };
+            if (window.localStorage["ampache_last_cache_update"]) {
+                var date = new Date(parseInt(window.localStorage["ampache_last_cache_update"]));
+                settings.update = date.toISOString();
+            }
+            this._requestPromise = this._apiCall("songs", settings).then(function (xmlDoc) {
+                var songs;
+                var songElements = xmlDoc.getElementsByTagName("song")[0];
+                if (songElements !== undefined && songElements.childNodes.length > 0) {
+                    songs = xmlDoc.getElementsByTagName("song");
+                }
+                if (songs && songs.length > 0) {
+                    Tomahawk.log("Collection needs to be updated");
+
+                    var tracks = that._parseSongResponse(xmlDoc);
+                    ampacheCollection.wipe({
+                        id: ampacheCollection.settings.id
+                    }).then(function () {
+                        ampacheCollection.addTracks({
+                            id: ampacheCollection.settings.id,
+                            tracks: tracks
+                        }).then(function () {
+                            Tomahawk.log("Updated cache in " + (Date.now() - time) + "ms");
+                            window.localStorage["ampache_last_cache_update"] = Date.now();
+                        });
+                    });
                 } else {
-                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.Success);
+                    Tomahawk.log("Collection doesn't need to be updated");
                 }
-            }, {}, {
-                errorHandler: function () {
-                    Tomahawk.onConfigTestResult(TomahawkConfigTestResultType.CommunicationError);
-                }
+            }, function (xhr) {
+                Tomahawk.log("Tomahawk.get failed: " + xhr.status + " - "
+                    + xhr.statusText + " - " + xhr.responseText);
+            }).finally(function () {
+                that._requestPromise = undefined;
             });
-    },*/
+        }
+        return this._requestPromise;
+    },
 
     testConfig: function (config) {
-        return this._handshake(this._sanitizeConfig(config));
+        var that = this;
+
+        return this._login().then(function (response) {
+            if (!that.auth) {
+                Tomahawk.log("auth failed!");
+                var error = response.getElementsByTagName("error")[0];
+                if (typeof error != 'undefined' && error.getAttribute("code") == "403") {
+                    return TomahawkConfigTestResultType.InvalidAccount;
+                } else {
+                    return TomahawkConfigTestResultType.InvalidCredentials;
+                }
+            } else {
+                return TomahawkConfigTestResultType.Success;
+            }
+        }, function () {
+            return TomahawkConfigTestResultType.CommunicationError;
+        });
     },
 
     _sanitizeConfig: function (config) {
@@ -137,32 +184,33 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         return config;
     },
 
-    _handshake: function (config) {
+    _handshake: function () {
         var time = Tomahawk.timestamp();
         var key, passphrase;
         if (typeof CryptoJS !== "undefined" && typeof CryptoJS.SHA256 == "function") {
-            key = CryptoJS.SHA256(config.password).toString(CryptoJS.enc.Hex);
+            key = CryptoJS.SHA256(this.password).toString(CryptoJS.enc.Hex);
             passphrase = CryptoJS.SHA256(time + key).toString(CryptoJS.enc.Hex);
         } else {
-            key = Tomahawk.sha256(config.password);
+            key = Tomahawk.sha256(this.password);
             passphrase = Tomahawk.sha256(time + key);
         }
 
         var params = {};
-        params.user = config.username;
+        params.user = this.username;
         params.timestamp = time;
         params.version = 350001;
         params.auth = passphrase;
 
-        return this._apiCallBase(config.server, 'handshake', params).then(this._parseHandshakeResult);
+        return this._apiCallBase(this.server, 'handshake',
+            params).then(this._parseHandshakeResult);
     },
 
     _parseHandshakeResult: function (xmlDoc) {
         var roots = xmlDoc.getElementsByTagName("root");
         var auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
         if (!auth) {
-            Tomahawk.log("INVALID HANDSHAKE RESPONSE: ", xmlDoc);
-            throw new Error("Handshake failed");
+            Tomahawk.log("INVALID HANDSHAKE RESPONSE!");
+            return xmlDoc;
         }
 
         Tomahawk.log("New auth token: " + auth);
@@ -178,21 +226,20 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         };
     },
 
-    _login: function (config) {
+    _login: function () {
         var resolver = this;
-        return this._handshake(config).then(function (result) {
+        return this._handshake().then(function (result) {
             resolver.auth = result.auth;
             resolver.trackCount = result.trackCount;
 
-            Tomahawk.log("Ampache Resolver properly initialised!", result);
+            Tomahawk.log("Ampache Resolver properly initialised!");
             resolver._ready = true;
-            Tomahawk.readdResolver();
-            Tomahawk.PluginManager.registerPlugin("collection", resolver);
 
             // FIXME: the old timer should be cancelled ...
             if (result.pingInterval) {
                 window.setInterval(resolver._ping, result.pingInterval - 60);
             }
+            return result;
         });
     },
 
@@ -225,8 +272,6 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
                 return resolver._login().then(function () {
                     return resolver._apiCallBase(action, params);
                 }, function () {
-                    Tomahawk.readdResolver();
-                    Tomahawk.PluginManager.unregisterPlugin("collection", resolver);
                     throw new Error("Could not renew session.");
                 });
             }
@@ -278,17 +323,23 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         return results;
     },
 
-    resolve: function (artist, album, title) {
-        return this.search(title);
+    resolve: function (params) {
+        var artist = params.artist;
+        var album = params.album;
+        var track = params.track;
+
+        return this.search({query: artist + " " + track});
     },
 
-    search: function (searchString) {
+    search: function (params) {
+        var query = params.query;
+
         if (!this._ready) {
             return;
         }
 
-        var params = {
-            filter: searchString,
+        params = {
+            filter: query,
             limit: this.settings.limit
         };
 
@@ -296,173 +347,40 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver.Promise, {
         return this._apiCall("search_songs", params).then(function (xmlDoc) {
             return that._parseSongResponse(xmlDoc);
         });
-    },
-
-    // ScriptCollection support starts here
-    artists: function () {
-        var that = this;
-        this.artistIds = {};
-        return this._apiCall("artists").then(function (xmlDoc) {
-            var results = [];
-            // check the response
-            var root = xmlDoc.getElementsByTagName("root")[0];
-            if (root !== undefined && root.childNodes.length > 0) {
-                var artists = xmlDoc.getElementsByTagName("artist");
-                for (var i = 0; i < artists.length; i++) {
-                    var artistName = Tomahawk.valueForSubNode(artists[i], "name");
-                    var artistId = artists[i].getAttribute("id");
-                    results.push(that._decodeEntity(artistName));
-                    that.artistIds[artistName] = artistId;
-                }
-            }
-
-            return {artists: results};
-        });
-    },
-
-    artistAlbums: function (params) {
-        var artist = params.artist;
-        var artistId = this.artistIds[artist];
-        this.albumIdsForArtist = {};
-
-        params = {
-            filter: artistId
-        };
-
-        return this._apiCall("artist_albums", params).then(this._parseAlbumResponse.bind(this));
-    },
-
-    albums: function () {
-        return this._apiCall("albums").then(this._parseAlbumResponse.bind(this));
-    },
-
-    _parseAlbumResponse: function (xmlDoc) {
-        var results = [];
-        var artists = [];
-
-        // check the response
-        var root = xmlDoc.getElementsByTagName("root")[0];
-        if (root !== undefined && root.childNodes.length > 0) {
-            var albums = xmlDoc.getElementsByTagName("album");
-            for (var i = 0; i < albums.length; i++) {
-                var albumName = Tomahawk.valueForSubNode(albums[i], "name");
-                var albumId = albums[i].getAttribute("id");
-                artist = Tomahawk.valueForSubNode(albums[i], "artist");
-                results.push(this._decodeEntity(albumName));
-                artists.push(artist);
-
-                this.albumIdsForArtist = this.albumIdsForArtist || {};
-                var artistObject = this.albumIdsForArtist[artist];
-                if (artistObject === undefined) {
-                    artistObject = {};
-                }
-                artistObject[albumName] = albumId;
-                this.albumIdsForArtist[artist] = artistObject;
-            }
-        }
-
-        var return_albums = {
-            albums: results,
-            artists: artists
-        };
-
-        Tomahawk.log("Ampache albums about to return: " + JSON.stringify(return_albums));
-        return return_albums;
-    },
-
-    albumTracks: function (params) {
-        var artist = params.artist;
-        var album = params.album;
-
-        var artistObject = this.albumIdsForArtist[artist];
-        var albumId = artistObject[album];
-        var that = this;
-
-        Tomahawk.log("AlbumId for " + artist + " - " + album + ": " + albumId);
-
-        params = {
-            filter: albumId
-        };
-
-        return this._apiCall("album_songs", params).then(function (xmlDoc) {
-            var tracks_result = that._parseSongResponse(xmlDoc);
-            tracks_result.sort(function (a, b) {
-                if (a.albumpos < b.albumpos) {
-                    return -1;
-                } else if (a.albumpos > b.albumpos) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            });
-
-            var return_tracks = {
-                results: tracks_result
-            };
-            Tomahawk.log("Ampache tracks about to return: " + JSON.stringify(return_tracks));
-            return return_tracks;
-        });
-    },
-
-    tracks: function () {
-        var resolver = this;
-        return this._apiCall("songs", {
-            offset: 0,
-            limit: 1000000 // EHRM.
-        }).then(function (xmlDoc) {
-            var results = resolver._parseSongResponse(xmlDoc);
-
-            return {results: results};
-        });
-    },
-
-    collection: function () {
-        //strip http:// and trailing slash
-        var desc = this.server.replace(/^http:\/\//, "")
-            .replace(/^https:\/\//, "")
-            .replace(/\/$/, "")
-            .replace(/\/remote.php\/ampache/, "");
-
-        var return_object = {
-            prettyname: "Ampache",
-            description: desc,
-            iconfile: "ampache-icon.png",
-            capabilities: [
-                Tomahawk.Collection.BrowseCapability.Artists,
-                Tomahawk.Collection.BrowseCapability.Albums,
-                Tomahawk.Collection.BrowseCapability.Tracks
-            ]
-        };
-
-        if (typeof( this.trackCount ) !== 'undefined') {
-            return_object["trackcount"] = this.trackCount;
-        }
-
-        //stupid check if it's an ownCloud instance
-        if (~this.server.indexOf("/remote.php/ampache")
-            || ~this.server.indexOf('/apps/music/ampache')) {
-            return_object["prettyname"] = "ownCloud";
-            return_object["iconfile"] = "owncloud-icon.png";
-        }
-
-        return return_object;
     }
+
 });
 
 Tomahawk.resolver.instance = AmpacheResolver;
+
+var ampacheCollection = Tomahawk.extend(Tomahawk.Collection, {
+    settings: {
+        id: "ampache",
+        prettyname: "Ampache",
+        description: AmpacheResolver.getUserConfig()
+            ? AmpacheResolver._sanitizeConfig(AmpacheResolver.getUserConfig()).server
+            .replace(/^http:\/\//, "")
+            .replace(/^https:\/\//, "")
+            .replace(/\/$/, "")
+            .replace(/\/remote.php\/ampache/, "")
+            : "",
+        iconfile: "contents/images/icon.png",
+        trackcount: AmpacheResolver.trackCount
+    }
+});
 
 /*
  * TEST ENVIRONMENT
  */
 
 /*TomahawkResolver.getUserConfig = function() {
-    return {
-        username: "domme",
-        password: "foo",
-        ampache: "http://owncloud.lo/ampache"
-        //ampache: "http://owncloud.lo/apps/media"
-    };
-};*/
+ return {
+ username: "domme",
+ password: "foo",
+ ampache: "http://owncloud.lo/ampache"
+ //ampache: "http://owncloud.lo/apps/media"
+ };
+ };*/
 //
 // var resolver = Tomahawk.resolver.instance;
 //
