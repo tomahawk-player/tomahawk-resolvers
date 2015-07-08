@@ -13,7 +13,7 @@
  *   all copies or substantial portions of the Software.
  */
 
-var RdioResolver = Tomahawk.extend(TomahawkResolver, {
+var RdioResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
 

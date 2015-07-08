@@ -13,7 +13,7 @@
  *   all copies or substantial portions of the Software.
  */
 
-var TomaHKMetadataResolver = Tomahawk.extend(TomahawkResolver, {
+var TomaHKMetadataResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
 
