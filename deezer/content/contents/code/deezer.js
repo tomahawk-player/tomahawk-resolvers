@@ -13,7 +13,7 @@
  *   all copies or substantial portions of the Software.
  */
 
-var DeezerResolver = Tomahawk.extend(TomahawkResolver, {
+var DeezerResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
 

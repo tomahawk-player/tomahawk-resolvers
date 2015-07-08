@@ -18,7 +18,7 @@
  *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var SoundcloudResolver = Tomahawk.extend(TomahawkResolver, {
+var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
 

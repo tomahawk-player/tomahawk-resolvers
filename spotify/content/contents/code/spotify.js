@@ -22,7 +22,7 @@
  *   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-var SpotifyResolver = Tomahawk.extend(TomahawkResolver, {
+var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
 
