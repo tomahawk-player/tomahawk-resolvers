@@ -136,6 +136,12 @@ begin
         filesToZip << File.join( "content", s )
     end
     filesToZip << File.join( "content", m["icon"] )
+    if not m["iconBackground"].nil?
+        filesToZip << File.join( "content", m["iconBackground"] )
+    end
+    if not m["iconWhite"].nil?
+        filesToZip << File.join( "content", m["iconWhite"] )
+    end
     m["resources"].each do |s|
         filesToZip << File.join( "content", s )
     end
