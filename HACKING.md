@@ -2,7 +2,7 @@
 
 ## Developing resolvers
 
-The best way to get you started with writing your own Resolver is by looking at the [`Example Resolver`](https://github.com/tomahawk-player/tomahawk-resolvers/examples/javascript). It's well documented and includes almost every aspect of the Tomahawk Resolver API.
+The best way to get you started with writing your own Resolver is by looking at the [`Example Resolver`](https://github.com/tomahawk-player/tomahawk-resolvers/tree/master/examples/javascript). It's well documented and includes almost every aspect of the Tomahawk Resolver API.
 
 The API you should develop against is defined in [`tomahawk.js`](https://github.com/tomahawk-player/tomahawk/blob/master/data/js/tomahawk.js) and [`JSResolverHelper`](https://github.com/tomahawk-player/tomahawk/blob/master/src/libtomahawk/resolvers/JSResolverHelper.h) in the Tomahawk main repo. This API is also being used in the [`Tomahawk Android`](https://github.com/tomahawk-player/tomahawk-android) App. Furthermore we also have an implementation in [`NodeJS`](https://github.com/xhochy/node-tomahawkjs). This means that you only have to write one resolver and have it work right away on Desktop, Android and Node!
 
