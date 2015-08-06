@@ -283,68 +283,75 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         //Slice queue in chunks of 5 as VK has a bug with > 5 audio.search
         //calls inside execute call
         var executeBatchSize = 5;
-        while (saved_queue_qids.length > 0)
-        {
-            var saved_queue = saved_queue_qids.splice(0, executeBatchSize);
+        var saved_queue = saved_queue_qids.splice(0, executeBatchSize);
 
-            var queries = [];
-            var count = 0;
-            var searchCount = 0;
-            for(var qid in saved_queue) {
-                qid = saved_queue[qid];
-                if ( searchCount >= executeBatchSize - 1 ) {
-                    saved_queue_qids.push(qid);
+        var queries = [];
+        var count = 0;
+        var searchCount = 0;
+        for(var qid in saved_queue) {
+            qid = saved_queue[qid];
+            if ( searchCount >= executeBatchSize - 1 ) {
+                saved_queue_qids.push(qid);
+            } else {
+                qid = JSON.parse(qid);
+                if (qid[1] === '') {
+                    searchCount++;
+                    //empty album
+                    queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
+                        '",result:[API.audio.search({count:5,q:' +
+                        JSON.stringify(qid.join(' - ')) + '})]}');
                 } else {
-                    qid = JSON.parse(qid);
-                    if (qid[1] === '') {
-                        searchCount++;
-                        //empty album
-                        queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
-                            '",result:[API.audio.search({count:5,q:' +
-                            JSON.stringify(qid.join(' - ')) + '})]}');
-                    } else {
-                        searchCount+=2;
-                        queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
-                            '",result:[API.audio.search({count:3,q:' +
-                            JSON.stringify(qid.join(' - ')) +
-                            '}),API.audio.search({count:3,q:' +
-                            JSON.stringify([qid[0],qid[2]].join(' - ')) +
-                            '})]}');
-                    }
+                    searchCount+=2;
+                    queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
+                        '",result:[API.audio.search({count:3,q:' +
+                        JSON.stringify(qid.join(' - ')) +
+                        '}),API.audio.search({count:3,q:' +
+                        JSON.stringify([qid[0],qid[2]].join(' - ')) +
+                        '})]}');
                 }
-                ++count;
             }
-            Tomahawk.log("Sending " + count + " of queued resolve requests");
-            var code = 'return [' + queries.join(',') + '];';
-            Tomahawk.log("Prepared 'execute' code:" + code);
-            that._apiCall('execute', {code:code}).then(function(results) {
-                Tomahawk.log('got result ' + JSON.stringify(results));
-                for (var result in results.response) {
-                    result = results.response[result];
-                    var tracks = [];
-                    tracks = tracks.concat.apply(tracks, result.result.map(function(item) {return item.items;}));
-                    //Leave unique only
-                    var u = {}, a = [];
-                    for(var i = 0, l = tracks.length; i < l; ++i){
-                        if(u.hasOwnProperty(tracks[i].url)) {
-                            continue;
-                        }
-                        a.push(tracks[i]);
-                        u[tracks[i].url] = 1;
+            ++count;
+        }
+        Tomahawk.log("Sending " + count + " of queued resolve requests");
+        var code = 'return [' + queries.join(',') + '];';
+        Tomahawk.log("Prepared 'execute' code:" + code);
+        that._apiCall('execute', {code:code}).then(function(results) {
+            Tomahawk.log('got result ' + JSON.stringify(results));
+            for (var result in results.response) {
+                result = results.response[result];
+                var tracks = [];
+                tracks = tracks.concat.apply(tracks, result.result.map(function(item) {return item.items;}));
+                //Leave unique only
+                var u = {}, a = [];
+                for(var i = 0, l = tracks.length; i < l; ++i){
+                    if(u.hasOwnProperty(tracks[i].url)) {
+                        continue;
                     }
-                    var _qid = JSON.parse(decodeURIComponent(result.qid));
-                    tracks = a.map(that._convertTrack,
-                        {
-                            artist: _qid[0],
-                            album : _qid[1],
-                            title : _qid[2],
-                        });
-                    for(var r in saved_queue_full[decodeURIComponent(result.qid)]) {
-                        Tomahawk.log('resolving' + decodeURIComponent(result.qid) + ' with ' + JSON.stringify(tracks));
-                        saved_queue_full[decodeURIComponent(result.qid)][r](tracks);
-                    }
+                    a.push(tracks[i]);
+                    u[tracks[i].url] = 1;
                 }
-            });
+                var _qid = JSON.parse(decodeURIComponent(result.qid));
+                tracks = a.map(that._convertTrack,
+                    {
+                        artist: _qid[0],
+                        album : _qid[1],
+                        title : _qid[2],
+                    });
+                for(var r in saved_queue_full[decodeURIComponent(result.qid)]) {
+                    Tomahawk.log('resolving' + decodeURIComponent(result.qid) + ' with ' + JSON.stringify(tracks));
+                    saved_queue_full[decodeURIComponent(result.qid)][r](tracks);
+                }
+            }
+        });
+        if (saved_queue_qids.length > 0)
+        {
+            //enqueue the ones we were not able to do back
+            for(var qid in saved_queue_qids) {
+                qid = saved_queue_qids[qid];
+                setTimeout(function(){ that._batchResolve(that); }, 1000);
+                that._batching = true;
+                that._queue[qid] = saved_queue_full[qid];
+            }
         }
     },
 
