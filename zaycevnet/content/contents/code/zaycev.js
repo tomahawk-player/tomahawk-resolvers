@@ -101,12 +101,6 @@ function strtr(str, from, to) {
   return ret;
 };
 
-function htmldecode (encoded) {
-    var div = document.createElement('div');
-    div.innerHTML = encoded;
-    return div.innerText
-};
-
 var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     apiVersion: 0.9,
 
@@ -132,9 +126,9 @@ var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     _convertTrack: function (entry) {
         return {
-            artist:     htmldecode(entry.artist.name),
-            track:      htmldecode(entry.name),
-            title:      htmldecode(entry.name),
+            artist:     Tomahawk.htmldecode(entry.artist.name),
+            track:      Tomahawk.htmldecode(entry.name),
+            title:      Tomahawk.htmldecode(entry.name),
             duration:   entry.length,
             url:        'zaycev://' + entry.uid,
             checked:    true,
