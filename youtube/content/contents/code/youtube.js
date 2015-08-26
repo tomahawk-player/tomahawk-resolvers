@@ -484,8 +484,38 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 haveSignature = true;
                 params.url += '&signature=' + params.sig;
             } else if (params.s) {
+                //This is the one I extracted manually 
+                var as = {
+                    QG: function(a, b) {
+                        var c = a[0];
+                        a[0] = a[b % a.length];
+                        a[b] = c
+                    },
+                    ft: function(a) {
+                        a.reverse()
+                    },
+                    yF: function(a, b) {
+                        a.splice(0, b)
+                    }
+                };
+
+                var bs = function (a) {
+                    a = a.split("");
+                    as.ft(a, 20);
+                    as.yF(a, 1);
+                    as.ft(a, 72);
+                    as.QG(a, 8);
+                    as.ft(a, 47);
+                    as.QG(a, 5);
+                    as.yF(a, 2);
+                    as.QG(a, 30);
+                    as.QG(a, 66);
+                    return a.join("")
+                };
                 //Encrypted Signature, do not support atm
-                Tomahawk.log('Found encrypted signature, no support for that yet :(');
+                //Tomahawk.log('Found encrypted signature, no support for that yet :(');
+                haveSignature = true;
+                params.url += '&signature=' + bs(params.s);
             }
 
             //This resolver relies heavily on having quality as part of the url
