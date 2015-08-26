@@ -199,7 +199,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         var finalResult = results[0];
         for ( var j = 0; j < results.length; j++ )
         {
-            if ( results[j].id < best || ( results[j].url && this.hasPreferredQuality( results[j].url ) ) )
+            if ( results[j].id < best || ( results[j].url && this.hasPreferredQuality( results[j].url, results[j].YouTubeQuality ) ) )
             {
                 best = results[j].id;
                 finalResult = results[j];
@@ -209,7 +209,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         return finalResult;
     },
 
-    hasPreferredQuality: function( urlString )
+    hasPreferredQuality: function( urlString, quality )
     {
         "use strict";
 
@@ -219,7 +219,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             return true;
         }
         
-        if ( urlString.indexOf("quality=" + this.getPreferredQuality() ) !== -1 )
+        if ( quality === this.getPreferredQuality() || urlString.indexOf("quality=" + this.getPreferredQuality() ) !== -1 )
         {
             return true;
         }
@@ -250,21 +250,22 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         return "hd720";
     },
 
-    getBitrate: function ( urlString )
+    getBitrate: function ( result )
     {
         "use strict";
 
+        var urlString = result.url;
         //http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
         // No need to get higher than hd720, as it only will eat bandwith and do nothing for sound quality
-        if ( urlString.indexOf( "quality=hd720" ) !== -1 )
+        if ( urlString.indexOf( "quality=hd720" ) !== -1 || result.quality === 'hd720' )
         {
             return 192;
         }
-        else if ( urlString.indexOf( "quality=medium" ) !== -1 )
+        else if ( urlString.indexOf( "quality=medium" ) !== -1 || result.quality === 'medium' )
         {
             return 128;
         }
-        else if ( urlString.indexOf( "quality=small" ) !== -1 )
+        else if ( urlString.indexOf( "quality=small" ) !== -1 || result.quality === 'medium' )
         {
             return 96;
         }
@@ -447,90 +448,84 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         return null;
     },
 
+    _parseQueryString : function( queryString ) {
+        var params = {}, queries, temp, i, l;
+
+        // Split into key/value pairs
+        queries = queryString.split("&");
+
+        // Convert the array of strings into an object
+        for ( i = 0, l = queries.length; i < l; i++ ) {
+            temp = queries[i].split('=');
+            params[temp[0]] = decodeURIComponent(temp[1]);
+        }
+
+        return params;
+    },
+
     parseURLS: function( rawUrls )
     {
         "use strict";
 
         var parsedUrls = [];
-        var urls = decodeURIComponent( decodeURIComponent( rawUrls ) );
-        // Youtube changes the start delimiter randomly
-        var matches = urls.match( /^((.+?)(=))/ );
-        if ( matches ) {
-            // split the decoded urls by matches[0] delimiter, separated by comma
-            var urlArray = urls.split( RegExp( "," + matches[0], "i" ) );
-            for ( var i = 0; i < urlArray.length; i++ )
+        var urlArray = rawUrls.split( /,/g );
+        for ( var i = 0; i < urlArray.length; i++ )
+        {
+            var params = this._parseQueryString(urlArray[i]);
+
+            //Without the following it'll give 403 for Tomahawk's user-agent
+            //(even though URL will work with anything else just fine)
+            //This is some bullshit black magic ... 
+            params.url = decodeURIComponent(params.url);
+
+            var haveSignature = params.url.indexOf('signature=') !== -1;
+
+            if (params.sig) {
+                haveSignature = true;
+                params.url += '&signature=' + params.sig;
+            } else if (params.s) {
+                //Encrypted Signature, do not support atm
+                Tomahawk.log('Found encrypted signature, no support for that yet :(');
+            }
+
+            //This resolver relies heavily on having quality as part of the url
+            if ( haveSignature && ['hd270','high','medium','small'].indexOf(params.quality) !== -1 ||
+                 params.url.regexIndexOf( /quality=(hd720|high|medium|small)/i, 0 ) !== -1)
             {
-                var url;
-                if ( matches[0] !== "url=" )
-                {
-                    // Delimiter isnt url=, we need to sort the params
-                    url = ( urlArray[i] !== urlArray[0] ) ? matches[0] + urlArray[i] : urlArray[i];
-                    var urlMatch = url.match( /(.+?)(url=)(.+?)(\?)(.+)/ );
-                    // Base & Params
-                    url = urlMatch[3]+urlMatch[4] + "&" + urlMatch[1]+urlMatch[5];
-                }
-                else
-                {
-                    // Just replace url=
-                    url = urlArray[i].replace( /^url=/, "" );
-                }
-                // itag is found twice, we need to remove that (last occurence)
-                var itagMatch = url.match( /(.*)(itag=\d+&)(.*?)/ );
-                url = url.replace(/(.*)(itag=\d+&)(.*?)/, itagMatch[1] + itagMatch[3] );
-                
-                // Sig needs to be sigature
-                url = url.replace( /sig=/, "signature=" );
-                var type;
-                try {
-                    // Parse out the type and codec, encode it
-                    // May have an quality effect
-                    type = url.match( /(&type=)(.+?)(&)/i );
-                    url = url.replace( /(&type=)(.+?)(&)/, type[1] + encodeURIComponent( type[2] ) + type[3] );
-                }
-                catch ( e ) {
-                    try {
-                        // Type is on the end of the url
-                        type = url.match( /(&type=)(.*?)/i );
-                        type = type[1] + encodeURIComponent( type[1] ) + type[2];
-                        url = url.replace( /(&type=)(.*)/, type );
+                parsedUrls.push( 
+                    {
+                        url: params.url,
+                        quality: params.quality
                     }
-                    catch ( e ) {
-                        this.debugMsg( "Critical: Cannot parse out type in url" + e + "\nUrl: "+ url );
-                    }
-                }
-
-                if ( url.regexIndexOf( /quality=(hd720|high|medium|small)/i, 0 ) !== -1 )
-                {
-                    parsedUrls.push( url );
-                }
+                    );
             }
+        }
 
-            var finalUrl;
+        var finalUrl;
 
-            if ( this.qualityPreference === undefined )
+        if ( this.qualityPreference === undefined )
+        {
+            // This shouldnt happen really, but sometimes do?!
+            this.qualityPreference = 0;
+            this.debugMsg( "Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference );
+        }
+
+        for ( i = 0; i < parsedUrls.length; i++ )
+        {
+            if ( this.hasPreferredQuality( parsedUrls[i].url,  parsedUrls[i].quality ) )
             {
-                // This shouldnt happen really, but sometimes do?!
-                this.qualityPreference = 0;
-                this.debugMsg( "Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference );
+                finalUrl = parsedUrls[i];
             }
+        }
 
-            for ( i = 0; i < parsedUrls.length; i++ )
-            {
-                if ( this.hasPreferredQuality( parsedUrls[i] ) )
-                {
-                    finalUrl = parsedUrls[i];
-                }
-            }
+        if ( finalUrl === undefined )
+        {
+            finalUrl = parsedUrls[0];
+        }
 
-            if ( finalUrl === undefined )
-            {
-                finalUrl = parsedUrls[0];
-            }
-
-            if ( finalUrl && finalUrl !== undefined )
-            {
-                return finalUrl;
-            }
+        if ( finalUrl && finalUrl !== undefined )
+        {
+            return finalUrl;
         }
         return null;
     },
@@ -556,76 +551,114 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         }
         var that = this;
         Tomahawk.asyncRequest( apiQuery, function( xhr ) {
-            var results = [];
             var resp = JSON.parse( xhr.responseText );
             if ( resp.pageInfo.totalResults !== 0 && resp.items !== undefined )
             {
+                var results = [];
                 var limit = Math.min( 10, resp.pageInfo.totalResults );
-                for ( var i = 0; i < limit; i++ )
-                {
-                    var responseItem = resp.items[i];
-                    if ( responseItem === undefined )
-                    {
-                        continue;
-                    }
-                    var responseTitle = responseItem.snippet.title.toLowerCase();
-                    // Check whether the artist and title (if set) are in the returned title, discard otherwise
-                    if ( responseTitle !== undefined && responseTitle.indexOf( artist.toLowerCase() ) === -1 ||
-                        ( title !== "" && responseTitle.toLowerCase().indexOf( title.toLowerCase() ) === -1 ) )
-                    {
-                        // Lets do a deeper check
-                        // Users tend to insert [ft. Artist] or **featuring Artist & someOther artist
-                        // Remove these
-                        var newTitle = that.magicCleanup( title );
-                        var newArtist = that.magicCleanup( artist );
-                        var newRespTitle = that.magicCleanup( responseTitle );
-                    
-                        if ( newRespTitle !== undefined && newRespTitle.indexOf( newArtist ) === -1 ||
-                            ( newTitle !== "" && newRespTitle.indexOf( newTitle ) === -1 ) )
-                        {
-                            // Lets do it in reverse!
-                            if ( newArtist.indexOf( newTitle ) === -1 && newTitle.indexOf( newArtist ) === -1 )
-                            {
-                                continue;
-                            }
+                //Lets fetch page for first result, usually if Google detected
+                //a proper track there it'll be in description with links to
+                //amazon/itunes/google stores. That would be the best result
+                //tbh
+                Tomahawk.get('https://www.youtube.com/watch?v=' + resp.items[0].id.videoId).then(function(page){
+                    var startIndex = 0;
+                    var r = /"content watch-info-tag-list">[\s]+<li>&quot;(.*?)&quot;\s+by\s+(.*?)\s\(<a[\s]+href/mg;
+                    var match = r.exec(page);
+                    if (match) {
+                        startIndex = 1;
+                        var _artist = match[2];
+                        var _track = match[1];
+                        var artistChannelRe = /<a[^>]+>([^<]+)/g;
+                        var artistChannelMatch = artistChannelRe.exec(_artist);
+                        if (artistChannelMatch) {
+                            _artist = artistChannelMatch[1];
                         }
-                    }
-                    if ( that.getTrack( responseTitle, title ) )
-                    {
-                        var result = {};
-                        if ( artist !== "" )
-                        {
-                            result.artist = artist;
-                        }
-                        result.source = that.settings.name;
-                        result.mimetype = "video/h264";
-                        result.score = 0.85;
-                        result.year = responseItem.snippet.publishedAt.slice( 0, 4 );
-                        result.track = title;
-                        result.youtubeVideoId = responseItem.id.videoId;
-                        result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeVideoId;
-                        result.id = i;
+                        var responseItem = resp.items[0];
+                        var result = {
+                            track : Tomahawk.htmlDecode(_track),
+                            //by
+                            artist : Tomahawk.htmlDecode(_artist),
+
+                            source : that.settings.name,
+                            mimetype : "video/h264",
+                            score : 0.85,
+                            youtubeVideoId : responseItem.id.videoId,
+                            linkUrl : "https://www.youtube.com/watch?v=" + responseItem.id.videoId,
+                            id : 0
+                        };
+
                         if ( that.qualityPreference === 0 )
                         {
                             result.linkUrl += "&hd=1";
                         }
                         results.push( result );
                     }
-                }
-                if (results.length === 0) { // if no results had appropriate titles, return empty
-                    that.sendEmptyResult( qid, artist + " - " + title );
-                }
-                else
-                {
-                    if ( that.hatchet )
+                    for ( var i = startIndex; i < limit; i++ )
                     {
-                        Tomahawk.addTrackResults( { qid: qid, results: [that.getMostRelevant( results )] } );
+                        var responseItem = resp.items[i];
+                        if ( responseItem === undefined )
+                        {
+                            continue;
+                        }
+                        var responseTitle = responseItem.snippet.title.toLowerCase();
+                        // Check whether the artist and title (if set) are in the returned title, discard otherwise
+                        if ( responseTitle !== undefined && responseTitle.indexOf( artist.toLowerCase() ) === -1 ||
+                            ( title !== "" && responseTitle.toLowerCase().indexOf( title.toLowerCase() ) === -1 ) )
+                        {
+                            // Lets do a deeper check
+                            // Users tend to insert [ft. Artist] or **featuring Artist & someOther artist
+                            // Remove these
+                            var newTitle = that.magicCleanup( title );
+                            var newArtist = that.magicCleanup( artist );
+                            var newRespTitle = that.magicCleanup( responseTitle );
+                        
+                            if ( newRespTitle !== undefined && newRespTitle.indexOf( newArtist ) === -1 ||
+                                ( newTitle !== "" && newRespTitle.indexOf( newTitle ) === -1 ) )
+                            {
+                                // Lets do it in reverse!
+                                if ( newArtist.indexOf( newTitle ) === -1 && newTitle.indexOf( newArtist ) === -1 )
+                                {
+                                    continue;
+                                }
+                            }
+                        }
+                        if ( that.getTrack( responseTitle, title ) )
+                        {
+                            var result = {};
+                            if ( artist !== "" )
+                            {
+                                result.artist = artist;
+                            }
+                            result.source = that.settings.name;
+                            result.mimetype = "video/h264";
+                            result.score = 0.65;
+                            result.year = responseItem.snippet.publishedAt.slice( 0, 4 );
+                            result.track = title;
+                            result.youtubeVideoId = responseItem.id.videoId;
+                            result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeVideoId;
+                            result.id = i;
+                            if ( that.qualityPreference === 0 )
+                            {
+                                result.linkUrl += "&hd=1";
+                            }
+                            results.push( result );
+                        }
+                    }
+                    if (results.length === 0) { // if no results had appropriate titles, return empty
+                        that.sendEmptyResult( qid, artist + " - " + title );
                     }
                     else
                     {
-                        that.getMetadata( qid, results );
+                        if ( that.hatchet )
+                        {
+                            Tomahawk.addTrackResults( { qid: qid, results: [that.getMostRelevant( results )] } );
+                        }
+                        else
+                        {
+                            that.getMetadata( qid, results );
+                        }
                     }
-                }
+                });
             }
             else
             {
@@ -825,12 +858,18 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 }
                 if ( url )
                 {
-                    result.url = url;
+                    result.url = url.url;
+                    result.mimetype = url.mime;
                     result.bitrate = that.getBitrate( url );
-                    var expires = result.url.match( /expire=([0-9]+)(?=(&))/ );
-                    if ( expires && expires[1] !== undefined)
+                    result.YouTubeQuality = url.quality;
+                    var expires = url.url.match( /expire=([0-9]+)(?=(&))/ );
+                    if ( expires && expires[1] !== undefined )
+                        expires = expires[1];
+                    else
+                        expires = url.expires;
+                    if ( expires )
                     {
-                        result.expires = Math.floor( expires[1] );
+                        result.expires = Math.floor( expires );
                     }
                 }
                 total--;
