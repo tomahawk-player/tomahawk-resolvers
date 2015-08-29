@@ -356,7 +356,9 @@ var TidalResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
         return Tomahawk.get(this.api_location + "tracks/" + parsedUrn.id + "/streamUrl", settings)
             .then(function (response) {
-                return response.url;
+                return {
+                    url: response.url
+                };
             });
     },
 
