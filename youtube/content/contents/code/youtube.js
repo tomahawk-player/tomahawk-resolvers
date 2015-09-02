@@ -36,6 +36,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     {
         "use strict";
 
+        this.deobfuscateFunctions = {};
+
         // Set userConfig here
         var userConfig = this.getUserConfig();
         if ( Object.getOwnPropertyNames( userConfig ).length > 0 )
@@ -463,11 +465,79 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         return params;
     },
 
-    parseURLS: function( rawUrls )
+    _extract_object : function( code, name, known_objects ) {
+        //For now objects we need to extract were always self contained so we
+        //just regex-extract it and return
+        Tomahawk.log('Extracting object:' + name);
+        var objectRE = new RegExp('(?:var\\s+)?' +
+                name + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
+        var obj_M = code.match(objectRE);
+        return obj_M[0];
+    },
+
+    _extract_function : function( code, name, known_objects ) {
+        Tomahawk.log('Extracting function:' + name);
+        var functionCode = '';
+        if (typeof known_objects === 'undefined')
+        {
+            known_objects = {
+                names: [ name ]
+            };
+        }
+        var f_RE = new RegExp('(?:function\\s+' + name + '|[{;\\s]' +
+            name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
+        Tomahawk.log('(?:function\\s+' + name + '|[{;]' +
+            name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
+        var f_match = code.match(f_RE);
+        if ( f_match )
+        {
+            Tomahawk.log('Args for function ' + name + ' is: ' + f_match[1]);
+            Tomahawk.log('Body for function ' + name + ' is: ' + f_match[2]);
+            var args = f_match[1].split(',');
+            known_objects.names = known_objects.names.concat(args);
+            Tomahawk.log(JSON.stringify(known_objects));
+            var statements = f_match[2].split(';');
+            for(var i = 0; i < statements.length; i++)
+            {
+                var stmt = statements[i].trim();
+                var callRE = /(?:^|[=\+-\s]+)([a-zA-Z\.]+)\s*\(/gm;
+                var match;
+                Tomahawk.log('Processing stmt:' + stmt);
+                while ((match = callRE.exec(stmt)) !== null)
+                {
+                    Tomahawk.log('Processing call:' + match[1]);
+                    var split = match[1].split('.');
+                    if (split.length == 1)
+                    {
+                        //function
+                        if (known_objects.names.indexOf(split[0]) == -1) 
+                        {
+                            functionCode += this._extract_function(code, split[0], known_objects);
+                            known_objects.names.push(split[0]);
+                        }
+                    } else {
+                        //object
+                        Tomahawk.log('see if object is known:' + split[0]);
+                        Tomahawk.log(known_objects.names.indexOf(split[0]));
+                        if (known_objects.names.indexOf(split[0]) == -1) 
+                        {
+                            functionCode += this._extract_object(code, split[0], known_objects);
+                            known_objects.names.push(split[0]);
+                        }
+                    }
+                }
+            }
+            return functionCode + f_match[0];
+        }
+        return null;
+    },
+
+    parseURLS: function( rawUrls, html )
     {
         "use strict";
 
         var parsedUrls = [];
+        var that = this;
         var urlArray = rawUrls.split( /,/g );
         for ( var i = 0; i < urlArray.length; i++ )
         {
@@ -484,38 +554,49 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 haveSignature = true;
                 params.url += '&signature=' + params.sig;
             } else if (params.s) {
-                //This is the one I extracted manually 
-                var as = {
-                    QG: function(a, b) {
-                        var c = a[0];
-                        a[0] = a[b % a.length];
-                        a[b] = c
-                    },
-                    ft: function(a) {
-                        a.reverse()
-                    },
-                    yF: function(a, b) {
-                        a.splice(0, b)
-                    }
-                };
+                //lets try to extract deobfuscation function automatically
+                //URL list for future testing, please append the new ones so
+                //that if anything breaks we can make sure our code works on
+                //all variants we have seen so far
+                //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflOWWv0e/html5player-new.js
+                //
+                var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
+                var assetsMatch = html.match( ASSETS_RE );
+                if ( assetsMatch )
+                {
+                    Tomahawk.log('yt player js: ' + JSON.parse(assetsMatch[1]));
+                    var js_player_url = JSON.parse(assetsMatch[1]);
+                    if (js_player_url.indexOf('//') === 0)
+                        js_player_url = 'https:' + js_player_url;
+                    if (js_player_url in that.deobfuscateFunctions)
+                    {
+                        var dec = that.deobfuscateFunctions[js_player_url];
 
-                var bs = function (a) {
-                    a = a.split("");
-                    as.ft(a, 20);
-                    as.yF(a, 1);
-                    as.ft(a, 72);
-                    as.QG(a, 8);
-                    as.ft(a, 47);
-                    as.QG(a, 5);
-                    as.yF(a, 2);
-                    as.QG(a, 30);
-                    as.QG(a, 66);
-                    return a.join("")
-                };
-                //Encrypted Signature, do not support atm
-                //Tomahawk.log('Found encrypted signature, no support for that yet :(');
-                haveSignature = true;
-                params.url += '&signature=' + bs(params.s);
+                        haveSignature = true;
+                        params.url += '&signature=' + eval(dec.code + dec.name + '("' + params.s + '");');
+                    } else {
+                        //TODO: this result will be abandoned ... only the
+                        //subsequent ones coming after we got the function will
+                        //succeed ... need to delat them, requires a bit of
+                        //refactoring
+                        Tomahawk.get(js_player_url).then(function (code) {
+                            //Extract top signature deobfuscation function name
+                            var decrypt_function_RE = /\.sig\|\|([a-zA-Z0-9$]+)\(/;
+                            var fname = code.match( decrypt_function_RE );
+                            if ( fname )
+                        {
+                            fname = fname[1];
+                            Tomahawk.log('Deobfuscate function name: ' + fname);
+                            var func = that._extract_function(code, fname);
+                            Tomahawk.log('Extracted deobfuscation code is:' + func);
+                            that.deobfuscateFunctions[js_player_url] = {
+                                code : func,
+                                name : fname
+                            };
+                        }
+                        });
+                    }
+                }
             }
 
             //This resolver relies heavily on having quality as part of the url
@@ -844,7 +925,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 var parsed;
                 if ( streamMatch && streamMatch[2] !== undefined )
                 {
-                    parsed = this.parseURLS( streamMatch[2] );
+                    parsed = this.parseURLS( streamMatch[2], html );
                     if ( parsed )
                     {
                         url = parsed;
@@ -875,7 +956,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                         var jsonMap = JSON.parse( streamMatch[2] );
                         if ( jsonMap.args.url_encoded_fmt_stream_map !== undefined )
                         {
-                            parsed = that.parseURLS( jsonMap.args.url_encoded_fmt_stream_map );
+                            parsed = that.parseURLS( jsonMap.args.url_encoded_fmt_stream_map, html );
                             if ( parsed )
                             {
                                 url = parsed;
