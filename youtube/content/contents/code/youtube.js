@@ -345,7 +345,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         {
             if ( title.toLowerCase().indexOf( searchString.toLowerCase() ) !== -1 )
             {
-                result.parsed = this.parseCleanTrack( title.replace( RegExp( searchString, "gi" ), searchString.concat( " :" ) ) );
+                result.parsed = this.parseCleanTrack( title.replace( RegExp( this.escapeRegExp(searchString), "gi" ), searchString.concat( " :" ) ) );
             }
             else
             {
@@ -465,12 +465,16 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         return params;
     },
 
+    escapeRegExp : function (str) {
+        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+    },
+
     _extract_object : function( code, name, known_objects ) {
         //For now objects we need to extract were always self contained so we
         //just regex-extract it and return
         Tomahawk.log('Extracting object:' + name);
         var objectRE = new RegExp('(?:var\\s+)?' +
-                name + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
+                this.escapeRegExp(name) + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
         var obj_M = code.match(objectRE);
         return obj_M[0];
     },
@@ -484,8 +488,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 names: [ name ]
             };
         }
-        var f_RE = new RegExp('(?:function\\s+' + name + '|[{;\\s]' +
-            name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
+        var f_RE = new RegExp('(?:function\\s+' + this.escapeRegExp(name) + '|[{;\\s]' +
+            this.escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
         Tomahawk.log('(?:function\\s+' + name + '|[{;]' +
             name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
         var f_match = code.match(f_RE);
@@ -500,7 +504,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             for(var i = 0; i < statements.length; i++)
             {
                 var stmt = statements[i].trim();
-                var callRE = /(?:^|[=\+-\s]+)([a-zA-Z\.]+)\s*\(/gm;
+                var callRE = /(?:^|[=\+-\s]+)([a-zA-Z$0-9\.]+)\s*\(/gm;
                 var match;
                 Tomahawk.log('Processing stmt:' + stmt);
                 while ((match = callRE.exec(stmt)) !== null)
@@ -559,6 +563,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 //that if anything breaks we can make sure our code works on
                 //all variants we have seen so far
                 //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflOWWv0e/html5player-new.js
+                //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflCeB3p5/html5player-new.js
                 //
                 var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
                 var assetsMatch = html.match( ASSETS_RE );
