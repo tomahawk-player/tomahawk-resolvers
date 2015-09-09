@@ -117,7 +117,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 return that._loadWebToken(config.token);
             });
         promise.then(function (webToken) {
-            return that._loadSettings(webToken, config.token);
+            return that._loadSettings(webToken, that._token);
         }).then(function () {
             return that._ensureCollection();
         }).then(function () {
@@ -376,7 +376,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
     _loadSettings: function (webToken, token) {
         var that = this;
 
-        var url = that._webURL + 'services/loadsettings';
+        var url = that._webURL + 'services/fetchsettings';
         var settings = {
             data: {
                 u: 0,
@@ -393,23 +393,24 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 throw new Error("Wasn't able to get resolver settings");
             }
 
-            that._allAccess = response.settings.isSubscription;
+            that._allAccess = response.settings.entitlementInfo.isSubscription;
             Tomahawk.log("Google Play Music All Access is "
                 + (that._allAccess ? "enabled" : "disabled" )
             );
 
             var device = null;
-            var devices = response.settings.devices;
+            var devices = response.settings.uploadDevice;
             for (var i = 0; i < devices.length; i++) {
                 var entry = devices[i];
-                if ('PHONE' == entry.type || 'IOS' == entry.type) {
+                //TODO: is 'IOS' now different?
+                if (2 == entry.deviceType) {
                     device = entry;
                     break;
                 }
             }
 
             if (device) {
-                if ('PHONE' == device.type) {
+                if ('2' == device.deviceType) {
                     // We have an Android device id
                     that._deviceId = device.id.slice(2);
                     Tomahawk.log(that.settings.name + " using Android device ID '"
@@ -536,7 +537,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 return that._loadWebToken(config.token);
             });
         return promise.then(function (webToken) {
-            return that._loadSettings(webToken, config.token);
+            return that._loadSettings(webToken, that._token);
         }).then(function () {
             return Tomahawk.ConfigTestResultType.Success;
         }, function (error) {
