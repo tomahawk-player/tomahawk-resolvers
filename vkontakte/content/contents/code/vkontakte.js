@@ -6,7 +6,7 @@
  * Licensed under the Eiffel Forum License 2.
  */
 
-var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     //These are copied from kodi vk.com plugin
@@ -45,8 +45,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    newConfigSaved: function() {
-        var config = this.getUserConfig();
+    newConfigSaved: function(config) {
 
         var changed = this._email !== config.email || this._password !== config.password;
 
@@ -75,7 +74,6 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             return;
         }
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
-        Tomahawk.addCustomUrlHandler( 'vk', 'getStreamUrl', true );
 
         return this._login(config);
     },
@@ -189,10 +187,14 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
     },
 
-    getStreamUrl : function (qid, url) {
-        var id = url.match( /vk:\/\/track\/([_\d]+)/ )[1];
+    getStreamUrl : function (params) {
+        if (params.url.indexOf('http:') === 0 || params.url.indexOf('https:') === 0)
+        {
+            return {url: params.url};
+        }
+        var id = params.url.match( /vk:\/\/track\/([_\d]+)/ )[1];
         this._apiCall('audio.getById', {audios : id}).then( function (response) {
-            Tomahawk.reportStreamUrl(qid, response[0].url);
+            return response[0].url;
         });
     },
 
@@ -252,9 +254,9 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    search: function (query, limit, trackInfo) {
+    search: function (searchparams) {
         if (!this.logged_in) {
-            return this._defer(this.search, [query], this);
+            return this._defer(this.search, [searchparams], this);
         } else if (this.logged_in ===2) {
             throw new Error('Failed login, cannot search.');
         }
@@ -262,12 +264,12 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         var that = this;
 
         var params = {
-            count: limit || 300,
-            q: query,
+            count: searchparams.limit || 300,
+            q: searchparams.query,
         };
 
         return this._apiCall('audio.search',params).then( function (response) {
-            return response.response.items.map(that._convertTrack, trackInfo);
+            return response.response.items.map(that._convertTrack);
         });
     },
 
@@ -355,10 +357,10 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         }
     },
 
-    resolve: function (artist, album, title) {
+    resolve: function (params) {
         var that = this;
 
-        var qid = JSON.stringify([artist, album, title]);
+        var qid = JSON.stringify([params.artist, params.album, params.track]);
 
         var promise = new Promise(function (resolve, reject) {
             if(!(qid in that._queue)) {
