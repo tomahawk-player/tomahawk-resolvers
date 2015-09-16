@@ -5,7 +5,7 @@
  *
  */
 
-var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     settings: {
@@ -30,19 +30,19 @@ var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    search: function (query) {
+    search: function (params) {
         var that = this;
 
-        query = query.replace(/\ /g, '+');
+        var query = params.query.replace(/\ /g, '+');
 
         return Tomahawk.get("http://pleer.com/browser-extension/search?q=" + query).then(function (response){
             return response.tracks.map(that._convertTrack, that);
         });
     },
 
-    resolve: function (artist, album, title) {
-        var query = [ artist, title ].join(' - ');
-        return this.search(query);
+    resolve: function (params) {
+        var query = [ params.artist, params.title ].join(' - ');
+        return this.search({query:query});
     }
 });
 
