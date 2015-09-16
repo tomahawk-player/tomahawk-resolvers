@@ -71,6 +71,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         if (callback){
             callback(null);
         }
+        Tomahawk.addCustomUrlHandler( 'youtube', 'getStreamUrl', true );
     },
 
     getConfigUi: function()
@@ -550,7 +551,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             //Without the following it'll give 403 for Tomahawk's user-agent
             //(even though URL will work with anything else just fine)
             //This is some bullshit black magic ... 
-            params.url = decodeURIComponent(params.url);
+            //params.url = decodeURIComponent(params.url);
 
             var haveSignature = params.url.indexOf('signature=') !== -1;
 
@@ -610,7 +611,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
             {
                 parsedUrls.push( 
                     {
-                        url: params.url,
+                        url: 'youtube://' + params.url,
                         quality: params.quality
                     }
                     );
@@ -645,6 +646,19 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         }
         return null;
     },
+
+    getStreamUrl: function(qid, url) {
+        //Temporary workaround to make compatible with both new and old api
+        if(qid.url)
+        {
+            url = qid.url;
+            qid = qid.qid;
+        }
+        Tomahawk.reportStreamUrl(qid, url.replace('youtube://', ''), {
+            'User-Agent': 'Mozilla/6.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        });
+    },
+
 
     resolve: function( qid, artist, album, title )
     {
