@@ -259,7 +259,7 @@ LRUCache.prototype.toString = function() {
 if (typeof this === 'object') this.LRUCache = LRUCache;
 /*-----  End of lru.js ------*/
 
-var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     settings: {
@@ -337,10 +337,10 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         return results;
     },
 
-    search: function (query, trackInfo) {
+    search: function (params, trackInfo) {
         var that = this;
 
-        return Tomahawk.get("http://m.kibergrad.com/search?q=" + query,
+        return Tomahawk.get("http://m.kibergrad.com/search?q=" + params.query,
             {headers: { 'X-Requested-With' : 'XMLHttpRequest' } }).then(function (response){
             if (typeof response == 'string' || response instanceof String)
                 response = JSON.parse(response);
@@ -350,14 +350,14 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
     },
 
-    resolve: function (artist, album, title) {
-        var query = [ artist, title ].join(' - ');
+    resolve: function (params) {
+        var query = [ params.artist, params.track ].join(' - ');
         var trackInfo = {
-            title: title,
-            artist: artist,
-            album: album
+            title: params.track,
+            artist: params.artist,
+            album: params.album
         };
-        return this.search(query, trackInfo);
+        return this.search({query:query}, trackInfo);
     }
 });
 
