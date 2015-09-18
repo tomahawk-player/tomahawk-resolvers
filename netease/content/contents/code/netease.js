@@ -20,14 +20,37 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         timeout: 15
     },
 
+    getConfigUi: function () {
+        return {
+            "widget": Tomahawk.readBase64("config.ui"),
+            fields: [{
+                name: "quality",
+                widget: "quality",
+                property: "currentIndex"
+            }]
+        };
+    },
+
+    strQuality: ['lMusic', 'mMusic', 'hMusic'],//There are some additional formats like m4a in bMusic, etc
+    numQuality: [96, 160, 320],
+
+    newConfigSaved: function (newConfig) {
+        var changed =
+            this._quality != newConfig.quality;
+
+        if (changed) {
+            this.init();
+        }
+    },
+
     _convertTrack: function (entry) {
         return {
             artist:     entry.artists[0].name,
             album:      entry.album.name,
             track:      entry.name,
             title:      entry.name,
-            bitrate:    320,//lmusic would be 96, m = 160
-            duration:   parseInt(entry.duration)/100,
+            bitrate:    this.numQuality[this._quality],
+            duration:   parseInt(entry.duration)/1000,
             url:        'netease://track/' + entry.id,
             checked:    true,
             type:       "track"
@@ -39,6 +62,8 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         this.SALT = '3go8&$8*3*3h0k(2)2';
         //Needed for old 0.9
         Tomahawk.addCustomUrlHandler( 'netease', 'getStreamUrl', true );
+        var config = this.getUserConfig();
+        this._quality = config.quality;
     },
 
     _encrypt: function(input) {
@@ -69,7 +94,7 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         return this._apiCall('song/detail', {id:id, ids:'['+id+']'}).then(function(result){
             if(!result.code)
                 result = JSON.parse(result);
-            var format = 'hMusic';//there are also lMusic and mMusic for low and medium respectively
+            var format = that.strQuality[that._quality];
             var dfsid = result.songs[0][format].dfsId.toString();
             var ext   =  result.songs[0][format].extension;
             var url = 'http://m1.music.126.net/' + that._encrypt(dfsid) + '/' +

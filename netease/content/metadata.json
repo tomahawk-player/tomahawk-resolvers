@@ -11,7 +11,9 @@
         "main": "contents/code/netease.js",
         "icon": "contents/images/logo.png",
         "scripts": [],
-        "resources": []
+        "resources": [
+            "contents/code/config.ui"
+        ]
     },
     "staticCapabilities": []
 }
