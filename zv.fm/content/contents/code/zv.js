@@ -50,7 +50,7 @@ var ZvResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     resolve: function (params) {
-        var query = [ params.artist, params.title ].join(' - ');
+        var query = [ params.artist, params.track ].join(' - ');
         return this.search({query:query});
     }
 });
