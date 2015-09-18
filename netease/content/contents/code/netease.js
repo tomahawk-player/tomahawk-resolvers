@@ -76,7 +76,7 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
             }
             return xored;
         }
-        return CryptoJS.enc.Base64.stringify(CryptoJS.MD5(xor_string(input, this.SALT))).replace('/', '_').replace('+', '-');
+        return CryptoJS.enc.Base64.stringify(CryptoJS.MD5(xor_string(input, this.SALT))).replace(/\//g, '_').replace(/\+/g, '-');
     },
 
     getStreamUrl: function(qid, url) {
