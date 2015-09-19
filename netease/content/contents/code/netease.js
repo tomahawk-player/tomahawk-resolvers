@@ -64,6 +64,8 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         Tomahawk.addCustomUrlHandler( 'netease', 'getStreamUrl', true );
         var config = this.getUserConfig();
         this._quality = config.quality;
+        if (typeof this._quality === 'undefined')
+            this._quality = 2;
     },
 
     _encrypt: function(input) {
@@ -121,7 +123,10 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         return this._apiCall('search/get', {type:1, s:query, limit:100}).then(function(results){
             if(!results.result)
                 results = JSON.parse(results);
-            return results.result.songs.map(that._convertTrack, that);
+            if(results.result.songCount > 0)
+                return results.result.songs.map(that._convertTrack, that);
+            else
+                return [];
         });
     },
 
@@ -129,9 +134,9 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         if(artist.hasOwnProperty('artist'))
         {
             //New 0.9
-            artist = artist.artist;
             album = artist.album;
             track = artist.track;
+            artist = artist.artist;
         }
         var query = [ artist, track ].join(' ');
         return this.search({query:query});
