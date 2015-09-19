@@ -1,0 +1,19 @@
+{
+    "name": "Netease",
+    "pluginName": "netease",
+    "author": "Anton Romanov",
+    "email": "",
+    "version": "0.0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Streams music from http://music.163.com",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/netease.js",
+        "icon": "contents/images/logo.png",
+        "scripts": [],
+        "resources": [
+            "contents/code/config.ui"
+        ]
+    },
+    "staticCapabilities": []
+}
