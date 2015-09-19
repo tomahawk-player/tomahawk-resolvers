@@ -1,0 +1,17 @@
+{
+    "name": "Bandcamp (Mobile API)",
+    "pluginName": "bandcampmobile",
+    "author": "Anton Romanov",
+    "email": "theli.ua@gmail.com",
+    "version": "0.0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Resolves to free to preview 128k streams from Bandcamp.(using mobile api)",
+    "platform": "any",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/bandcampm.js",
+        "scripts": [],
+        "icon": "contents/images/icon.png",
+        "resources": []
+    }
+}
