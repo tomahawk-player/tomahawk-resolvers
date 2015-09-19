@@ -63,9 +63,7 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         //Needed for old 0.9
         Tomahawk.addCustomUrlHandler( 'netease', 'getStreamUrl', true );
         var config = this.getUserConfig();
-        this._quality = config.quality;
-        if (typeof this._quality === 'undefined')
-            this._quality = 2;
+        this._quality = config.quality || 2;
     },
 
     _encrypt: function(input) {
@@ -94,17 +92,19 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         var that = this;
         var id = url.match(/^netease:\/\/([a-z]+)\/(.+)$/)[2];
         return this._apiCall('song/detail', {id:id, ids:'['+id+']'}).then(function(result){
-            if(!result.code)
+            if(!result.code) {
                 result = JSON.parse(result);
+            }
             var format = that.strQuality[that._quality];
             var dfsid = result.songs[0][format].dfsId.toString();
             var ext   =  result.songs[0][format].extension;
             var url = 'http://m1.music.126.net/' + that._encrypt(dfsid) + '/' +
                 dfsid + '.' + ext;
-            if(newAPI)
+            if(newAPI) {
                 return {url:url};
-            else
+            } else {
                 Tomahawk.reportStreamUrl(qid, url);
+            }
         });
     },
 
@@ -117,16 +117,19 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
     search: function (query) {
         var that = this;
 
-        if(query.hasOwnProperty('query'))
+        if(query.hasOwnProperty('query')) {
             query = query.query; //New 0.9
+        }
 
         return this._apiCall('search/get', {type:1, s:query, limit:100}).then(function(results){
-            if(!results.result)
+            if(!results.result) {
                 results = JSON.parse(results);
-            if(results.result.songCount > 0)
+            }
+            if(results.result.songCount > 0) {
                 return results.result.songs.map(that._convertTrack, that);
-            else
+            } else {
                 return [];
+            }
         });
     },
 
