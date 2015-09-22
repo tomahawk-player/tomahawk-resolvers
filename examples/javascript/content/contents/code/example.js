@@ -56,8 +56,9 @@ var ExampleResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     /**
      * LEGACY! This is the old way of defining the Resolver's config dialog UI. In the future there
-     * will only be the "ui"-property that provides a proper cross-compatible way of defining a UI.
-     * Currently both the "ui"-property and this "getConfigUi"-function should be implemented.
+     * will only be the "configUi"-property that provides a proper cross-compatible way of defining
+     * a UI.
+     * Currently both the "configUi"-property and this "getConfigUi"-function should be implemented.
      *
      *
      * @returns * Map containing information to define this Resolver's config dialog UI.
