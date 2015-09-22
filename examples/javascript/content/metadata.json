@@ -3,7 +3,7 @@
     "pluginName": "example",
     "author": "Enno Gottschalk",
     "email": "mrmaffen@gmail.com",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "website": "http://gettomahawk.com",
     "description": "Just an example Resolver.",
     "type": "resolver/javascript",
