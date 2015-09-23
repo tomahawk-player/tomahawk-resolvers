@@ -66,17 +66,17 @@
       <widget class="QComboBox" name="quality">
        <item>
         <property name="text">
-         <string>LOW</string>
+         <string>AAC PLUS 64</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>HIGH</string>
+         <string>AAC 192</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>LOSSLESS</string>
+         <string>AAC 320</string>
         </property>
        </item>
       </widget>
