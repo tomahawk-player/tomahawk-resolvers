@@ -70,7 +70,7 @@ var HatchetMetadataResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 type: Tomahawk.UrlType.Artist,
                 artist: urlParts[urlParts.length - 1]
             };
-        } else if (/^https?:\/\/(www\.)?hatchet\.is\/music\/[^\/\n]+\/_\/[^\/\n]+$/.test(url)) {
+        } else if (/^https?:\/\/(www\.)?hatchet\.is\/music\/[^\/\n]+\/[^\/\n]+\/[^\/\n]+$/.test(url)) {
             Tomahawk.log("Found a track");
             // We have to deal with a Track
             return {
