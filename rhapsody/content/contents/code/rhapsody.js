@@ -13,8 +13,7 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
     apiVersion: 0.9,
 
     logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
-    strQuality: ['lMusic', 'mMusic', 'hMusic'],//There are some additional formats like m4a in bMusic, etc
-    numQuality: [96, 160, 320],
+    numQuality: [64, 192, 320],
 
     settings: {
         cacheTime: 300,
@@ -144,7 +143,11 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
                 session.id + '/track/' + id + '?context=ON_DEMAND', {
                     headers: Tomahawk.extend(that._headers, {'x-rhapsody-access-token-v2':that._rhap_config.rhapsodyAccessToken})
                 }).then(function(track) {
-                    url = track.stationTrack.medias[2].location;
+                    url = track.stationTrack.medias[2].filter(function(m){
+                        m.bitrate == that.numQuality[this._quality];})[0].location;
+                    url = url.split('/');
+                    url[5] = 'mp4:' + url[5];
+                    url = url.join('/');
                     Tomahawk.log(url);
                     if(newAPI) {
                         return {url:url};
