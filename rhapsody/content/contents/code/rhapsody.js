@@ -5,11 +5,7 @@
  *
  */
 
-var api_to_extend = Tomahawk.Resolver.Promise; //Old 0.9
-if(typeof api_to_extend === 'undefined')
-    api_to_extend = Tomahawk.Resolver; //New 0.9
-
-var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
+var RhapsodyResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
@@ -80,9 +76,6 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
     },
 
     init: function() {
-        //Needed for old 0.9
-        Tomahawk.addCustomUrlHandler( 'rhap', 'getStreamUrl', true );
-
         var config = this.getUserConfig();
 
         this._email = config.email;
@@ -116,23 +109,11 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
         }
     },
 
-    getStreamUrl: function(qid, url) {
-        var newAPI = false;
-        Tomahawk.log(qid);
-        Tomahawk.log(url);
-        if(qid.url) {
-            //new 0.9
-            url = qid.url;
-            newAPI = true;
-        }
+    getStreamUrl: function(params) {
         var that = this;
-        var id = url.match(/^rhap:\/\/([a-z]+)\/(.+)$/);
+        var id = params.url.match(/^rhap:\/\/([a-z]+)\/(.+)$/);
         if(!id ) {
-            if(newAPI) {
-                return {url:url};
-            } else {
-                Tomahawk.reportStreamUrl(qid, url);
-            }
+            return {url:params.url};
         }
         id = id[2];
 
@@ -143,55 +124,39 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
                 session.id + '/track/' + id + '?context=ON_DEMAND', {
                     headers: Tomahawk.extend(that._headers, {'x-rhapsody-access-token-v2':that._rhap_config.rhapsodyAccessToken})
                 }).then(function(track) {
-                    url = track.stationTrack.medias.filter(function(m){
+                    var url = track.stationTrack.medias.filter(function(m){
                         return m.bitrate == that.numQuality[that._quality];
                     })[0].location;
                     url = url.split('/');
                     url[5] = 'mp4:' + url[5];
                     url = url.join('/');
-                    Tomahawk.log(url);
-                    if(newAPI) {
-                        return {url:url};
-                    } else {
-                        Tomahawk.reportStreamUrl(qid, url);
-                    }
+                    return {url:url};
                 });
         });
     },
 
-    search: function (query) {
+    search: function (params) {
         var that = this;
         return this._loginPromise.then(function() {
-
-        if(query.hasOwnProperty('query'))
-            query = query.query; //New 0.9
-
-        return Tomahawk.get('http://api.rhapsody.com/v1/search/typeahead', {
-                data : {
-                   type: 'track',
-                   limit: '10',
-                   offset: '0',
-                   apikey: that._api_key,
-                   catalog: that._rhap_config.country,
-                   q: query
-                }
-                }).then(function(results) {
-                    return results.map(that._convertTrack, that);
-                });
+            return Tomahawk.get('http://api.rhapsody.com/v1/search/typeahead', {
+                    data : {
+                       type: 'track',
+                       limit: '10',
+                       offset: '0',
+                       apikey: that._api_key,
+                       catalog: that._rhap_config.country,
+                       q: params.query
+                    }
+                    }).then(function(results) {
+                        return results.map(that._convertTrack, that);
+                    });
         }, function() {
             return [];
         });
     },
 
-    resolve: function (artist, album, track) {
-        if(artist.hasOwnProperty('artist'))
-        {
-            //New 0.9
-            album = artist.album;
-            track = artist.track;
-            artist = artist.artist;
-        }
-        var query = [ artist, track ].join(' ');
+    resolve: function (params) {
+        var query = [ params.artist, params.track ].join(' ');
         return this.search({query:query});
     },
 
