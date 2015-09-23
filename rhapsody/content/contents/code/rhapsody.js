@@ -159,20 +159,9 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
         });
     },
 
-    _apiCall: function(endpoint, params) {
-        return Tomahawk.post(this.API_BASE + endpoint, {data: params, headers: {
-            'Referer' : this.API_BASE
-        }});
-    },
-
     search: function (query) {
-        if (!this.logged_in) {
-            return this._defer(this.search, [query], this);
-        } else if (this.logged_in === 2) {
-            throw new Error('Failed login, cannot search.');
-        }
-
         var that = this;
+        return this._loginPromise.then(function() {
 
         if(query.hasOwnProperty('query'))
             query = query.query; //New 0.9
@@ -189,6 +178,9 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
                 }).then(function(results) {
                     return results.map(that._convertTrack, that);
                 });
+        }, function() {
+            return [];
+        });
     },
 
     resolve: function (artist, album, track) {
@@ -201,18 +193,6 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
         }
         var query = [ artist, track ].join(' ');
         return this.search({query:query});
-    },
-
-    _defer: function (callback, args, scope) {
-        if (typeof this._loginPromise !== 'undefined' && 'then' in this._loginPromise) {
-            args = args || [];
-            scope = scope || this;
-            Tomahawk.log('Deferring action with ' + args.length + ' arguments.');
-            return this._loginPromise.then(function () {
-                Tomahawk.log('Performing deferred action with ' + args.length + ' arguments.');
-                callback.call(scope, args);
-            });
-        }
     },
 
     _getLoginPromise: function (config) {
@@ -244,7 +224,7 @@ var RhapsodyResolver = Tomahawk.extend( api_to_extend, {
     _login: function (config) {
         // If a login is already in progress don't start another!
         if (this.logged_in === 0) {
-            return;
+            return this._loginPromise;
         }
         this.logged_in = 0;
 
