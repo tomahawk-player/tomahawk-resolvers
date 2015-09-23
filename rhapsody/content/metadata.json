@@ -1,0 +1,19 @@
+{
+    "name": "Rhapsody",
+    "pluginName": "rhapsody",
+    "author": "Anton Romanov",
+    "email": "",
+    "version": "0.0.1",
+    "website": "http://gettomahawk.com",
+    "description": "Rhapsody (PREMIER) on-demand streaming",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/rhapsody.js",
+        "icon": "contents/images/logo.png",
+        "scripts": [],
+        "resources": [
+            "contents/code/config.ui"
+        ]
+    },
+    "staticCapabilities": []
+}
