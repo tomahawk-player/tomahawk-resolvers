@@ -4,11 +4,7 @@
  * Licensed under the Eiffel Forum License 2.
  */
 
-var api_to_extend = Tomahawk.Resolver.Promise; //Old 0.9
-if(typeof api_to_extend === 'undefined')
-    api_to_extend = Tomahawk.Resolver; //New 0.9
-
-var BandcampResolver = Tomahawk.extend( api_to_extend, {
+var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     settings: {
@@ -31,38 +27,25 @@ var BandcampResolver = Tomahawk.extend( api_to_extend, {
         };
     },
 
-    getStreamUrl: function(qid, url) {
-        var newAPI = false;
-        if(qid.url) {
-            //new 0.9
-            url = qid.url;
-            newAPI = true;
+    getStreamUrl: function(params) {
+        if (params.url.indexOf('http') == 0)
+        {
+            return {url:params.url};
         }
-        if (url.indexOf('http') == 0)
-            if(newAPI)
-                return {url:url};
-            else
-                Tomahawk.reportStreamUrl(qid, url);
         var that = this;
-        var parsed = url.match(/^bandcampm:\/\/([a-z]+)\/(\d+)\/(\d+)$/);
+        var parsed = params.url.match(/^bandcampm:\/\/([a-z]+)\/(\d+)\/(\d+)$/);
         var band_id = parsed[2];
         var id      = parsed[3];
         return Tomahawk.get('https://bandcamp.com/api/mobile/15/tralbum_details?tralbum_type=t&band_id='+band_id+'&tralbum_id='+id).then(function(result){
             var url = result.tracks[0].streaming_url['mp3-128'];
-            if(newAPI)
-                return {url:url};
-            else
-                Tomahawk.reportStreamUrl(qid, url);
+            return {url:url};
         });
     },
 
-    search: function (query) {
+    search: function (params) {
         var that = this;
 
-        if(query.hasOwnProperty('query'))
-            query = query.query; //New 0.9
-        
-        return Tomahawk.get('https://bandcamp.com/api/nusearch/2/autocomplete?q=' + query).then(function(result){
+        return Tomahawk.get('https://bandcamp.com/api/nusearch/2/autocomplete?q=' + params.query).then(function(result){
             var trackPromises = result.results.filter(function(e) {
                 return e.type == 't'; //t stands for track, b - band, a - album
             }).map(that._convertTrack, that).splice(0,3).map(function(track){
@@ -83,19 +66,10 @@ var BandcampResolver = Tomahawk.extend( api_to_extend, {
         });
     },
 
-    resolve: function (artist, album, track) {
-        if(artist.hasOwnProperty('artist'))
-        {
-            //New 0.9
-            album = artist.album;
-            track = artist.track;
-            artist = artist.artist;
-        }
-        var query = track;//search we're using searches matches in a single field
+    resolve: function (params) {
+        var query = params.track;//search we're using searches matches in a single field
         return this.search({query:query});
     }
 });
 
 Tomahawk.resolver.instance = BandcampResolver;
-
-
