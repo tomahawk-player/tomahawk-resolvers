@@ -101,7 +101,7 @@ function strtr(str, from, to) {
   return ret;
 };
 
-var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     settings: {
@@ -126,9 +126,9 @@ var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     _convertTrack: function (entry) {
         return {
-            artist:     Tomahawk.htmldecode(entry.artist.name),
-            track:      Tomahawk.htmldecode(entry.name),
-            title:      Tomahawk.htmldecode(entry.name),
+            artist:     Tomahawk.htmlDecode(entry.artist.name),
+            track:      Tomahawk.htmlDecode(entry.name),
+            title:      Tomahawk.htmlDecode(entry.name),
             duration:   entry.length,
             url:        'zaycev://' + entry.uid,
             checked:    true,
@@ -138,7 +138,6 @@ var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
 
     init: function() {
         var that = this;
-        Tomahawk.addCustomUrlHandler( 'zaycev', 'getStreamUrl', true );
 
         return Tomahawk.get("http://zaycevnet.info/").then(function (response){
             var keyRe = /var\ +keyd\ *=[^"]+"([^"]+)/gm;
@@ -148,25 +147,25 @@ var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
     },
 
-    search: function (query) {
+    search: function (params) {
         var that = this;
 
-        return Tomahawk.get("http://zaycevnet.info/term/" + query).then(function (response){
+        return Tomahawk.get("http://zaycevnet.info/term/" + params.query).then(function (response){
             if (typeof response == 'string' || response instanceof String)
                 response = JSON.parse(response);
             return response.map(that._convertTrack, that);
         });
     },
 
-    resolve: function (artist, album, title) {
-        var query = [ artist, title ].join(' - ');
-        return this.search(query);
+    resolve: function (params) {
+        var query = [ params.artist, params.track ].join(' - ');
+        return this.search({query:query});
     },
 
-    getStreamUrl: function(qid, url) {
+    getStreamUrl: function(params) {
         var that = this;
-        var id = this.decodeSongID(url.split('://')[1]);
-        Tomahawk.get(this.api_location + 'audio.getlinks/', {
+        var id = this.decodeSongID(params.url.split('://')[1]);
+        return Tomahawk.get(this.api_location + 'audio.getlinks/', {
             data: {
                 proxy: '4',
                 id: id,
@@ -177,12 +176,11 @@ var ZaycevResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             if (typeof response == 'string' || response instanceof String)
                 response = JSON.parse(response);
             if(response.status == 'ok')
-                Tomahawk.reportStreamUrl(qid, response.result[0].url);
+                return {url:response.result[0].url};
             else
-                Tomahawk.reportStreanUrl(qid, '');
+                return {url:null};
         });
     }
 });
 
 Tomahawk.resolver.instance = ZaycevResolver;
-
