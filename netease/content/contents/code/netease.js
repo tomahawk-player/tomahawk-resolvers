@@ -88,7 +88,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             {
                 //Requested quality not found , try to find the one going down
                 //a step
-                for(var i = that._quality; i > 0 && !song[format]; --i) {
+                for(var i = that._quality; i >= 0 && !song[format]; --i) {
                     var format = that.strQuality[i];
                 }
             }
