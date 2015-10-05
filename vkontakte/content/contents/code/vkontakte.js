@@ -192,9 +192,9 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
         {
             return {url: params.url};
         }
-        var id = params.url.match( /vk:\/\/track\/([_\d]+)/ )[1];
-        this._apiCall('audio.getById', {audios : id}).then( function (response) {
-            return response[0].url;
+        var id = params.url.match( /vk:\/\/track\/([_\-\d]+)/ )[1];
+        return this._apiCall('audio.getById', {audios : id}).then( function (response) {
+            return {url : response.response[0].url};
         });
     },
 
@@ -247,8 +247,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
             title:      title,
             album:      album,
             duration:   entry.duration,
-            url:        entry.url,
             hint:       'vk://track/' + entry.owner_id + '_' + entry.id,
+            url:        'vk://track/' + entry.owner_id + '_' + entry.id,
             type:       "track",
             checked:    true
         };
