@@ -2,6 +2,7 @@
  * Copyright (C) 2012 Hugo Lindström <hugolm84@gmail.com>
  * Copyright (C) 2011-2015 Thierry Göckel <thierry@strayrayday.lu>
  * Copyright (C) 2012 Leo Franchi <lfranchi@kde.org>
+ * Copyright (C) 2015 Anton Romanov <theliua@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,7 +20,9 @@
  * NOTICE: This resolver and its intent, is for demonstrational purposes only
  **/
 
-var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
+var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
+
+    apiVersion: 0.9,
 
     settings: {
         name: 'YouTube',
@@ -31,6 +34,52 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     hatchet: false,
 
     resolveMode: false,
+
+    bitratesToItags : {
+        // we are not including LIVE itags and the ones with audio bitrate < 64
+        // Of course we will also not include VIDEO-ONLY itags for this
+        // resolver 
+        // Each one in order of prefefence
+        "64" : [
+            250,//DASH Audio only / Opus
+            5, //FLV 240o/ MP3
+            6, //FLV 270p/ MP3
+        ],
+        "96" : [
+            83,//240p MP4/ AAC
+            18,//360p MP4/ AAC
+            82,//360p MP4/ AAC
+        ],
+        "128" : [
+            140,//DASH Audio only / AAC
+            171,//DASH Audio only / Vorbis
+            100,//360p WebM/ Opus
+            34,//360p FLV/ AAC
+            43,//360p WebM/ Opus
+            35,//480p FLV/ AAC
+            44,//480p WebM/ Opus
+        ],
+        "160" : [
+            251,//DASH Audio only / Opus
+        ],
+        "192" : [
+            172,//DASH Audio only / Vorbis
+            101,//360p WebM/ Opus
+            22,//720p MP4/ AAC
+            45,//720p WebM/ Opus
+            101,//720p WebM/ Opus
+            84,//720p MP4/ AAC
+            37,//1080p MP4/ AAC
+            46,//1080p WebM/ Opus
+            85,//1080p MP4/ AAC
+            38,//3072p MP4/ AAC
+        ],
+        "256" : [
+            141,//DASH Audio only / AAC
+        ]
+    },
+
+    bitrateSelectedIndexToBitrate : [ "64", "96", "128", "160", "192", "256" ],
 
     init: function(callback)
     {
@@ -71,7 +120,6 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         if (callback){
             callback(null);
         }
-        Tomahawk.addCustomUrlHandler( 'youtube', 'getStreamUrl', true );
     },
 
     getConfigUi: function()
@@ -108,6 +156,13 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         };
     },
 
+    apiCall : function(method, params) 
+    {
+        params['key'] = 'AIzaSyD22x7IqYZp' + 'f3cn27wL9' + '8MQg2FWnno_JHA'
+        return Tomahawk.get("https://www.googleapis.com/youtube/v3/" + method, 
+                { data : params });
+    },
+
     newConfigSaved: function ()
     {
         "use strict";
@@ -125,30 +180,10 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         }
     },
 
-    sendEmptyResult: function( qid )
-    {
-        "use strict";
-
-        var empty = {
-            results: [],
-            qid: qid
-        };
-        Tomahawk.addTrackResults( empty );
-    },
-
-    // Allows async requests being made with userdata
-    asyncRequest: function ( url, userdata, callback )
-    {
-        "use strict";
-
-        Tomahawk.asyncRequest( url, function ( xhr ) {
-            callback.call( window, xhr, userdata );
-        } );
-    },
-
     debugMsg: function( msg )
     {
         "use strict";
+        Tomahawk.log('debugMsg called');
 
         if ( msg.toLowerCase().indexOf( "assert" ) === 0 )
         {
@@ -198,13 +233,16 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     {
         "use strict";
 
-        var best = results.length;
         var finalResult = results[0];
+        Tomahawk.log('GETTING MOST RELEVANT FROM: ' +JSON.stringify(results));
         for ( var j = 0; j < results.length; j++ )
         {
-            if ( results[j].id < best || ( results[j].url && this.hasPreferredQuality( results[j].url, results[j].YouTubeQuality ) ) )
+            Tomahawk.log(JSON.stringify(results[j]));
+            if (
+                    results[j].score > finalResult.score ||
+                    (results[j].score == finalResult.score && (results[j].id < finalResult.id || ( results[j].url && results[j].bitrate > finalResult.bitrate ) ))
+               )
             {
-                best = results[j].id;
                 finalResult = results[j];
             }
         }
@@ -253,27 +291,20 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         return "hd720";
     },
 
-    getBitrate: function ( result )
+    getBitrate: function ( itag )
     {
         "use strict";
 
-        var urlString = result.url;
-        //http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
-        // No need to get higher than hd720, as it only will eat bandwith and do nothing for sound quality
-        if ( urlString.indexOf( "quality=hd720" ) !== -1 || result.quality === 'hd720' )
+        itag = parseInt(itag);
+        for(var bitrate in this.bitratesToItags)
         {
-            return 192;
+            if(this.bitratesToItags[bitrate].indexOf(itag) !== -1)
+            {
+                return bitrate;
+            }
         }
-        else if ( urlString.indexOf( "quality=medium" ) !== -1 || result.quality === 'medium' )
-        {
-            return 128;
-        }
-        else if ( urlString.indexOf( "quality=small" ) !== -1 || result.quality === 'medium' )
-        {
-            return 96;
-        }
-        // Probably
-        return 128;
+        this.debugMsg("Unexpected itag in getBitrate: " + itag.toString());
+        return 128;//how we can even get there?
     },
 
     getTrack: function ( trackTitle, origTitle, isSearch )
@@ -473,7 +504,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     _extract_object : function( code, name, known_objects ) {
         //For now objects we need to extract were always self contained so we
         //just regex-extract it and return
-        Tomahawk.log('Extracting object:' + name);
+        this.debugMsg('Extracting object:' + name);
         var objectRE = new RegExp('(?:var\\s+)?' +
                 this.escapeRegExp(name) + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
         var obj_M = code.match(objectRE);
@@ -481,7 +512,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
     },
 
     _extract_function : function( code, name, known_objects ) {
-        Tomahawk.log('Extracting function:' + name);
+        this.debugMsg('Extracting function:' + name);
         var functionCode = '';
         if (typeof known_objects === 'undefined')
         {
@@ -491,26 +522,26 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
         }
         var f_RE = new RegExp('(?:function\\s+' + this.escapeRegExp(name) + '|[{;\\s]' +
             this.escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
-        Tomahawk.log('(?:function\\s+' + name + '|[{;]' +
+        this.debugMsg('(?:function\\s+' + name + '|[{;]' +
             name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
         var f_match = code.match(f_RE);
         if ( f_match )
         {
-            Tomahawk.log('Args for function ' + name + ' is: ' + f_match[1]);
-            Tomahawk.log('Body for function ' + name + ' is: ' + f_match[2]);
+            this.debugMsg('Args for function ' + name + ' is: ' + f_match[1]);
+            this.debugMsg('Body for function ' + name + ' is: ' + f_match[2]);
             var args = f_match[1].split(',');
             known_objects.names = known_objects.names.concat(args);
-            Tomahawk.log(JSON.stringify(known_objects));
+            this.debugMsg(JSON.stringify(known_objects));
             var statements = f_match[2].split(';');
             for(var i = 0; i < statements.length; i++)
             {
                 var stmt = statements[i].trim();
                 var callRE = /(?:^|[=\+-\s]+)([a-zA-Z$0-9\.]+)\s*\(/gm;
                 var match;
-                Tomahawk.log('Processing stmt:' + stmt);
+                this.debugMsg('Processing stmt:' + stmt);
                 while ((match = callRE.exec(stmt)) !== null)
                 {
-                    Tomahawk.log('Processing call:' + match[1]);
+                    this.debugMsg('Processing call:' + match[1]);
                     var split = match[1].split('.');
                     if (split.length == 1)
                     {
@@ -522,8 +553,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                         }
                     } else {
                         //object
-                        Tomahawk.log('see if object is known:' + split[0]);
-                        Tomahawk.log(known_objects.names.indexOf(split[0]));
+                        this.debugMsg('see if object is known:' + split[0]);
+                        this.debugMsg(known_objects.names.indexOf(split[0]).toString());
                         if (known_objects.names.indexOf(split[0]) == -1) 
                         {
                             functionCode += this._extract_object(code, split[0], known_objects);
@@ -543,145 +574,120 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
 
         var parsedUrls = [];
         var that = this;
-        var urlArray = rawUrls.split( /,/g );
-        for ( var i = 0; i < urlArray.length; i++ )
+        var urlArray = rawUrls.split( /,/g ).map(function(r) { return that._parseQueryString(r);});
+        //Start from the top (user preffeded/max quality and go down from that
+        for ( var i = that.qualityPreference; i >= 0; --i)
         {
-            var params = this._parseQueryString(urlArray[i]);
-
-            //Without the following it'll give 403 for Tomahawk's user-agent
-            //(even though URL will work with anything else just fine)
-            //This is some bullshit black magic ... 
-            //params.url = decodeURIComponent(params.url);
-
-            var haveSignature = params.url.indexOf('signature=') !== -1;
-
-            if (params.sig) {
-                haveSignature = true;
-                params.url += '&signature=' + params.sig;
-            } else if (params.s) {
-                //lets try to extract deobfuscation function automatically
-                //URL list for future testing, please append the new ones so
-                //that if anything breaks we can make sure our code works on
-                //all variants we have seen so far
-                //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflOWWv0e/html5player-new.js
-                //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflCeB3p5/html5player-new.js
-                //
-                var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
-                var assetsMatch = html.match( ASSETS_RE );
-                if ( assetsMatch )
+            var itags = that.bitratesToItags[that.bitrateSelectedIndexToBitrate[i]];
+            for (var itagI = 0; itagI < itags.length; ++itagI){
+                var itag = itags[itagI];
+                var prefUrl = urlArray.filter(function(params){return params['itag'] == itag;});
+                if (prefUrl.length > 0)
                 {
-                    Tomahawk.log('yt player js: ' + JSON.parse(assetsMatch[1]));
-                    var js_player_url = JSON.parse(assetsMatch[1]);
-                    if (js_player_url.indexOf('//') === 0)
-                        js_player_url = 'https:' + js_player_url;
-                    if (js_player_url in that.deobfuscateFunctions)
-                    {
-                        var dec = that.deobfuscateFunctions[js_player_url];
+                    var params = prefUrl[0];
+                    that.debugMsg(JSON.stringify(params));
 
-                        haveSignature = true;
-                        params.url += '&signature=' + eval(dec.code + dec.name + '("' + params.s + '");');
-                    } else {
-                        //TODO: this result will be abandoned ... only the
-                        //subsequent ones coming after we got the function will
-                        //succeed ... need to delat them, requires a bit of
-                        //refactoring
-                        Tomahawk.get(js_player_url).then(function (code) {
-                            //Extract top signature deobfuscation function name
-                            var decrypt_function_RE = /\.sig\|\|([a-zA-Z0-9$]+)\(/;
-                            var fname = code.match( decrypt_function_RE );
-                            if ( fname )
+                    if (params.sig) {
+                        params.url += '&signature=' + params.sig;
+                    } else if (params.s) {
+                        //lets try to extract deobfuscation function automatically
+                        //URL list for future testing, please append the new ones so
+                        //that if anything breaks we can make sure our code works on
+                        //all variants we have seen so far
+                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflOWWv0e/html5player-new.js
+                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflCeB3p5/html5player-new.js
+                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vfliM_xst/html5player-new.js
+                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflt2Xpp6/html5player-new.js
+                        //  etc...etc
+                        //
+                        var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
+                        var assetsMatch = html.match( ASSETS_RE );
+                        if ( assetsMatch )
                         {
-                            fname = fname[1];
-                            Tomahawk.log('Deobfuscate function name: ' + fname);
-                            var func = that._extract_function(code, fname);
-                            Tomahawk.log('Extracted deobfuscation code is:' + func);
-                            that.deobfuscateFunctions[js_player_url] = {
-                                code : func,
-                                name : fname
-                            };
+                            this.debugMsg('player js: ' + JSON.parse(assetsMatch[1]));
+                            var js_player_url = JSON.parse(assetsMatch[1]);
+                            if (js_player_url.indexOf('//') === 0)
+                                js_player_url = 'https:' + js_player_url;
+                            var dec;
+                            if (js_player_url in that.deobfuscateFunctions)
+                            {
+                                dec = that.deobfuscateFunctions[js_player_url];
+
+                            } else {
+                                dec = Tomahawk.get(js_player_url).then(function (code) {
+                                    //Extract top signature deobfuscation function name
+                                    var decrypt_function_RE = /\.sig\|\|([a-zA-Z0-9$]+)\(/;
+                                    var fname = code.match( decrypt_function_RE );
+                                    if ( fname )
+                                    {
+                                        fname = fname[1];
+                                        that.debugMsg('Deobfuscate function name: ' + fname);
+                                        var func = that._extract_function(code, fname);
+                                        that.debugMsg('Extracted deobfuscation code is:' + func);
+                                        that.deobfuscateFunctions[js_player_url] = {
+                                            code : func,
+                                            name : fname
+                                        };
+                                        return that.deobfuscateFunctions[js_player_url];
+                                    }
+                                });
+                            }
+                            return RSVP.Promise.all([dec,params]).then(function(data){
+                                var params = data[1];
+                                var dec    = data[0];
+                                if(dec)
+                                {
+                                    params.url += '&signature=' + eval(dec.code + dec.name + '("' + params.s + '");');
+                                    return params;
+                                }
+                            });
                         }
-                        });
                     }
                 }
             }
-
-            //This resolver relies heavily on having quality as part of the url
-            if ( haveSignature && ['hd270','high','medium','small'].indexOf(params.quality) !== -1 ||
-                 params.url.regexIndexOf( /quality=(hd720|high|medium|small)/i, 0 ) !== -1)
-            {
-                parsedUrls.push( 
-                    {
-                        url: 'youtube://' + params.url,
-                        quality: params.quality
-                    }
-                    );
-            }
         }
-
-        var finalUrl;
-
-        if ( this.qualityPreference === undefined )
-        {
-            // This shouldnt happen really, but sometimes do?!
-            this.qualityPreference = 0;
-            this.debugMsg( "Critical: Failed to set qualitypreference in init, resetting to " + this.qualityPreference );
-        }
-
-        for ( i = 0; i < parsedUrls.length; i++ )
-        {
-            if ( this.hasPreferredQuality( parsedUrls[i].url,  parsedUrls[i].quality ) )
-            {
-                finalUrl = parsedUrls[i];
-            }
-        }
-
-        if ( finalUrl === undefined )
-        {
-            finalUrl = parsedUrls[0];
-        }
-
-        if ( finalUrl && finalUrl !== undefined )
-        {
-            return finalUrl;
-        }
-        return null;
     },
 
-    getStreamUrl: function(qid, url) {
-        //Temporary workaround to make compatible with both new and old api
-        if(qid.url)
-        {
-            url = qid.url;
-            qid = qid.qid;
+    getStreamUrl: function(params) {
+        return {
+            url: params.url,
+            headers: {
+                'User-Agent': 'Mozilla/6.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'
+            }
         }
-        Tomahawk.reportStreamUrl(qid, url.replace('youtube://', ''), {
-            'User-Agent': 'Mozilla/6.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        });
     },
 
 
-    resolve: function( qid, artist, album, title )
+    resolve: function( params )
     {
         "use strict";
 
+        var artist = params.artist;
+        var album = params.album;
+        var title = params.track;
         this.resolveMode = true;
         var query;
         if ( artist !== "" )
         {
-            query = encodeURIComponent( artist ) + "%20";
+            query = artist + " ";
         }
         if ( title !== "" )
         {
-            query += encodeURIComponent( title );
+            query += title;
         }
-        var apiQuery = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=10&order=relevance&type=video&q=" + query.replace( /\%20/g, '+' );
+        var queryParams = {
+            part : 'snippet',
+            maxResults : 10,
+            order : 'relevance',
+            type : 'video',
+            q : query
+        };
         if ( this.hatchet )
         {
             apiQuery += "&videoEmbeddable=true";
         }
         var that = this;
-        Tomahawk.asyncRequest( apiQuery, function( xhr ) {
-            var resp = JSON.parse( xhr.responseText );
+        return this.apiCall( 'search', queryParams).then(function( resp ) {
             if ( resp.pageInfo.totalResults !== 0 && resp.items !== undefined )
             {
                 var results = [];
@@ -690,7 +696,7 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 //a proper track there it'll be in description with links to
                 //amazon/itunes/google stores. That would be the best result
                 //tbh
-                Tomahawk.get('https://www.youtube.com/watch?v=' + resp.items[0].id.videoId).then(function(page){
+                return Tomahawk.get('https://www.youtube.com/watch?v=' + resp.items[0].id.videoId).then(function(page){
                     var startIndex = 0;
                     var r = /"content watch-info-tag-list">[\s]+<li>&quot;(.*?)&quot;\s+by\s+(.*?)\s\(<a[\s]+href/mg;
                     var match = r.exec(page);
@@ -717,10 +723,6 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                             id : 0
                         };
 
-                        if ( that.qualityPreference === 0 )
-                        {
-                            result.linkUrl += "&hd=1";
-                        }
                         results.push( result );
                     }
                     for ( var i = startIndex; i < limit; i++ )
@@ -767,48 +769,43 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                             result.youtubeVideoId = responseItem.id.videoId;
                             result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeVideoId;
                             result.id = i;
-                            if ( that.qualityPreference === 0 )
-                            {
-                                result.linkUrl += "&hd=1";
-                            }
                             results.push( result );
                         }
                     }
                     if (results.length === 0) { // if no results had appropriate titles, return empty
-                        that.sendEmptyResult( qid, artist + " - " + title );
+                        return [];
                     }
                     else
                     {
                         if ( that.hatchet )
                         {
-                            Tomahawk.addTrackResults( { qid: qid, results: [that.getMostRelevant( results )] } );
+                            return [that.getMostRelevant( results )];
                         }
                         else
                         {
-                            that.getMetadata( qid, results );
+                            return that.getMetadata( results );
                         }
                     }
                 });
             }
             else
             {
-                that.sendEmptyResult( qid, artist + " - " + title );
+                return [];
             }
         });
     },
 
-    getCandidates: function( qid, searchString )
+    getCandidates: function( searchString )
     {
         "use strict";
 
-        var queryUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=50&order=relevance&type=video&q=" + encodeURIComponent( searchString ).replace( /\%20/g, '+' );
+        var queryUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=50&order=relevance&type=video&q=" + encodeURIComponent( searchString );
         if ( this.hatchet )
         {
             queryUrl += "&videoEmbeddable=true";
         }
         var that = this;
-        Tomahawk.asyncRequest( queryUrl, function( xhr ){
-            var resp = JSON.parse( xhr.responseText );
+        return Tomahawk.get( queryUrl ) .then(function( resp ){
             var results = [];
             if ( resp.pageInfo.totalResults !== 0 )
             {
@@ -849,37 +846,34 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     result.year = resp.items[i].snippet.publishedAt.slice( 0, 4 );
                     result.linkUrl = "https://www.youtube.com/watch?v=" + result.youtubeVideoId;
                     result.mimetype = "video/h264";
-                    result.score = (parsedTrack.isOfficial !== undefined ? 0.85 : 0.95);
+                    result.score = (parsedTrack.isOfficial === 1 ? 0.80 : 0.65);
                     results.push( result );
                 }
             }
             if ( results.length === 0 )
             {
-                that.sendEmptyResult( qid, searchString );
+                return results;
             }
             else
             {
-                that.verify( qid, results );
+                return that.verify( results );
             }
         } );
     },
 
-    verify: function( qid, candidates )
+    verify: function( candidates )
     {
         "use strict";
 
-        var verified = [];
-        var total = candidates.length;
         var that = this;
-        candidates.forEach( function( candidate ){
+        RSVP.Promise.all(candidates.map( function( candidate ){
             var trackLookupUrl = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent( candidate.artist ) + "&track=" + encodeURIComponent( candidate.track );
-            Tomahawk.asyncRequest( trackLookupUrl, function( xhr ){
-                var response = JSON.parse( xhr.responseText );
+            return Tomahawk.get( trackLookupUrl).then(function( response ){
                 if ( response.track !== undefined && response.track.name !== undefined && response.track.artist.name !== undefined )
                 {
                     if ( response.track.name.toLowerCase() === candidate.track.toLowerCase() && response.track.artist.name.toLowerCase() === candidate.artist.toLowerCase() )
                     {
-                        verified.push( candidate );
+                        return candidate;
                     }
                 }
                 else
@@ -893,27 +887,26 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                         that.debugMsg( "Bad result from track lookup? " + trackLookupUrl + ": " + JSON.stringify( response ) );
                     }
                 }
-                total--;
-                if ( total === 0 )
-                {
-                    that.getMetadata( qid, verified );
-                }
             } );
-        } );
+        } )).then(function(results) {
+            return that.getMetadata( verified.filter(function(e) { return e !== undefined; } ));
+        });
     },
 
-    getMetadata: function( qid, results )
+    getMetadata: function( results )
     {
         "use strict";
         
+        Tomahawk.log('getMetadata');
+        Tomahawk.log(JSON.stringify(results));
         var queryUrl = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&id=";
-        results.forEach( function( result ){
-            queryUrl += result.youtubeVideoId + ",";
-        } );
-        queryUrl = queryUrl.substring( 0, queryUrl.length - 1 );
+        var params = {
+            part : 'contentDetails',
+            id   : results.map(function(r) { return r.youtubeVideoId; }).join(','),
+        };
         var that = this;
-        Tomahawk.asyncRequest( queryUrl, function( xhr ){
-            var response = JSON.parse( xhr.responseText );
+        return that.apiCall('videos', params).then(function( response ){
+            Tomahawk.log(JSON.stringify(results));
             results.forEach( function( result ){
                 for ( var i = 0; i < response.items.length; i++ )
                 {
@@ -924,38 +917,24 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                     }
                 }
             } );
-            that.parseVideoUrlFromYtPages( qid, results );
+            Tomahawk.log(JSON.stringify(results));
+            return that.parseVideoUrlFromYtPages( results );
         } );
     },
 
-    parseVideoUrlFromYtPages: function( qid, results )
+    parseVideoUrlFromYtPages: function( results )
     {
         "use strict";
+        Tomahawk.log('parse videourlfrompages');
 
         var that = this;
-        var total = results.length;
-        results.forEach( function( result ){
-            Tomahawk.asyncRequest( result.linkUrl, function( xhr ){
-                var html = xhr.responseText;
+        Tomahawk.log(JSON.stringify(results));
+        return RSVP.Promise.all(results.map( function( result ){
+            return Tomahawk.get( result.linkUrl).then(function( html ){
                 var url;
-                // First, lets try and find the stream_map at top of the page
-                // to save some time going to the end and do JSON.parse on the yt.config
-                var streamMatch = html.match( /(url_encoded_fmt_stream_map=)(.*?)(?=(\\u0026amp))/i );
                 var parsed;
-                if ( streamMatch && streamMatch[2] !== undefined )
-                {
-                    parsed = this.parseURLS( streamMatch[2], html );
-                    if ( parsed )
-                    {
-                        url = parsed;
-                    }
-                    else
-                    {
-                        this.debug( "Hm, failed to parse urls from top of the page" );
-                    }
-                }
                 // Now we can go further down, and check the ytplayer.config map
-                streamMatch = html.match( /(ytplayer\.config =)([^\r\n]+?\});/ );
+                var streamMatch = html.match( /(ytplayer\.config =)([^\r\n]+?\});/ );
                 if ( !streamMatch )
                 {
                     // Todo: Open window for user input?
@@ -981,6 +960,8 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                                 url = parsed;
                             }
                         }
+                        else 
+                            that.debugMsg('NOOOO ' + jsonMap.args.video_id);
                     }
                     catch ( e ) {
                         that.debugMsg( "Critical: " + e );
@@ -988,39 +969,39 @@ var YoutubeResolver = Tomahawk.extend( TomahawkResolver, {
                 }
                 if ( url )
                 {
-                    result.url = url.url;
-                    result.mimetype = url.mime;
-                    result.bitrate = that.getBitrate( url );
-                    result.YouTubeQuality = url.quality;
-                    var expires = url.url.match( /expire=([0-9]+)(?=(&))/ );
-                    if ( expires && expires[1] !== undefined )
-                        expires = expires[1];
-                    else
-                        expires = url.expires;
-                    if ( expires )
-                    {
-                        result.expires = Math.floor( expires );
-                    }
-                }
-                total--;
-                if ( total === 0 )
-                {
-                    var toReturn = {qid: qid, results: results};
-                    if ( that.resolveMode )
-                    {
-                        toReturn.results = [that.getMostRelevant( results )];
-                    }
-                    Tomahawk.addTrackResults( toReturn );
+                    return RSVP.Promise.all([url, result]).then(function(data){
+                        var url    = data[0];
+                        var result = data[1];
+                        result.url = url.url;
+                        result.mimetype = url.mime;
+                        result.bitrate = that.getBitrate( url.itag );
+                        var expires = url.url.match( /expire=([0-9]+)(?=(&))/ );
+                        if ( expires && expires[1] !== undefined )
+                            expires = expires[1];
+                        else
+                            expires = url.expires;
+                        if ( expires )
+                        {
+                            result.expires = Math.floor( expires );
+                        }
+                        return result;
+                    });
                 }
             } );
-        } );
+        } )).then(function(results) {
+            if ( that.resolveMode )
+            {
+                return [that.getMostRelevant( results )];
+            }
+            return results;
+        });
     },
 
-    search: function( qid, searchString )
+    search: function( params )
     {
         "use strict";
 
-        this.getCandidates( qid, searchString );
+        return getCandidates( params.query );
     }
 } );
 
