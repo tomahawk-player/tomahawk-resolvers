@@ -183,8 +183,6 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     debugMsg: function( msg )
     {
         "use strict";
-        Tomahawk.log('debugMsg called');
-
         if ( msg.toLowerCase().indexOf( "assert" ) === 0 )
         {
             Tomahawk.log( this.settings.name + msg );
