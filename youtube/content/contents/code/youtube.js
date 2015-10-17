@@ -41,7 +41,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         // resolver 
         // Each one in order of prefefence
         "64" : [
-            250,//DASH Audio only / Opus
+            //250,//DASH Audio only / Opus
             5, //FLV 240o/ MP3
             6, //FLV 270p/ MP3
         ],
@@ -53,24 +53,24 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         "128" : [
             140,//DASH Audio only / AAC
             171,//DASH Audio only / Vorbis
-            100,//360p WebM/ Opus
+            //100,//360p WebM/ Opus
             34,//360p FLV/ AAC
-            43,//360p WebM/ Opus
+            //43,//360p WebM/ Opus
             35,//480p FLV/ AAC
-            44,//480p WebM/ Opus
+            //44,//480p WebM/ Opus
         ],
         "160" : [
-            251,//DASH Audio only / Opus
+            //251,//DASH Audio only / Opus
         ],
         "192" : [
             172,//DASH Audio only / Vorbis
-            101,//360p WebM/ Opus
+            //101,//360p WebM/ Opus
             22,//720p MP4/ AAC
-            45,//720p WebM/ Opus
-            101,//720p WebM/ Opus
+            //45,//720p WebM/ Opus
+            //101,//720p WebM/ Opus
             84,//720p MP4/ AAC
             37,//1080p MP4/ AAC
-            46,//1080p WebM/ Opus
+            //46,//1080p WebM/ Opus
             85,//1080p MP4/ AAC
             38,//3072p MP4/ AAC
         ],
@@ -575,11 +575,13 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         var that = this;
         var urlArray = rawUrls.split( /,/g ).map(function(r) { return that._parseQueryString(r);});
         //Start from the top (user preffeded/max quality and go down from that
+        that.debugMsg('rawUrls : ' + JSON.stringify(rawUrls));
         for ( var i = that.qualityPreference; i >= 0; --i)
         {
             var itags = that.bitratesToItags[that.bitrateSelectedIndexToBitrate[i]];
             for (var itagI = 0; itagI < itags.length; ++itagI){
                 var itag = itags[itagI];
+                that.debugMsg('trying itag : ' + itag.toString());
                 var prefUrl = urlArray.filter(function(params){return params['itag'] == itag;});
                 if (prefUrl.length > 0)
                 {
@@ -951,7 +953,15 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 {
                     try {
                         var jsonMap = JSON.parse( streamMatch[2] );
-                        if ( jsonMap.args.url_encoded_fmt_stream_map !== undefined )
+                        if ( jsonMap.args.adaptive_fmts !== undefined )
+                        {
+                            parsed = that.parseURLS( jsonMap.args.adaptive_fmts, html );
+                            if ( parsed )
+                            {
+                                url = parsed;
+                            }
+                        }
+                        if ( !url && jsonMap.args.url_encoded_fmt_stream_map !== undefined )
                         {
                             parsed = that.parseURLS( jsonMap.args.url_encoded_fmt_stream_map, html );
                             if ( parsed )
@@ -959,8 +969,6 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                                 url = parsed;
                             }
                         }
-                        else 
-                            that.debugMsg('NOOOO ' + jsonMap.args.video_id);
                     }
                     catch ( e ) {
                         that.debugMsg( "Critical: " + e );
