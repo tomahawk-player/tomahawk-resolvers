@@ -18,24 +18,22 @@
  *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
+import Resolver from 'tomahawk/resolver';
 
-    apiVersion: 0.9,
-
-    soundcloudClientId: "TiNg2DRYhBnp01DA3zNag",
-
-    echonestClientId: "JRIHWEP6GPOER2QQ6",
-
-    baseUrl: "https://api.soundcloud.com/",
+export default class SoundcloudResolver extends Resolver {
+    apiVersion: 0.9
+    soundcloudClientId: "TiNg2DRYhBnp01DA3zNag"
+    echonestClientId: "JRIHWEP6GPOER2QQ6"
+    baseUrl: "https://api.soundcloud.com/"
 
     settings: {
         name: 'SoundCloud',
         icon: 'soundcloud-icon.png',
         weight: 85,
         timeout: 15
-    },
+    }
 
-    getConfigUi: function () {
+    getConfigUi() {
         var uiData = Tomahawk.readBase64("config.ui");
         return {
             "widget": uiData,
@@ -62,18 +60,18 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 }
             ]
         };
-    },
+    }
 
-    newConfigSaved: function (newConfig) {
+    newConfigSaved(newConfig) {
         this.includeCovers = newConfig.includeCovers;
         this.includeRemixes = newConfig.includeRemixes;
         this.includeLive = newConfig.includeLive;
-    },
+    }
 
     /**
      * Initialize the Soundcloud resolver.
      */
-    init: function () {
+    init() {
         // Set userConfig here
         var userConfig = this.getUserConfig();
         if (userConfig) {
@@ -87,9 +85,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
         }
 
         Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
-    },
+    }
 
-    _isValidTrack: function (trackTitle, origTitle) {
+    _isValidTrack(trackTitle, origTitle) {
         if (!this.includeCovers &&
             trackTitle.search(/cover/i) >= 0 &&
             origTitle.search(/cover/i) < 0) {
@@ -106,9 +104,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             return false;
         }
         return true;
-    },
+    }
 
-    resolve: function (params) {
+    resolve(params) {
         var artist = params.artist;
         var album = params.album;
         var track = params.track;
@@ -159,9 +157,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             }
             return results;
         });
-    },
+    }
 
-    _guessMetaData: function (title) {
+    _guessMetaData(title) {
         var matches = title.match(/\s*(.+?)\s*(?:\s[-\u2014]|\s["']|:)\s*["']?(.+?)["']?\s*$/);
         if (matches && matches.length > 2) {
             return {
@@ -176,9 +174,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 artist: matches[1]
             };
         }
-    },
+    }
 
-    search: function (params) {
+    search(params) {
         var query = params.query;
 
         var that = this;
@@ -287,9 +285,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 return results;
             });
         });
-    },
+    }
 
-    canParseUrl: function (params) {
+    canParseUrl(params) {
         var url = params.url;
         var type = params.type;
         // Soundcloud only returns tracks and playlists
@@ -301,9 +299,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             default:
                 return (/https?:\/\/(www\.)?soundcloud.com\//).test(url);
         }
-    },
+    }
 
-    _convertTrack: function (track) {
+    _convertTrack(track) {
         var result = {
             type: Tomahawk.UrlType.Track,
             track: track.title,
@@ -314,9 +312,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             result.hint = track.stream_url + "?client_id=" + this.soundcloudClientId;
         }
         return result;
-    },
+    }
 
-    lookupUrl: function (params) {
+    lookupUrl(params) {
         var url = params.url;
 
         var that = this;
@@ -379,6 +377,4 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             }
         });
     }
-});
-
-Tomahawk.resolver.instance = SoundcloudResolver;
+}
