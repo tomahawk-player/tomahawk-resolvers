@@ -79,7 +79,6 @@ export default class PluginManager {
                         window.resolverInstance.getStreamUrl(requestId, params.url);
                     });
                 } else if (methodName == 'resolve') {
-                    console.log('RESOLVE WAAAAAAAAAAT');
                     return new RSVP.Promise(function (resolve, reject) {
                         pluginManager.resolve[requestId] = resolve;
                         window.resolverInstance.resolve(requestId, params.artist,
