@@ -19,6 +19,19 @@
  *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
  */
 
+var valueForSubNode = function (node, tag) {
+    if (node === undefined) {
+        throw new Error("Tomahawk.valueForSubnode: node is undefined!");
+    }
+
+    var element = node.getElementsByTagName(tag)[0];
+    if (element === undefined) {
+        return undefined;
+    }
+
+    return element.textContent;
+};
+
 var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     apiVersion: 0.9,
@@ -214,16 +227,16 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     _parseHandshakeResult: function (xmlDoc) {
         var roots = xmlDoc.getElementsByTagName("root");
-        var auth = roots[0] === undefined ? false : Tomahawk.valueForSubNode(roots[0], "auth");
+        var auth = roots[0] === undefined ? false : valueForSubNode(roots[0], "auth");
         if (!auth) {
             Tomahawk.log("INVALID HANDSHAKE RESPONSE!");
             return xmlDoc;
         }
 
         Tomahawk.log("New auth token: " + auth);
-        var pingInterval = parseInt(roots[0] === undefined ? 0 : Tomahawk.valueForSubNode(roots[0],
+        var pingInterval = parseInt(roots[0] === undefined ? 0 : valueForSubNode(roots[0],
                 "session_length")) * 1000;
-        var trackCount = roots[0] === undefined ? (-1) : Tomahawk.valueForSubNode(roots[0],
+        var trackCount = roots[0] === undefined ? (-1) : valueForSubNode(roots[0],
             "songs");
 
         return {
@@ -312,18 +325,18 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 var song = songs[i];
 
                 results.push({
-                    artist: this._decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
-                    album: this._decodeEntity(Tomahawk.valueForSubNode(song, "album")),
-                    track: this._decodeEntity(Tomahawk.valueForSubNode(song, "title")),
-                    albumpos: Tomahawk.valueForSubNode(song, "track"),
+                    artist: this._decodeEntity(valueForSubNode(song, "artist")),
+                    album: this._decodeEntity(valueForSubNode(song, "album")),
+                    track: this._decodeEntity(valueForSubNode(song, "title")),
+                    albumpos: valueForSubNode(song, "track"),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
-                    url: Tomahawk.valueForSubNode(song, "url"),
+                    url: valueForSubNode(song, "url"),
                     //mimetype: valueForSubNode(song, "mime"), //FIXME what's up here? it was there before :\
                     //result.bitrate = valueForSubNode(song, "title");
-                    size: Tomahawk.valueForSubNode(song, "size"),
-                    duration: Tomahawk.valueForSubNode(song, "time"),
-                    score: Tomahawk.valueForSubNode(song, "rating")
+                    size: valueForSubNode(song, "size"),
+                    duration: valueForSubNode(song, "time"),
+                    score: valueForSubNode(song, "rating")
                 });
             }
         }
