@@ -55,9 +55,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     init: function() {
         this.API_BASE = 'http://music.163.com/api/';
-        this.SALT = '3go8&$8*3*3h0k(2)2';
-        //Needed for old 0.9
-        Tomahawk.addCustomUrlHandler( 'netease', 'getStreamUrl', true );
+        this.SALT = '3go8&$8' + '*3*3h0k(2)2';
         var config = this.getUserConfig();
         this._quality = config.quality || 2;
     },
@@ -98,7 +96,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             }
             var dfsid = song[format].dfsId.toString();
             var ext   =  song[format].extension;
-            var url = 'http://m1.music.126.net/' + that._encrypt(dfsid) + '/' +
+            var url = 'http://m2.music.126.net/' + that._encrypt(dfsid) + '/' +
                 dfsid + '.' + ext;
             return {url:url};
         });
