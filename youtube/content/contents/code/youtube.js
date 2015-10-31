@@ -43,12 +43,12 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         "64" : [
             //250,//DASH Audio only / Opus
             5, //FLV 240o/ MP3
-            6, //FLV 270p/ MP3
+            6 //FLV 270p/ MP3
         ],
         "96" : [
             83,//240p MP4/ AAC
             18,//360p MP4/ AAC
-            82,//360p MP4/ AAC
+            82//360p MP4/ AAC
         ],
         "128" : [
             140,//DASH Audio only / AAC
@@ -56,7 +56,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             //100,//360p WebM/ Opus
             34,//360p FLV/ AAC
             //43,//360p WebM/ Opus
-            35,//480p FLV/ AAC
+            35//480p FLV/ AAC
             //44,//480p WebM/ Opus
         ],
         "160" : [
@@ -72,10 +72,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             37,//1080p MP4/ AAC
             //46,//1080p WebM/ Opus
             85,//1080p MP4/ AAC
-            38,//3072p MP4/ AAC
+            38//3072p MP4/ AAC
         ],
         "256" : [
-            141,//DASH Audio only / AAC
+            141//DASH Audio only / AAC
         ]
     },
 
@@ -158,7 +158,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     apiCall : function(method, params) 
     {
-        params['key'] = 'AIzaSyD22x7IqYZp' + 'f3cn27wL9' + '8MQg2FWnno_JHA'
+        params['key'] = 'AIzaSyD22x7IqYZp' + 'f3cn27wL9' + '8MQg2FWnno_JHA';
         return Tomahawk.get("https://www.googleapis.com/youtube/v3/" + method, 
                 { data : params });
     },
@@ -168,8 +168,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         "use strict";
 
         var userConfig = this.getUserConfig();
-        if ((userConfig.includeCovers !== this.includeCovers) || (userConfig.includeRemixes !== this.includeRemixes) ||
-            (userConfig.includeLive !== this.includeLive) || (userConfig.qualityPreference !== this.qualityPreference))
+        if (userConfig.includeCovers !== this.includeCovers
+            || userConfig.includeRemixes !== this.includeRemixes
+            || userConfig.includeLive !== this.includeLive
+            || userConfig.qualityPreference !== this.qualityPreference)
         {
             this.includeCovers = userConfig.includeCovers;
             this.includeRemixes = userConfig.includeRemixes;
@@ -224,7 +226,8 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     {
         "use strict";
 
-        return toClean.replace( /[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "" ).replace( /(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'' ).replace( /\s+/g,' ' ).toLowerCase();
+        return toClean.replace(/[^A-Za-z0-9 ]|(feat|ft.|featuring|prod|produced|produced by)/g, "")
+            .replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g, '').replace(/\s+/g, ' ').toLowerCase();
     },
 
     getMostRelevant: function( results )
@@ -235,11 +238,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         for ( var j = 0; j < results.length; j++ )
         {
             Tomahawk.log(JSON.stringify(results[j]));
-            if (
-                    results[j].score > finalResult.score ||
-                    (results[j].score == finalResult.score && (results[j].id < finalResult.id || ( results[j].url && results[j].bitrate > finalResult.bitrate ) ))
-               )
-            {
+            if (results[j].score > finalResult.score
+                || (results[j].score == finalResult.score
+                && (results[j].id < finalResult.id
+                || ( results[j].url && results[j].bitrate > finalResult.bitrate )))) {
                 finalResult = results[j];
             }
         }
@@ -256,12 +258,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             this.debugMsg( "ASSERT: quality undefined!" );
             return true;
         }
-        
-        if ( quality === this.getPreferredQuality() || urlString.indexOf("quality=" + this.getPreferredQuality() ) !== -1 )
-        {
-            return true;
-        }
-        return false;
+
+        return !!(quality === this.getPreferredQuality()
+        || urlString.indexOf("quality=" + this.getPreferredQuality()) !== -1);
+
     },
     
     getPreferredQuality: function()
@@ -281,10 +281,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 return "medium";
             case 2:
                 return "small";
-            default:
-                return "hd720";
         }
-        // To make Lint happy
         return "hd720";
     },
 
@@ -308,24 +305,25 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     {
         "use strict";
 
-        if ( ( this.includeCovers === false || this.includeCovers === undefined ) && trackTitle.search( /(\Wcover(?!(\w)))/i ) !== -1 && origTitle.search( /(\Wcover(?!(\w)))/i ) === -1 )
-        {
+        if (( this.includeCovers === false || this.includeCovers === undefined )
+            && trackTitle.search(/(\Wcover(?!(\w)))/i) !== -1
+            && origTitle.search(/(\Wcover(?!(\w)))/i) === -1) {
             return null;
         }
         // Allow remix:es in search results?
-        if ( isSearch === undefined )
-        {
-            if ( ( this.includeRemixes === false || this.includeRemixes === undefined ) && trackTitle.search( /(\W(re)*?mix(?!(\w)))/i ) !== -1 && origTitle.search( /(\W(re)*?mix(?!(\w)))/i ) === -1 )
-            {
+        if (isSearch === undefined) {
+            if (( this.includeRemixes === false || this.includeRemixes === undefined )
+                && trackTitle.search(/(\W(re)*?mix(?!(\w)))/i) !== -1
+                && origTitle.search(/(\W(re)*?mix(?!(\w)))/i) === -1) {
                 return null;
             }
         }
-        if ( ( this.includeLive === false || this.includeLive === undefined ) && trackTitle.search( /(live(?!(\w)))/i ) !== -1 && origTitle.search( /(live(?!(\w)))/i ) === -1 )
-        {
+        if (( this.includeLive === false || this.includeLive === undefined )
+            && trackTitle.search(/(live(?!(\w)))/i) !== -1 && origTitle.search(/(live(?!(\w)))/i)
+            === -1) {
             return null;
         }
-        else
-        {
+        else {
             return trackTitle;
         }
     },
@@ -347,7 +345,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         // Sometimes users separate titles with quotes :
         // eg, "\"Young Forever\" Jay Z | Mr. Hudson (OFFICIAL VIDEO)"
         // this will parse out the that title
-        var inQuote = title.match( /([""'])(?:(?=(\\?))\2.).*\1/g );
+        var inQuote = title.match( /(["'])(?:(?=(\\?))\2.).*\1/g );
         if ( inQuote && inQuote !== undefined )
         {
             result.track = inQuote[0].substr( 1, inQuote[0].length - 2 );
@@ -374,7 +372,9 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         {
             if ( title.toLowerCase().indexOf( searchString.toLowerCase() ) !== -1 )
             {
-                result.parsed = this.parseCleanTrack( title.replace( RegExp( this.escapeRegExp(searchString), "gi" ), searchString.concat( " :" ) ) );
+                result.parsed
+                    = this.parseCleanTrack(title.replace(RegExp(this.escapeRegExp(searchString),
+                    "gi"), searchString.concat(" :")));
             }
             else
             {
@@ -495,10 +495,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     escapeRegExp : function (str) {
-        return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+        return str.replace(/[\-\[\]\/\{}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
     },
 
-    _extract_object : function( code, name, known_objects ) {
+    _extract_object : function( code, name ) {
         //For now objects we need to extract were always self contained so we
         //just regex-extract it and return
         this.debugMsg('Extracting object:' + name);
@@ -554,7 +554,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         this.debugMsg(known_objects.names.indexOf(split[0]).toString());
                         if (known_objects.names.indexOf(split[0]) == -1) 
                         {
-                            functionCode += this._extract_object(code, split[0], known_objects);
+                            functionCode += this._extract_object(code, split[0]);
                             known_objects.names.push(split[0]);
                         }
                     }
@@ -569,7 +569,6 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     {
         "use strict";
 
-        var parsedUrls = [];
         var that = this;
         var urlArray = rawUrls.split( /,/g ).map(function(r) { return that._parseQueryString(r);});
         //Start from the top (user preffeded/max quality and go down from that
@@ -896,11 +895,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     getMetadata: function( results )
     {
         "use strict";
-        
-        var queryUrl = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&id=";
+
         var params = {
             part : 'contentDetails',
-            id   : results.map(function(r) { return r.youtubeVideoId; }).join(','),
+            id   : results.map(function(r) { return r.youtubeVideoId; }).join(',')
         };
         var that = this;
         return that.apiCall('videos', params).then(function( response ){
@@ -929,7 +927,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 var url;
                 var parsed;
                 // Now we can go further down, and check the ytplayer.config map
-                var streamMatch = html.match( /(ytplayer\.config =)([^\r\n]+?\});/ );
+                var streamMatch = html.match( /(ytplayer\.config =)([^\r\n]+?});/ );
                 if ( !streamMatch )
                 {
                     // Todo: Open window for user input?
