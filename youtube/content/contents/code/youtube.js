@@ -81,7 +81,11 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     bitrateSelectedIndexToBitrate : [ "64", "96", "128", "160", "192", "256" ],
 
-    init: function(callback)
+    _apiKey: "AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA",
+
+    _apiUrl: "https://www.googleapis.com/youtube/v3/",
+
+    init: function()
     {
         "use strict";
 
@@ -117,9 +121,6 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         String.prototype.splice = function( idx, rem, s ) {
             return ( this.slice( 0, idx ) + s + this.slice( idx + Math.abs( rem ) ) );
         };
-        if (callback){
-            callback(null);
-        }
     },
 
     getConfigUi: function()
@@ -154,13 +155,6 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 "youtube.png" : Tomahawk.readBase64("youtube.png")
             }]
         };
-    },
-
-    _apiCall : function(method, params)
-    {
-        params['key'] = 'AIzaSyD22x7IqYZp' + 'f3cn27wL9' + '8MQg2FWnno_JHA';
-        return Tomahawk.get("https://www.googleapis.com/youtube/v3/" + method,
-                { data : params });
     },
 
     newConfigSaved: function ()
@@ -680,7 +674,9 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             query += title;
         }
 
+        var url = this._apiUrl + 'search';
         var queryParams = {
+            key: this._apiKey,
             part : 'snippet',
             maxResults : 5,
             order : 'relevance',
@@ -689,7 +685,8 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
         var queryParams2 = Tomahawk.extend(queryParams, { query : query });
         var that = this;
-        return RSVP.Promise.all([this._apiCall( 'search', queryParams), this._apiCall('search', queryParams2)]).then(function( responses ) {
+        return RSVP.Promise.all([Tomahawk.get(url, {data: queryParams}),
+            Tomahawk.get(url, {data: queryParams2})]).then(function (responses) {
             var items = responses[0].items.concat(responses[1].items);
             if ( items.length > 0 )
             {
@@ -808,11 +805,11 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         "use strict";
         var that = this;
 
-        var url = 'https://www.googleapis.com/youtube/v3/search';
+        var url = this._apiUrl + 'search';
         var settings = {
             data: {
                 part: "snippet",
-                key: "AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA",
+                key: this._apiKey,
                 maxResults: 50,
                 order: "relevance",
                 type: "video",
@@ -926,12 +923,16 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     {
         "use strict";
 
-        var params = {
-            part : 'contentDetails',
-            id   : results.map(function(r) { return r.youtubeVideoId; }).join(',')
-        };
         var that = this;
-        return that._apiCall('videos', params).then(function( response ){
+        var url = this._apiUrl + 'videos';
+        var settings = {
+            data: {
+                key: this._apiKey,
+                part : 'contentDetails',
+                id   : results.map(function(r) { return r.youtubeVideoId; }).join(',')
+            }
+        };
+        return Tomahawk.get(url, settings).then(function( response ){
             results.forEach( function( result ){
                 for ( var i = 0; i < response.items.length; i++ )
                 {
