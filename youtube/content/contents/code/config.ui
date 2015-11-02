@@ -93,24 +93,39 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>Choose your preferred quality setting</string>
+    <string>Choose your preferred(and also max) audio bitrate setting</string>
    </property>
    <property name="currentIndex">
     <number>1</number>
    </property>
    <item>
     <property name="text">
-     <string>High</string>
+     <string>64</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Medium</string>
+     <string>96</string>
     </property>
    </item>
    <item>
     <property name="text">
-     <string>Low</string>
+     <string>128</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>160</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>192</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>256</string>
     </property>
    </item>
   </widget>
@@ -124,7 +139,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Preferred audio quality:</string>
+    <string>Preferred(also max) audio bitrate:</string>
    </property>
   </widget>
   <widget class="QCheckBox" name="debug">
