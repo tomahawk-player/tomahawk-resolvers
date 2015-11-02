@@ -915,7 +915,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 }
             } );
         } )).then(function(results) {
-            return that._getMetadata( verified.filter(function(e) { return e !== undefined; } ));
+            return that._getMetadata( results.filter(function(e) { return e !== undefined; } ));
         });
     },
 
