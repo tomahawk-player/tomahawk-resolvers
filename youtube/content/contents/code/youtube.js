@@ -698,7 +698,13 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 //a proper track there it'll be in description with links to
                 //amazon/itunes/google stores. That would be the best result
                 //tbh
-                return Tomahawk.get('https://www.youtube.com/watch?v=' + items[0].id.videoId).then(function(page){
+                var url ='https://www.youtube.com/watch';
+                var settings = {
+                    data: {
+                        v: items[0].id.videoId
+                    }
+                };
+                return Tomahawk.get(url, settings).then(function (page) {
                     var startIndex = 0;
                     var r = /"content watch-info-tag-list">[\s]+<li>&quot;(.*?)&quot;\s+by\s+(.*?)\s\(<a[\s]+href/mg;
                     var match = r.exec(page);
@@ -800,14 +806,23 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     getCandidates: function( searchString )
     {
         "use strict";
-
-        var queryUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&key=AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA&maxResults=50&order=relevance&type=video&q=" + encodeURIComponent( searchString );
-        if ( this.hatchet )
-        {
-            queryUrl += "&videoEmbeddable=true";
-        }
         var that = this;
-        return Tomahawk.get( queryUrl ) .then(function( resp ){
+
+        var url = 'https://www.googleapis.com/youtube/v3/search';
+        var settings = {
+            data: {
+                part: "snippet",
+                key: "AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA",
+                maxResults: 50,
+                order: "relevance",
+                type: "video",
+                q: searchString
+            }
+        };
+        if (this.hatchet) {
+            settings.data["videoEmbeddable"] = true
+        }
+        return Tomahawk.get(url, settings).then(function (resp) {
             var results = [];
             if ( resp.pageInfo.totalResults !== 0 )
             {
@@ -869,8 +884,18 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var that = this;
         RSVP.Promise.all(candidates.map( function( candidate ){
-            var trackLookupUrl = "http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=b14d61bf2f7968731eb686c7b4a1516e&format=json&limit=5&artist=" + encodeURIComponent( candidate.artist ) + "&track=" + encodeURIComponent( candidate.track );
-            return Tomahawk.get( trackLookupUrl).then(function( response ){
+            var url = 'http://ws.audioscrobbler.com/2.0/';
+            var settings = {
+                data: {
+                    method: "track.getInfo",
+                    api_key: "b14d61bf2f7968731eb686c7b4a1516e",
+                    format: "json",
+                    limit: 5,
+                    artist: candidate.artist,
+                    track: candidate.track
+                }
+            };
+            return Tomahawk.get(url, settings).then(function (response) {
                 if ( response.track !== undefined && response.track.name !== undefined && response.track.artist.name !== undefined )
                 {
                     if ( response.track.name.toLowerCase() === candidate.track.toLowerCase() && response.track.artist.name.toLowerCase() === candidate.artist.toLowerCase() )
@@ -880,13 +905,15 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 }
                 else
                 {
-                    if( response.track !== undefined )
-                    {
-                        that.debugMsg( "Bad track name? " + trackLookupUrl + ": " + JSON.stringify( response.track ) );
+                    if (response.track !== undefined) {
+                        that._debugMsg("Bad track name? url: " + url + ", artist: "
+                            + candidate.artist + ", track: " + candidate.track + " -> "
+                            + JSON.stringify(response.track));
                     }
-                    else
-                    {
-                        that.debugMsg( "Bad result from track lookup? " + trackLookupUrl + ": " + JSON.stringify( response ) );
+                    else {
+                        that._debugMsg("Bad result from track lookup? url: " + url + ", artist: "
+                            + candidate.artist + ", track: " + candidate.track + " -> "
+                            + JSON.stringify(response));
                     }
                 }
             } );
