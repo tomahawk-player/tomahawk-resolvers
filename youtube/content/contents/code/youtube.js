@@ -372,9 +372,9 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         {
             if ( title.toLowerCase().indexOf( searchString.toLowerCase() ) !== -1 )
             {
-                result.parsed
-                    = this.parseCleanTrack(title.replace(RegExp(this.escapeRegExp(searchString),
-                    "gi"), searchString.concat(" :")));
+                result.parsed = this.parseCleanTrack(
+                    title.replace(new RegExp(this.escapeRegExp(searchString), "gi"),
+                        searchString.concat(" :")));
             }
             else
             {
@@ -390,7 +390,8 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     {
                         replaceWith = searchString.concat( " : " );
                     }
-                    result.parsed = this.parseCleanTrack( title.replace( RegExp( tryMatch, "gi" ), replaceWith ) );
+                    result.parsed = this.parseCleanTrack(
+                        title.replace(new RegExp(tryMatch, "gi"), replaceWith));
                 }
             }
         }
@@ -826,7 +827,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     // Dirty check, filters out the most of the unwanted results
                     var searchFoundItem = resp.items[i].snippet.title.replace( /([^A-Za-z0-9\s])/gi, "" ).replace( /(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'' ).replace( /\s+/g,'|' );
                     var searchStringItem = searchString.replace( /([^A-Za-z0-9\s])/gi, "" ).replace( /(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'' ).replace( /\s+/g,'|' );
-                    var matches = searchFoundItem.match( RegExp( searchStringItem, "gi" ) );
+                    var matches = searchFoundItem.match(new RegExp(searchStringItem, "gi"));
                     if ( !matches )
                     {
                         continue;
