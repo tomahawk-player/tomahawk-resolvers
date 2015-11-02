@@ -689,7 +689,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
         var queryParams2 = Tomahawk.extend(queryParams, { query : query });
         var that = this;
-        return Promise.all([this.apiCall( 'search', queryParams), this.apiCall('search', queryParams2)]).then(function( responses ) {
+        return RSVP.Promise.all([this.apiCall( 'search', queryParams), this.apiCall('search', queryParams2)]).then(function( responses ) {
             var items = responses[0].items.concat(responses[1].items);
             if ( items.length > 0 )
             {
