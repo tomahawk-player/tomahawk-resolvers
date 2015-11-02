@@ -156,10 +156,10 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
     },
 
-    apiCall : function(method, params) 
+    apiCall : function(method, params)
     {
         params['key'] = 'AIzaSyD22x7IqYZp' + 'f3cn27wL9' + '8MQg2FWnno_JHA';
-        return Tomahawk.get("https://www.googleapis.com/youtube/v3/" + method, 
+        return Tomahawk.get("https://www.googleapis.com/youtube/v3/" + method,
                 { data : params });
     },
 
@@ -263,7 +263,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         || urlString.indexOf("quality=" + this.getPreferredQuality()) !== -1);
 
     },
-    
+
     getPreferredQuality: function()
     {
         "use strict";
@@ -358,7 +358,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 return result.parsed;
             }
         }
-        else 
+        else
         {
             result.parsed = this.parseCleanTrack( title );
             if ( result.parsed )
@@ -544,7 +544,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     if (split.length == 1)
                     {
                         //function
-                        if (known_objects.names.indexOf(split[0]) == -1) 
+                        if (known_objects.names.indexOf(split[0]) == -1)
                         {
                             functionCode += this._extract_function(code, split[0], known_objects);
                             known_objects.names.push(split[0]);
@@ -553,7 +553,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         //object
                         this.debugMsg('see if object is known:' + split[0]);
                         this.debugMsg(known_objects.names.indexOf(split[0]).toString());
-                        if (known_objects.names.indexOf(split[0]) == -1) 
+                        if (known_objects.names.indexOf(split[0]) == -1)
                         {
                             functionCode += this._extract_object(code, split[0]);
                             known_objects.names.push(split[0]);
@@ -579,73 +579,75 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             var itags = that.bitratesToItags[that.bitrateSelectedIndexToBitrate[i]];
             for (var itagI = 0; itagI < itags.length; ++itagI){
                 var itag = itags[itagI];
-                that.debugMsg('trying itag : ' + itag.toString());
-                var prefUrl = urlArray.filter(function(params){return params['itag'] == itag;});
-                if (prefUrl.length > 0)
-                {
-                    var params = prefUrl[0];
-                    that.debugMsg(JSON.stringify(params));
+                (function (itag) {
+                    that.debugMsg('trying itag : ' + itag.toString());
+                    var prefUrl = urlArray.filter(function(params){return params['itag'] == itag;});
+                    if (prefUrl.length > 0)
+                    {
+                        var params = prefUrl[0];
+                        that.debugMsg(JSON.stringify(params));
 
-                    if (params.sig) {
-                        params.url += '&signature=' + params.sig;
-                        return params;
-                    } else if (params.s) {
-                        //lets try to extract deobfuscation function automatically
-                        //URL list for future testing, please append the new ones so
-                        //that if anything breaks we can make sure our code works on
-                        //all variants we have seen so far
-                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflOWWv0e/html5player-new.js
-                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflCeB3p5/html5player-new.js
-                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vfliM_xst/html5player-new.js
-                        //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflt2Xpp6/html5player-new.js
-                        //  etc...etc
-                        //
-                        var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
-                        var assetsMatch = html.match( ASSETS_RE );
-                        if ( assetsMatch )
-                        {
-                            this.debugMsg('player js: ' + JSON.parse(assetsMatch[1]));
-                            var js_player_url = JSON.parse(assetsMatch[1]);
-                            if (js_player_url.indexOf('//') === 0)
-                                js_player_url = 'https:' + js_player_url;
-                            var dec;
-                            if (js_player_url in that.deobfuscateFunctions)
+                        if (params.sig) {
+                            params.url += '&signature=' + params.sig;
+                            return params;
+                        } else if (params.s) {
+                            //lets try to extract deobfuscation function automatically
+                            //URL list for future testing, please append the new ones so
+                            //that if anything breaks we can make sure our code works on
+                            //all variants we have seen so far
+                            //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflOWWv0e/html5player-new.js
+                            //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflCeB3p5/html5player-new.js
+                            //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vfliM_xst/html5player-new.js
+                            //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflt2Xpp6/html5player-new.js
+                            //  etc...etc
+                            //
+                            var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
+                            var assetsMatch = html.match( ASSETS_RE );
+                            if ( assetsMatch )
                             {
-                                that.debugMsg('Deobfuscation code already available');
-                                dec = that.deobfuscateFunctions[js_player_url];
-                            } else {
-                                dec = Tomahawk.get(js_player_url).then(function (code) {
-                                    //Extract top signature deobfuscation function name
-                                    var decrypt_function_RE = /\.sig\|\|([a-zA-Z0-9$]+)\(/;
-                                    var fname = code.match( decrypt_function_RE );
-                                    if ( fname )
+                                this.debugMsg('player js: ' + JSON.parse(assetsMatch[1]));
+                                var js_player_url = JSON.parse(assetsMatch[1]);
+                                if (js_player_url.indexOf('//') === 0)
+                                    js_player_url = 'https:' + js_player_url;
+                                var dec;
+                                if (js_player_url in that.deobfuscateFunctions)
+                                {
+                                    that.debugMsg('Deobfuscation code already available');
+                                    dec = that.deobfuscateFunctions[js_player_url];
+                                } else {
+                                    dec = Tomahawk.get(js_player_url).then(function (code) {
+                                        //Extract top signature deobfuscation function name
+                                        var decrypt_function_RE = /\.sig\|\|([a-zA-Z0-9$]+)\(/;
+                                        var fname = code.match( decrypt_function_RE );
+                                        if ( fname )
+                                        {
+                                            fname = fname[1];
+                                            that.debugMsg('Deobfuscate function name: ' + fname);
+                                            var func = that._extract_function(code, fname);
+                                            that.debugMsg('Extracted deobfuscation code is:' + func);
+                                            that.deobfuscateFunctions[js_player_url] = {
+                                                code : func,
+                                                name : fname
+                                            };
+                                            return that.deobfuscateFunctions[js_player_url];
+                                        }
+                                    });
+                                }
+                                return RSVP.Promise.all([dec,params]).then(function(data){
+                                    var params = data[1];
+                                    var dec    = data[0];
+                                    if(dec)
                                     {
-                                        fname = fname[1];
-                                        that.debugMsg('Deobfuscate function name: ' + fname);
-                                        var func = that._extract_function(code, fname);
-                                        that.debugMsg('Extracted deobfuscation code is:' + func);
-                                        that.deobfuscateFunctions[js_player_url] = {
-                                            code : func,
-                                            name : fname
-                                        };
-                                        return that.deobfuscateFunctions[js_player_url];
+                                        params.url += '&signature=' + eval(dec.code + dec.name + '("' + params.s + '");');
+                                        return params;
                                     }
                                 });
                             }
-                            return RSVP.Promise.all([dec,params]).then(function(data){
-                                var params = data[1];
-                                var dec    = data[0];
-                                if(dec)
-                                {
-                                    params.url += '&signature=' + eval(dec.code + dec.name + '("' + params.s + '");');
-                                    return params;
-                                }
-                            });
+                        } else {
+                            return params;
                         }
-                    } else {
-                        return params;
                     }
-                }
+                })(itag);
             }
         }
     },
@@ -743,7 +745,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                             var newTitle = that.magicCleanup( title );
                             var newArtist = that.magicCleanup( artist );
                             var newRespTitle = that.magicCleanup( responseTitle );
-                        
+
                             if ( newRespTitle !== undefined && newRespTitle.indexOf( newArtist ) === -1 ||
                                 ( newTitle !== "" && newRespTitle.indexOf( newTitle ) === -1 ) )
                             {
@@ -834,7 +836,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     }
                     var track = resp.items[i].snippet.title;
                     var parsedTrack = that.cleanupAndParseTrack( track, searchString );
-                    
+
                     if ( !parsedTrack || parsedTrack.artist === undefined || parsedTrack.track === undefined )
                     {
                         continue;
