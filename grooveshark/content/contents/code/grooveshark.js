@@ -181,10 +181,10 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
 
         // Testing only
         //Tomahawk.log("Getting playlist songs!");
-        //this.apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
+        //this._apiCall('getPlaylistSongs', { playlistID: '64641975' }, function (xhr) {
         //    Tomahawk.log("PLAYLIST RESPONSE: " + xhr.responseText );
         //});
-        //this.apiCall('getSongsInfo', { songIDs: ['3GBAjY'] }, function(xhr) {
+        //this._apiCall('getSongsInfo', { songIDs: ['3GBAjY'] }, function(xhr) {
         //    Tomahawk.log("GOT SONG INFO:" + xhr.responseText );
         //});
     },
@@ -304,7 +304,7 @@ var GroovesharkResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     apiCall: function (methodName, args, callback, errorHandler) {
-        // Tomahawk.log("apiCall - methodName: " + methodName + ", args: " + args);
+        // Tomahawk.log("_apiCall - methodName: " + methodName + ", args: " + args);
         var payload = {
             header: {
                 wsKey: this.apiKey
