@@ -156,7 +156,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
     },
 
-    apiCall : function(method, params)
+    _apiCall : function(method, params)
     {
         params['key'] = 'AIzaSyD22x7IqYZp' + 'f3cn27wL9' + '8MQg2FWnno_JHA';
         return Tomahawk.get("https://www.googleapis.com/youtube/v3/" + method,
@@ -182,7 +182,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
     },
 
-    debugMsg: function( msg )
+    _debugMsg: function( msg )
     {
         "use strict";
         if ( msg.toLowerCase().indexOf( "assert" ) === 0 )
@@ -195,7 +195,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
     },
 
-    iso8601toSeconds: function( iso8601 )
+    _iso8601toSeconds: function( iso8601 )
     {
         "use strict";
 
@@ -222,7 +222,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return seconds;
     },
 
-    magicCleanup: function( toClean )
+    _magicCleanup: function( toClean )
     {
         "use strict";
 
@@ -230,7 +230,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             .replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g, '').replace(/\s+/g, ' ').toLowerCase();
     },
 
-    getMostRelevant: function( results )
+    _getMostRelevant: function( results )
     {
         "use strict";
 
@@ -249,22 +249,22 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return finalResult;
     },
 
-    hasPreferredQuality: function( urlString, quality )
+    _hasPreferredQuality: function( urlString, quality )
     {
         "use strict";
 
         if ( this.qualityPreference === undefined )
         {
-            this.debugMsg( "ASSERT: quality undefined!" );
+            this._debugMsg( "ASSERT: quality undefined!" );
             return true;
         }
 
-        return !!(quality === this.getPreferredQuality()
-        || urlString.indexOf("quality=" + this.getPreferredQuality()) !== -1);
+        return !!(quality === this._getPreferredQuality()
+        || urlString.indexOf("quality=" + this._getPreferredQuality()) !== -1);
 
     },
 
-    getPreferredQuality: function()
+    _getPreferredQuality: function()
     {
         "use strict";
 
@@ -285,7 +285,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return "hd720";
     },
 
-    getBitrate: function ( itag )
+    _getBitrate: function ( itag )
     {
         "use strict";
 
@@ -297,11 +297,11 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 return bitrate;
             }
         }
-        this.debugMsg("Unexpected itag in getBitrate: " + itag.toString());
+        this._debugMsg("Unexpected itag in _getBitrate: " + itag.toString());
         return 128;//how we can even get there?
     },
 
-    getTrack: function ( trackTitle, origTitle, isSearch )
+    _getTrack: function ( trackTitle, origTitle, isSearch )
     {
         "use strict";
 
@@ -328,7 +328,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
     },
 
-    cleanupAndParseTrack: function( title, searchString )
+    _cleanupAndParseTrack: function( title, searchString )
     {
         "use strict";
 
@@ -351,7 +351,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             result.track = inQuote[0].substr( 1, inQuote[0].length - 2 );
             title = title.replace( inQuote[0], '' );
             result.fromQuote = result.track;
-            result.parsed = this.parseCleanTrack( title );
+            result.parsed = this._parseCleanTrack( title );
             if ( result.parsed )
             {
                 result.parsed.track = result.track;
@@ -360,7 +360,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
         else
         {
-            result.parsed = this.parseCleanTrack( title );
+            result.parsed = this._parseCleanTrack( title );
             if ( result.parsed )
             {
                 return result.parsed;
@@ -372,8 +372,8 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         {
             if ( title.toLowerCase().indexOf( searchString.toLowerCase() ) !== -1 )
             {
-                result.parsed = this.parseCleanTrack(
-                    title.replace(new RegExp(this.escapeRegExp(searchString), "gi"),
+                result.parsed = this._parseCleanTrack(
+                    title.replace(new RegExp(this._escapeRegExp(searchString), "gi"),
                         searchString.concat(" :")));
             }
             else
@@ -390,7 +390,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     {
                         replaceWith = searchString.concat( " : " );
                     }
-                    result.parsed = this.parseCleanTrack(
+                    result.parsed = this._parseCleanTrack(
                         title.replace(new RegExp(tryMatch, "gi"), replaceWith));
                 }
             }
@@ -419,7 +419,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return result;
     },
 
-    parseCleanTrack: function( track )
+    _parseCleanTrack: function( track )
     {
         "use strict";
 
@@ -495,22 +495,22 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return params;
     },
 
-    escapeRegExp : function (str) {
+    _escapeRegExp : function (str) {
         return str.replace(/[\-\[\]\/\{}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
     },
 
     _extract_object : function( code, name ) {
         //For now objects we need to extract were always self contained so we
         //just regex-extract it and return
-        this.debugMsg('Extracting object:' + name);
+        this._debugMsg('Extracting object:' + name);
         var objectRE = new RegExp('(?:var\\s+)?' +
-                this.escapeRegExp(name) + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
+                this._escapeRegExp(name) + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
         var obj_M = code.match(objectRE);
         return obj_M[0];
     },
 
     _extract_function : function( code, name, known_objects ) {
-        this.debugMsg('Extracting function:' + name);
+        this._debugMsg('Extracting function:' + name);
         var functionCode = '';
         if (typeof known_objects === 'undefined')
         {
@@ -518,28 +518,28 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 names: [ name ]
             };
         }
-        var f_RE = new RegExp('(?:function\\s+' + this.escapeRegExp(name) + '|[{;\\s]' +
-            this.escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
-        this.debugMsg('(?:function\\s+' + name + '|[{;]' +
+        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;\\s]' +
+            this._escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
+        this._debugMsg('(?:function\\s+' + name + '|[{;]' +
             name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
         var f_match = code.match(f_RE);
         if ( f_match )
         {
-            this.debugMsg('Args for function ' + name + ' is: ' + f_match[1]);
-            this.debugMsg('Body for function ' + name + ' is: ' + f_match[2]);
+            this._debugMsg('Args for function ' + name + ' is: ' + f_match[1]);
+            this._debugMsg('Body for function ' + name + ' is: ' + f_match[2]);
             var args = f_match[1].split(',');
             known_objects.names = known_objects.names.concat(args);
-            this.debugMsg(JSON.stringify(known_objects));
+            this._debugMsg(JSON.stringify(known_objects));
             var statements = f_match[2].split(';');
             for(var i = 0; i < statements.length; i++)
             {
                 var stmt = statements[i].trim();
                 var callRE = /(?:^|[=\+\s-]+)([a-zA-Z$0-9\.]+)\s*\(/gm;
                 var match;
-                this.debugMsg('Processing stmt:' + stmt);
+                this._debugMsg('Processing stmt:' + stmt);
                 while ((match = callRE.exec(stmt)) !== null)
                 {
-                    this.debugMsg('Processing call:' + match[1]);
+                    this._debugMsg('Processing call:' + match[1]);
                     var split = match[1].split('.');
                     if (split.length == 1)
                     {
@@ -551,8 +551,8 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         }
                     } else {
                         //object
-                        this.debugMsg('see if object is known:' + split[0]);
-                        this.debugMsg(known_objects.names.indexOf(split[0]).toString());
+                        this._debugMsg('see if object is known:' + split[0]);
+                        this._debugMsg(known_objects.names.indexOf(split[0]).toString());
                         if (known_objects.names.indexOf(split[0]) == -1)
                         {
                             functionCode += this._extract_object(code, split[0]);
@@ -566,26 +566,26 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return null;
     },
 
-    parseURLS: function( rawUrls, html )
+    _parseURLS: function( rawUrls, html )
     {
         "use strict";
 
         var that = this;
         var urlArray = rawUrls.split( /,/g ).map(function(r) { return that._parseQueryString(r);});
         //Start from the top (user preffeded/max quality and go down from that
-        that.debugMsg('rawUrls : ' + JSON.stringify(rawUrls));
+        that._debugMsg('rawUrls : ' + JSON.stringify(rawUrls));
         for ( var i = that.qualityPreference; i >= 0; --i)
         {
             var itags = that.bitratesToItags[that.bitrateSelectedIndexToBitrate[i]];
             for (var itagI = 0; itagI < itags.length; ++itagI){
                 var itag = itags[itagI];
                 (function (itag) {
-                    that.debugMsg('trying itag : ' + itag.toString());
+                    that._debugMsg('trying itag : ' + itag.toString());
                     var prefUrl = urlArray.filter(function(params){return params['itag'] == itag;});
                     if (prefUrl.length > 0)
                     {
                         var params = prefUrl[0];
-                        that.debugMsg(JSON.stringify(params));
+                        that._debugMsg(JSON.stringify(params));
 
                         if (params.sig) {
                             params.url += '&signature=' + params.sig;
@@ -605,14 +605,14 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                             var assetsMatch = html.match( ASSETS_RE );
                             if ( assetsMatch )
                             {
-                                this.debugMsg('player js: ' + JSON.parse(assetsMatch[1]));
+                                this._debugMsg('player js: ' + JSON.parse(assetsMatch[1]));
                                 var js_player_url = JSON.parse(assetsMatch[1]);
                                 if (js_player_url.indexOf('//') === 0)
                                     js_player_url = 'https:' + js_player_url;
                                 var dec;
                                 if (js_player_url in that.deobfuscateFunctions)
                                 {
-                                    that.debugMsg('Deobfuscation code already available');
+                                    that._debugMsg('Deobfuscation code already available');
                                     dec = that.deobfuscateFunctions[js_player_url];
                                 } else {
                                     dec = Tomahawk.get(js_player_url).then(function (code) {
@@ -622,9 +622,9 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                                         if ( fname )
                                         {
                                             fname = fname[1];
-                                            that.debugMsg('Deobfuscate function name: ' + fname);
+                                            that._debugMsg('Deobfuscate function name: ' + fname);
                                             var func = that._extract_function(code, fname);
-                                            that.debugMsg('Extracted deobfuscation code is:' + func);
+                                            that._debugMsg('Extracted deobfuscation code is:' + func);
                                             that.deobfuscateFunctions[js_player_url] = {
                                                 code : func,
                                                 name : fname
@@ -689,7 +689,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
         var queryParams2 = Tomahawk.extend(queryParams, { query : query });
         var that = this;
-        return RSVP.Promise.all([this.apiCall( 'search', queryParams), this.apiCall('search', queryParams2)]).then(function( responses ) {
+        return RSVP.Promise.all([this._apiCall( 'search', queryParams), this._apiCall('search', queryParams2)]).then(function( responses ) {
             var items = responses[0].items.concat(responses[1].items);
             if ( items.length > 0 )
             {
@@ -748,9 +748,9 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                             // Lets do a deeper check
                             // Users tend to insert [ft. Artist] or **featuring Artist & someOther artist
                             // Remove these
-                            var newTitle = that.magicCleanup( title );
-                            var newArtist = that.magicCleanup( artist );
-                            var newRespTitle = that.magicCleanup( responseTitle );
+                            var newTitle = that._magicCleanup( title );
+                            var newArtist = that._magicCleanup( artist );
+                            var newRespTitle = that._magicCleanup( responseTitle );
 
                             if ( newRespTitle !== undefined && newRespTitle.indexOf( newArtist ) === -1 ||
                                 ( newTitle !== "" && newRespTitle.indexOf( newTitle ) === -1 ) )
@@ -762,7 +762,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                                 }
                             }
                         }
-                        if ( that.getTrack( responseTitle, title ) )
+                        if ( that._getTrack( responseTitle, title ) )
                         {
                             var result = {};
                             if ( artist !== "" )
@@ -787,11 +787,11 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     {
                         if ( that.hatchet )
                         {
-                            return [that.getMostRelevant( results )];
+                            return [that._getMostRelevant( results )];
                         }
                         else
                         {
-                            return that.getMetadata( results );
+                            return that._getMetadata( results );
                         }
                     }
             });
@@ -803,7 +803,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         });
     },
 
-    getCandidates: function( searchString )
+    _getCandidates: function( searchString )
     {
         "use strict";
         var that = this;
@@ -850,7 +850,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         continue;
                     }
                     var track = resp.items[i].snippet.title;
-                    var parsedTrack = that.cleanupAndParseTrack( track, searchString );
+                    var parsedTrack = that._cleanupAndParseTrack( track, searchString );
 
                     if ( !parsedTrack || parsedTrack.artist === undefined || parsedTrack.track === undefined )
                     {
@@ -873,12 +873,12 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             }
             else
             {
-                return that.verify( results );
+                return that._verify( results );
             }
         } );
     },
 
-    verify: function( candidates )
+    _verify: function( candidates )
     {
         "use strict";
 
@@ -918,11 +918,11 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 }
             } );
         } )).then(function(results) {
-            return that.getMetadata( verified.filter(function(e) { return e !== undefined; } ));
+            return that._getMetadata( verified.filter(function(e) { return e !== undefined; } ));
         });
     },
 
-    getMetadata: function( results )
+    _getMetadata: function( results )
     {
         "use strict";
 
@@ -931,22 +931,22 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
             id   : results.map(function(r) { return r.youtubeVideoId; }).join(',')
         };
         var that = this;
-        return that.apiCall('videos', params).then(function( response ){
+        return that._apiCall('videos', params).then(function( response ){
             results.forEach( function( result ){
                 for ( var i = 0; i < response.items.length; i++ )
                 {
                     if ( response.items[i].id === result.youtubeVideoId )
                     {
                         result.name = that.settings.name;
-                        result.duration = that.iso8601toSeconds( response.items[i].contentDetails.duration );
+                        result.duration = that._iso8601toSeconds( response.items[i].contentDetails.duration );
                     }
                 }
             } );
-            return that.parseVideoUrlFromYtPages( results );
+            return that._parseVideoUrlFromYtPages( results );
         } );
     },
 
-    parseVideoUrlFromYtPages: function( results )
+    _parseVideoUrlFromYtPages: function( results )
     {
         "use strict";
         Tomahawk.log('parse videourlfrompages');
@@ -964,11 +964,11 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     var dasCaptcha = html.match( /www.google.com\/recaptcha\/api\/challenge?/i );
                     if ( dasCaptcha )
                     {
-                        that.debugMsg( "Failed to parse url from youtube page. Captcha limitation in place." );
+                        that._debugMsg( "Failed to parse url from youtube page. Captcha limitation in place." );
                     }
                     else
                     {
-                        that.debugMsg( "Failed to find stream_map in youtube page." );
+                        that._debugMsg( "Failed to find stream_map in youtube page." );
                     }
                 }
                 if ( streamMatch && streamMatch[2] !== undefined )
@@ -977,7 +977,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         var jsonMap = JSON.parse( streamMatch[2] );
                         if ( jsonMap.args.adaptive_fmts !== undefined )
                         {
-                            parsed = that.parseURLS( jsonMap.args.adaptive_fmts, html );
+                            parsed = that._parseURLS( jsonMap.args.adaptive_fmts, html );
                             if ( parsed )
                             {
                                 url = parsed;
@@ -985,7 +985,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         }
                         if ( !url && jsonMap.args.url_encoded_fmt_stream_map !== undefined )
                         {
-                            parsed = that.parseURLS( jsonMap.args.url_encoded_fmt_stream_map, html );
+                            parsed = that._parseURLS( jsonMap.args.url_encoded_fmt_stream_map, html );
                             if ( parsed )
                             {
                                 url = parsed;
@@ -993,7 +993,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         }
                     }
                     catch ( e ) {
-                        that.debugMsg( "Critical: " + e );
+                        that._debugMsg( "Critical: " + e );
                     }
                 }
                 if ( url )
@@ -1003,7 +1003,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         var result = data[1];
                         result.url = url.url;
                         result.mimetype = url.mime;
-                        result.bitrate = that.getBitrate( url.itag );
+                        result.bitrate = that._getBitrate( url.itag );
                         var expires = url.url.match( /expire=([0-9]+)(?=(&))/ );
                         if ( expires && expires[1] !== undefined )
                             expires = expires[1];
@@ -1020,7 +1020,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
         } )).then(function(results) {
             if ( that.resolveMode )
             {
-                return [that.getMostRelevant( results )];
+                return [that._getMostRelevant( results )];
             }
             return results;
         });
@@ -1030,7 +1030,7 @@ var YoutubeResolver = Tomahawk.extend( Tomahawk.Resolver, {
     {
         "use strict";
 
-        return this.getCandidates( params.query );
+        return this._getCandidates( params.query );
     }
 } );
 
