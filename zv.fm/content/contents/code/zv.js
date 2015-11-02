@@ -5,7 +5,7 @@
  *
  */
 
-var ZvResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var ZvResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     settings: {
@@ -19,16 +19,12 @@ var ZvResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     init: function() {
         //To populate Cookies
         Tomahawk.get("http://zv.fm");
-        //We use custom url handler instead of returning plain http links cause
-        //that site uses weird redirects which work perfectly fine with
-        //Tomahawk but not with VLC
-        Tomahawk.addCustomUrlHandler( 'zvfm', 'getStreamUrl', true );
     },
 
-    search: function (query) {
+    search: function (params) {
         var that = this;
 
-        query = query.replace(/\ /g, '+');
+        var query = params.query.replace(/\ /g, '+');
 
         return Tomahawk.get("http://zv.fm/mp3/search?keywords=" + query).then(function (response){
             var results = [];
@@ -49,13 +45,13 @@ var ZvResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
     },
 
-    getStreamUrl: function(qid, url) {
-        Tomahawk.reportStreamUrl(qid, url.replace('zvfm://', 'http://zv.fm/download/'));
+    getStreamUrl: function(params) {
+        return {url: params.url.replace('zvfm://', 'http://zv.fm/download/')};
     },
 
-    resolve: function (artist, album, title) {
-        var query = [ artist, title ].join(' - ');
-        return this.search(query);
+    resolve: function (params) {
+        var query = [ params.artist, params.track ].join(' - ');
+        return this.search({query:query});
     }
 });
 
