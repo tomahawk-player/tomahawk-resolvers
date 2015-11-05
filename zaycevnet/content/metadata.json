@@ -10,7 +10,9 @@
     "manifest": {
         "main": "contents/code/zaycev.js",
         "icon": "contents/images/icon.png",
-        "scripts": [],
+        "scripts": [
+            "contents/code/strstr.js"
+        ],
         "resources": []
     },
     "staticCapabilities": []
