@@ -10,7 +10,9 @@
     "manifest": {
         "main": "contents/code/kibergrad.js",
         "icon": "contents/images/icon.png",
-        "scripts": [],
+        "scripts": [
+                "contents/code/lru.js"
+            ],
         "resources": []
     },
     "staticCapabilities": []
