@@ -6,158 +6,146 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>301</width>
     <height>300</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>400</width>
+    <width>300</width>
     <height>300</height>
    </size>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QCheckBox" name="covers">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>140</y>
-     <width>181</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Check this if you want to include cover versions.</string>
-   </property>
-   <property name="text">
-    <string>Include cover versions</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="remixes">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>170</y>
-     <width>181</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Check this if you want to include remixes.</string>
-   </property>
-   <property name="text">
-    <string>Include remixes</string>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="live">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>200</y>
-     <width>181</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Check this if you want to include live versions.</string>
-   </property>
-   <property name="text">
-    <string>Include live versions</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="youtube">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>20</y>
-     <width>200</width>
-     <height>73</height>
-    </rect>
-   </property>
-   <property name="pixmap">
-    <pixmap>youtube.png</pixmap>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="qualityDropdown">
-   <property name="geometry">
-    <rect>
-     <x>200</x>
-     <y>230</y>
-     <width>78</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Choose your preferred(and also max) audio bitrate setting</string>
-   </property>
-   <property name="currentIndex">
-    <number>1</number>
-   </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
-    <property name="text">
-     <string>64</string>
-    </property>
+    <widget class="QLabel" name="header_image">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="pixmap">
+      <pixmap>youtube.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </item>
    <item>
-    <property name="text">
-     <string>96</string>
-    </property>
+    <layout class="QFormLayout" name="formLayout">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinimumSize</enum>
+     </property>
+     <property name="fieldGrowthPolicy">
+      <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+     </property>
+     <property name="labelAlignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="formAlignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="covers">
+       <property name="toolTip">
+        <string>Check this if you want to include cover versions.</string>
+       </property>
+       <property name="text">
+        <string>Include cover versions</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QCheckBox" name="remixes">
+       <property name="toolTip">
+        <string>Check this if you want to include remixes.</string>
+       </property>
+       <property name="text">
+        <string>Include remixes</string>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="live">
+       <property name="toolTip">
+        <string>Check this if you want to include live versions.</string>
+       </property>
+       <property name="text">
+        <string>Include live versions</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Preferred audio bitrate:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QComboBox" name="qualityDropdown">
+       <property name="toolTip">
+        <string>Choose your preferred(and also max) audio bitrate setting</string>
+       </property>
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <item>
+        <property name="text">
+         <string>64</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>96</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>128</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>160</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>192</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>256</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QCheckBox" name="debug">
+       <property name="toolTip">
+        <string>Check this to add verbose debug output.</string>
+       </property>
+       <property name="text">
+        <string>Debug</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
-   <item>
-    <property name="text">
-     <string>128</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>160</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>192</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>256</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>230</y>
-     <width>161</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Preferred(also max) audio bitrate:</string>
-   </property>
-  </widget>
-  <widget class="QCheckBox" name="debug">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>260</y>
-     <width>181</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Check this to add verbose debug output.</string>
-   </property>
-   <property name="text">
-    <string>Debug</string>
-   </property>
-  </widget>
+  </layout>
  </widget>
  <resources/>
  <connections/>
