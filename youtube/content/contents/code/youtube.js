@@ -456,7 +456,12 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
         var videoId = url.replace("youtube://track/", "");
         var query = "https://www.youtube.com/watch?v=" + videoId;
-        return Tomahawk.get(query).then(function (html) {
+        var settings = {
+            headers: {
+                'User-Agent': 'Mozilla/6.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'
+            }
+        };
+        return Tomahawk.get(query, settings).then(function (html) {
             // Now we can go further down, and check the ytplayer.config map
             var streamMatch = html.match(/(ytplayer\.config =)([^\r\n]+?});/);
             if (!streamMatch) {
@@ -484,10 +489,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                             that._debugMsg("Found stream url for " + params.url + ": "
                                 + result.url);
                             return {
-                                url: result.url,
-                                headers: {
-                                    'User-Agent': 'Mozilla/6.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'
-                                }
+                                url: result.url
                             }
                         });
                     } else {
