@@ -106,7 +106,7 @@ var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     return track;
                 });
             });
-            return Promise.all(trackPromises);
+            return RSVP.Promise.all(trackPromises);
         });
     },
 
