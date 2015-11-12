@@ -24,7 +24,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     _resolveAlbumName: function (id, cache) {
         var that = this;
-        return Tomahawk.get('http://m.kibergrad.com/' + id + '/abcde/abcde').then(function (response){
+        return Tomahawk.get('http://m.kibergrad.fm/' + id + '/abcde/abcde').then(function (response){
             var TitleRe = /<title>(.+)<\/title>/gm;
             var ArtistRe = /class="cover-artist">\s*([^<]+?)\s*</gm;
             try {
@@ -75,7 +75,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 duration:   track.duration,
                 bitrate:    track.bitrate,
                 //url:        CryptoJS.enc.Base64.parse(track.base64).toString(CryptoJS.enc.Latin1),
-                url:        'http://kibergrad.com/api/song/download/' + track.id + '.mp3',
+                url:        'http://kibergrad.fm/api/song/download/' + track.id + '.mp3',
                 checked:    true,
                 type:       "track",
             });
@@ -86,7 +86,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver, {
     search: function (params, trackInfo) {
         var that = this;
 
-        return Tomahawk.get("http://m.kibergrad.com/search?q=" + params.query,
+        return Tomahawk.get("http://m.kibergrad.fm/search?q=" + params.query,
             {headers: { 'X-Requested-With' : 'XMLHttpRequest' } }).then(function (response){
             if (typeof response == 'string' || response instanceof String)
                 response = JSON.parse(response);
