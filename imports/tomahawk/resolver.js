@@ -97,7 +97,7 @@ export default class Resolver {
         });
     }
 
-    _adapter_testConfig(config) {
+    _testConfig(config) {
         return RSVP.Promise.resolve(this.testConfig(config)).then(function () {
             return {result: Tomahawk.ConfigTestResultType.Success};
         });
