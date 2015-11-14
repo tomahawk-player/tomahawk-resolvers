@@ -825,8 +825,10 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                                     var params = data[1];
                                     var dec = data[0];
                                     if (dec) {
+                                        that._debugMsg("Will try to eval: '" +
+                                            dec.code + ';' + dec.name + '(\"' + params.s + "\")'");
                                         params.url += '&signature=' + eval(
-                                                dec.code + dec.name + '("' + params.s + '");');
+                                                dec.code + ';' + dec.name + '("' + params.s + '");');
                                         return params;
                                     }
                                 });
@@ -866,9 +868,9 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 names: [name]
             };
         }
-        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;\\s]' +
+        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;\\s]var\\s+' +
             this._escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
-        this._debugMsg('(?:function\\s+' + name + '|[{;]' +
+        this._debugMsg('(?:function\\s+' + name + '|[{;]var\\s+' +
             name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
         var f_match = code.match(f_RE);
         if (f_match) {
