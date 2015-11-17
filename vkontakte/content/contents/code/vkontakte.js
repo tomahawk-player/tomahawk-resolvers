@@ -362,7 +362,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var qid = JSON.stringify([params.artist, params.album, params.track]);
 
-        var promise = new Promise(function (resolve, reject) {
+        var promise = new RSVP.Promise(function (resolve, reject) {
             if(!(qid in that._queue)) {
                 that._queue[qid] = [];
             }
