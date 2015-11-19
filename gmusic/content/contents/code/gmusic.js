@@ -326,11 +326,13 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
             if (album) {
                 query += ' - ' + album;
             }
-            query += ' - ' + title;
-            Tomahawk.log("All Access: Resolved track '" + artist + " - " + title + " - "
-                + album + "' for " + (Date.now() - time) + "ms and found "
-                + (resultIds ? resultIds.length : 0) + " track results");
+            query += ' - ' + track;
+
             return this._execSearchAllAccess(query, 1).then(function (results) {
+                console.log("All Access: Resolved track '" + artist + " - " + track + " - "
+                  + album + "' for " + (Date.now() - time) + "ms and found "
+                  + results.tracks.length + " track results");
+
                 return results.tracks;
             });
         } else {
