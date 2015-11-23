@@ -96,7 +96,9 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             }
             var dfsid = song[format].dfsId.toString();
             var ext   =  song[format].extension;
-            var url = 'http://m2.music.126.net/' + that._encrypt(dfsid) + '/' +
+            // m2.music.126.net is also working but is properly resolvable via
+            // chinese DNS servers only, thus m5
+            var url = 'http://m5.music.126.net/' + that._encrypt(dfsid) + '/' +
                 dfsid + '.' + ext;
             return {url:url};
         });
