@@ -97,7 +97,7 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
             var format = that.strQuality[that._quality];
             var dfsid = result.songs[0][format].dfsId.toString();
             var ext   =  result.songs[0][format].extension;
-            var url = 'http://m1.music.126.net/' + that._encrypt(dfsid) + '/' +
+            var url = 'http://m5.music.126.net/' + that._encrypt(dfsid) + '/' +
                 dfsid + '.' + ext;
             if(newAPI)
                 return {url:url};
