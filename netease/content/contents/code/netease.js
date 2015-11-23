@@ -5,11 +5,7 @@
  *
  */
 
-var api_to_extend = Tomahawk.Resolver.Promise; //Old 0.9
-if(typeof api_to_extend === 'undefined')
-    api_to_extend = Tomahawk.Resolver; //New 0.9
-
-var NeteaseResolver = Tomahawk.extend( api_to_extend, {
+var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     settings: {
@@ -59,11 +55,9 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
 
     init: function() {
         this.API_BASE = 'http://music.163.com/api/';
-        this.SALT = '3go8&$8*3*3h0k(2)2';
-        //Needed for old 0.9
-        Tomahawk.addCustomUrlHandler( 'netease', 'getStreamUrl', true );
+        this.SALT = '3go8&$8' + '*3*3h0k(2)2';
         var config = this.getUserConfig();
-        this._quality = config.quality;
+        this._quality = config.quality || 2;
     },
 
     _encrypt: function(input) {
@@ -79,30 +73,34 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         return CryptoJS.enc.Base64.stringify(CryptoJS.MD5(xor_string(input, this.SALT))).replace(/\//g, '_').replace(/\+/g, '-');
     },
 
-    getStreamUrl: function(qid, url) {
-        var newAPI = false;
-        Tomahawk.log(qid);
-        Tomahawk.log(url);
-        if(qid.url) {
-            //new 0.9
-            url = qid.url;
-            newAPI = true;
-        }
-        Tomahawk.log(url);
+    getStreamUrl: function(params) {
         var that = this;
-        var id = url.match(/^netease:\/\/([a-z]+)\/(.+)$/)[2];
+        var id = params.url.match(/^netease:\/\/([a-z]+)\/(.+)$/)[2];
         return this._apiCall('song/detail', {id:id, ids:'['+id+']'}).then(function(result){
-            if(!result.code)
+            if(!result.code) {
                 result = JSON.parse(result);
+            }
             var format = that.strQuality[that._quality];
-            var dfsid = result.songs[0][format].dfsId.toString();
-            var ext   =  result.songs[0][format].extension;
-            var url = 'http://m1.music.126.net/' + that._encrypt(dfsid) + '/' +
+            var song = result.songs[0];
+            if (!song[format])
+            {
+                //Requested quality not found , try to find the one going down
+                //a step
+                for(var i = that._quality; i >= 0 && !song[format]; --i) {
+                    var format = that.strQuality[i];
+                }
+            }
+            if (!song[format])
+            {
+                return {url:null};
+            }
+            var dfsid = song[format].dfsId.toString();
+            var ext   =  song[format].extension;
+            // m2.music.126.net is also working but is properly resolvable via
+            // chinese DNS servers only, thus m5
+            var url = 'http://m5.music.126.net/' + that._encrypt(dfsid) + '/' +
                 dfsid + '.' + ext;
-            if(newAPI)
-                return {url:url};
-            else
-                Tomahawk.reportStreamUrl(qid, url);
+            return {url:url};
         });
     },
 
@@ -112,28 +110,23 @@ var NeteaseResolver = Tomahawk.extend( api_to_extend, {
         }});
     },
 
-    search: function (query) {
+    search: function (params) {
         var that = this;
 
-        if(query.hasOwnProperty('query'))
-            query = query.query; //New 0.9
-
-        return this._apiCall('search/get', {type:1, s:query, limit:100}).then(function(results){
-            if(!results.result)
+        return this._apiCall('search/get', {type:1, s:params.query, limit:100}).then(function(results){
+            if(!results.result) {
                 results = JSON.parse(results);
-            return results.result.songs.map(that._convertTrack, that);
+            }
+            if(results.result.songCount > 0) {
+                return results.result.songs.map(that._convertTrack, that);
+            } else {
+                return [];
+            }
         });
     },
 
-    resolve: function (artist, album, track) {
-        if(artist.hasOwnProperty('artist'))
-        {
-            //New 0.9
-            artist = artist.artist;
-            album = artist.album;
-            track = artist.track;
-        }
-        var query = [ artist, track ].join(' ');
+    resolve: function (params) {
+        var query = [ params.artist, params.track ].join(' ');
         return this.search({query:query});
     }
 });
