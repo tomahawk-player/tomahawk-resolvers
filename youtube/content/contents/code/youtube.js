@@ -78,7 +78,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         ]
     },
 
-    bitrateSelectedIndexToBitrate: ["64", "96", "128", "160", "192", "256"],
+    bitrateSelectedIndexToBitrate: ["128", "192", "256"],
 
     _apiKey: "AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA",
 
@@ -101,7 +101,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
             this.includeCovers = false;
             this.includeRemixes = false;
             this.includeLive = false;
-            this.qualityPreference = 4;
+            this.qualityPreference = 2;
             this.debugMode = 1;
         }
 
@@ -761,9 +761,11 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var urlArray = rawUrls.split(/,/g).map(function (r) {
             return that._parseQueryString(r);
         });
-        //Start from the top (user preffeded/max quality and go down from that
+        //Start from the top with the user-preferred/max quality and go down from that
         that._debugMsg('rawUrls : ' + JSON.stringify(rawUrls));
-        for (var i = that.qualityPreference; i >= 0; --i) {
+        var qualityPref =
+            Math.min(that.qualityPreference, that.bitrateSelectedIndexToBitrate.length - 1);
+        for (var i = qualityPref; i >= 0; --i) {
             var itags = that.bitratesToItags[that.bitrateSelectedIndexToBitrate[i]];
             for (var itagI = 0; itagI < itags.length; ++itagI) {
                 var itag = itags[itagI];

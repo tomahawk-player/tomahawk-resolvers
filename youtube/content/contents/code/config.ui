@@ -89,7 +89,7 @@
      <item row="3" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Preferred audio bitrate:</string>
+        <string>Maximum audio bitrate:</string>
        </property>
       </widget>
      </item>
@@ -99,26 +99,11 @@
         <string>Choose your preferred(and also max) audio bitrate setting</string>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>2</number>
        </property>
        <item>
         <property name="text">
-         <string>64</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>96</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
          <string>128</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>160</string>
         </property>
        </item>
        <item>
