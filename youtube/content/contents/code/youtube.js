@@ -917,7 +917,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         //just regex-extract it and return
         this._debugMsg('Extracting object:' + name);
         var objectRE = new RegExp('(?:var\\s+)?' + this._escapeRegExp(name)
-            + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\(.*?\\)\\s*\\{.*?\\})*)\\}\\s*;');
+            + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\([\\S\\s]*?\\)\\s*\\{[\\S\\s]*?\\})*)\\}\\s*;');
         var obj_M = code.match(objectRE);
         return obj_M[0];
     },
