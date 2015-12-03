@@ -179,7 +179,7 @@ var TidalResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var album = params.album;
         var track = params.track;
 
-        var query = [artist, album, track].join(' ');
+        var query = [artist, track].join(' ');
 
         return this.search({
             query: query,
