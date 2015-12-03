@@ -41,7 +41,7 @@ var ProstopleerResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     resolve: function (params) {
-        var query = [ params.artist, params.track ].join(' - ');
+        var query = [ encodeURIComponent(params.artist), encodeURIComponent(params.track) ].join(' - ');
         return this.search({query:query});
     }
 });
