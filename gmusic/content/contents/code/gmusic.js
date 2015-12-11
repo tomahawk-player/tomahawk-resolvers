@@ -172,17 +172,37 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
     _ensureCollection: function () {
         var that = this;
 
-        var url = that._baseURL
-            + 'trackfeed?fields=nextPageToken,'
-            + 'data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
-        if (window.localStorage["gmusic_last_cache_update"]) {
-            url += '&updated-min=' + window.localStorage["gmusic_last_cache_update"] * 1000;
-        }
+        return gmusicCollection.revision({
+            id: gmusicCollection.settings.id
+        }).then(function (result) {
+            var url = that._baseURL
+                + 'trackfeed?fields=nextPageToken,'
+                + 'data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
+            var lastCollectionUpdate = window.localStorage["gmusic_last_collection_update"];
+            if (lastCollectionUpdate && lastCollectionUpdate == result) {
+                Tomahawk.log("Collection database has not been changed since last time.");
+                if (window.localStorage["gmusic_last_cache_update"]) {
+                    url += '&updated-min=' + window.localStorage["gmusic_last_cache_update"] * 1000;
+                }
+                return that._fetchAndStoreCollection(url);
+            } else {
+                Tomahawk.log("Collection database has been changed. Wiping and re-fetching...");
+                return gmusicCollection.wipe({
+                    id: gmusicCollection.settings.id
+                }).then(function () {
+                    return that._fetchAndStoreCollection(url);
+                });
+            }
+        });
+    },
+
+    _fetchAndStoreCollection: function (url) {
+        var that = this;
         var time = Date.now();
-        if (!this._requestPromise) {
+        if (!that._requestPromise) {
             Tomahawk.log("Checking if collection needs to be updated");
-            this._requestPromise = that._paginatedRequest(url).then(function (results) {
-                Tomahawk.PluginManager.registerPlugin("collection", gmusicCollection);
+            Tomahawk.PluginManager.registerPlugin("collection", gmusicCollection);
+            that._requestPromise = that._paginatedRequest(url).then(function (results) {
                 if (results && results.length > 0) {
                     Tomahawk.log("Collection needs to be updated");
 
@@ -192,9 +212,10 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     gmusicCollection.addTracks({
                         id: gmusicCollection.settings.id,
                         tracks: tracks
-                    }).then(function () {
+                    }).then(function (newRevision) {
                         Tomahawk.log("Updated cache in " + (Date.now() - time) + "ms");
                         window.localStorage["gmusic_last_cache_update"] = Date.now();
+                        window.localStorage["gmusic_last_collection_update"] = newRevision;
                     });
                 } else {
                     Tomahawk.log("Collection doesn't need to be updated");
@@ -206,11 +227,12 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
             }, function (xhr) {
                 Tomahawk.log("paginatedRequest failed: " + xhr.status + " - "
                     + xhr.statusText + " - " + xhr.responseText);
+                Tomahawk.PluginManager.unregisterPlugin("collection", gmusicCollection);
             }).finally(function () {
                 that._requestPromise = undefined;
             });
         }
-        return this._requestPromise;
+        return that._requestPromise;
     },
 
     _paginatedRequest: function (url, results, nextPageToken) {
@@ -326,13 +348,11 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
             if (album) {
                 query += ' - ' + album;
             }
-            query += ' - ' + track;
-
+            query += ' - ' + title;
+            Tomahawk.log("All Access: Resolved track '" + artist + " - " + title + " - "
+                + album + "' for " + (Date.now() - time) + "ms and found "
+                + (resultIds ? resultIds.length : 0) + " track results");
             return this._execSearchAllAccess(query, 1).then(function (results) {
-                console.log("All Access: Resolved track '" + artist + " - " + track + " - "
-                  + album + "' for " + (Date.now() - time) + "ms and found "
-                  + results.tracks.length + " track results");
-
                 return results.tracks;
             });
         } else {
@@ -667,7 +687,6 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
 Tomahawk.resolver.instance = GMusicResolver;
 
 var gmusicCollection = Tomahawk.extend(Tomahawk.Collection, {
-    resolver: GMusicResolver,
     settings: {
         id: "gmusic",
         prettyname: "Google Music",
