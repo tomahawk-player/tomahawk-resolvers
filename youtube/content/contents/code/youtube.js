@@ -80,7 +80,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     bitrateSelectedIndexToBitrate: ["128", "192", "256"],
 
-    _apiKey: "AIzaSyD22x7IqYZpf3cn27wL98MQg2FWnno_JHA",
+    _apiKey: "AIza" + "SyD22x7IqYZp" + "f3cn27wL98" + "MQg2FWnno_JHA",
 
     _apiUrl: "https://www.googleapis.com/youtube/v3/",
 
@@ -790,6 +790,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                             //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflCeB3p5/html5player-new.js
                             //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vfliM_xst/html5player-new.js
                             //  s.ytimg.com/yts/jsbin/html5player-new-en_US-vflt2Xpp6/html5player-new.js
+                            //  s.ytimg.com/yts/jsbin/player-en_US-vflnrstgx/base.js
                             //  etc...etc
                             //
                             var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
@@ -870,10 +871,10 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 names: [name]
             };
         }
-        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;\\s]var\\s+' +
+        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;,]'
+            + this._escapeRegExp(name) + '\\s*=\\s*function|var\\s+' +
             this._escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
-        this._debugMsg('(?:function\\s+' + name + '|[{;]var\\s+' +
-            name + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
+        this._debugMsg(f_RE.source);
         var f_match = code.match(f_RE);
         if (f_match) {
             this._debugMsg('Args for function ' + name + ' is: ' + f_match[1]);
@@ -907,7 +908,8 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     }
                 }
             }
-            return functionCode + f_match[0];
+            return functionCode + 'function ' + name + '(' + f_match[1] + '){' +
+                f_match[2] + ';}';
         }
         return null;
     },
@@ -918,6 +920,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         this._debugMsg('Extracting object:' + name);
         var objectRE = new RegExp('(?:var\\s+)?' + this._escapeRegExp(name)
             + '\\s*=\\s*\\{\\s*(([a-zA-Z$0-9]+\\s*:\\s*function\\([\\S\\s]*?\\)\\s*\\{[\\S\\s]*?\\})*)\\}\\s*;');
+        this._debugMsg(objectRE.source);
         var obj_M = code.match(objectRE);
         return obj_M[0];
     },
