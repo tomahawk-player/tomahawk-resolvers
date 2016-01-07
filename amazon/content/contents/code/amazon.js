@@ -49,7 +49,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     newConfigSaved: function(config) {
         var that = this;
-        var changed = 
+        var changed =
             this._email !== config.email ||
             this._password !== config.password ||
             this._region != config.region;
@@ -88,7 +88,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         if (method == 'POST')
             return Tomahawk.post( url, options);
-        else 
+        else
             return Tomahawk.get( url, options);
     },
     _post: function (url, options, use_csrf_headers) {
@@ -173,7 +173,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             return that._post(that.api_location + "clientbuddy/compartments/32f93572142e8f7c/handlers/search", {
                 data: {
                     "keywords" : params.query,
-                   "marketplaceId" : that._appConfig['cirrus']['marketplaceId']
+                    "marketplaceId" : that._appConfig['cirrus']['marketplaceId']
                 },
                 dataFormat: 'json'
             }, true).then( function (response) {
@@ -196,9 +196,9 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         spaces = spaces || '';
 
         var str = '';
-        for (key in obj) {
+        for (var key in obj) {
             if (typeof obj[key] === "object") {
-                var b = ["{", "}"]
+                var b = ["{", "}"];
                 if (obj[key].constructor == Array) {
                     b = ["[", "]"];
                 }
@@ -213,7 +213,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             str.split('\n').map(Tomahawk.log, Tomahawk);
         }
     },
-    
+
     getStreamUrl: function(params) {
         return this._getStreamUrlPromise(params.url).then(function (streamUrl){
             return {url: streamUrl};
@@ -241,7 +241,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
 
         var parsedUrn = this._parseUrn( urn );
-        
+
         if (!parsedUrn || parsedUrn.type != 'track') {
             Tomahawk.log( "Failed to get stream. Couldn't parse '" + urn + "'" );
             return;
@@ -250,29 +250,29 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var _headers = {
             'X-Amz-Target' : 'com.amazon.digitalmusiclocator.DigitalMusicLocatorServiceExternal.getRestrictedStreamingURL',
-            'Content-Encoding': 'amz-1.0',
+            'Content-Encoding': 'amz-1.0'
         };
 
         var request = {
             "appMetadata": {
                 "https": "true"
-            }, 
-            "bitRate": "HIGH", 
+            },
+            "bitRate": "HIGH",
             "clientMetadata": {
                 "clientId": "WebCP"
-            }, 
-            "contentDuration": parsedUrn.duration, 
+            },
+            "contentDuration": parsedUrn.duration,
             "contentId": {
-                "identifier": parsedUrn.id, 
+                "identifier": parsedUrn.id,
                 "identifierType": parsedUrn.idType
-            }, 
-            "customerId": this._appConfig['customerId'], 
+            },
+            "customerId": this._appConfig['customerId'],
             "deviceToken": {
-                "deviceId": this._appConfig['deviceId'], 
+                "deviceId": this._appConfig['deviceId'],
                 "deviceTypeId": this._appConfig['deviceType']
             }
         };
-            
+
 
         return this._post(this.api_location + "dmls/", {
             data: request,
@@ -309,7 +309,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 }
                 else
                 {
-                    var myRE = /input type=.*?\ name="([^"]+)"\ value="([^"]+)"/g ;
+                    var myRE = /input type=.*? name="([^"]+)" value="([^"]+)"/g;
 
                     var match = myRE.exec(resp);
                     var params = {};
@@ -342,7 +342,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         this._loginPromise = this._getLoginPromise(config).then(
             function (resp) {
-                var appConfigRe = /amznMusic.appConfig\ *?=\ *?({.*});/g;
+                var appConfigRe = /amznMusic.appConfig *?= *?({.*});/g;
                 that._appConfig = JSON.parse(appConfigRe.exec(resp)[1]);
                 that.logged_in = 1;
                 that.api_location = 'https://' + that._appConfig['serverName'] + '/';
@@ -458,7 +458,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 return previousResults;
             return that._getLibraryTracks(previousResults, nextResultsToken);
         });
-    },
+    }
 });
 
 var amazonCollection = Tomahawk.extend(Tomahawk.Collection, {
@@ -466,7 +466,7 @@ var amazonCollection = Tomahawk.extend(Tomahawk.Collection, {
     settings: {
         id: "amazon",
         prettyname: "Amazon Music Library",
-        iconfile: "contents/images/icon.png",
+        iconfile: "contents/images/icon.png"
     }
 });
 Tomahawk.resolver.instance = AmazonResolver;
