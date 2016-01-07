@@ -157,7 +157,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     search: function (params) {
         if (!this.logged_in) {
-            return this._defer(this.search, [params], this);
+            return this._defer(this.search, params, this);
         } else if (this.logged_in === 2) {
             throw new Error('Failed login, cannot search.');
         }
@@ -462,6 +462,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 });
 
 var amazonCollection = Tomahawk.extend(Tomahawk.Collection, {
+    resolver: AmazonResolver,
     settings: {
         id: "amazon",
         prettyname: "Amazon Music Library",
