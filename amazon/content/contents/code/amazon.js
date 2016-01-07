@@ -110,7 +110,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             throw new Error( "Invalid configuration." );
         }
 
-        var domains = ['.com', '.co.uk', '.de'];
+        var domains = ['.com', '.de', '.co.uk'];
 
         this.api_location = 'https://www.amazon' + domains[this._region] + '/';
 
