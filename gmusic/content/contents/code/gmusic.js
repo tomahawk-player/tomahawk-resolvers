@@ -687,6 +687,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
 Tomahawk.resolver.instance = GMusicResolver;
 
 var gmusicCollection = Tomahawk.extend(Tomahawk.Collection, {
+    resolver: GMusicResolver,
     settings: {
         id: "gmusic",
         prettyname: "Google Music",
