@@ -90,8 +90,6 @@ var RhapsodyResolver = Tomahawk.extend( Tomahawk.Resolver, {
             return;
         }
 
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
-
         this._login(config);
     },
 
