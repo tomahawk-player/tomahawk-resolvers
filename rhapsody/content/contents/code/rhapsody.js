@@ -176,7 +176,7 @@ var RhapsodyResolver = Tomahawk.extend( Tomahawk.Resolver, {
             //I know this function is not supposed to change state as it is
             //also used from testConfig ... but these 2 lines are safe, trust me
             that._headers = saved_headers;
-            that._api_key = data.match(/apikey="([^"]+)/)[1];
+            that._api_key = data.match(/apikey[", ]+([^"]+)/)[1];
 
             return Tomahawk.get('https://direct.rhapsody.com/authserver/v3/useraccounts?userName=' + encodeURIComponent(config.email),{
                     headers : Tomahawk.extend(saved_headers, {'x-rds-authentication' : config.password, })
