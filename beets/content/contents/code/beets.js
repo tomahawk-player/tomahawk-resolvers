@@ -68,11 +68,15 @@ var BeetsResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 // couldn't find a proper protocol, so we default to "http://"
                 config.server = "http://" + config.server;
             }
-            var url = new URL(config.server);
-            if (!url.port) {
-                url.port = 8337;
+
+            // qtwebkit doesn't support toString() or href on URLs
+            if(URL.prototype.hasOwnProperty('toString')) {
+                var url = new URL(config.server);
+                if (!url.port) {
+                    url.port = 8337;
+                }
+                config.server = url.toString();
             }
-            config.server = url.toString();
         }
 
         return config;
