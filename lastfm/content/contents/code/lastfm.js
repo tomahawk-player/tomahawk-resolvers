@@ -27,12 +27,11 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5
     },
 
-    init: function (callback){
+    init: function (){
         "use strict";
 
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
-        if (callback){
-            callback(null);
+        if(Tomahawk.reportCapabilities && window.TomahawkResolverCapability && window.TomahawkResolverCapability.UrlLookup) {
+            Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
         }
     },
 
@@ -121,28 +120,30 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
             result.score = 0.95;
             results.push(result);
         }
-        var return1 = {
-            qid: qid,
-            results: results
-        };
-        Tomahawk.addTrackResults(return1);
+
+        return results;
     },
-    resolve: function (qid, artist, album, title) {
+    resolve: function (params) {
+        // disable until we found a new api to useful
+        return [];
+
         "use strict";
+
+        var artist = params.artist;
+        var album = params.album;
+        var title = params.track;
 
         artist = encodeURIComponent(artist).replace(/\%20/g, '+').trim();
         var track = encodeURIComponent(title).replace(/\%20/g, '+').trim();
         var lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&autocorrect=1&artist=" + artist + "&track=" + track;
         var that = this;
-        Tomahawk.asyncRequest(lastfmUrl, function(xhr) {
-            that.parseSongResponse(qid, JSON.parse(xhr.responseText));
-        });
+        return Tomahawk.get(lastfmUrl).then(that.parseSongResponse);
     },
     search: function (qid, searchString) {
         "use strict";
 
         // Not yet possible, sorry
-        this.resolve(qid, "", "", "");
+        return [];
     }
 });
 
