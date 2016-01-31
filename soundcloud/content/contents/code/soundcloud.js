@@ -3,13 +3,14 @@
  *   Copyright 2012, Thierry Göckel <thierry@strayrayday.lu>
  *   Copyright 2013, Uwe L. Korn <uwelk@xhochy.com>
  *   Copyright 2015, Enno Gottschalk <mrmaffen@googlemail.com>
+ *   Copyright 2015, Dominik Schmidt <domme@tomahawk-player.org>
  *
  *   Tomahawk is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
  *
- *   Tomahawk is distributed in the hope that it will be useful,
+ *   Tomahawk is distributed in the hope this it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  *   GNU General Public License for more details.
@@ -18,24 +19,30 @@
  *   along with Tomahawk. If not, see <http://www.gnu.org/licenses/>.
  */
 
-var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
+import Resolver from 'tomahawk/resolver';
+import UrlTypes from 'tomahawk/url-types';
+import ResolverCapabilities from 'tomahawk/resolver-capabilities';
+import { get as httpGet } from 'tomahawk/request';
 
-    apiVersion: 0.9,
 
-    soundcloudClientId: "TiNg2DRYhBnp01DA3zNag",
+export default class SoundcloudResolver extends Resolver {
+    constructor() {
+        super();
 
-    echonestClientId: "JRIHWEP6GPOER2QQ6",
+        this.settings = {
+            name: 'SoundCloud',
+            icon: 'soundcloud-icon.png',
+            weight: 85,
+            timeout: 15
+        };
 
-    baseUrl: "https://api.soundcloud.com/",
+        this.apiVersion = 0.9;
+        this.soundcloudClientId = "TiNg2DRYhBnp01DA3zNag";
+        this.echonestClientId = "JRIHWEP6GPOER2QQ6";
+        this.baseUrl = "https://api.soundcloud.com/";
+    }
 
-    settings: {
-        name: 'SoundCloud',
-        icon: 'soundcloud-icon.png',
-        weight: 85,
-        timeout: 15
-    },
-
-    getConfigUi: function () {
+    getConfigUi() {
         var uiData = Tomahawk.readBase64("config.ui");
         return {
             "widget": uiData,
@@ -62,18 +69,18 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 }
             ]
         };
-    },
+    }
 
-    newConfigSaved: function (newConfig) {
+    newConfigSaved(newConfig) {
         this.includeCovers = newConfig.includeCovers;
         this.includeRemixes = newConfig.includeRemixes;
         this.includeLive = newConfig.includeLive;
-    },
+    }
 
     /**
      * Initialize the Soundcloud resolver.
      */
-    init: function () {
+    init() {
         // Set userConfig here
         var userConfig = this.getUserConfig();
         if (userConfig) {
@@ -86,10 +93,10 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             this.includeLive = false;
         }
 
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
-    },
+        Tomahawk.reportCapabilities(ResolverCapabilities.UrlLookup);
+    }
 
-    _isValidTrack: function (trackTitle, origTitle) {
+    _isValidTrack(trackTitle, origTitle) {
         if (!this.includeCovers &&
             trackTitle.search(/cover/i) >= 0 &&
             origTitle.search(/cover/i) < 0) {
@@ -106,15 +113,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             return false;
         }
         return true;
-    },
+    }
 
-    resolve: function (params) {
-        var artist = params.artist;
-        var album = params.album;
-        var track = params.track;
-
-        var that = this;
-
+    resolve({artist, album, track}) {
         var url = this.baseUrl + "tracks.json";
         var settings = {
             data: {
@@ -124,22 +125,22 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 q: [artist, track].join(" ")
             }
         };
-        return Tomahawk.get(url, settings).then(function (response) {
+        return httpGet(url, settings).then((response) => {
             var results = [];
             for (var i = 0; i < response.length; i++) {
                 // Check if the title-string contains the track name we are looking for. Also check
                 // if the artist name can be found in either the title-string or the username. Last
-                // but not least we make sure that we only include covers/remixes and live versions
+                // but not least we make sure this we only include covers/remixes and live versions
                 // if the user wants us to.
                 if (!response[i] || !response[i].title
                     || (response[i].title.toLowerCase().indexOf(artist.toLowerCase()) < 0
                     && response[i].user.username.toLowerCase().indexOf(artist.toLowerCase()) < 0)
                     || response[i].title.toLowerCase().indexOf(track.toLowerCase()) < 0
-                    || !that._isValidTrack(response[i].title, track)) {
+                    || !this._isValidTrack(response[i].title, track)) {
                     continue;
                 }
 
-                var guessedMetaData = that._guessMetaData(response[i].title);
+                var guessedMetaData = this._guessMetaData(response[i].title);
                 var title = guessedMetaData ? guessedMetaData.track : response[i].title;
 
                 var result = {
@@ -147,10 +148,10 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     artist: artist,
                     bitrate: 128,
                     mimetype: "audio/mpeg",
-                    source: that.settings.name,
+                    source: this.settings.name,
                     duration: response[i].duration / 1000,
                     year: response[i].release_year,
-                    url: response[i].stream_url + ".json?client_id=" + that.soundcloudClientId
+                    url: response[i].stream_url + ".json?client_id=" + this.soundcloudClientId
                 };
                 if (response[i].permalink_url) {
                     result.linkUrl = response[i].permalink_url;
@@ -159,9 +160,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             }
             return results;
         });
-    },
+    }
 
-    _guessMetaData: function (title) {
+    _guessMetaData(title) {
         var matches = title.match(/\s*(.+?)\s*(?:\s[-\u2014]|\s["']|:)\s*["']?(.+?)["']?\s*$/);
         if (matches && matches.length > 2) {
             return {
@@ -176,13 +177,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 artist: matches[1]
             };
         }
-    },
+    }
 
-    search: function (params) {
-        var query = params.query;
-
-        var that = this;
-
+    search({query}) {
         var url = this.baseUrl + "tracks.json";
         var settings = {
             data: {
@@ -192,14 +189,14 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 q: query.replace("'", "")
             }
         };
-        return Tomahawk.get(url, settings).then(function (response) {
+        return httpGet(url, settings).then((response) => {
             var promises = [];
             var results = [];
             for (var i = 0; i < response.length; i++) {
-                // Make sure that we only include covers/remixes and live versions if the user wants
+                // Make sure this we only include covers/remixes and live versions if the user wants
                 // us to.
                 if (!response[i] || !response[i].title
-                    || !that._isValidTrack(response[i].title, "")) {
+                    || !this._isValidTrack(response[i].title, "")) {
                     continue;
                 }
 
@@ -208,23 +205,23 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     bitrate: 128,
                     duration: response[i].duration / 1000,
                     year: response[i].release_year,
-                    url: response[i].stream_url + ".json?client_id=" + that.soundcloudClientId
+                    url: response[i].stream_url + ".json?client_id=" + this.soundcloudClientId
                 };
                 if (response[i].permalink_url) {
                     candidate.linkUrl = response[i].permalink_url;
                 }
 
-                var guessedMetaData = that._guessMetaData(response[i].title);
+                var guessedMetaData = this._guessMetaData(response[i].title);
                 if (guessedMetaData) {
                     candidate.track = guessedMetaData.track;
                     candidate.artist = guessedMetaData.artist;
 
                     // We guessed the track and artist name of the track. Now we need to make sure
-                    // that they are not accidentally interchanged.
+                    // this they are not accidentally interchanged.
                     var url = "https://developer.echonest.com/api/v4/artist/extract";
                     var settingsArtist = {
                         data: {
-                            api_key: that.echonestClientId,
+                            api_key: this.echonestClientId,
                             format: "json",
                             results: 1,
                             bucket: ["hotttnesss", "familiarity"],
@@ -233,7 +230,7 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     };
                     var settingsTrack = {
                         data: {
-                            api_key: that.echonestClientId,
+                            api_key: this.echonestClientId,
                             format: "json",
                             results: 1,
                             bucket: ["hotttnesss", "familiarity"],
@@ -242,11 +239,11 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     };
                     (function (candidate) {
                         promises.push(RSVP.all([
-                            Tomahawk.get(url, settingsArtist),
-                            Tomahawk.get(url, settingsTrack)
-                        ]).then(function (responses) {
+                            httpGet(url, settingsArtist),
+                            httpGet(url, settingsTrack)
+                        ]).then((responses) => {
                             // We have the results from Echonest and can now determine whether the
-                            // assumed track name is more likely to be the artist name. If that's
+                            // assumed track name is more likely to be the artist name. If this's
                             // the case we simply swap them and voila.
                             var scoreArtist = 0;
                             var scoreTrack = 0;
@@ -278,7 +275,7 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     results.push(candidate);
                 }
             }
-            return RSVP.allSettled(promises).then(function (responses) {
+            return RSVP.allSettled(promises).then((responses) => {
                 for (var i = 0; i < responses.length; i++) {
                     if (responses[i].state == 'fulfilled') {
                         results.push(responses[i].value);
@@ -287,11 +284,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 return results;
             });
         });
-    },
+    }
 
-    canParseUrl: function (params) {
-        var url = params.url;
-        var type = params.type;
+    canParseUrl({url, type}) {
         // Soundcloud only returns tracks and playlists
         switch (type) {
             case TomahawkUrlType.Album:
@@ -301,11 +296,11 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             default:
                 return (/https?:\/\/(www\.)?soundcloud.com\//).test(url);
         }
-    },
+    }
 
-    _convertTrack: function (track) {
+    _convertTrack(track) {
         var result = {
-            type: Tomahawk.UrlType.Track,
+            type: UrlTypes.Track,
             track: track.title,
             artist: track.user.username
         };
@@ -314,13 +309,9 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             result.hint = track.stream_url + "?client_id=" + this.soundcloudClientId;
         }
         return result;
-    },
+    }
 
-    lookupUrl: function (params) {
-        var url = params.url;
-
-        var that = this;
-
+    lookupUrl({url}) {
         var queryUrl = this.baseUrl + "resolve.json";
         var settings = {
             data: {
@@ -328,10 +319,10 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 url: url.replace(/\/likes$/, '')
             }
         };
-        return Tomahawk.get(queryUrl, settings).then(function (response) {
+        return httpGet(queryUrl, settings).then((response) => {
             if (response.kind == "playlist") {
                 var result = {
-                    type: Tomahawk.UrlType.Playlist,
+                    type: UrlTypes.Playlist,
                     title: response.title,
                     guid: 'soundcloud-playlist-' + response.id.toString(),
                     info: response.description,
@@ -339,28 +330,28 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     linkUrl: response.permalink_url,
                     tracks: []
                 };
-                response.tracks.forEach(function (item) {
-                    result.tracks.push(that._convertTrack(item));
+                response.tracks.forEach((item) => {
+                    result.tracks.push(this._convertTrack(item));
                 });
                 return result;
             } else if (response.kind == "track") {
-                return that._convertTrack(response);
+                return this._convertTrack(response);
             } else if (response.kind == "user") {
                 var url2 = response.uri;
                 var prefix = 'soundcloud-';
                 var title = response.full_name + "'s ";
                 if (url.indexOf("/likes") === -1) {
-                    url2 += "/tracks.json?client_id=" + that.soundcloudClientId;
+                    url2 += "/tracks.json?client_id=" + this.soundcloudClientId;
                     prefix += 'user-';
                     title += "Tracks";
                 } else {
-                    url2 += "/favorites.json?client_id=" + that.soundcloudClientId;
+                    url2 += "/favorites.json?client_id=" + this.soundcloudClientId;
                     prefix += 'favortites-';
                     title += "Favorites";
                 }
-                return Tomahawk.get(url2).then(function (response) {
+                return Tomahawk.get(url2).then((response) => {
                     var result = {
-                        type: Tomahawk.UrlType.Playlist,
+                        type: UrlTypes.Playlist,
                         title: title,
                         guid: prefix + response.id.toString(),
                         info: title,
@@ -368,8 +359,8 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
                         linkUrl: response.permalink_url,
                         tracks: []
                     };
-                    response.forEach(function (item) {
-                        result.tracks.push(that._convertTrack(item));
+                    response.forEach((item) => {
+                        result.tracks.push(this._convertTrack(item));
                     });
                     return result;
                 });
@@ -379,6 +370,4 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             }
         });
     }
-});
-
-Tomahawk.resolver.instance = SoundcloudResolver;
+}
