@@ -33,7 +33,7 @@ var YoutubeMetadataResolver = Tomahawk.extend(TomahawkResolver, {
         String.prototype.capitalise = function () {
             return this.toLowerCase().replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
         };
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
         if (callback){
             callback(null);
         }

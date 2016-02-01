@@ -21,7 +21,7 @@ var StreamTestResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
     },
 
     init: function() {
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
         Tomahawk.addCustomUrlHandler( 'streamtest', 'getStreamUrl', true );
     },
 

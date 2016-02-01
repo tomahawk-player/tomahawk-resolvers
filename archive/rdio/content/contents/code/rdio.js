@@ -167,7 +167,7 @@ var RdioResolver = Tomahawk.extend(Tomahawk.Resolver, {
     },
 
     init: function () {
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
     },
 
     _spell: function (a) {

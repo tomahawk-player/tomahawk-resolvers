@@ -86,7 +86,7 @@ var SoundcloudResolver = Tomahawk.extend(Tomahawk.Resolver, {
             this.includeLive = false;
         }
 
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
     },
 
     _isValidTrack: function (trackTitle, origTitle) {

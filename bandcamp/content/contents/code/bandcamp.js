@@ -35,7 +35,7 @@ var BandcampResolver = Tomahawk.extend(TomahawkResolver, {
         this.secret = this.spell(this.wand);
 
 
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
         if (callback) {
             callback(null);
         }

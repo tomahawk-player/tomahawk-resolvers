@@ -106,7 +106,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         this._region = config.region || 0;
 
         if (!this._email || !this._password) {
-            Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
+            Tomahawk.PluginManager.unregisterPlugin("collection", amazonCollection);
             throw new Error( "Invalid configuration." );
         }
 

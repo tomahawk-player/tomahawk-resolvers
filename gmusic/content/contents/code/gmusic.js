@@ -89,7 +89,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var name = this.settings.name;
         var config = this.getUserConfig();
         if (!config.email || (!config.token && !config.password)) {
-            Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
+            Tomahawk.PluginManager.unregisterPlugin("collection", gmusicCollection);
             Tomahawk.log(name + " resolver not configured.");
             return;
         }

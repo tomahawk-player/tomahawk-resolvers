@@ -25,7 +25,7 @@ var SpotifyMetadataResolver = Tomahawk.extend(Tomahawk.Resolver, {
     },
 
 	init: function() {
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
 	},
 
     canParseUrl: function (params) {

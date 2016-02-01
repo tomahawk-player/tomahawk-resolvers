@@ -26,7 +26,7 @@ var ExfmResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
     init: function () {
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
     },
 
     cleanTitle: function (title, artist) {

@@ -21,7 +21,7 @@
  *   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* globals Tomahawk, TomahawkResolver, async, TomahawkResolverCapability, TomahawkConfigTestResultType, TomahawkUrlType */
+/* globals Tomahawk, TomahawkResolver, async, TomahawkConfigTestResultType, TomahawkUrlType */
 
 
 var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
@@ -139,7 +139,7 @@ var BeatsMusicResolver = Tomahawk.extend(TomahawkResolver, {
     init: function(cb) {
         this.app_token = this.spell("s4fw8if4jfwxakawi7xud55c");
 
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
 
         Tomahawk.addCustomUrlHandler("beatsmusic", "getStreamUrl", true);
 
