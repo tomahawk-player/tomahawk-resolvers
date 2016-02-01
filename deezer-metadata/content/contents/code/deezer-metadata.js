@@ -21,7 +21,7 @@ var DeezerMetadataResolver = Tomahawk.extend(TomahawkResolver, {
     },
 
 	init: function() {
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
 	},
 
 

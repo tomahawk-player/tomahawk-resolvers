@@ -30,9 +30,7 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
     init: function (){
         "use strict";
 
-        if(Tomahawk.reportCapabilities && window.TomahawkResolverCapability && window.TomahawkResolverCapability.UrlLookup) {
-            Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
-        }
+        Tomahawk.PluginManager.registerPlugin("linkParser", this);
     },
 
     canParseUrl: function (url, type){

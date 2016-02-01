@@ -68,7 +68,6 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         this._password = config.password;
 
         if (!this._email || !this._password) {
-            Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
             //This is being called even for disabled ones
             //throw new Error( "Invalid configuration." );
             Tomahawk.log("Invalid Configuration");

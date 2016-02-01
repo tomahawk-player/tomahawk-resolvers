@@ -98,7 +98,7 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
         this.doApiRequest(auth_url, function(jsonResponse) {
             if (typeof(jsonResponse.data.sid) === "undefined") {
                 Tomahawk.log("No session identifier (sid) received. Future api calls will fail.");
-                Tomahawk.reportCapabilities(TomahawkResolverCapability.NullCapability);
+                Tomahawk.PluginManager.unregisterPlugin("collection", that);
 
                 return;
             }
@@ -115,7 +115,7 @@ var SynologyResolver = Tomahawk.extend(TomahawkResolver, {
 
         this.doApiRequest(track_url, function(jsonResponse) {
             that.trackCount = jsonResponse.data.total;
-            Tomahawk.reportCapabilities(TomahawkResolverCapability.Browsable);
+            Tomahawk.PluginManager.registerPlugin("collection", that);
         });
     },
 
