@@ -35,9 +35,10 @@ var ExampleResolver = Tomahawk.extend(Tomahawk.Resolver, {
         },
         {
             id: "example_textfield_password",
-            type: "textfield_password",
+            type: "textfield",
             label: "Password",
-            defaultValue: "superSafeAdminPassword!!!!0000"
+            defaultValue: "superSafeAdminPassword!!!!0000",
+            isPassword: true
         },
         {
             id: "example_checkbox",
