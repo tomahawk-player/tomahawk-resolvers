@@ -95,7 +95,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
             this.includeCovers = userConfig.includeCovers;
             this.includeRemixes = userConfig.includeRemixes;
             this.includeLive = userConfig.includeLive;
-            this.qualityPreference = userConfig.qualityPreference;
+            this.qualityPreference = userConfig.qualityPreference || 2;
             this.debugMode = userConfig.debugMode;
         } else {
             this.includeCovers = false;
@@ -510,50 +510,6 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         } else if (this.debugMode) {
             Tomahawk.log(this.settings.name + " debug: " + msg);
         }
-    },
-
-    _hasPreferredQuality: function (urlString, quality) {
-        "use strict";
-
-        if (this.qualityPreference === undefined) {
-            this._debugMsg("ASSERT: quality undefined!");
-            return true;
-        }
-
-        return !!(quality === this._getPreferredQuality()
-        || urlString.indexOf("quality=" + this._getPreferredQuality()) !== -1);
-
-    },
-
-    _getPreferredQuality: function () {
-        "use strict";
-
-        if (this.qualityPreference === undefined) {
-            this.qualityPreference = 0;
-        }
-
-        switch (this.qualityPreference) {
-            case 0:
-                return "hd720";
-            case 1:
-                return "medium";
-            case 2:
-                return "small";
-        }
-        return "hd720";
-    },
-
-    _getBitrate: function (itag) {
-        "use strict";
-
-        itag = parseInt(itag);
-        for (var bitrate in this.bitratesToItags) {
-            if (this.bitratesToItags[bitrate].indexOf(itag) !== -1) {
-                return bitrate;
-            }
-        }
-        this._debugMsg("Unexpected itag in _getBitrate: " + itag.toString());
-        return 128;//how we can even get there?
     },
 
     _isValidTrack: function (trackTitle, origTitle) {
