@@ -148,6 +148,39 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         };
     },
 
+    /**
+     * Defines this Resolver's config dialog UI.
+     */
+    configUi: [
+        {
+            id: "includeCovers",
+            type: "checkbox",
+            label: "Include cover versions"
+        },
+        {
+            id: "includeRemixes",
+            type: "checkbox",
+            label: "Include remix versions"
+        },
+        {
+            id: "includeLive",
+            type: "checkbox",
+            label: "Include live versions"
+        },
+        {
+            id: "qualityPreference",
+            type: "dropdown",
+            label: "Maximal audio quality",
+            items: ["128", "192", "256"],
+            defaultValue: 2
+        },
+        {
+            id: "debugMode",
+            type: "checkbox",
+            label: "Debug log output"
+        }
+    ],
+
     newConfigSaved: function (newConfig) {
         "use strict";
 
