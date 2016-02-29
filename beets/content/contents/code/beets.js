@@ -50,6 +50,29 @@ var BeetsResolver = Tomahawk.extend(Tomahawk.Resolver, {
         };
     },
 
+    /**
+     * Defines this Resolver's config dialog UI.
+     */
+    configUi: [
+        {
+            id: "server",
+            type: "textfield",
+            label: "Server URL",
+            defaultValue: "http://localhost:8337/"
+        },
+        {
+            id: "username",
+            type: "textfield",
+            label: "Username"
+        },
+        {
+            id: "password",
+            type: "textfield",
+            label: "Password",
+            isPassword: true
+        }
+    ],
+
     newConfigSaved: function (newConfig) {
         Tomahawk.log("Invalidating cache");
         var that = this;

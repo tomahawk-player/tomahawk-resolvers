@@ -51,6 +51,30 @@ var TidalResolver = Tomahawk.extend(Tomahawk.Resolver, {
         };
     },
 
+    /**
+     * Defines this Resolver's config dialog UI.
+     */
+    configUi: [
+        {
+            id: "email",
+            type: "textfield",
+            label: "E-Mail"
+        },
+        {
+            id: "password",
+            type: "textfield",
+            label: "Password",
+            isPassword: true
+        },
+        {
+            id: "quality",
+            type: "dropdown",
+            label: "Audio quality",
+            items: ["Low", "High", "Lossless"],
+            defaultValue: 2
+        }
+    ],
+
     newConfigSaved: function (newConfig) {
         var changed =
             this._email !== newConfig.email ||
