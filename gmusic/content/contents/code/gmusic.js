@@ -72,6 +72,38 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         };
     },
 
+    /**
+     * Defines this Resolver's config dialog UI.
+     */
+    configUi: [
+        {
+            type: "textview",
+            text: "For this plug-in to work you must first login using the official Google Music "
+            + "iOS or Android app and play a song. After you've done that Tomahawk should then be "
+            + "able to authenticate with your account."
+        },
+        {
+            type: "textview",
+            text: "<html>Note: If you use 2-Step Verification, then you must create an "
+            + "<a href=\"https://support.google.com/accounts/answer/185833?hl=en\">app-specific "
+            + "password</a> to use in Tomahawk. Otherwise, make sure that you enable "
+            + "\"less secure apps\" in your "
+            + "<a href=\"https://www.google.com/settings/security/lesssecureapps\">Google account "
+            + "settings</a></html>"
+        },
+        {
+            id: "email",
+            type: "textfield",
+            label: "E-Mail"
+        },
+        {
+            id: "password",
+            type: "textfield",
+            label: "Password",
+            isPassword: true
+        }
+    ],
+
     newConfigSaved: function (newConfig) {
         if (this._email !== newConfig.email
             || this._password !== newConfig.password
