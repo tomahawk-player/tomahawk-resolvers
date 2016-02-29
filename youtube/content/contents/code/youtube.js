@@ -187,7 +187,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
         this.includeCovers = newConfig.includeCovers;
         this.includeRemixes = newConfig.includeRemixes;
         this.includeLive = newConfig.includeLive;
-        this.qualityPreference = newConfig.qualityPreference;
+        this.qualityPreference = newConfig.qualityPreference || 2;
         this.debugMode = newConfig.debugMode;
     },
 
