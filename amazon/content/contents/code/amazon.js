@@ -47,6 +47,30 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
     },
 
+    /**
+     * Defines this Resolver's config dialog UI.
+     */
+    configUi: [
+        {
+            id: "email",
+            type: "textfield",
+            label: "E-Mail"
+        },
+        {
+            id: "password",
+            type: "textfield",
+            label: "Password",
+            isPassword: true
+        },
+        {
+            id: "region",
+            type: "dropdown",
+            label: "Region",
+            items: [".com", ".de", ".co.uk"],
+            defaultValue: 0
+        }
+    ],
+
     newConfigSaved: function(config) {
         var that = this;
         var changed =
@@ -66,10 +90,15 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     testConfig: function (config) {
-        //This is not really working as this resolvers relies on Cookies which
-        //"just work" and not controlled explicitly
-        return this._getLoginPromise(config).catch(function (error) {
-            throw new Error('Invalid credentials');
+        return this._getLoginPromise(config, true).then(function (resp) {
+            var appConfigRe = /amznMusic.appConfig *?= *?({.*});/g;
+            if (appConfigRe.exec(resp) != null) {
+                return Tomahawk.ConfigTestResultType.Success;
+            } else {
+                return Tomahawk.ConfigTestResultType.InvalidCredentials;
+            }
+        }, function (error) {
+            return "Internal error.";
         });
     },
 
@@ -298,9 +327,12 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
     },
 
-    _getLoginPromise: function (config) {
+    _getLoginPromise: function (config, isTestingConfig) {
         var that = this;
-        return this._get(this.api_location + "cloudplayer").then(
+        var options = {
+            isTestingConfig: isTestingConfig
+        };
+        return this._get(this.api_location + "cloudplayer", options).then(
             function (resp) {
                 if (resp.indexOf('amznMusic.appConfig') !== -1 )
                 {
@@ -322,7 +354,11 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     params['create'] = '0';
                     var actionRe = /action="([^"]+)"/g ;
                     var url = actionRe.exec(resp)[1];
-                    return that._post( url ,{data : params});
+                    var options = {data: params};
+                    if (isTestingConfig) {
+                        options.isTestingConfig = true;
+                    }
+                    return that._post(url, options);
                 }
             },
             function (error) {
@@ -340,7 +376,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var that = this;
 
-        this._loginPromise = this._getLoginPromise(config).then(
+        this._loginPromise = this._getLoginPromise(config, false).then(
             function (resp) {
                 var appConfigRe = /amznMusic.appConfig *?= *?({.*});/g;
                 that._appConfig = JSON.parse(appConfigRe.exec(resp)[1]);
@@ -349,16 +385,17 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 amazonCollection.settings['description'] = that._appConfig['customerName'];
                 that._checkForLibraryUpdates();
                 Tomahawk.PluginManager.registerPlugin("collection", amazonCollection);
+                Tomahawk.log(that.settings.name + " successfully logged in.");
             },
             function (error) {
-                Tomahawk.log(that.settings.name + " failed login.");
+                Tomahawk.log(that.settings.name + " failed login: " + JSON.stringify(error));
 
                 delete that._appConfig;
 
                 that.logged_in = 2;
             }
         ).catch(function(error) {
-            Tomahawk.log(that.settings.name + " failed login.");
+            Tomahawk.log(that.settings.name + " failed login: " + JSON.stringify(error));
             that.logged_in = 2;
         });
         return this._loginPromise;
