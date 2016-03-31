@@ -92,7 +92,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             }
             if (!song[format])
             {
-                return {url:null};
+                return;
             }
             var dfsid = song[format].dfsId.toString();
             var ext   =  song[format].extension;
