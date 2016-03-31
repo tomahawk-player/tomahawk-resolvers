@@ -274,33 +274,36 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 = url.match(/https?:\/\/(?:play|open)\.spotify\.[^\/]+\/user\/([^\/]+)\/playlist\/([^\/\?]+)/);
         }
         if (match != null) {
-            var query = 'https://ws.spotify.com/lookup/1/.json?uri=spotify:' + match[1] + ':'
+            var query = 'https://api.spotify.com/v1/' + match[1] + 's/'
                 + match[2];
             Tomahawk.log("Found album/artist/track, calling " + query);
             return Tomahawk.get(query).then(function (response) {
                 if (match[1] == "artist") {
-                    Tomahawk.log("Reported found artist '" + response.artist.name + "'");
+                    Tomahawk.log("Reported found artist '" + response.name + "'");
                     return {
                         type: Tomahawk.UrlType.Artist,
-                        artist: response.artist.name
+                        artist: response.name
                     };
                 } else if (match[1] == "album") {
-                    Tomahawk.log("Reported found album '" + response.album.name + "' by '"
-                        + response.album.artist + "'");
-                    return {
-                        type: Tomahawk.UrlType.Album,
-                        album: response.album.name,
-                        artist: response.album.artist
-                    };
-                } else if (match[1] == "track") {
-                    var artist = response.track.artists.map(function (item) {
+					var artist = response.artists.map(function (item) {
                         return item.name;
                     }).join(" & ");
-                    Tomahawk.log("Reported found track '" + response.track.name + "' by '" + artist
+                    Tomahawk.log("Reported found album '" + response.name + "' by '"
+                        + artist + "'");
+                    return {
+                        type: Tomahawk.UrlType.Album,
+                        album: response.name,
+                        artist: artist
+                    };
+                } else if (match[1] == "track") {
+                    var artist = response.artists.map(function (item) {
+                        return item.name;
+                    }).join(" & ");
+                    Tomahawk.log("Reported found track '" + response.name + "' by '" + artist
                         + "'");
                     return {
                         type: Tomahawk.UrlType.Track,
-                        track: response.track.name,
+                        track: response.name,
                         artist: artist
                     };
                 }
