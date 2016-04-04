@@ -3,7 +3,7 @@
     "pluginName": "netease",
     "author": "Anton Romanov",
     "email": "",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "website": "http://gettomahawk.com",
     "description": "Streams music from http://music.163.com",
     "type": "resolver/javascript",
