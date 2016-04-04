@@ -119,7 +119,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             }
             if(results.result.songCount > 0) {
                 return results.result.songs.filter(function(song) {
-                    return song["copyrightId"] == 0;
+                    return song['copyrightId'] == 0 || song['status'] == 3;
                 }).map(that._convertTrack, that);
             } else {
                 return [];
