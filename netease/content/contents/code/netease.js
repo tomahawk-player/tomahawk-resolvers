@@ -97,7 +97,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             var dfsid = song[format].dfsId.toString();
             var ext   =  song[format].extension;
             // m2.music.126.net is also working but is properly resolvable via
-            // chinese DNS servers only, thus m5
+            // chinese DNS servers only, thus p2
             var url = 'http://p2.music.126.net/' + that._encrypt(dfsid) + '/' +
                 dfsid + '.' + ext;
             return {url:url};
@@ -118,7 +118,9 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 results = JSON.parse(results);
             }
             if(results.result.songCount > 0) {
-                return results.result.songs.map(that._convertTrack, that);
+                return results.result.songs.filter(function(song) {
+                    return song["copyrightId"] == 0;
+                }).map(that._convertTrack, that);
             } else {
                 return [];
             }
