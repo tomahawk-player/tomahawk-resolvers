@@ -47,7 +47,7 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             title:      entry.name,
             bitrate:    this.numQuality[this._quality],
             duration:   parseInt(entry.duration)/1000,
-            url:        'netease://track/' + entry.id,
+            url:        this._convertStreamUrl(entry),
             checked:    true,
             type:       "track"
         };
@@ -73,35 +73,28 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return CryptoJS.enc.Base64.stringify(CryptoJS.MD5(xor_string(input, this.SALT))).replace(/\//g, '_').replace(/\+/g, '-');
     },
 
-    getStreamUrl: function(params) {
+    _convertStreamUrl: function(song) {
         var that = this;
-        var id = params.url.match(/^netease:\/\/([a-z]+)\/(.+)$/)[2];
-        return this._apiCall('song/detail', {id:id, ids:'['+id+']'}).then(function(result){
-            if(!result.code) {
-                result = JSON.parse(result);
+        var format = that.strQuality[that._quality];
+        if (!song[format])
+        {
+            //Requested quality not found , try to find the one going down
+            //a step
+            for(var i = that._quality; i >= 0 && !song[format]; --i) {
+                var format = that.strQuality[i];
             }
-            var format = that.strQuality[that._quality];
-            var song = result.songs[0];
-            if (!song[format])
-            {
-                //Requested quality not found , try to find the one going down
-                //a step
-                for(var i = that._quality; i >= 0 && !song[format]; --i) {
-                    var format = that.strQuality[i];
-                }
-            }
-            if (!song[format])
-            {
-                return;
-            }
-            var dfsid = song[format].dfsId.toString();
-            var ext   =  song[format].extension;
-            // m2.music.126.net is also working but is properly resolvable via
-            // chinese DNS servers only, thus p2
-            var url = 'http://p2.music.126.net/' + that._encrypt(dfsid) + '/' +
-                dfsid + '.' + ext;
-            return {url:url};
-        });
+        }
+        if (!song[format])
+        {
+            return null;
+        }
+        var dfsid = song[format].dfsId.toString();
+        var ext   =  song[format].extension;
+        // m2.music.126.net is also working but is properly resolvable via
+        // chinese DNS servers only, thus p2
+        var url = 'http://p2.music.126.net/' + that._encrypt(dfsid) + '/' +
+            dfsid + '.' + ext;
+        return url;
     },
 
     _apiCall: function(endpoint, params) {
@@ -118,9 +111,15 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 results = JSON.parse(results);
             }
             if(results.result.songCount > 0) {
-                return results.result.songs.filter(function(song) {
-                    return song['copyrightId'] == 0 || song['status'] == 3;
-                }).map(that._convertTrack, that);
+                var songIds = results.result.songs.map(function(song) {
+                    return song.id;
+                });
+                return that._apiCall('song/detail', {ids:'['+songIds.join(',')+']'}).then(function(result){
+                    if(!result.code) {
+                        result = JSON.parse(result);
+                    }
+                    return result.songs.map(that._convertTrack,that);
+                });
             } else {
                 return [];
             }
