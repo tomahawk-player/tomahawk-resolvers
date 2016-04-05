@@ -6,14 +6,14 @@
  * Licensed under the Eiffel Forum License 2.
  */
 
-var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
     //These are copied from kodi vk.com plugin
     APP_ID : '2054573',
     APP_KEY : 'KUPNPTTQGApLFVOVgqdx',
     APP_SCOPE : 'audio',
-    API_VERSION : '5.0',
+    API_VERSION : '5.34',
 
     STORAGE_KEY : 'vk.com.access_token',
 
@@ -45,8 +45,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    newConfigSaved: function() {
-        var config = this.getUserConfig();
+    newConfigSaved: function(config) {
 
         var changed = this._email !== config.email || this._password !== config.password;
 
@@ -73,6 +72,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
             Tomahawk.log("Invalid Configuration");
             return;
         }
+        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
 
         return this._login(config);
     },
@@ -85,9 +85,10 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         }
 
         params['access_token'] = this._access_token;
-        params['v']            = this.API_VERSION;
+        if(!params.hasOwnProperty('v'))
+            params['v'] = this.API_VERSION;
 
-        return Tomahawk.get("https://api.vk.com/method/" + api, {
+        return Tomahawk.post("https://api.vk.com/method/" + api, {
             data: params
         }).then(function (resp) {
                 if(resp.error)
@@ -117,46 +118,144 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         );
     },
 
+    _parseUrlPrefix: function (url) {
+        var match = url.match( /(?:https?:\/\/)?(?:www\.)?vk\.com\/audios(\d+)\?album_id=(\d+)/ );
+        // eg: http://vk.com/audios8178142?album_id=59520611
+        return match;
+    },
+
+    canParseUrl: function (url, type) {
+        url = this._parseUrlPrefix(url);
+        if (!url) return false;
+
+        return true;
+        switch (type) {
+            case TomahawkUrlType.Playlist:
+                return true;
+            default:
+                return false;
+        }
+    },
+
+    lookupUrl: function (url) {
+        this.lookupUrlPromise(url).then(function (result) {
+            Tomahawk.addUrlResult(url, result);
+        }).catch(function (e) {
+            Tomahawk.log("Error in lookupUrlPromise! " + e);
+            Tomahawk.addUrlResult(url, null);
+        });
+    },
+
+    lookupUrlPromise: function (url) {
+        if (!this.logged_in) {
+            return this._defer(this.lookupUrl, [url], this);
+        } else if (this.logged_in === 2) {
+            throw new Error('Failed login, cannot lookupUrl');
+        }
+
+        var match = this._parseUrlPrefix(url);
+        var that = this;
+
+        if (!match[1])
+            throw new Error("Couldn't parse given URL: " + url);
+
+        var owner = match[1];
+        var album = match[2];
+        var code = 'var owner = ' + owner + '; ' + 
+                   'var album = ' + album + '; ' +
+                   'var albums = API.audio.getAlbums({owner_id: owner}).items; ' +
+                   'var l = albums.length - 1; ' +
+                   'var title = ""; ' +
+                   'while ( l >= 0 ) { ' +
+                   '    if ( albums[l].id == album ) { ' +
+                   '        title = albums[l].title; ' +
+                   '        l = -1; ' +
+                   '    } ' +
+                   '    l = l - 1 ; ' +
+                   '} ' +
+                   'var tracks = API.audio.get({album_id : album, owner_id : owner}).items; ' +
+                   'return { ' +
+                   '   title: title, ' +
+                   '   tracks: tracks, ' +
+                   '   type: "playlist" '+
+                   '};';
+
+        return this._apiCall('execute',{code: code}).then( function (response) {
+            response.response.tracks = response.response.tracks.map(that._convertTrack);
+            return response.response;
+        });
+    },
+
+    getStreamUrl : function (params) {
+        if (params.url.indexOf('http:') === 0 || params.url.indexOf('https:') === 0)
+        {
+            return {url: params.url};
+        }
+        var id = params.url.match( /vk:\/\/track\/([_\-\d]+)/ )[1];
+        return this._apiCall('audio.getById', {audios : id}).then( function (response) {
+            return {url : response.response[0].url};
+        });
+    },
+
     _convertTrack: function (entry) {
         var escapeRegExp = function (string){
             return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
         };
+
+        var artist = entry.artist;
+        var title = entry.title;
+        var album = null;
     
-        entry = {
-            artist:     entry.artist,
-            track:      entry.title,
-            title:      entry.title,
-            duration:   entry.duration,
-            url:        entry.url,
-            type:       "track",
-            checked:    true
-        };
         var trackInfo = this;
         if (trackInfo.title) {
+            //As vk.com doesn't really have an 'album' field,
+            //often tracks on vk.com are named in a similar fashion:
+            //artist: "Vader - The Ultimate Incantation"
+            //track: Decapitated Saints
+            //or 
+            //track: 'Track Name ("Album Name")' etc
+            //this block is to workaround that
+            
             if (entry.artist.toLowerCase().search(trackInfo.artist.toLowerCase()) != -1 &&
                     entry.artist.toLowerCase().search(trackInfo.album.toLowerCase()) != -1)
                 //Assuming user put "Vader - The Ultimate Incantation" into
                 //artist
             {
-                entry.artist = trackInfo.artist;
-                entry.album  = trackInfo.album;
+                artist = trackInfo.artist;
+                album  = trackInfo.album;
             }
+            else if (entry.title.toLowerCase().search(trackInfo.artist.toLowerCase()) != -1 &&
+                    entry.title.toLowerCase().search(trackInfo.title.toLowerCase()) != -1)
+                //track: 'Track Name ("Album Name")' 
+            {
+                title = trackInfo.title;
+                album  = trackInfo.album;
+            }
+
             var regex = new RegExp('[0-9\ \-\.]+' + escapeRegExp(trackInfo.title), 'i');
             //Track title looks like:
             //  11. Decapitated Saints
             if (entry.title.match(regex)) {
-                entry.title = trackInfo.title;
+                title = trackInfo.title;
             }
         }
 
-        entry.track = entry.title;
-
-        return entry;
+        return {
+            artist:     artist,
+            track:      title,
+            title:      title,
+            album:      album,
+            duration:   entry.duration,
+            hint:       'vk://track/' + entry.owner_id + '_' + entry.id,
+            url:        'vk://track/' + entry.owner_id + '_' + entry.id,
+            type:       "track",
+            checked:    true
+        };
     },
 
-    search: function (query, limit, trackInfo) {
+    search: function (searchparams) {
         if (!this.logged_in) {
-            return this._defer(this.search, [query], this);
+            return this._defer(this.search, [searchparams], this);
         } else if (this.logged_in ===2) {
             throw new Error('Failed login, cannot search.');
         }
@@ -164,43 +263,61 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         var that = this;
 
         var params = {
-            count: limit || 300,
-            q: query,
+            count: searchparams.limit || 300,
+            q: searchparams.query,
         };
 
         return this._apiCall('audio.search',params).then( function (response) {
-            return response.response.items.map(that._convertTrack, trackInfo);
+            return response.response.items.map(that._convertTrack);
         });
     },
 
     _batchResolve: function (that) {
-        var saved_queue = that._queue;
+        var saved_queue_full = that._queue;
         that._batching = false;
         that._queue = Object.create(null);
+        var saved_queue_qids = [];
+        for(var qid in saved_queue_full) {
+            saved_queue_qids.push(qid);
+        }
+
+        //Slice queue in chunks of 5 as VK has a bug with > 5 audio.search
+        //calls inside execute call
+        var executeBatchSize = 5;
+        var saved_queue = saved_queue_qids.splice(0, executeBatchSize);
 
         var queries = [];
         var count = 0;
+        var searchCount = 0;
         for(var qid in saved_queue) {
-            qid = JSON.parse(qid);
-            if (qid[1] === '') {
-                //empty album
-                queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
-                    '",result:[API.audio.search({count:5,q:' +
-                    JSON.stringify(qid.join(' ')) + '})]}');
+            qid = saved_queue[qid];
+            if ( searchCount >= executeBatchSize - 1 ) {
+                saved_queue_qids.push(qid);
             } else {
-                queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
-                    '",result:[API.audio.search({count:3,q:' +
-                    JSON.stringify(qid.join(' ')) +
-                    '}),API.audio.search({count:3,q:' +
-                    JSON.stringify([qid[0],qid[2]].join(' ')) +
-                    '})]}');
+                qid = JSON.parse(qid);
+                if (qid[1] === '') {
+                    searchCount++;
+                    //empty album
+                    queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
+                        '",result:[API.audio.search({count:5,q:' +
+                        JSON.stringify(qid.join(' - ')) + '})]}');
+                } else {
+                    searchCount+=2;
+                    queries.push('{qid:"' + encodeURIComponent(JSON.stringify(qid)) +
+                        '",result:[API.audio.search({count:3,q:' +
+                        JSON.stringify(qid.join(' - ')) +
+                        '}),API.audio.search({count:3,q:' +
+                        JSON.stringify([qid[0],qid[2]].join(' - ')) +
+                        '})]}');
+                }
             }
             ++count;
         }
         Tomahawk.log("Sending " + count + " of queued resolve requests");
-        var code = 'return [' + queries.join(',') + '];';        
+        var code = 'return [' + queries.join(',') + '];';
         Tomahawk.log("Prepared 'execute' code:" + code);
         that._apiCall('execute', {code:code}).then(function(results) {
+            Tomahawk.log('got result ' + JSON.stringify(results));
             for (var result in results.response) {
                 result = results.response[result];
                 var tracks = [];
@@ -215,25 +332,36 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
                     u[tracks[i].url] = 1;
                 }
                 var _qid = JSON.parse(decodeURIComponent(result.qid));
-                tracks = a.map(that._convertTrack, 
+                tracks = a.map(that._convertTrack,
                     {
                         artist: _qid[0],
                         album : _qid[1],
                         title : _qid[2],
                     });
-                for(var r in saved_queue[decodeURIComponent(result.qid)]) {
-                    saved_queue[decodeURIComponent(result.qid)][r](tracks);
+                for(var r in saved_queue_full[decodeURIComponent(result.qid)]) {
+                    Tomahawk.log('resolving' + decodeURIComponent(result.qid) + ' with ' + JSON.stringify(tracks));
+                    saved_queue_full[decodeURIComponent(result.qid)][r](tracks);
                 }
             }
         });
+        if (saved_queue_qids.length > 0)
+        {
+            //enqueue the ones we were not able to do back
+            for(var qid in saved_queue_qids) {
+                qid = saved_queue_qids[qid];
+                setTimeout(function(){ that._batchResolve(that); }, 1000);
+                that._batching = true;
+                that._queue[qid] = saved_queue_full[qid];
+            }
+        }
     },
 
-    resolve: function (artist, album, title) {
+    resolve: function (params) {
         var that = this;
 
-        var qid = JSON.stringify([artist, album, title]);
+        var qid = JSON.stringify([params.artist, params.album, params.track]);
 
-        var promise = new Promise(function (resolve, reject) {
+        var promise = new RSVP.Promise(function (resolve, reject) {
             if(!(qid in that._queue)) {
                 that._queue[qid] = [];
             }
