@@ -72,7 +72,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
             Tomahawk.log("Invalid Configuration");
             return;
         }
-        Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
+        //Tomahawk.reportCapabilities(TomahawkResolverCapability.UrlLookup);
 
         return this._login(config);
     },
