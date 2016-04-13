@@ -23,6 +23,7 @@ var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
             title:      entry.name,
             hint:        'bandcampm://track/' + entry.band_id + '/' + entry.id,
             bitrate:    128,
+            checked:    true,
             type:       "track"
         };
     },
