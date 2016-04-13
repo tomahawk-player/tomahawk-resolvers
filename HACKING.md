@@ -14,7 +14,7 @@ resolve: function(qid, artist, album, track) {
     Tomahawk.addTrackResults(qid, results);
 }
 ```
-Now with the new promise-based API the same implementation would like this:  
+Now with the new promise-based API, the same implementation would be like this:  
 ```javascript
 resolve: function (params) {
     return getResultArray(params.artist, params.album, params.track);
