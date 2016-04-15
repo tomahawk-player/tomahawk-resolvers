@@ -55,8 +55,10 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     testConfig: function (config) {
-        return this._getLoginPromise(config).catch(function (error) {
-            throw new Error('Invalid credentials');
+        return this._getLoginPromise(config).then(function (error) {
+            return Tomahawk.ConfigTestResultType.Success;
+        }, function (error) {
+            return Tomahawk.ConfigTestResultType.InvalidCredentials;
         });
     },
 
@@ -78,10 +80,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     _apiCall: function (api, params) {
-        if (!this.logged_in) {
-            return this._defer(this._apiCall, [api, params], this);
-        } else if (this.logged_in === 2) {
-            throw new Error('Failed login, cannot _apiCall.');
+        if (!this.logged_in || this.logged_in === 2) {
+            throw new Error('Not logged in, cannot _apiCall.');
         }
 
         params['access_token'] = this._access_token;
@@ -147,10 +147,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     lookupUrlPromise: function (url) {
-        if (!this.logged_in) {
-            return this._defer(this.lookupUrl, [url], this);
-        } else if (this.logged_in === 2) {
-            throw new Error('Failed login, cannot lookupUrl');
+        if (!this.logged_in || this.logged_in === 2) {
+            throw new Error('Not logged in, cannot lookupUrl');
         }
 
         var match = this._parseUrlPrefix(url);
@@ -254,10 +252,8 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     search: function (searchparams) {
-        if (!this.logged_in) {
-            return this._defer(this.search, [searchparams], this);
-        } else if (this.logged_in ===2) {
-            throw new Error('Failed login, cannot search.');
+        if (!this.logged_in || this.logged_in ===2) {
+            throw new Error('Not logged in, cannot search.');
         }
 
         var that = this;
@@ -376,18 +372,6 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return promise;
     },
 
-    _defer: function (callback, args, scope) {
-        if (typeof this._loginPromise !== 'undefined' && 'then' in this._loginPromise) {
-            args = args || [];
-            scope = scope || this;
-            Tomahawk.log('Deferring action with ' + args.length + ' arguments.');
-            return this._loginPromise.then(function () {
-                Tomahawk.log('Performing deferred action with ' + args.length + ' arguments.');
-                callback.call(scope, args);
-            });
-        }
-    },
-
     _getLoginPromise: function (config) {
         var params = {
             grant_type      : 'password',
@@ -412,7 +396,7 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
         if (Tomahawk.localStorage) {
             this._access_token = Tomahawk.localStorage.getItem(this.STORAGE_KEY);
             if (this._access_token) {
-                this._logged_in = 1;
+                this.logged_in = 1;
                 return;
             }
         }
