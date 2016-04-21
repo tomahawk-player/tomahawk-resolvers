@@ -374,7 +374,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 mimetypeValue = this._decodeEntity(Tomahawk.valueForSubNode(song, "mime"));
                 
                 if (typeof bitrateValue !== "undefined" && bitrateValue !== null && bitrateValue != "undefined") 
-                    trackObject['bitrate'] = bitrateValue;
+                    trackObject['bitrate'] = bitrateValue/1000;
                
                 if (typeof mimetypeValue !== "undefined" && mimetypeValue !== null && bitrateValue != "undefined") 
                     trackObject['mime'] = mimetypeValue;
