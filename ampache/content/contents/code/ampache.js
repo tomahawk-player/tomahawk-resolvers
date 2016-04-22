@@ -426,6 +426,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
 Tomahawk.resolver.instance = AmpacheResolver;
 
 var ampacheCollection = Tomahawk.extend(Tomahawk.Collection, {
+    resolver:  AmpacheResolver,
     settings: {
         id: "ampache",
         prettyname: "Ampache",
