@@ -363,7 +363,6 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
                     albumpos: Tomahawk.valueForSubNode(song, "track"),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
-                    // url: this._decodeEntity(Tomahawk.valueForSubNode(song, "url")),
                     url: "ampache://track/" + song.getAttribute("id"),
                     size: Tomahawk.valueForSubNode(song, "size"),
                     duration: Tomahawk.valueForSubNode(song, "time"),
