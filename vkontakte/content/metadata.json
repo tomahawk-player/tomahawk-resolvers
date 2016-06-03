@@ -3,7 +3,7 @@
     "pluginName": "vkontakte",
     "author": "Anton Romanov",
     "email": "theli.ua@gmail.com",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "website": "http://gettomahawk.com",
     "description": "Searches VKontakte (vk.com) for music to play. Requires free account",
     "type": "resolver/javascript",
