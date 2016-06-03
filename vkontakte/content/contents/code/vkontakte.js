@@ -45,6 +45,23 @@ var VkontakteResolver = Tomahawk.extend( Tomahawk.Resolver, {
         };
     },
 
+    /**
+     * Defines this Resolver's config dialog UI.
+     */
+    configUi: [
+        {
+            id: "email",
+            type: "textfield",
+            label: "E-Mail"
+        },
+        {
+            id: "password",
+            type: "textfield",
+            label: "Password",
+            isPassword: true
+        }
+    ],
+
     newConfigSaved: function(config) {
 
         var changed = this._email !== config.email || this._password !== config.password;
