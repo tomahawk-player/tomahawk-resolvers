@@ -3,7 +3,7 @@
     "pluginName": "bandcampmobile",
     "author": "Anton Romanov",
     "email": "theli.ua@gmail.com",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "website": "http://gettomahawk.com",
     "description": "Resolves to free to preview 128k streams from Bandcamp.(using mobile api)",
     "platform": "any",
