@@ -16,7 +16,13 @@ var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     _convertTrack: function (entry) {
-        return {
+        if (entry.track_id) {
+            entry.id = entry.track_id;
+        }
+        if (entry.title) {
+            entry.name = entry.title;
+        }
+        var track =  {
             artist:     entry.band_name,
             album:      entry.album_name,
             track:      entry.name,
@@ -26,6 +32,13 @@ var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
             checked:    true,
             type:       "track"
         };
+        if (entry.streaming_url && entry.streaming_url['mp3-128']) {
+            track.url = entry.streaming_url['mp3-128'];
+        }
+        if (entry.duration) {
+            track.duration = parseInt(entry.duration);//Its actually a float but we don't need fractions of seconds
+        }
+        return track;
     },
 
     _getEditDistance : function(a, b){
@@ -86,34 +99,58 @@ var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
     search: function (params) {
         var that = this;
 
-        return Tomahawk.get('https://bandcamp.com/api/nusearch/2/autocomplete?q=' + params.query).then(function(result){
-            var trackPromises = result.results.filter(function(e) {
-                return e.type == 't'; //t stands for track, b - band, a - album
-            }).map(that._convertTrack, that).sort(function(a,b) {
-                if (!params.artist)
-                    return 0;
-                return that._getEditDistance(params.artist, a.artist) - that._getEditDistance(params.artist, b.artist);
-            }).splice(0,3).map(function(track){
-                //We don't know if track streamable during search, we limit to
-                //3 top results as otherwise we'll start getting 503s
-                var parsed = track.hint.match(/^bandcampm:\/\/([a-z]+)\/(\d+)\/(\d+)$/);
-                var band_id = parsed[2];
-                var id      = parsed[3];
-                return Tomahawk.get('https://bandcamp.com/api/mobile/15/tralbum_details?tralbum_type=t&band_id='+band_id+'&tralbum_id='+id).then(function(result){
-                    if(result.tracks.length > 0) {
-                        track.url = result.tracks[0].streaming_url['mp3-128'];
-                        track.duration = parseInt(result.tracks[0].duration);//Its actually a float but we don't need fractions of seconds
-                    }
-                    return track;
+        if (!params.album) {
+            return Tomahawk.get('https://bandcamp.com/api/nusearch/2/autocomplete?q=' + params.query).then(function(result){
+                var trackPromises = result.results.filter(function(e) {
+                    return e.type == 't'; //t stands for track, b - band, a - album
+                }).map(that._convertTrack, that).sort(function(a,b) {
+                    if (!params.artist)
+                        return 0;
+                    return that._getEditDistance(params.artist, b.artist) - that._getEditDistance(params.artist, a.artist);
+                }).splice(0,3).map(function(track){
+                    //We don't know if track streamable during search, we limit to
+                    //3 top results as otherwise we'll start getting 503s
+                    var parsed = track.hint.match(/^bandcampm:\/\/([a-z]+)\/(\d+)\/(\d+)$/);
+                    var band_id = parsed[2];
+                    var id      = parsed[3];
+                    return Tomahawk.get('https://bandcamp.com/api/mobile/15/tralbum_details?tralbum_type=t&band_id='+band_id+'&tralbum_id='+id).then(function(result){
+                        if(result.tracks.length > 0) {
+                            track.url = result.tracks[0].streaming_url['mp3-128'];
+                            track.duration = parseInt(result.tracks[0].duration);//Its actually a float but we don't need fractions of seconds
+                        }
+                        return track;
+                    });
+                });
+                return RSVP.Promise.all(trackPromises);
+            });
+        } else {
+            // More reliable to search by album
+            var album = params.album.replace(/,/g, '%2c');
+            return Tomahawk.get('https://bandcamp.com/api/nusearch/2/autocomplete?q=' + album).then(function(result){
+                var trackPromises = result.results.filter(function(e) {
+                    return e.type == 'a'; //t stands for track, b - band, a - album
+                }).splice(0,1).map(function(album){
+                    //We don't know if album streamable during search, we limit to
+                    //1 top result as otherwise we'll start getting 503s
+                    var band_id = album.band_id;
+                    var id      = album.id;
+                    return Tomahawk.get('https://bandcamp.com/api/mobile/15/tralbum_details?tralbum_type=a&band_id='+band_id+'&tralbum_id='+id).then(function(result){
+                        return result.tracks.map(function (track) {
+                            track.album_name = result.title;
+                            return track;
+                        }).map(that._convertTrack, that);
+                    });
+                });
+                return RSVP.Promise.all(trackPromises).then(function(results) {
+                    return [].concat.apply([],results);
                 });
             });
-            return RSVP.Promise.all(trackPromises);
-        });
+        }
     },
 
     resolve: function (params) {
         var query = params.track;//search we're using searches matches in a single field
-        return this.search({query:query, artist: params.artist});
+        return this.search({query:query, album: params.album, artist: params.artist});
     }
 });
 
