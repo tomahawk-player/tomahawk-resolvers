@@ -75,7 +75,7 @@ var KibergradResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 duration:   track.duration,
                 bitrate:    track.bitrate,
                 //url:        CryptoJS.enc.Base64.parse(track.base64).toString(CryptoJS.enc.Latin1),
-                url:        'http://kibergrad.fm/api/song/download/' + track.id + '.mp3',
+                url:        'http://m.kibergrad.fm/song/play/' + track.id + '.mp3',
                 checked:    true,
                 type:       "track",
             });
