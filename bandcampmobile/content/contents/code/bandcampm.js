@@ -103,7 +103,7 @@ var BandcampResolver = Tomahawk.extend( Tomahawk.Resolver, {
             return Tomahawk.get('https://bandcamp.com/api/nusearch/2/autocomplete?q=' + params.query).then(function(result){
                 var trackPromises = result.results.filter(function(e) {
                     return e.type == 't'; //t stands for track, b - band, a - album
-                }).map(that._convertTrack, that).sort(function(a,b) {
+                }).map(that._convertTrack, that).sort(function(b,a) {
                     if (!params.artist)
                         return 0;
                     return that._getEditDistance(params.artist, b.artist) - that._getEditDistance(params.artist, a.artist);
