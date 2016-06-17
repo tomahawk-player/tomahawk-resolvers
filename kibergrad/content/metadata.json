@@ -3,7 +3,7 @@
     "pluginName": "kibergrad",
     "author": "Anton Romanov",
     "email": "",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "website": "http://gettomahawk.com",
     "description": "Streams music from kibergrad.com",
     "type": "resolver/javascript",
