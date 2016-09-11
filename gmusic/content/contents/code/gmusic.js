@@ -457,7 +457,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 throw new Error("Wasn't able to get resolver settings");
             }
 
-            that._allAccess = response.settings.entitlementInfo.isSubscription;
+            that._allAccess = response.settings.entitlementInfo.isSubscription || response.settings.entitlementInfo.isTrial;
             Tomahawk.log("Google Play Music All Access is "
                 + (that._allAccess ? "enabled" : "disabled" )
             );
