@@ -517,6 +517,15 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                             urlPromise = that._parseURLS(jsonMap.args.url_encoded_fmt_stream_map,
                                 html);
                         }
+                    } else if (jsonMap.args.dashmpd) {
+                        //Theoretically we could parse manifest, select quality
+                        //we want and then return it. 
+                        //But it just doesn't seem to be worth it, unless
+                        //someone really wanna do it
+                        Tomahawk.log("Found MPEG-DASH, just letting VLC handle it");
+                        urlPromise = {url: jsonMap.args.dashmpd};
+                    } else {
+                        Tomahawk.log("Couldn't find MPEG-DASH manifest or adaptive_fmts, aborting");
                     }
                     if (urlPromise) {
                         return RSVP.Promise.resolve(urlPromise).then(function (result) {
