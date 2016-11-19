@@ -3,7 +3,7 @@
     "pluginName": "youtube",
     "author": "Hugo, Leo, Thierry, Anton and Enno",
     "email": "lfranchi@kde.org",
-    "version": "0.9.25",
+    "version": "0.9.26",
     "website": "http://gettomahawk.com",
     "description": "Searches YouTube for audio content to play.",
     "type": "resolver/javascript",

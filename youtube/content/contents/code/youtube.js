@@ -869,7 +869,7 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 names: [name]
             };
         }
-        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;,]'
+        var f_RE = new RegExp('(?:function\\s+' + this._escapeRegExp(name) + '|[{;,]\\s*'
             + this._escapeRegExp(name) + '\\s*=\\s*function|var\\s+' +
             this._escapeRegExp(name) + '\\s*=\\s*function)\\s*\\(([^)]*)\\)\\s*\\{([^}]+)\\}');
         this._debugMsg(f_RE.source);
