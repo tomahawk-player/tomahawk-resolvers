@@ -23,7 +23,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         cacheTime: 300,
         name: 'Amazon Music',
         icon: '../images/icon.png',
-        weight: 91,
+        weight: 95,
         timeout: 8,
         user_agent: 'Mozilla/6.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'
     },
@@ -198,6 +198,10 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             bitrate:    entry.bitrate,
             type:       "track"
         };
+
+        //We request HIGH quality with this resolver which corresponds to
+        //256 VBR kbps, lets set it as default
+        track.bitrate = track.bitrate || 256;
 
         if(entry.albumReleaseDate)
         {
