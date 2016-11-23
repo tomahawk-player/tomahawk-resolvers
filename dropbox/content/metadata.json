@@ -1,0 +1,19 @@
+{
+    "name": "Dropbox",
+    "pluginName": "dropbox",
+    "author": "ISI-Peasy team",
+    "email": "isi-peasy@googlegroups.com",
+    "version": "0.2",
+    "website": "http://gettomahawk.com",
+    "description": "Browse your music files on Dropbox",
+    "type": "resolver/javascript",
+    "manifest": {
+        "main": "contents/code/dropbox.js",
+        "scripts": ["contents/code/musicManager.js", "contents/code/jsOAuth-1.3.6.min.js"],
+        "icon": "contents/images/icon.svg",
+        "resources": [
+            "contents/code/config.ui",
+            "contents/code/dropbox.svg"
+        ]
+    }
+}
