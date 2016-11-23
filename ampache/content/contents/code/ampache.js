@@ -356,20 +356,30 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
             for (var i = 0; i < songs.length; i++) {
                 var song = songs[i];
 
-                results.push({
+                trackObject = {
                     artist: this._decodeEntity(Tomahawk.valueForSubNode(song, "artist")),
                     album: this._decodeEntity(Tomahawk.valueForSubNode(song, "album")),
                     track: this._decodeEntity(Tomahawk.valueForSubNode(song, "title")),
                     albumpos: Tomahawk.valueForSubNode(song, "track"),
                     //result.year = 0;//valueForSubNode(song, "year");
                     source: this.settings.name,
-                    url: "ampache://track/" + song.getAttribute("id"),
-                    //mimetype: valueForSubNode(song, "mime"), //FIXME what's up here? it was there before :\
-                    //result.bitrate = valueForSubNode(song, "title");
+                    url: this._decodeEntity(Tomahawk.valueForSubNode(song, "url")),
                     size: Tomahawk.valueForSubNode(song, "size"),
                     duration: Tomahawk.valueForSubNode(song, "time"),
                     score: Tomahawk.valueForSubNode(song, "rating")
-                });
+                };
+
+                //Check if this stuff is present, and if so append it
+                bitrateValue = this._decodeEntity(Tomahawk.valueForSubNode(song, "bitrate"));
+                mimetypeValue = this._decodeEntity(Tomahawk.valueForSubNode(song, "mime"));
+                
+                if (typeof bitrateValue !== "undefined" && bitrateValue !== null && bitrateValue != "undefined") 
+                    trackObject['bitrate'] = bitrateValue/1000;
+               
+                if (typeof mimetypeValue !== "undefined" && mimetypeValue !== null && bitrateValue != "undefined") 
+                    trackObject['mime'] = mimetypeValue;
+
+                results.push(trackObject);
             }
         }
         return results;
