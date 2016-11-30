@@ -66,7 +66,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             id: "region",
             type: "dropdown",
             label: "Region",
-            items: [".com", ".de", ".co.uk"],
+            items: [".com", ".de", ".co.uk", "co.jp"],
             defaultValue: 0
         }
     ],
@@ -132,7 +132,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return this._request(url, 'GET', options, use_csrf_headers);
     },
 
-    _domains : ['.com', '.de', '.co.uk'],
+    _domains : ['.com', '.de', '.co.uk', 'co.jp'],
 
     init: function() {
         var config = this.getUserConfig();

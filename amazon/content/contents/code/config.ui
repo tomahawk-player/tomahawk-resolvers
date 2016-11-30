@@ -79,6 +79,11 @@
          <string>.co.uk</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>.co.jp</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
