@@ -3,7 +3,7 @@
     "pluginName": "spotify-metadata",
     "author": "Uwe L. Korn, Enno Gottschalk",
     "email": "uwelk@xhochy.com",
-    "version": "0.1.3",
+    "version": "0.2.0",
     "website": "http://gettomahawk.com",
     "description": "Supports drag and drop of Spotify artist and track URLs (no Spotify account required)",
     "type": "resolver/javascript",
