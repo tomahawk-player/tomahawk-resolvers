@@ -560,7 +560,19 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         return that._post(this.api_location + 'cirrus/', {
             data: _query
         }, true).then(function(response) {
-            previousResults = previousResults.concat(response.searchLibraryResponse.searchLibraryResult.searchReturnItemList.map(that._convertTrack));
+            previousResults = previousResults.concat(response
+                .searchLibraryResponse
+                .searchLibraryResult
+                .searchReturnItemList
+                .filter(function(track) {
+                    track = track.metadata;
+                    return (
+                        track.purchased == 'true' ||
+                        track.uploaded  == 'true' ||
+                        (track.primeStatus == 'PRIME' && that._appConfig.featureController.robin == 1) ||
+                        (track.isMusicSubscription == 'true' && that._appConfig.featureController.hawkfireAccess == 1));
+                })
+                .map(that._convertTrack));
             nextResultsToken = response.searchLibraryResponse.searchLibraryResult.nextResultsToken;
             if (null === nextResultsToken)
                 return previousResults;
