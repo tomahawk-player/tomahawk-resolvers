@@ -410,7 +410,7 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var nextUrl = firstBatch ? response.tracks.next : response.next;
         if (!nextUrl) {
             Tomahawk.log("Done parsing playlist tracks.");
-            return tracks;
+            return RSVP.resolve(tracks);
         } else {
             Tomahawk.log("Getting next batch of playlist tracks: " + nextUrl);
             return SpotifyAuth.get(nextUrl).then(function (res) {
