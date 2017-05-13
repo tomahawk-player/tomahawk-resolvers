@@ -47,7 +47,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
     _authUrl: 'https://android.clients.google.com/auth',
     _userAgent: 'tomahawk-gmusic-0.6.0',
-    _baseURL: 'https://www.googleapis.com/sj/v1/',
+    _baseURL: 'https://mclients.googleapis.com/sj/v2.5/',
     _webURL: 'https://play.google.com/music/',
     // Google Play Services key version 7.3.29:
     _googlePlayKey: "AAAAgMom/1a/v0lblO2Ubrt60J2gcuXSljGFQXgcyZWveWLEwo6prwgi3iJIZdodyhKZQrNWp5nKJ3"
@@ -172,7 +172,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         if (entry.id) {
             realId = entry.id;
         } else {
-            realId = entry.nid;
+            realId = entry.storeId;
         }
 
         return {
@@ -207,33 +207,32 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         return gmusicCollection.revision({
             id: gmusicCollection.settings.id
         }).then(function (result) {
-            var url = that._baseURL
-                + 'trackfeed?fields=nextPageToken,'
-                + 'data/items(id,nid,artist,album,title,year,trackNumber,discNumber,estimatedSize,durationMillis)';
             var lastCollectionUpdate = window.localStorage["gmusic_last_collection_update"];
             if (lastCollectionUpdate && lastCollectionUpdate == result) {
                 Tomahawk.log("Collection database has not been changed since last time.");
-                if (window.localStorage["gmusic_last_cache_update"]) {
-                    url += '&updated-min=' + window.localStorage["gmusic_last_cache_update"] * 1000;
-                }
-                return that._fetchAndStoreCollection(url);
+                return that._fetchAndStoreCollection();
             } else {
                 Tomahawk.log("Collection database has been changed. Wiping and re-fetching...");
                 return gmusicCollection.wipe({
                     id: gmusicCollection.settings.id
                 }).then(function () {
-                    return that._fetchAndStoreCollection(url);
+                    return that._fetchAndStoreCollection();
                 });
             }
         });
     },
 
-    _fetchAndStoreCollection: function (url) {
+    _fetchAndStoreCollection: function () {
         var that = this;
         var time = Date.now();
         if (!that._requestPromise) {
             Tomahawk.log("Checking if collection needs to be updated");
             Tomahawk.PluginManager.registerPlugin("collection", gmusicCollection);
+            var url = that._baseURL + 'trackfeed?ct=1&hl=en_US&dv=0&alt=json&include-tracks=true';
+            url += "&tier=" + (that._allAccess ? 'aa' : 'fr');
+            if (window.localStorage["gmusic_last_cache_update"]) {
+                url += '&updated-min=' + window.localStorage["gmusic_last_cache_update"] * 1000;
+            }
             that._requestPromise = that._paginatedRequest(url).then(function (results) {
                 if (results && results.length > 0) {
                     Tomahawk.log("Collection needs to be updated");
@@ -271,15 +270,12 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var that = this;
         var settings = {
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': 'GoogleLogin auth=' + this._token
-            }
+            },
+            dataFormat: 'json'
         };
         if (nextPageToken) {
-            settings.data = {
-                'start-token': nextPageToken
-            };
-            settings.dataFormat = 'json';
+            settings.data['start-token'] = nextPageToken;
         }
         results = results || [];
         return Tomahawk.post(url, settings).then(function (response) {
@@ -300,7 +296,11 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var url = this._baseURL + "query";
         var settings = {
             data: {
-                q: query
+                q: query,
+                ct: '1',
+                hl: 'en_US',
+                dv: 0,
+                tier: that._allAccess ? 'aa' : 'fr'
             },
             headers: {
                 Authorization: 'GoogleLogin auth=' + this._token
@@ -416,7 +416,7 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
             Tomahawk.log("Failed to get stream. Couldn't parse '" + urn + "'");
             return;
         }
-        Tomahawk.log("Getting stream for '" + urn + "', track ID is '" + urn.id + "'");
+        Tomahawk.log("Getting stream for '" + url + "', track ID is '" + urn.id + "'");
 
         var salt = util.salt(13);
         var sig = CryptoJS.HmacSHA1(urn.id + salt, this._key).toString(util.Base64)
@@ -425,12 +425,12 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
             .replace(/\//g, '_'); // URL-safe alphabet
 
         return {
-            url: 'https://android.clients.google.com/music/mplay'
-            + '?net=wifi&pt=e&targetkbps=8310'
+            url: 'https://mclients.googleapis.com/music/mplay'
+            + '?net=wifi&pt=e&hl=en_US&dv=0'
+            + '&tier=' + (this._allAccess ? 'aa' : 'fr')
             + '&' + ('T' == urn.id[0] ? 'mjck' : 'songid')
             + '=' + urn.id + '&slt=' + salt + '&sig=' + sig,
             headers: {
-                'Content-type': 'application/x-www-form-urlencoded',
                 'Authorization': 'GoogleLogin auth=' + this._token,
                 'X-Device-ID': this._deviceId
             }
@@ -457,7 +457,8 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
                 throw new Error("Wasn't able to get resolver settings");
             }
 
-            that._allAccess = response.settings.entitlementInfo.isSubscription || response.settings.entitlementInfo.isTrial;
+            that._allAccess = response.settings.entitlementInfo.isSubscription
+                || response.settings.entitlementInfo.isTrial;
             Tomahawk.log("Google Play Music All Access is "
                 + (that._allAccess ? "enabled" : "disabled" )
             );
