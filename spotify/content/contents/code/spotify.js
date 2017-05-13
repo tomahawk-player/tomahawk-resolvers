@@ -602,6 +602,8 @@ Tomahawk.PluginManager.registerPlugin('playlistGenerator', {
      * doesn't yet have an id, fetch the id automagically.
      */
     _buildSettingsData: function (params) {
+        var that = this;
+
         var artistIds = [];
         var trackIds = [];
         var genreIds = [];
@@ -613,16 +615,30 @@ Tomahawk.PluginManager.registerPlugin('playlistGenerator', {
                     artistIds.push(artist.id);
                 } else if (artist.artist) {
                     // No artist id provided, so we have to search for it
-                    var queryParams = {
+                    var queryParams1 = {
                         query: artist.artist
                     };
-                    promises.push(this.search(queryParams).then(function (result) {
-                        if (result.artists && result.artists.length > 0) {
-                            // Let's use the first result
-                            Tomahawk.log("Resolved artist to id: " + result.artists[0].id);
-                            artistIds.push(result.artists[0].id);
+                    promises.push(this.search(queryParams1).then(function (result) {
+                            if (result.artists && result.artists.length > 0) {
+                                // Let's use the first result
+                                Tomahawk.log("Resolved artist to id: " + result.artists[0].id);
+                                artistIds.push(result.artists[0].id);
+                            } else {
+                                var parts = queryParams1.query.split("&");
+                                if (parts && parts.length > 0) {
+                                    queryParams1.query = parts[0];
+                                    return that.search(queryParams1).then(function (result) {
+                                        if (result.artists && result.artists.length > 0) {
+                                            // Let's use the first result
+                                            Tomahawk.log("Resolved partial artist to id: "
+                                                + result.artists[0].id);
+                                            artistIds.push(result.artists[0].id);
+                                        }
+                                    });
+                                }
+                            }
                         }
-                    }));
+                    ));
                 }
             }
         } else if (params.tracks) {
@@ -728,6 +744,8 @@ Tomahawk.PluginManager.registerPlugin('playlistGenerator', {
                                 track: item.name
                             };
                         });
+                    } else {
+                        throw new Error("Sorry, artist/track not available.");
                     }
                     Tomahawk.log("Filled playlist with sessionId: " + sessionId
                         + ", resultCount: " + results.length);
