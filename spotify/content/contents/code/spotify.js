@@ -201,7 +201,7 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
                     return Tomahawk.post(SpotifyAuth._tokenEndPoint, settings)
                         .then(function (response) {
-                            Tomahawk.localStorage.setItem(that._storageKeyRefreshToken,
+                            Tomahawk.localStorage.setItem(SpotifyAuth._storageKeyRefreshToken,
                                 response.refresh_token);
                             Tomahawk.log("Received new refresh token!");
                             return TomahawkConfigTestResultType.Success;
@@ -211,12 +211,12 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
     },
 
     logout: function () {
-        Tomahawk.localStorage.removeItem(this._storageKeyRefreshToken);
+        Tomahawk.localStorage.removeItem(SpotifyAuth._storageKeyRefreshToken);
         return TomahawkConfigTestResultType.Logout;
     },
 
     isLoggedIn: function () {
-        var refreshToken = Tomahawk.localStorage.getItem(this._storageKeyRefreshToken);
+        var refreshToken = Tomahawk.localStorage.getItem(SpotifyAuth._storageKeyRefreshToken);
         return refreshToken !== null && refreshToken.length > 0;
     },
 
