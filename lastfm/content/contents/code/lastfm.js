@@ -1,6 +1,7 @@
 /* === This file is part of Tomahawk Player - <http://tomahawk-player.org> ===
  *
  *   Copyright 2011-2015, Thierry Göckel <thierry@strayrayday.lu>
+ *   Copyright 2017, Enno Gottschalk <mrmaffen@googlemail.com>
  *
  *   Tomahawk is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU Lesser General Public License as
@@ -17,8 +18,6 @@
 
 var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
 
-    arr: [],
-
     settings: {
         name: 'Last.fm',
         icon: 'lastfm-icon.png',
@@ -26,122 +25,343 @@ var LastfmResolver = Tomahawk.extend(TomahawkResolver, {
         timeout: 5
     },
 
-    init: function (){
-        "use strict";
-
+    init: function () {
         Tomahawk.PluginManager.registerPlugin("linkParser", this);
     },
 
-    canParseUrl: function (url, type){
-        "use strict";
+    canParseUrl: function (params) {
+        var url = params.url;
+        var type = params.type;
 
-        var domainRegex = /http:\/\/(cn|www)\.last(\.fm|fm\.(de|es|fr|it|jp|pl|com\.br|ru|se|com\.tr))\/music\//;
-
-        if (!(domainRegex).test(url)){
-            return false;
-        }
-        this.arr = url.replace(domainRegex, "").split("\/");
-
-        switch (type){
-            case TomahawkUrlType.Album:
-                return this.arr.length >= 2;
-            case TomahawkUrlType.Artist:
-                return this.arr.length >= 1;
-            case TomahawkUrlType.Playlist:
-                return false;
-            case TomahawkUrlType.Track:
-                return this.arr.length === 3;
+        switch (type) {
+            case Tomahawk.UrlType.Album:
+                return /^https?:\/\/((www|cn)\.last\.).+\/music\/[^\/\n]+\/[^\/\n]+$/.test(url);
+            case Tomahawk.UrlType.Artist:
+                return /^https?:\/\/((www|cn)\.last\.).+\/music\/[^\/\n][^\/\n_]+$/.test(url);
+            case Tomahawk.UrlType.Track:
+                return /^https?:\/\/((www|cn)\.last\.).+\/music\/[^\/\n]+\/_\/[^\/\n]+$/.test(url);
             default:
-                return true;
+                return false;
         }
     },
 
-    lookupUrl: function (url){
-        "use strict";
+    lookupUrl: function (params) {
+        var url = params.url;
 
-        var result = {};
-        if (this.arr.length >= 1){
-            result.type = "artist";
-            result.name = decodeURIComponent(this.arr[0]).replace(/\+/g, " ");
-            if (result.name.indexOf("?") !== -1){
-                result.name = result.name.substring(0, result.name.indexOf("?"));
-            }
-            if (this.arr.length >= 2){
-                result.type = "album";
-                result.artist = result.name;
-                result.name = decodeURIComponent(this.arr[1]).replace(/\+/g, " ");
-                if (result.name.indexOf("?") !== -1){
-                    result.name = result.name.substring(0, result.name.indexOf("?"));
-                }
-                if (this.arr.length === 3){
-                    result.type = "track";
-                    result.title = decodeURIComponent(this.arr[2]).replace(/\+/g, " ");
-                    if (result.title.indexOf("?") !== -1){
-                        result.title = result.title.substring(0, result.title.indexOf("?"));
-                    }
-                    delete result.name;
-                }
-            }
+        Tomahawk.log("lookupUrl: " + url);
+        var urlParts =
+            url.split('/').filter(function (item) {
+                return item.length != 0;
+            }).map(function (s) {
+                return decodeURIComponent(s.replace(/\+/g, '%20'));
+            });
+        if (/^https?:\/\/((www|cn)\.last\.).+\/music\/[^\/\n]+\/[^\/\n]+$/.test(url)) {
+            Tomahawk.log("Found an album");
+            // We have to deal with an Album
+            return {
+                type: Tomahawk.UrlType.Album,
+                artist: urlParts[urlParts.length - 2],
+                album: urlParts[urlParts.length - 1]
+            };
+        } else if (/^https?:\/\/((www|cn)\.last\.).+\/music\/[^\/\n][^\/\n_]+$/.test(url)) {
+            Tomahawk.log("Found an artist");
+            // We have to deal with an Artist
+            return {
+                type: Tomahawk.UrlType.Artist,
+                artist: urlParts[urlParts.length - 1]
+            };
+        } else if (/^https?:\/\/((www|cn)\.last\.).+\/music\/[^\/\n]+\/_\/[^\/\n]+$/.test(url)) {
+            Tomahawk.log("Found a track");
+            // We have to deal with a Track
+            return {
+                type: Tomahawk.UrlType.Track,
+                artist: urlParts[urlParts.length - 3],
+                track: urlParts[urlParts.length - 1]
+            };
         }
-        Tomahawk.addUrlResult(url, result);
-    },
-
-    parseSongResponse: function (qid, responseString) {
-        "use strict";
-
-        var results = [];
-        if (responseString !== undefined && responseString.track !== undefined && responseString.track.freedownload) {
-            var result = {};
-            result.artist = responseString.track.artist.name;
-            result.track = responseString.track.name;
-            if (responseString.track.album !== undefined) {
-                result.album = responseString.track.album.title;
-            } else {
-                result.album = "";
-            }
-            if (responseString.track.year !== undefined) {
-                result.year = responseString.track.year;
-            }
-            if (responseString.track.url !== undefined) {
-                result.linkUrl = responseString.track.url;
-            }
-            result.source = this.settings.name;
-            result.url = responseString.track.freedownload;
-            if (result.url.indexOf('http:') === 0) {
-                result.url = result.url.replace(/http:/, 'https:');
-            }
-
-            result.mimetype = "audio/mpeg";
-            result.bitrate = 128;
-            result.duration = responseString.track.duration / 1000;
-            result.score = 0.95;
-            results.push(result);
-        }
-
-        return results;
-    },
-    resolve: function (params) {
-        // disable until we found a new api to useful
-        return [];
-
-        "use strict";
-
-        var artist = params.artist;
-        var album = params.album;
-        var title = params.track;
-
-        artist = encodeURIComponent(artist).replace(/\%20/g, '+').trim();
-        var track = encodeURIComponent(title).replace(/\%20/g, '+').trim();
-        var lastfmUrl = "https://ws.audioscrobbler.com/2.0/?method=track.getinfo&api_key=3ded6e3f4bfc780abecea04808abdd70&format=json&autocorrect=1&artist=" + artist + "&track=" + track;
-        var that = this;
-        return Tomahawk.get(lastfmUrl).then(that.parseSongResponse);
-    },
-    search: function (qid, searchString) {
-        "use strict";
-
-        // Not yet possible, sorry
-        return [];
     }
 });
 
 Tomahawk.resolver.instance = LastfmResolver;
+
+Tomahawk.PluginManager.registerPlugin('infoPlugin', {
+
+    _apiUrl: 'http://ws.audioscrobbler.com/2.0/',
+
+    _apiKey: '7194b85b6d1f424fe1668173a78c0c4a',
+
+    _apiSecret: '59edd383762b4f933c059a527423dc0e',
+
+    _convertArtist: function (artist) {
+        var result = {
+            id: "",
+            artist: "",
+            bio: "",
+            images: [],
+            tracks: [],
+            albums: [],
+            similar: []
+        };
+        if (artist) {
+            if (typeof artist == 'string' || artist instanceof String) {
+                result.artist = artist;
+            } else {
+                result.id = artist.mbid;
+                result.artist = artist.name;
+                result.bio = artist.bio ? artist.bio.content : "";
+                result.images = this._convertImages(artist.image);
+                result.similar = artist.similar ? this._convertArtists(artist.similar.artist) : [];
+            }
+        }
+        return result;
+    },
+
+    _convertArtists: function (artists) {
+        var that = this;
+
+        var result = [];
+        if (artists) {
+            artists.forEach(function (artist) {
+                result.push(that._convertArtist(artist));
+            });
+        }
+        return result;
+    },
+
+    _convertImages: function (images) {
+        var result = [];
+        if (images) {
+            images.forEach(function (image) {
+                if (image.size && (image.size == "medium" || image.size == "extralarge")) {
+                    result.push({
+                        url: image["#text"]
+                    });
+                }
+            });
+        }
+        return result;
+    },
+
+    _convertTracks: function (tracks) {
+        var that = this;
+
+        var result = [];
+        if (tracks) {
+            tracks.forEach(function (track) {
+                result.push({
+                    id: track.mbid,
+                    track: track.name,
+                    artist: that._convertArtist(track.artist),
+                    album: that._convertAlbum(track.album),
+                    composer: "",
+                    date: 0,        // in Unix time
+                    genre: "",
+                    number: 0,
+                    discnumber: 0,
+                    bitrate: 0,     // in kbps
+                    duration: track.duration,    // in ms
+                    samplerate: 0,  // in hz
+                    filesize: 0,    // in kb
+                    bpm: 0,
+                    lyrics: "",
+                    similar: []     // list of similar track's ids
+                });
+            });
+        }
+        return result;
+    },
+
+    _convertAlbum: function (album) {
+        var result = {
+            id: "",
+            album: "",
+            artist: this._convertArtist(),
+            composer: "",
+            date: 0,     // in Unix time
+            genre: "",
+            images: [],  // list of album image urls (low res first)
+            tracks: []   // list of track ids
+        };
+        if (album) {
+            result = {
+                id: album.mbid,
+                album: album.name,
+                artist: this._convertArtist(album.artist),
+                composer: "",
+                date: 0,  // in Unix time
+                genre: "",
+                images: this._convertImages(album.image),  // list of album image urls (low res first)
+                tracks: album.tracks ? this._convertTracks(album.tracks.track) : [] // list of track ids
+            };
+        }
+        return result;
+    },
+
+    _convertAlbums: function (albums) {
+        var that = this;
+
+        var result = [];
+        if (albums) {
+            albums.forEach(function (album) {
+                if (album && album.image && album.image.length > 0 && album.image[0]["#text"]) {
+                    result.push(that._convertAlbum(album));
+                }
+            });
+        }
+        return result;
+    },
+
+    _apiRequest: function (method, optionsData) {
+        optionsData.method = method;
+        optionsData.api_key = this._apiKey;
+        optionsData.format = "json";
+        var options = {
+            data: optionsData
+        };
+        return Tomahawk.get(this._apiUrl, options);
+    },
+
+    /**
+     * Search for tracks, artists and albums
+     *
+     * @param params A map containing all of the necessary parameters describing the query
+     *
+     *               Example:
+     *               { query: "Queen" }
+     *
+     * @returns A map consisting of the contentType and parsed results.
+     *
+     *          Example:
+     *          {
+     *            artists: [],
+     *            albums: [],
+     *            tracks: []
+     *          }
+     *
+     */
+    search: function (params) {
+        var that = this;
+
+        var query = params.query;
+
+        if (params.suggestions) {
+            return;
+        }
+
+        var promises = [];
+
+        promises.push(that._apiRequest("artist.search", {artist: query}).then(function (result) {
+            return that._convertArtists(result.results.artistmatches.artist);
+        }));
+        promises.push(that._apiRequest("album.search", {album: query}).then(function (result) {
+            return that._convertAlbums(result.results.albummatches.album);
+        }));
+        return RSVP.all(promises).then(function (results) {
+            return {
+                artists: results[0],
+                albums: results[1],
+                tracks: []
+            }
+        }).catch(function (reason) {
+            reject("search error! " + reason);
+        });
+    },
+
+    /**
+     * Get the artist info from the server specified by the given params map and parse them into the
+     * correct result format.
+     *
+     * @param params A map containing all of the necessary parameters describing the artist which to
+     *               get infos from the server for.
+     *
+     *               Example:
+     *               { name: "Queen",   // the artist's name
+     *                 short: true   }  // if true, only basic information is being fetched
+     *
+     * @returns A map containing the parsed results.
+     *
+     *          Example:
+     *          {
+     *            id: "421421",
+     *            name: "Queen",
+     *            bio: "Queen is da best. For real!",
+     *            images: ["http://www.img.de/queen_small.png",   // list of artist image urls (low res first)
+      *                    "http://www.img.de/queen_medium.png",
+      *                    "http://www.img.de/queen_large.png"],
+     *            tracks: [],     // list of track objects
+     *            similar: []     // list of similar artists
+     *          }
+     *
+     */
+    artist: function (params) {
+        var that = this;
+
+        var artistName = params.artist;
+
+        return that._apiRequest("artist.getinfo", {artist: artistName}).then(function (result) {
+            return that._convertArtist(result.artist);
+        }).then(function (result) {
+            if (params.short) {
+                return result;
+            } else {
+                var promises = [];
+                promises.push(that._apiRequest("artist.gettopalbums", {artist: artistName})
+                    .then(function (result) {
+                        return that._convertAlbums(result.topalbums.album);
+                    }));
+                promises.push(that._apiRequest("artist.gettoptracks", {artist: artistName})
+                    .then(function (result) {
+                        return that._convertTracks(result.toptracks.track);
+                    }));
+                return RSVP.all(promises).then(function (results) {
+                    result.albums = results[0];
+                    result.tracks = results[1];
+                    return result;
+                }).catch(function (reason) {
+                    reject("search error! " + reason);
+                });
+            }
+        });
+    },
+
+    /**
+     * Get the album info from the server specified by the given params map and parse them into the
+     * correct result format.
+     *
+     * @param params A map containing all of the necessary parameters describing the album which to
+     *               get infos from the server for.
+     *
+     *               Example:
+     *               { album: "Greatest Hits",   // the album's name
+     *                 artist: "Queen",    // the artist's name
+     *                 short: true   }          // if true, only basic information is being fetched
+     *
+     * @returns A map containing the parsed results.
+     *
+     *          Example:
+     *          {
+     *           id: "25525252",
+     *           name: "Greatest Hits",
+     *           artist: {name: "Queen", ...},
+     *           composer: "",
+     *           date: 1484086490,  // in Unix time
+     *           genre: "Rock",
+     *           images: ["http://www.img.de/greatesthits_small.png",   // list of album image urls (low res first)
+      *                   "http://www.img.de/greatesthits_medium.png",
+      *                   "http://www.img.de/greatesthits_large.png"],
+     *           tracks: [],     // list of track objects
+     *          }
+     *
+     */
+    album: function (params) {
+        var that = this;
+
+        var artistName = params.artist;
+        var albumName = params.album;
+
+        return that._apiRequest("album.getinfo", {artist: artistName, album: albumName})
+            .then(function (result) {
+                return that._convertAlbum(result.album);
+            });
+    }
+});

@@ -1,9 +1,9 @@
 {
     "name": "Last.fm",
     "pluginName": "lastfm",
-    "author": "Thierry Göckel",
+    "author": "Thierry Göckel, Enno Gottschalk",
     "email": "thierry@strayrayday.lu",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "website": "http://gettomahawk.com",
     "description": "Resolves to freely downloadable tracks on Last.fm.",
     "type": "resolver/javascript",
