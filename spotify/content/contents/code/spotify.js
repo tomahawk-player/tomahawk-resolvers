@@ -194,8 +194,8 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
                         },
                         data: {
                             grant_type: "authorization_code",
-                            code: encodeURIComponent(that._getParameterByName(result.url, "code")),
-                            redirect_uri: encodeURIComponent(SpotifyAuth._redirectUri)
+                            code: that._getParameterByName(result.url, "code"),
+                            redirect_uri: SpotifyAuth._redirectUri
                         }
                     };
 
