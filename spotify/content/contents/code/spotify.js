@@ -247,9 +247,10 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
         var album = params.album;
         var track = params.track;
 
-        var q = "artist:\"" + artist + "\" track:\"" + track + "\"";
+        var q = "artist:\"" + artist.replace('&', '') + "\" track:\""
+            + track.replace('&', '') + "\"";
         if (album) {
-            q += " album:\"" + album + "\"";
+            q += " album:\"" + album.replace('&', '') + "\"";
         }
 
         return this._search(q);
@@ -258,7 +259,7 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
     search: function (params) {
         var query = params.query;
 
-        return this._search(query);
+        return this._search(query.replace('&', ''));
     },
 
     _search: function (query) {
@@ -274,8 +275,15 @@ var SpotifyResolver = Tomahawk.extend(Tomahawk.Resolver, {
         };
         return SpotifyAuth.get(url, settings).then(function (response) {
             return response.tracks.items.map(function (item) {
+                var combinedArtistName = "";
+                for (var i = 0; i < item.artists.length; i++) {
+                    if (i != 0) {
+                        combinedArtistName += " & ";
+                    }
+                    combinedArtistName += item.artists[i].name;
+                }
                 return {
-                    artist: item.artists[0].name,
+                    artist: combinedArtistName,
                     album: item.album.name,
                     duration: item.duration_ms / 1000,
                     source: that.settings.name,
