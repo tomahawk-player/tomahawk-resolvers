@@ -158,10 +158,10 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     _convertTrack2: function (entry) {
         var track = {
-            artist:     Tomahawk.htmlDecode(entry.artist.name),
-            album:      Tomahawk.htmlDecode(entry.album.title),
-            track:      Tomahawk.htmlDecode(entry.title),
-            title:      Tomahawk.htmlDecode(entry.title),
+            artist:     he.decode(entry.artist.name),
+            album:      he.decode(entry.album.title),
+            track:      he.decode(entry.title),
+            title:      he.decode(entry.title),
 
             albumpos:   entry.trackNum,
             discnumber: entry.discNum,
@@ -182,11 +182,11 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         if (entry.hasOwnProperty('metadata'))
             entry = entry.metadata;
         var track = {
-            artist:     Tomahawk.htmlDecode(entry.artistName),
-            albumArtist:     Tomahawk.htmlDecode(entry.albumArtistName),
-            album:      Tomahawk.htmlDecode(entry.albumName),
-            track:      Tomahawk.htmlDecode(entry.title),
-            title:      Tomahawk.htmlDecode(entry.title),
+            artist:     he.decode(entry.artistName),
+            albumArtist:     he.decode(entry.albumArtistName),
+            album:      he.decode(entry.albumName),
+            track:      he.decode(entry.title),
+            title:      he.decode(entry.title),
 
             albumpos:   entry.trackNum,
             discnumber: entry.discNum,
