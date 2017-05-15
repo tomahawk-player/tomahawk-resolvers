@@ -98,10 +98,6 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
         this._ready = false;
 
-        if (!this.element) {
-            this.element = document.createElement('div');
-        }
-
         // check resolver is properly configured
         var userConfig = this.getUserConfig();
         if (!userConfig.username || !userConfig.password || !userConfig.server) {
@@ -340,8 +336,7 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
     },
 
     _decodeEntity: function (str) {
-        this.element.innerHTML = str;
-        return this.element.textContent;
+        return he.decode(str);
     },
 
     _parseSongResponse: function (xmlDoc) {
@@ -425,7 +420,6 @@ var AmpacheResolver = Tomahawk.extend(Tomahawk.Resolver, {
 Tomahawk.resolver.instance = AmpacheResolver;
 
 var ampacheCollection = Tomahawk.extend(Tomahawk.Collection, {
-    resolver:  AmpacheResolver,
     settings: {
         id: "ampache",
         prettyname: "Ampache",
