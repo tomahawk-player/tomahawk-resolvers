@@ -11,7 +11,8 @@
         "main": "contents/code/gmusic.js",
         "scripts": [],
         "libs": [
-            "cryptojs:3.1.2"
+            "cryptojs:3.1.2",
+            "asmcryptojs:0.0.11-808a91f"
         ],
         "icon": "contents/images/icon.png",
         "iconWhite": "contents/images/iconWhite.png",
