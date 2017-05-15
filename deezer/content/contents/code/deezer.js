@@ -239,3 +239,110 @@ var DeezerResolver = Tomahawk.extend(Tomahawk.Resolver, {
 
 Tomahawk.resolver.instance = DeezerResolver;
 
+Tomahawk.PluginManager.registerPlugin('infoPlugin', {
+
+    _convertArtist: function (artist) {
+        var result = {
+            id: "",
+            artist: "",
+            bio: "",
+            images: [],
+            tracks: [],
+            albums: [],
+            similar: []
+        };
+        if (artist) {
+            if (typeof artist == 'string' || artist instanceof String) {
+                result.artist = artist;
+            } else {
+                result.id = artist.id;
+                result.artist = artist.name;
+                result.images = [{url: artist.picture_medium},
+                    {url: artist.picture_xl || artist.picture_big}];
+            }
+        }
+        return result;
+    },
+
+    _convertArtists: function (artists) {
+        var that = this;
+
+        var result = [];
+        if (artists) {
+            artists.forEach(function (artist) {
+                result.push(that._convertArtist(artist));
+            });
+        }
+        return result;
+    },
+
+    _convertAlbum: function (album) {
+        var result = {
+            id: "",
+            album: "",
+            artist: this._convertArtist(),
+            composer: "",
+            date: 0,     // in Unix time
+            genre: "",
+            images: [],  // list of album image urls (low res first)
+            tracks: []   // list of track ids
+        };
+        if (album) {
+            result = {
+                id: album.id,
+                album: album.title,
+                artist: this._convertArtist(album.artist),
+                images: [{url: album.cover_medium}, {url: album.cover_xl || album.cover_big}]  // list of album image urls (low res first)
+            };
+        }
+        return result;
+    },
+
+    _convertAlbums: function (albums) {
+        var that = this;
+
+        var result = [];
+        if (albums) {
+            albums.forEach(function (album) {
+                result.push(that._convertAlbum(album));
+            });
+        }
+        return result;
+    },
+
+    search: function (params) {
+        var that = this;
+
+        var query = params.query;
+        var suggestions = params.suggestions;
+
+        if (suggestions) {
+            var artistUrl = 'http://api.deezer.com/search/artist';
+            var artistSettings = {
+                data: {
+                    q: query,
+                    limit: 3
+                }
+            };
+            var albumUrl = 'http://api.deezer.com/search/album';
+            var albumSettings = {
+                data: {
+                    q: query,
+                    limit: 1
+                }
+            };
+            var promises = [
+                Tomahawk.get(artistUrl, artistSettings),
+                Tomahawk.get(albumUrl, albumSettings)
+            ];
+            return RSVP.all(promises).then(function (results) {
+                return {
+                    artists: that._convertArtists(results[0].data),
+                    albums: that._convertAlbums(results[1].data)
+                };
+            }).catch(function (reason) {
+                reject("search error! " + reason);
+            });
+        }
+    }
+});
