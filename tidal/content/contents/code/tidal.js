@@ -18,6 +18,7 @@ var TidalResolver = Tomahawk.extend(Tomahawk.Resolver, {
     /* This can also be used with WiMP service if you change next 2 lines */
     api_location: 'https://listen.tidal.com/v1/',
     api_token: 'P5Xbeo5LFvESeDy6',
+    api_clientVer: '2.2.1--7',
 
     logged_in: null, // null, = not yet tried, 0 = pending, 1 = success, 2 = failed
 
@@ -403,7 +404,8 @@ var TidalResolver = Tomahawk.extend(Tomahawk.Resolver, {
             type: 'POST', // backwards compatibility for old versions of tomahawk.js
             data: {
                 "username": config.email.trim(),
-                "password": config.password.trim()
+                "password": config.password.trim(),
+                "clientVersion": TidalResolver.api_clientVer //clientVersion string, API now checks for this on login
             },
             headers: {'Origin': 'http://listen.tidal.com'}
         };
