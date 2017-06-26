@@ -227,16 +227,16 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var that = this;
 
-
-        //Just a guess, not sure how to check if haz prime music
         if (that._appConfig.featureController.hawkfireAccess == 1)
         {
+            // User has Music Unlimited
             return that._post(that.api_location + "clientbuddy/compartments/eeb70a31c77c4ecd/handlers/search", {
                 data: {
                     "keywords" : params.query,
                     "offset" : 0,
                     "count" : 100,
-                    "marketplaceId" : that._appConfig['cirrus']['marketplaceId'],
+                    "marketplaceId": that._appConfig['marketplaceId']
+                    || that._appConfig['cirrus']['marketplaceId'],
                     "features" : ["musicSubscription"],
                     "isMusicSubscription" : true,
                     "primeOnly" : false,
@@ -255,12 +255,12 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         }
         else if (that._appConfig.featureController.robin == 1)
         {
-            //I have no idea where this URL comes from yet
-            //This is to search 'Prime Music'
+            // User has Prime
             return that._post(that.api_location + "clientbuddy/compartments/32f93572142e8f7c/handlers/search", {
                 data: {
                     "keywords" : params.query,
-                    "marketplaceId" : that._appConfig['cirrus']['marketplaceId']
+                    "marketplaceId": that._appConfig['marketplaceId']
+                    || that._appConfig['cirrus']['marketplaceId']
                 },
                 dataFormat: 'json'
             }, true).then( function (response) {
@@ -269,6 +269,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 }).map(that._convertTrack, that);
             });
         } else {
+            // User doesn't have Unlimited nor Prime
             return [];
         }
     },
@@ -572,7 +573,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                         (track.primeStatus == 'PRIME' && that._appConfig.featureController.robin == 1) ||
                         (track.isMusicSubscription == 'true' && that._appConfig.featureController.hawkfireAccess == 1));
                 })
-                .map(that._convertTrack));
+                .map(that._convertTrack, that));
             nextResultsToken = response.searchLibraryResponse.searchLibraryResult.nextResultsToken;
             if (null === nextResultsToken)
                 return previousResults;
