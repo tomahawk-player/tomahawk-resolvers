@@ -132,7 +132,8 @@ Tomahawk.PluginManager.registerPlugin('infoPlugin', {
         var result = [];
         if (images) {
             images.forEach(function (image) {
-                if (image.size && (image.size == "medium" || image.size == "extralarge")) {
+                if (image["#text"] && image.size
+                    && (image.size == "medium" || image.size == "extralarge")) {
                     result.push({
                         url: image["#text"]
                     });
@@ -179,8 +180,7 @@ Tomahawk.PluginManager.registerPlugin('infoPlugin', {
             composer: "",
             date: 0,     // in Unix time
             genre: "",
-            images: [],  // list of album image urls (low res first)
-            tracks: []   // list of track ids
+            images: []  // list of album image urls (low res first)
         };
         if (album) {
             result = {
@@ -191,8 +191,10 @@ Tomahawk.PluginManager.registerPlugin('infoPlugin', {
                 date: 0,  // in Unix time
                 genre: "",
                 images: this._convertImages(album.image),  // list of album image urls (low res first)
-                tracks: album.tracks ? this._convertTracks(album.tracks.track) : [] // list of track ids
             };
+            if (album.tracks && album.tracks.track && album.tracks.track.length > 0) {
+                result.tracks = this._convertTracks(album.tracks.track);
+            }
         }
         return result;
     },
@@ -200,15 +202,30 @@ Tomahawk.PluginManager.registerPlugin('infoPlugin', {
     _convertAlbums: function (albums) {
         var that = this;
 
-        var result = [];
         if (albums) {
+            var promises = [];
             albums.forEach(function (album) {
-                if (album && album.image && album.image.length > 0 && album.image[0]["#text"]) {
-                    result.push(that._convertAlbum(album));
+                if (album && album.image && album.name && album.artist && album.artist.name
+                    && album.image.length > 0 && album.image[0]["#text"]) {
+                    var params = {
+                        album: album.name,
+                        artist: album.artist.name
+                    };
+                    promises.push(that.album(params));
                 }
             });
         }
-        return result;
+        return RSVP.all(promises).then(function (albums) {
+            var validAlbums = [];
+            if (albums) {
+                albums.forEach(function (album) {
+                    if (album.tracks) {
+                        validAlbums.push(album);
+                    }
+                });
+            }
+            return validAlbums;
+        });
     },
 
     _apiRequest: function (method, optionsData) {
@@ -253,17 +270,16 @@ Tomahawk.PluginManager.registerPlugin('infoPlugin', {
         promises.push(that._apiRequest("artist.search", {artist: query}).then(function (result) {
             return that._convertArtists(result.results.artistmatches.artist);
         }));
-        promises.push(that._apiRequest("album.search", {album: query}).then(function (result) {
-            return that._convertAlbums(result.results.albummatches.album);
-        }));
+        promises.push(
+            that._apiRequest("album.search", {limit: 20, album: query}).then(function (result) {
+                return that._convertAlbums(result.results.albummatches.album);
+            }));
         return RSVP.all(promises).then(function (results) {
             return {
                 artists: results[0],
                 albums: results[1],
                 tracks: []
             }
-        }).catch(function (reason) {
-            reject("search error! " + reason);
         });
     },
 
@@ -305,7 +321,8 @@ Tomahawk.PluginManager.registerPlugin('infoPlugin', {
                 return result;
             } else {
                 var promises = [];
-                promises.push(that._apiRequest("artist.gettopalbums", {artist: artistName})
+                promises.push(that._apiRequest(
+                    "artist.gettopalbums", {limit: 20, artist: artistName})
                     .then(function (result) {
                         return that._convertAlbums(result.topalbums.album);
                     }));
