@@ -58,18 +58,15 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
     configUi: [
         {
             type: "textview",
-            text: "For this plug-in to work you must first login using the official Google Music "
-            + "iOS or Android app and play a song. After you've done that Tomahawk should then be "
-            + "able to authenticate with your account."
-        },
-        {
-            type: "textview",
-            text: "<html>Note: If you use 2-Step Verification, then you must create an "
+            text: "<html>IMPORTANT:<br/>"
+            + "- Make sure you have previously logged into the official Google Music iOS or "
+            + "Android app and played a song.<br/>"
+            + "- For security reasons we highly recommend using an "
             + "<a href=\"https://support.google.com/accounts/answer/185833?hl=en\">app-specific "
-            + "password</a> to use in Tomahawk. Otherwise, make sure that you enable "
-            + "\"less secure apps\" in your "
-            + "<a href=\"https://www.google.com/settings/security/lesssecureapps\">Google account "
-            + "settings</a></html>"
+            + "password</a>. This is mandatory when you are using two-factor authentication.<br/>"
+            + "If you don't you can also enable "
+            + "<a href=\"https://www.google.com/settings/security/lesssecureapps\">"
+            + "\"less secure apps\"</a> and login with your normal password.</html>"
         },
         {
             id: "email",
@@ -694,6 +691,11 @@ var GMusicResolver = Tomahawk.extend(Tomahawk.Resolver, {
         // Ready to encrypt!
         var pubkey = [modulus, exponent];
         var clearBytes = asmCrypto.string_to_bytes(email + '\0' + password);
+        if (Tomahawk.generateSeed) {
+            asmCrypto.random.seed(Tomahawk.generateSeed());
+        } else {
+            asmCrypto.random.skipSystemRNGWarning = true;
+        }
         var encryptedBytes = asmCrypto.RSA_OAEP_SHA1.encrypt(clearBytes, pubkey);
         signature.set(encryptedBytes, 5);
 
