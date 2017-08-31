@@ -5,10 +5,10 @@
  *
  */
 
-var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
+var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
-    apiLocation : 'https://myzuka.org/',
+    apiLocation : 'https://myzuka.me/',
 
     settings: {
         cacheTime: 300,
@@ -18,15 +18,11 @@ var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         timeout: 8
     },
 
-    init: function() {
-        Tomahawk.addCustomUrlHandler( 'myzuka', 'getStreamUrl', true );
-    },
-
-    search: function (query) {
+    search: function (param) {
         var that = this;
 
         var params = {
-            searchText: query
+            searchText: param.query
         };
 
         return Tomahawk.get(this.apiLocation + "Search", {
@@ -50,9 +46,9 @@ var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         });
     },
 
-    resolve: function (artist, album, title) {
-        var query = [ artist, title ].join(' ');
-        return this.search(query);
+    resolve: function (params) {
+        var query = [ params.artist, params.album, params.track ].join(' ');
+        return this.search({query:query});
     },
 
     _parseUrn: function (urn) {
@@ -65,18 +61,17 @@ var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver.Promise, {
         };
     },
 
-    getStreamUrl: function(qid, url) {
+    getStreamUrl: function(params) {
         var that = this;
-        var songPageUrl = this.apiLocation + url.match(/^myzuka:\/\/(.+)$/)[1];
-        Tomahawk.get(songPageUrl).then(function(response) {
+        var songPageUrl = this.apiLocation + params.url.match(/^myzuka:\/\/(.+)$/)[1];
+        return Tomahawk.get(songPageUrl).then(function(response) {
             var mediaRe = /<a itemprop="audio" href="([^"]+)/gm;
             var match = mediaRe.exec(response);
-            Tomahawk.log(JSON.stringify(match));
             var streamUrl = match[1].replace(/&amp;/g, '&');
             if (streamUrl.substring(0, 4) != "http") {
                 streamUrl = that.apiLocation + streamUrl;
             }
-            Tomahawk.reportStreamUrl(qid, streamUrl);
+            return {url: streamUrl};
         });
     }
 });
