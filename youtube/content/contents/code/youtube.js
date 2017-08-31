@@ -794,11 +794,14 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                             var ASSETS_RE = /"assets":.+?"js":\s*("[^"]+")/;
                             var assetsMatch = html.match(ASSETS_RE);
                             if (assetsMatch) {
-                                that._debugMsg('player js: ' + JSON.parse(assetsMatch[1]));
                                 var js_player_url = JSON.parse(assetsMatch[1]);
                                 if (js_player_url.indexOf('//') === 0) {
                                     js_player_url = 'https:' + js_player_url;
                                 }
+                                else if (js_player_url.indexOf('//') === -1) {
+                                    js_player_url = 'https://youtube.com' + js_player_url;
+                                }
+                                that._debugMsg('player js: ' + js_player_url);
                                 var dec;
                                 if (js_player_url in that.deobfuscateFunctions) {
                                     that._debugMsg('Deobfuscation code already available');
@@ -810,6 +813,14 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                                         var fname = code.match(decrypt_function_RE);
                                         if (fname) {
                                             fname = fname[1];
+                                        } else {
+                                            decrypt_function_RE = /([\"\'])signature\1\s*,\s*([a-zA-Z0-9$]+)\(/;
+                                            fname = code.match(decrypt_function_RE);
+                                            if (fname) {
+                                                fname = fname[2];
+                                            }
+                                        }
+                                        if (fname) {
                                             that._debugMsg('Deobfuscate function name: ' + fname);
                                             var func = that._extractFunction(code, fname);
                                             that._debugMsg(
@@ -819,6 +830,8 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                                                 name: fname
                                             };
                                             return that.deobfuscateFunctions[js_player_url];
+                                        } else {
+                                            Tomahawk.log("Failed to extract signature function name");
                                         }
                                     });
                                 }
