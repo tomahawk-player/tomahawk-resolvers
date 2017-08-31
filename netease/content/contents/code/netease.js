@@ -89,6 +89,9 @@ var NeteaseResolver = Tomahawk.extend( Tomahawk.Resolver, {
             return null;
         }
         var dfsid = song[format].dfsId.toString();
+        if (dfsid == '0') {
+            return null;
+        }
         var ext   =  song[format].extension;
         // m2.music.126.net is also working but is properly resolvable via
         // chinese DNS servers only, thus p2
