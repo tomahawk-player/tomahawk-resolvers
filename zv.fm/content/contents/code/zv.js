@@ -18,7 +18,7 @@ var ZvResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
     init: function() {
         //To populate Cookies
-        Tomahawk.get("http://zv.fm");
+        Tomahawk.get("https://zv.fm/");
     },
 
     search: function (params) {
@@ -26,7 +26,7 @@ var ZvResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var query = params.query.replace(/\ /g, '+');
 
-        return Tomahawk.get("http://zv.fm/mp3/search?keywords=" + query).then(function (response){
+        return Tomahawk.get("https://zv.fm/mp3/search?keywords=" + query).then(function (response){
             var results = [];
             var trackRe = /href="\/artist[^"]+"><span>([^<]+).*?\/song\/[^"]+"><span>([^<]+)<[\s\S]*?data-time="([0-9]+)"\s+data-sid="([0-9]+)"/gm;
             var matches;
@@ -46,7 +46,7 @@ var ZvResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     getStreamUrl: function(params) {
-        return {url: params.url.replace('zvfm://', 'http://zv.fm/download/')};
+        return {url: params.url.replace('zvfm://', 'https://zv.fm/download/')};
     },
 
     resolve: function (params) {
