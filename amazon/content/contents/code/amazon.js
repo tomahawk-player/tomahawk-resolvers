@@ -156,12 +156,19 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         });
     },
 
+    _decode: function (item) {
+        if (item) {
+            return he.decode(item);
+        }
+        return item;
+    },
+
     _convertTrack2: function (entry) {
         var track = {
-            artist:     Tomahawk.htmlDecode(entry.artist.name),
-            album:      Tomahawk.htmlDecode(entry.album.title),
-            track:      Tomahawk.htmlDecode(entry.title),
-            title:      Tomahawk.htmlDecode(entry.title),
+            artist:     this._decode(entry.artist.name),
+            album:      this._decode(entry.album.title),
+            track:      this._decode(entry.title),
+            title:      this._decode(entry.title),
 
             albumpos:   entry.trackNum,
             discnumber: entry.discNum,
@@ -182,11 +189,11 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         if (entry.hasOwnProperty('metadata'))
             entry = entry.metadata;
         var track = {
-            artist:     Tomahawk.htmlDecode(entry.artistName),
-            albumArtist:     Tomahawk.htmlDecode(entry.albumArtistName),
-            album:      Tomahawk.htmlDecode(entry.albumName),
-            track:      Tomahawk.htmlDecode(entry.title),
-            title:      Tomahawk.htmlDecode(entry.title),
+            artist:         this._decode(entry.artistName),
+            albumArtist:    this._decode(entry.albumArtistName),
+            album:          this._decode(entry.albumName),
+            track:          this._decode(entry.title),
+            title:          this._decode(entry.title),
 
             albumpos:   entry.trackNum,
             discnumber: entry.discNum,
