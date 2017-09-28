@@ -391,11 +391,12 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         var options = {
             isTestingConfig: isTestingConfig
         };
-        return this._get(this.api_location + "cloudplayer", options).then(
+        return this._get(this.api_location + "gp/dmusic/cloudplayer/forceSignIn", options).then(
             function (resp) {
                 if (resp.indexOf('amznMusic.appConfig') !== -1 )
                 {
                     //We are already logged in
+                    Tomahawk.log("Already logged in\n");
                     return resp;
                 }
                 else
