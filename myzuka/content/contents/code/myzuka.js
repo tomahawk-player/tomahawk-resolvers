@@ -8,7 +8,7 @@
 var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver, {
     apiVersion: 0.9,
 
-    apiLocation : 'https://myzuka.me/',
+    apiLocation : 'https://myzuka.club/',
 
     settings: {
         cacheTime: 300,
@@ -35,9 +35,9 @@ var MyzukaResolver = Tomahawk.extend( Tomahawk.Resolver, {
             while (matches = trackRe.exec(tracks)) {
                 results.push({
                     type: 'track',
-                    artist: matches[1],
-                    title: matches[3],
-                    track: matches[3],
+                    artist: Tomahawk.htmlDecode(matches[1]),
+                    title: Tomahawk.htmlDecode(matches[3]),
+                    track: Tomahawk.htmlDecode(matches[3]),
                     url: 'myzuka://' + matches[2],
                 });
             }
