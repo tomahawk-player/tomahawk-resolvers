@@ -76,7 +76,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         var changed =
             this._email !== config.email ||
             this._password !== config.password ||
-            this._region != config.region;
+            this._region !== config.region;
 
         if (changed) {
             return this._get(this.api_location + "gp/dmusic/cloudplayer/forceSignOut").then(function(resp){
@@ -120,7 +120,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
         options.headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0';
         options.headers['Accept-Language'] = 'en-US,en;q=0.5';
 
-        if (method == 'POST')
+        if (method === 'POST')
             return Tomahawk.post( url, options);
         else
             return Tomahawk.get( url, options);
@@ -170,7 +170,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
             checked:    true,
             type:       "track",
-            url : 'amzn://track/' + entry.duration + '/ASIN/' + entry.asin
+            url : 'amzn://track/' + entry.duration + '/COID//ASIN/' + entry.asin + '/IDTYPE/ASIN'
         };
         // also has originalReleaseDate with values like 1476921600000
 
@@ -209,10 +209,13 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             track['year'] = entry.albumReleaseDate.split('-')[0];
         }
 
-        if (entry.purchased === 'true' || entry.uploaded === 'true')
-            track.url = 'amzn://track/' + entry.duration + '/COID/' + entry.objectId;
-        else
-            track.url = 'amzn://track/' + entry.duration + '/ASIN/' + entry.asin;
+        track.url = 'amzn://track/' + entry.duration + '/COID/' + entry.objectId +
+            '/ASIN/' + entry.asin + '/IDTYPE/';
+        if (entry.purchased === 'true' || entry.uploaded === 'true') {
+            track.url += 'COID';
+        } else {
+            track.url += 'ASIN';
+        }
 
         track.hint = track.url;
         return track;
@@ -227,7 +230,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
 
         var that = this;
 
-        if (that._appConfig.featureController.hawkfireAccess == 1)
+        if (that._appConfig.featureController.hawkfireAccess === 1)
         {
             // User has Music Unlimited
             return that._post(that.api_location + "clientbuddy/compartments/eeb70a31c77c4ecd/handlers/search", {
@@ -253,7 +256,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 return response.trackList.map(that._convertTrack2, that);
             });
         }
-        else if (that._appConfig.featureController.robin == 1)
+        else if (that._appConfig.featureController.robin === 1)
         {
             // User has Prime
             return that._post(that.api_location + "clientbuddy/compartments/32f93572142e8f7c/handlers/search", {
@@ -309,16 +312,22 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
     },
 
     _parseUrn: function (urn) {
-        //amzn://track/' + entry.duration + '/ASIN/' + entry.asin
-        var match = urn.match( /^amzn:\/\/([a-z]+)\/([0-9]+)\/(ASIN|COID)\/(.+)$/ );
+        var match = urn.match( /^amzn:\/\/([a-z]+)\/([0-9]+)\/COID\/(.*?)\/ASIN\/(.+?)\/IDTYPE\/(.+)$/ );
         if (!match) return null;
 
-        return {
-            type:    match[ 1 ],
-            duraion: match[ 2 ],
-            idType:  match[ 3 ],
-            id:      match[ 4 ]
+        var parsed = {
+            type        : match[ 1 ],
+            duraion     : match[ 2 ],
+            cdObjectId  : match[ 3 ],
+            asin        : match[ 4 ],
+            idType      : match[ 5 ]
         };
+        if (parsed.idType === 'COID') {
+            parsed.id     = parsed.cdObjectId;
+        } else {
+            parsed.id     = parsed.asin;
+        }
+        return parsed;
     },
 
     _getStreamUrlPromise: function (urn) {
@@ -341,6 +350,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             'Content-Encoding': 'amz-1.0'
         };
 
+
         var request = {
             "appMetadata": {
                 "https": "true"
@@ -361,6 +371,44 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             }
         };
 
+        var that = this;
+
+        var cirrusData = {
+            "clientActionList": [{
+                "actionName": "streamingTerminated",
+                "additionalDetails": {
+                    "trackCount": "1",
+                    "cacheHitStatus": "none",
+                    "source": "wifi",
+                    "terminationReason": "userStop",
+                    "initiationReason": "USERSTART",
+                    "durationSeconds": "3",
+                    "initialPlaybackDelayMilliseconds": "1541",
+                    "initialPlaybackDelaySeconds": "1.541",
+                    "transferSpeedBPS": "",
+                    "selectionSourceType": "AUTO_PLAYLIST",
+                    "isDirectedPlay": "true",
+                    "isShufflePlay": "false",
+                    "pageType": "recentlyPlayed",
+                    "selectionSourceId": "RECENTLY_PLAYED",
+                    "resourceType": "CLOUD_PLAYER",
+                    "rebufferCount": "0",
+                    "bitrates": "AutoMedium",
+                    "containerLoadDelayMilliseconds": "398",
+                    "streamOrDRMTech": "DASH",
+                    "playerType": "HTML5",
+                    "specificEventVersion": "2",
+                    "appVersion": "1.0.200025.0",
+                    "baseEventVersion": "1",
+                    "asin": parsedUrn.asin,
+                    "cdObjectId": parsedUrn.cdObjectId,
+                },
+                "timestamp": Date.now()
+            }],
+            'customerId' : this._appConfig['customerId'],
+            'deviceId' :   this._appConfig['deviceId'],
+            'deviceType' : this._appConfig['deviceType']
+        };
 
         return this._post(this.api_location + "dmls/", {
             data: request,
@@ -370,6 +418,14 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
             Tomahawk.log(JSON.stringify(response));
             if (! response.contentResponse.urlList)
                 throw new Error( response.contentResponse.statusMessage );
+            //We'll post this just to get this track to "Recently Played" on
+            //amazon
+            _headers['X-Amz-Target'] = 'com.amazon.cirrus.libraryservice.v3.CirrusLibraryServiceExternalV3.reportClientActions';
+            that._post(that.api_location + "cirrus/v3/", {
+                data: cirrusData,
+                dataFormat: 'json',
+                headers: _headers
+            }, true);
             return response.contentResponse.urlList[0];
         });
     },
@@ -569,10 +625,10 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                 .filter(function(track) {
                     track = track.metadata;
                     return (
-                        track.purchased == 'true' ||
-                        track.uploaded  == 'true' ||
-                        (track.primeStatus == 'PRIME' && that._appConfig.featureController.robin == 1) ||
-                        (track.isMusicSubscription == 'true' && that._appConfig.featureController.hawkfireAccess == 1));
+                        track.purchased === 'true' ||
+                        track.uploaded  === 'true' ||
+                        (track.primeStatus === 'PRIME' && that._appConfig.featureController.robin === 1) ||
+                        (track.isMusicSubscription === 'true' && that._appConfig.featureController.hawkfireAccess === 1));
                 })
                 .map(that._convertTrack, that));
             nextResultsToken = response.searchLibraryResponse.searchLibraryResult.nextResultsToken;
