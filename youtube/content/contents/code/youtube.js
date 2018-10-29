@@ -809,17 +809,23 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                                 } else {
                                     dec = Tomahawk.get(js_player_url).then(function (code) {
                                         //Extract top signature deobfuscation function name
-                                        var decrypt_function_RE = /\.sig\|\|([a-zA-Z0-9$]+)\(/;
-                                        var fname = code.match(decrypt_function_RE);
-                                        if (fname) {
-                                            fname = fname[1];
-                                        } else {
-                                            decrypt_function_RE = /([\"\'])signature\1\s*,\s*([a-zA-Z0-9$]+)\(/;
-                                            fname = code.match(decrypt_function_RE);
+                                        var decrypt_function_REs = [ 
+                                            /\.sig\|\|([a-zA-Z0-9$]+)\(/ ,
+                                            /(?:[\"\'])signature\1\s*,\s*([a-zA-Z0-9$]+)\(/ ,
+                                            /yt\.akamaized\.net\/\)\s*\|\|\s*.*?\s*c\s*&&\s*d\.set\([^,]+\s*,\s*([a-zA-Z0-9$]+)\(/
+                                        ];
+
+                                        var fname;
+                                        decrypt_function_REs.some(function(re){
+                                            fname = code.match(re);
+
                                             if (fname) {
-                                                fname = fname[2];
-                                            }
-                                        }
+                                                fname = fname[1];
+                                                return true;
+                                            } 
+                                            return false;
+                                        });
+
                                         if (fname) {
                                             that._debugMsg('Deobfuscate function name: ' + fname);
                                             var func = that._extractFunction(code, fname);
