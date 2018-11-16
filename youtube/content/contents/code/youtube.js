@@ -812,7 +812,9 @@ var YoutubeResolver = Tomahawk.extend(Tomahawk.Resolver, {
                                         var decrypt_function_REs = [ 
                                             /\.sig\|\|([a-zA-Z0-9$]+)\(/ ,
                                             /(?:[\"\'])signature\1\s*,\s*([a-zA-Z0-9$]+)\(/ ,
-                                            /yt\.akamaized\.net\/\)\s*\|\|\s*.*?\s*c\s*&&\s*d\.set\([^,]+\s*,\s*([a-zA-Z0-9$]+)\(/
+                                            /yt\.akamaized\.net\/\)\s*\|\|\s*.*?\s*c\s*&&\s*d\.set\([^,]+\s*,\s*([a-zA-Z0-9$]+)\(/,
+                                            /\bc\s*&&\s*d\.set\([^,]+\s*,\s*\([^)]*\)\s*\(\s*([a-zA-Z0-9$]+)\(/,
+                                            /\bc\s*&&\s*d\.set\([^,]+\s*,\s*([a-zA-Z0-9$]+)\(/
                                         ];
 
                                         var fname;
