@@ -469,7 +469,7 @@ var AmazonResolver = Tomahawk.extend( Tomahawk.Resolver, {
                     params['password'] = config.password.trim();
                     params['create'] = '0';
                     var actionRe = /action="([^"]+)"/g ;
-                    var url = actionRe.exec(resp)[1];
+                    var url = Tomahawk.htmlDecode(actionRe.exec(resp)[1]);
                     var tokenRE = /token...([A-F0-9]+)/g ;
                     var token = tokenRE.exec(resp)[1];
                     var options = {
